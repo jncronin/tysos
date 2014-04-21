@@ -1,0 +1,12 @@
+The build script of this version of libpng has been altered to support
+building for the EFI platform by John Cronin <jncronin@tysos.org>
+
+It remains under the original libpng licence, see png.h
+
+To build:
+
+TOOLS=target-name- ZLIBINC=zlib-dir EFILIBC=libc-inc-dir make libpng.a
+
+if TOOLS is not specified it defaults to x86_64-w64-mingw32-, e.g. the compiler
+used is x86_64-w64-mingw32-gcc.  If ZLIBINC is not specified, it defaults to ../zlib (this should contain zlib header files).  If EFILIBC is not specified, it defaults to ../efilibc/inc (this should contain libc header files).
+

@@ -1,0 +1,7 @@
+#sources
+#define NET_1_1;NET_2_0;INSIDE_CORLIB
+#outdir .
+#target library
+#extra /nowarn:1691,0675,0219,0688,0414,0162,1699,0649,0169,0618,0809,0168,0612 /unsafe /noconfig /nostdlib /optimize+
+#tools 2.0
+#unix

@@ -1,0 +1,86 @@
+efilibc
+-------
+
+By John Cronin <jncronin@tysos.org>
+A simple (incomplete) C library for the (U)EFI environment.
+
+
+Licence
+-------
+
+data.c and the files in the 'efi' directory are licensed as per
+efi/README.efilib.  All other files are licensed as per the source (efilibc
+contains some parts of the FreeBSD C library).
+
+
+Building
+--------
+
+EFI_CC=compiler EFI_AR=archiver make
+should build a efilibc.a file for use in your EFI applications.
+
+If EFI_CC and EFI_AR are not specified, the Makefile defaults to using
+x86_64-w64-mingw32-gcc and x86_64-w64-mingw32-ar respectively.
+
+
+Usage
+-----
+
+Add the efilibc/inc, efilibc/efi/inc, efilibc/efi/inc/protocol and
+efilibc/efi/inc/x86_64 directories to your compiler include directories, and
+link with the efilibc.a library.  efilibc expects a freestanding compiler
+environment.
+
+The functions are as per SUSv4.  In addition, a number of functions supporting
+efilibc are available (obtained by #including <efilibc.h>)
+
+int efilibc_init(EFI_HANDLE ImageHandle);
+    Please call this function prior to any other efilibc functions with the
+     ImageHandle of your EFI application.  Typically this should be the first
+     function called within your EFI program.  It sets the default stdout and
+     stdin streams to be the text console in the EFI_SYSTEM_TABLE (ConIn/
+     ConOut), and stderr either to the first serial port (if it exists) or
+     ConOut.  Returns zero on success, non-zero otherwise.
+
+    N.B. prior to calling this function, you must set EFI_SYSTEM_TABLE *ST to
+     the EFI System Table, and EFI_BOOT_SERVICES *BS to the EFI Boot Services
+     table.  These global variables are defined by #including <efilibc.h>
+
+
+typedef size_t *fwrite_func/fread_func([const] void *ptr, size_t size,
+ size_t nmemb, void *data);
+    If you wish to override the default stdout/stdin/stderr streams used by
+     efilibc, then please define a function as per these prototypes.  ptr is
+     const for fwrite_func, not for fread_func.  ptr, size, nmemb and the
+     return value are defined as per standard C.  data is a user defined data
+     structure that was passed to efilibc_register_* (see below).
+
+	 
+int efilibc_register_std{out/err/in}_{fwrite/fread}(fwrite_func/fread_func
+ func, void *data);
+    Call these functions to override the default streams with your own
+     fwrite_func/fread_func function (see above).  The data argument provided
+     here is passed to your custom fwrite_func/fread_func function whenever it
+     is called.  Returns 0 on success, -1 otherwise.
+
+	 
+int efilibc_setup_serial(int port_no);
+    Set up a serial port.  port_no describes the port requested and is
+     numbered from 0 (the first serial port in the system as identified by
+     EFI - this may not necessarily be COM1)
+
+    If efilibc_serial_fwrite is being used for a fwrite function, then
+     efilibc_setup_serial() is also used to determine which serial port to use
+     for this.
+
+    Returns 0 on success, -1 otherwise.
+
+	
+fwrite_func efilibc_console_fwrite, efilibc_serial_fwrite;
+fread_func efilibc_console_fread;
+    These are the default stdin/stdout streams set up by efilibc_init.  If you
+     are using a custom function and wish to go back to the default, then
+     pass these to efilibc_register_*
+
+    They do not care what value is passed for void *data.
+

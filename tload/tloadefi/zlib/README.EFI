@@ -1,0 +1,13 @@
+This is zlib (www.zlib.net) with an updated build script to support building
+for EFI targets by John Cronin <jncronin@tysos.org>
+
+It remains under the zlib licence, see zlib.h
+
+To build:
+
+TOOLS=target-name- EFILIBC=libc_include_dir make libz.a
+
+If TOOLS is not specified, it defaults to x86_64-w64-ming32- , e.g. the
+compiler used will be x86_64-w64-mingw32-gcc.  If EFILIBC is not specified,
+it defaults to ../efilibc/inc
+

@@ -1,0 +1,6 @@
+libstdcs is a secondary support library (after libsupcs) for code produced by
+tysila.  It contains code for helping implement, e.g. a JIT engine including
+a run-time version of the name mangler present within libtysila.
+
+It is dependent on mscorlib.
+

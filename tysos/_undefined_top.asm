@@ -1,0 +1,4 @@
+extern __undefined_func
+extern __display_halt
+global _ZN5tysos3ABI14CastOperationsM_0_9GetArg0U8_Ry_P0:function
+

@@ -1,0 +1,25 @@
+﻿extern IntPtr gcmalloc(IntPtr)
+def 1,2,3,4,5 as int32
+
+func test
+L1:
+2 = $100
+1 = *(2 + $200)
+4 = $7
+bge_i4(L3: 2, $4)
+L2:
+1 = 2
+5 = 4
+L3:
+3 = add_i4(1, 2)
+5 = call_i(&gcmalloc: 3)
+ret_i4(5)
+
+func test2
+L1:
+1 = $0
+L2:
+1 = add_i4(1, $1)
+ble_i4(L2: 1, $10)
+L3:
+ret_i4(1)

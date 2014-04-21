@@ -1,0 +1,109 @@
+﻿/* Copyright (C) 2011 by John Cronin
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Runtime.CompilerServices;
+
+namespace tysos
+{
+    public class Process
+    {
+        public List<Thread> threads = new List<Thread>();
+        public Thread startup_thread;
+        public string name;
+        public IInputStream stdin;
+        public IOutputStream stdout, stderr;
+        internal bool started = false;
+        public bool Started { get { return started; } }
+        internal string current_directory = "/";
+        public string CurrentDirectory { get { return current_directory; } }
+
+        internal static Process Create(string name, ulong e_point, ulong stack_size, Virtual_Regions vreg, SymbolTable stab, object[] parameters)
+        {
+            Process p = new Process();
+
+            p.startup_thread = Thread.Create(name + "(Thread 1)", e_point, stack_size, vreg, stab, parameters);
+            p.startup_thread.owning_process = p;
+            p.threads.Add(p.startup_thread);
+            p.name = name;
+
+            return p;
+        }
+
+        internal Virtual_Regions.Region ipc_region;
+        internal IPC ipc;
+    }
+
+    public class Thread
+    {
+        internal static int next_thread_id = 2;
+
+        internal const long DEF_SLICE = 10000000;     // 10 ms
+        internal const int DEF_PRIORITY = 5;
+
+        internal const int LOC_CURRENT = -1;
+        internal const int LOC_SLEEPING = -2;
+        internal const int LOC_BLOCKING = -3;
+        internal const int LOC_RELEASED = -4;
+
+        internal int location = LOC_RELEASED;
+        internal int priority = DEF_PRIORITY;
+        internal long time_to_run;
+        internal long default_slice = DEF_SLICE;
+
+        internal int thread_id;
+        internal TaskSwitchInfo saved_state;
+        public Process owning_process;
+        internal Virtual_Regions.Region sse;
+        internal Virtual_Regions.Region stack;
+
+        public bool do_profile = false;
+
+        internal List<Event> BlockingOn = new List<Event>();
+
+        internal ulong exit_address;
+
+        internal static Thread Create(string name, ulong e_point, ulong stack_size, Virtual_Regions vreg, SymbolTable stab, object[] parameters)
+        {
+            Thread t = new Thread();
+
+            t.thread_id = next_thread_id++;
+
+            t.saved_state = Program.arch.CreateTaskSwitchInfo();
+            t.stack = vreg.AllocRegion(stack_size, 0x1000, name + "_Stack", 0x1000, Virtual_Regions.Region.RegionType.Stack);
+            t.saved_state.Init(new UIntPtr(e_point), t.stack, new UIntPtr(stab.GetAddress("__exit")), parameters);
+
+            t.exit_address = stab.GetAddress("__exit");
+
+            return t;
+        }
+
+        public static Thread CurrentThread
+        {
+            get
+            {
+                return Program.cur_cpu_data.CurrentThread;
+            }
+        }
+    }
+}

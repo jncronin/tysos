@@ -1,0 +1,33 @@
+efiwindow
+---------
+
+A simple window library for writing to a EFI framebuffer.
+By John Cronin <jncronin@tysos.org>
+
+
+Building
+--------
+
+EFI_CC=compiler EFI_AR=archiver EFILIBC=libc [options] make
+
+will build a efiwindow.a static library for including in your EFI programs.
+
+If EFI_CC or EFI_AR are not set, they will default to x86_64-w64-mingw32-gcc and
+x86_64-w64-mingw32-ar respectively.
+
+EFILIBC defines the location of your C library (efilibc is assumed).  If not
+set, it defaults to ../efilibc
+
+options can contain:
+
+WITH_LIBPNG=/path/to/libpng/headers
+  which will enable png support in the EW_BITMAP functions.
+
+
+Usage
+-----
+
+Add the efiwindow/inc directory to your compiler include directories, and link
+with efiwindow.a (and efilibc.a, and optionally libpng.a, libz.a and libm.a if
+png support is included).
+

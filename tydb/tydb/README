@@ -1,0 +1,114 @@
+Command line source level debugger for tysos
+
+Example usage
+-------------
+
+bin/Release/tydb.exe --serial-port COM6 --tydb-file ../../tysos/tysos.obj.tydb
+  --pe-file ../../tysos/bin/Release/tysos.exe --text-offset 0x40000000
+
+
+Command line options
+--------------------
+
+
+--serial-port
+
+The serial port to use for remote debugging of tysos.  If using Windows and
+VirtualBox you can set up local debugging by use of the com0com software to
+create two virtual serial ports: connect VirtualBox's com2 to one and tydb to
+the other.
+
+
+--baud, --stop-bits, --parity, --data-bits
+
+Serial port settings.  Defaults to 38400 baud, one stop bit, no parity, 8 data
+bits (compatible with tysos' gdb stub).
+
+
+--symbols <file>
+
+Load symbols from a file.  Currently not supported.
+
+
+--tydb-file <file>
+
+Load function definitions from a .tydb file.  The tysos.obj.tydb file is
+automatically produced by tysila when building tysos.  Required for source
+level debugging.
+
+
+--pe-file <file>
+
+The PE file of the kernel.  Required for source level debugging.  See the
+section 'Cci Metadata' below.
+
+
+--text-offset <value>
+
+The offset at which the .text section is loaded.
+
+
+
+Interactive commands
+--------------------
+
+q, quit, exit
+
+Exit the debugger
+
+
+c, cont, continue
+
+Continue execution
+
+
+si, stepi
+
+Single step one assembly instruction at a time
+
+
+s, step
+
+Step one source line at a time
+
+
+r, regs, register
+
+Dump registers
+
+
+bp, break, breakpoint <addr>
+
+Set a breakpoint at <addr> - specified in hexadecimal
+
+
+x, ? <addr/obj/register>
+
+Interrogate the value of an address, object or register.
+
+
+set
+
+List currently user defined variable
+
+
+set <variable>=<addr/obj/register>
+
+Set a user defined variable to a particular value
+
+
+
+Cci Metadata
+------------
+
+The Cci Metadata library if freely available from Microsoft at
+http://ccimetadata.codeplex.com.  If you compile it as per their instructions
+you can use it to provide source level debugging to tydb by copying the
+following files to the current directory where tydb is run from:
+
+Microsoft.Cci.MetadataHelper.dll
+Microsoft.Cci.MetadataModel.dll
+Microsoft.Cci.PdbReader.dll
+Microsoft.Cci.PeReader.dll
+Microsoft.Cci.SourceModel.dll
+

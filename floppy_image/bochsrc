@@ -1,0 +1,9 @@
+#include "c:/Program Files (x86)/bochs-2.4.5/bochsrc.bxrc"
+
+floppya:1_44=image
+debug: action=ignore
+info: action=report
+error: action=report
+panic: action=report
+magic_break: enabled=1
+

@@ -1,0 +1,38 @@
+This is mkfat, a simple utility for generating FAT filesystem images from a
+directory in the current filesystem.
+
+Building
+--------
+
+mkfat requires a functioning C++ compiler and the Boost C++ libraries.  To
+build:
+
+./configure
+make
+make install
+
+Optionally, the included Visual C++ project can be used on Windows.
+
+
+Usage
+-----
+
+mkfat [-o image_file] source
+
+Make a FAT image from the files contained within 'source'.  If the -o option is
+specified, this is written to the file 'image_file', else it is writted to
+stdout.
+
+
+Acknowledgements
+----------------
+
+mkfat heavily depends on the fatfs library available from:
+    http://elm-chan.org/fsw/ff/00index_e.html
+
+
+Bugs
+----
+
+Bug reports/suggestions are welcome at jncronin@tysos.org
+

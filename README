@@ -1,0 +1,33 @@
+Tysos - the typesafe operating system
+http://www.tysos.org
+
+Copyright (C) 2008-2011 John Cronin
+
+
+Requirements:
+
+- The Microsoft .NET build system from the .NET 3.5 release or mono >= 2.10
+- Mtools (http://mtools.linux.lu)
+- Binutils cross-compiled to support both i586-elf and x86_64-elf targets
+- Gcc cross-compiled to support i586-elf targets
+- Bzip2
+- Grub (version 1.96 or greater)
+
+Mtools and appropriate cross compiles of gcc and binutils are available from the tysos website for Cygwin.
+
+Note that you need to be able to natively run CLR executables in your host
+operating system.  In Linux this can be enabled by adding binfmt_misc support
+(on Debian - apt-get install binfmt-support) and then (from the shell) running
+echo ':CLR:M::MZ::/path/to/mono:' > /proc/sys/fs/binfmt_misc/register
+See http://www.mono-project.com/Guide:Running_Mono_Applications for more
+details.
+
+
+Build instructions:
+
+- Simply type 'make' in the root directory of the source to build an iso image
+    in the iso_image directory which can be run under VirtualBox.  While it
+    is possible to run tysos on a real machine this is not supported and
+    MAY DAMAGE YOUR COMPUTER and as such is not supported by us (i.e. do this
+    at your own risk).
+

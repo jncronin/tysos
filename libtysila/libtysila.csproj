@@ -1,0 +1,172 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{2C921410-704F-4DAE-BD17-81A336C8B663}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>libtysila</RootNamespace>
+    <AssemblyName>libtysila</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile libtysila|AnyCPU'">
+    <OutputPath>bin\Compile libtysila\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile libsupcs|AnyCPU'">
+    <OutputPath>bin\Compile libsupcs\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
+    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="arm\arm_alloca.cs" />
+    <Compile Include="arm\arm_Assembler.cs" />
+    <Compile Include="arm\arm_Assembler_opcodes.cs" />
+    <Compile Include="arm\arm_assign.cs" />
+    <Compile Include="arm\arm_Callconv.cs" />
+    <Compile Include="arm\arm_callret.cs" />
+    <Compile Include="arm\arm_cmpbr.cs" />
+    <Compile Include="arm\arm_conv.cs" />
+    <Compile Include="arm\arm_numop.cs" />
+    <Compile Include="arm\arm_throw.cs" />
+    <Compile Include="arm\arm_tybel.cs" />
+    <Compile Include="Assembler.cs" />
+    <Compile Include="Assembler_Array.cs" />
+    <Compile Include="Assembler_AssembleTIR.cs" />
+    <Compile Include="Assembler_casting.cs" />
+    <Compile Include="Assembler_code_generator.cs" />
+    <Compile Include="Assembler_code_generator_coercion.cs" />
+    <Compile Include="Assembler_code_generator_register_allocator.cs" />
+    <Compile Include="Assembler_control_flow_graph.cs" />
+    <Compile Include="Assembler_Delegate.cs" />
+    <Compile Include="Assembler_DoCompile.cs" />
+    <Compile Include="Assembler_dominance.cs" />
+    <Compile Include="Assembler_emit_library_call.cs" />
+    <Compile Include="Assembler_encode_opcodes.cs" />
+    <Compile Include="Assembler_fastregalloc2.cs" />
+    <Compile Include="Assembler_InfoStructures.cs" />
+    <Compile Include="Assembler_intcall.cs" />
+    <Compile Include="Assembler_list_assemblers.cs" />
+    <Compile Include="Assembler_liveness.cs" />
+    <Compile Include="Assembler_opcodes.cs" />
+    <Compile Include="Assembler_Requestor.cs" />
+    <Compile Include="Assembler_ssa.cs" />
+    <Compile Include="Assembler_stack.cs" />
+    <Compile Include="Assembler_type.cs" />
+    <Compile Include="Assembler_var.cs" />
+    <Compile Include="InstructionHeader.cs" />
+    <Compile Include="CallConv.cs" />
+    <Compile Include="EqualityComparer.cs" />
+    <Compile Include="File.cs" />
+    <Compile Include="IByteOperations.cs" />
+    <Compile Include="IOutputFile.cs" />
+    <Compile Include="MiniAssembler.cs" />
+    <Compile Include="regalloc\AssignColors.cs" />
+    <Compile Include="regalloc\Build.cs" />
+    <Compile Include="regalloc\Coalesce.cs" />
+    <Compile Include="regalloc\Freeze.cs" />
+    <Compile Include="regalloc\MachineReg.cs" />
+    <Compile Include="regalloc\MakeWorklist.cs" />
+    <Compile Include="regalloc\RegAlloc.cs" />
+    <Compile Include="regalloc\SelectSpill.cs" />
+    <Compile Include="regalloc\Simplify.cs" />
+    <Compile Include="timple\ConstantPropagation.cs" />
+    <Compile Include="timple\DeadCodeElimination.cs" />
+    <Compile Include="timple\Dominator.cs" />
+    <Compile Include="timple\Liveness.cs" />
+    <Compile Include="timple\Node.cs" />
+    <Compile Include="timple\Graph.cs" />
+    <Compile Include="timple\Optimizer.cs" />
+    <Compile Include="timple\SSA.cs" />
+    <Compile Include="tybel\Node.cs" />
+    <Compile Include="tybel\Tybel.cs" />
+    <Compile Include="TyDbFile.cs" />
+    <Compile Include="Layout3.cs" />
+    <Compile Include="Layout_InfoStructures.cs" />
+    <Compile Include="lsb_assembler.cs" />
+    <Compile Include="Mangler2.cs" />
+    <Compile Include="Metadata.cs" />
+    <Compile Include="msb_assembler.cs" />
+    <Compile Include="PEFile.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Signature.cs" />
+    <Compile Include="StringTable.cs" />
+    <Compile Include="Token.cs" />
+    <Compile Include="TysilaIntermediateRepresentation.cs" />
+    <Compile Include="util.cs" />
+    <Compile Include="Version.cs" />
+    <Compile Include="x86_64\x86_64-elf64.cs" />
+    <Compile Include="x86_64\x86_64_asm.cs" />
+    <Compile Include="x86_64\x86_64_Assembler.cs" />
+    <Compile Include="x86_64\x86_64_Assembler_CompiledInstruction.cs" />
+    <Compile Include="x86_64\x86_64_Assembler_intcall.cs" />
+    <Compile Include="x86_64\x86_64_Assembler_mutex.cs" />
+    <Compile Include="x86_64\x86_64_Assembler_numop.cs" />
+    <Compile Include="x86_64\x86_64_assign.cs" />
+    <Compile Include="x86_64\x86_64_call.cs" />
+    <Compile Include="x86_64\x86_64_CallConv.cs" />
+    <Compile Include="x86_64\x86_64_cmpbr.cs" />
+    <Compile Include="x86_64\x86_64_conv.cs" />
+    <Compile Include="x86_64\x86_64_memcpy.cs" />
+    <Compile Include="x86_64\x86_64_MiniAssembler.cs" />
+    <Compile Include="x86_64\x86_64_opcodes.cs" />
+    <Compile Include="x86_64\x86_64_throw.cs" />
+    <Compile Include="x86_64\x86_64_tybel.cs" />
+    <Compile Include="x86_64\x86_64_tybelnode.cs" />
+    <Compile Include="x86_64\x86_64_xmm_numop.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libasm\libasm.csproj">
+      <Project>{2E236BDA-1B64-47D4-B430-5FB43CB4F342}</Project>
+      <Name>libasm</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\libsupcs\libsupcs.csproj">
+      <Project>{566AA7AB-C8B8-417C-B16E-08C7D359CBB1}</Project>
+      <Name>libsupcs</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

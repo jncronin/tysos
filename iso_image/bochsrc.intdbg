@@ -1,0 +1,11 @@
+#include "c:/Program Files (x86)/Bochs-2.4.5/bochsrc.bxrc"
+
+ata0-master: type=cdrom, path=tysos.iso, status=inserted
+boot: cdrom
+debug: action=ignore
+info: action=report
+error: action=report
+panic: action=report
+magic_break: enabled=1
+debug_symbols: file="tysos.sym"
+

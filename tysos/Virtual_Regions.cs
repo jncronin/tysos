@@ -1,0 +1,208 @@
+﻿/* Copyright (C) 2008 - 2011 by John Cronin
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+/* This is the class which stores a list of all regions known to the operating system */
+
+namespace tysos
+{
+    class Virtual_Regions
+    {
+        public class Region
+        {
+            public ulong start;
+            public ulong length;
+            public ulong stack_protect;
+            public ulong end { get { return start + length - 1; } }
+
+            public bool intersects(Region other)
+            {
+                if (this.end < other.start)
+                    return false;
+                if (this.start > other.end)
+                    return false;
+                return true;
+            }
+
+            public bool contains(ulong addr)
+            {
+                if (addr < this.start)
+                    return false;
+                if (addr > this.end)
+                    return false;
+                return true;
+            }
+
+            public enum RegionType
+            {
+                Tysos,
+                Heap,
+                PageTables,
+                Other,
+                NonCanonical,
+                Stack,
+                SSE_state,
+                CPU_specific,
+                IPC,
+                Free
+            }
+
+            public int proc_affinity = 0;
+            public string name;
+            public RegionType type;
+
+            public Region prev, next;
+        }
+
+        public Region list_start, list_end;
+
+        public Region tysos, free, noncanonical, heap, pts;
+
+        void Add(Region r)
+        {
+            if(list_start == null)
+            {
+                list_start = list_end = r;
+                r.next = r.prev = null;
+            }
+            else
+            {
+                r.prev = list_end;
+                list_end.next = r;
+                list_end = r;
+                r.next = null;
+            }
+        }
+
+        public ulong Alloc(ulong length, ulong align, string name)
+        { return AllocRegion(length, align, name, 0, Region.RegionType.Other).start; }
+
+        public Region AllocRegion(ulong length, ulong align, string name, ulong stack_protect, Region.RegionType r_type)
+        {
+            /* Allocate a new region from the 'free' region */
+
+            lock (this)
+            {
+                ulong start = util.align(free.start, align);
+                if ((start + length + stack_protect) > (free.start + free.length))
+                    throw new OutOfMemoryException();
+                ulong old_free_start = free.start;
+                free.start = start + length + stack_protect;
+                free.length -= (free.start - old_free_start);
+
+                Region ret = new Region();
+                ret.type = r_type;
+                ret.name = name;
+                ret.start = start;
+                ret.length = length + stack_protect;
+                ret.stack_protect = stack_protect;
+
+                Add(ret);
+
+                Formatter.Write("VirtualRegions: Allocated new region: ", Program.arch.DebugOutput);
+                Formatter.Write(name, Program.arch.DebugOutput);
+                Formatter.Write(", start: ", Program.arch.DebugOutput);
+                Formatter.Write(start, "X", Program.arch.DebugOutput);
+                Formatter.Write(", length: ", Program.arch.DebugOutput);
+                Formatter.Write(length, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);
+
+                return ret;
+            }
+        }
+
+        public void Dump(IDebugOutput o)
+        {
+            Formatter.WriteLine("Virtual regions:", o);
+
+            Region cur_r = list_start;
+
+            while (cur_r != null)
+            {
+                Formatter.Write(cur_r.name, o);
+                Formatter.Write("  start: 0x", o);
+                Formatter.Write(cur_r.start, "X", o);
+                Formatter.Write("  end: 0x", o);
+                Formatter.Write(cur_r.end, "X", o);
+                Formatter.WriteLine(o);
+
+                cur_r = cur_r.next;
+            }
+        }
+
+        public Virtual_Regions(ulong tysos_length)
+        {
+            // Set up the virtual region allocator
+
+            /* Virtual memory looks like:
+             * 
+             * Tysos:           0 - tysos_end
+             * Free:            tysos_end - 0x00007ffff 00000000
+             * NonCanonical     0x00008000 00000000 - 0xffff7fff ffffffff
+             * Heap:            0xffff8000 00000000 - 0xffffff7f 00000000
+             * PageTables:      0xffffff80 00000000 - 0xffffffff ffffffff
+             *
+             * 
+             * Any new sections requested are taken off the start of free
+             */
+
+            list_start = list_end = null;
+
+            tysos = new Region();
+            tysos.type = Region.RegionType.Tysos;
+            tysos.name = "Tysos";
+            tysos.start = 0x0;
+            tysos.length = tysos_length;
+            Add(tysos);
+
+            free = new Region();
+            free.type = Region.RegionType.Free;
+            free.name = "Free region";
+            free.start = util.align(tysos.end, VirtMem.page_size);
+            free.length = 0x800000000000 - free.start;
+            Add(free);
+
+            noncanonical = new Region();
+            noncanonical.type = Region.RegionType.NonCanonical;
+            noncanonical.name = "NonCanonical";
+            noncanonical.start = 0x0000800000000000;
+            noncanonical.length = 0xffff000000000000;
+            Add(noncanonical);
+
+            heap = new Region();
+            heap.type = Region.RegionType.Heap;
+            heap.name = "Heap";
+            heap.start = 0xffff800000000000;
+            heap.length = 0x7f8000000000;
+            Add(heap);
+
+            pts = new Region();
+            pts.type = Region.RegionType.PageTables;
+            pts.name = "PageTables";
+            pts.start = 0xffffff8000000000;
+            pts.length = 0x8000000000;
+            Add(pts);
+        }
+    }
+}

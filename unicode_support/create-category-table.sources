@@ -1,0 +1,9 @@
+#sources
+#outdir create-category-table
+#target exe
+#tools 3.5
+#assemblyname create-category-table.exe
+#unix
+
+create-category-table/create-category-table.cs
+

@@ -1,0 +1,14 @@
+This is the libm sources from FreeBSD.
+
+See the source files for licence information.
+
+It has been modified for compiling in an EFI environment to complement
+efilibc.
+
+To build:
+
+EFI_CC=compiler EFI_AR=archiver make
+
+where EFI_CC and EFI_AR default to x86_64-w64-mingw32-gcc and
+x86_64-w64-mingw32-ar if not set.
+

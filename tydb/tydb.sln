@@ -1,0 +1,123 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tydb", "tydb\tydb.csproj", "{176EC036-64A4-4D1F-92BF-92638355601C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tydisasm", "tydisasm\tydisasm.csproj", "{27576A43-2BF2-4E40-B19B-560E642B92BE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Compile corlib|Any CPU = Compile corlib|Any CPU
+		Compile corlib|Mixed Platforms = Compile corlib|Mixed Platforms
+		Compile corlib|x86 = Compile corlib|x86
+		Compile TestProcess|Any CPU = Compile TestProcess|Any CPU
+		Compile TestProcess|Mixed Platforms = Compile TestProcess|Mixed Platforms
+		Compile TestProcess|x86 = Compile TestProcess|x86
+		CompilerOnly|Any CPU = CompilerOnly|Any CPU
+		CompilerOnly|Mixed Platforms = CompilerOnly|Mixed Platforms
+		CompilerOnly|x86 = CompilerOnly|x86
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|x86 = Debug|x86
+		Generate tloadkif|Any CPU = Generate tloadkif|Any CPU
+		Generate tloadkif|Mixed Platforms = Generate tloadkif|Mixed Platforms
+		Generate tloadkif|x86 = Generate tloadkif|x86
+		NightlyDebug|Any CPU = NightlyDebug|Any CPU
+		NightlyDebug|Mixed Platforms = NightlyDebug|Mixed Platforms
+		NightlyDebug|x86 = NightlyDebug|x86
+		NightlyRelease|Any CPU = NightlyRelease|Any CPU
+		NightlyRelease|Mixed Platforms = NightlyRelease|Mixed Platforms
+		NightlyRelease|x86 = NightlyRelease|x86
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile corlib|Any CPU.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile corlib|Mixed Platforms.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile corlib|Mixed Platforms.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile corlib|x86.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile corlib|x86.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile TestProcess|Any CPU.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile TestProcess|Mixed Platforms.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile TestProcess|Mixed Platforms.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile TestProcess|x86.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Compile TestProcess|x86.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.CompilerOnly|Any CPU.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.CompilerOnly|Mixed Platforms.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.CompilerOnly|Mixed Platforms.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.CompilerOnly|x86.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.CompilerOnly|x86.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Debug|x86.ActiveCfg = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Debug|x86.Build.0 = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Generate tloadkif|Any CPU.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Generate tloadkif|Mixed Platforms.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Generate tloadkif|Mixed Platforms.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Generate tloadkif|x86.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Generate tloadkif|x86.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyDebug|Any CPU.ActiveCfg = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyDebug|Mixed Platforms.ActiveCfg = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyDebug|Mixed Platforms.Build.0 = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyDebug|x86.ActiveCfg = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyDebug|x86.Build.0 = Debug|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyRelease|Any CPU.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyRelease|Mixed Platforms.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyRelease|Mixed Platforms.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyRelease|x86.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.NightlyRelease|x86.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Release|Any CPU.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Release|Mixed Platforms.Build.0 = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Release|x86.ActiveCfg = Release|x86
+		{176EC036-64A4-4D1F-92BF-92638355601C}.Release|x86.Build.0 = Release|x86
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile corlib|Any CPU.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile corlib|Any CPU.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile corlib|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile corlib|Mixed Platforms.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile corlib|x86.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile TestProcess|Any CPU.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile TestProcess|Any CPU.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile TestProcess|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile TestProcess|Mixed Platforms.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Compile TestProcess|x86.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.CompilerOnly|Any CPU.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.CompilerOnly|Any CPU.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.CompilerOnly|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.CompilerOnly|Mixed Platforms.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.CompilerOnly|x86.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Generate tloadkif|Any CPU.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Generate tloadkif|Any CPU.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Generate tloadkif|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Generate tloadkif|Mixed Platforms.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Generate tloadkif|x86.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyDebug|Any CPU.Build.0 = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyDebug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyDebug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyDebug|x86.ActiveCfg = Debug|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyRelease|Any CPU.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyRelease|Any CPU.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyRelease|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyRelease|Mixed Platforms.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.NightlyRelease|x86.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{27576A43-2BF2-4E40-B19B-560E642B92BE}.Release|x86.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = tydb\tydb.csproj
+	EndGlobalSection
+EndGlobal
