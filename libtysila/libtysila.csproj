@@ -103,6 +103,7 @@
     <Compile Include="regalloc\RegAlloc.cs" />
     <Compile Include="regalloc\SelectSpill.cs" />
     <Compile Include="regalloc\Simplify.cs" />
+    <Compile Include="regalloc\Util.cs" />
     <Compile Include="timple\ConstantPropagation.cs" />
     <Compile Include="timple\DeadCodeElimination.cs" />
     <Compile Include="timple\Dominator.cs" />

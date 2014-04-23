@@ -37,25 +37,60 @@ namespace libtysila
 
             public override bool IsMove
             {
-                get { throw new NotImplementedException(); }
+                get {
+                    if (inst.is_move)
+                    {
+                        foreach (vara v in ops)
+                        {
+                            if (v.VarType != vara.vara_type.Logical)
+                                return false;
+                        }
+                        return true;
+                    }
+                    return false;
+                }
             }
 
             public override ICollection<vara> defs
             {
                 get {
                     util.Set<vara> ret = new util.Set<vara>();
-                    throw new NotImplementedException();
-                    /*foreach (int idx in inst.dest_indices)
+
+                    foreach (libasm.hardware_location oput in inst.outputs)
                     {
-                        switch (ops[idx].VarType)
+                        if (oput is x86_64.x86_64_asm.op_loc)
                         {
-                            case vara.vara_type.Logical:
-                            case vara.vara_type.MachineReg:
-                                ret.Add(ops[idx]);
-                                break;
+                            int idx = ((x86_64.x86_64_asm.op_loc)oput).op_idx;
+
+                            switch (ops[idx].VarType)
+                            {
+                                case vara.vara_type.Logical:
+                                case vara.vara_type.MachineReg:
+                                    ret.Add(ops[idx]);
+                                    break;
+                            }
                         }
+                        else throw new NotImplementedException();
                     }
-                    return ret; */
+
+                    foreach (libasm.hardware_location iput in inst.inputs)
+                    {
+                        if (iput is x86_64.x86_64_asm.op_loc)
+                        {
+                            int idx = ((x86_64.x86_64_asm.op_loc)iput).op_idx;
+
+                            switch (ops[idx].VarType)
+                            {
+                                case vara.vara_type.AddrOf:
+                                    ret.Add(vara.Logical(ops[idx].LogicalVar, ops[idx].SSA, CliType.native_int));
+                                    break;
+                            }
+                        }
+                        else
+                            throw new NotImplementedException();
+                    }
+
+                    return ret;
                 }
             }
 
@@ -63,35 +98,49 @@ namespace libtysila
             {
                 get {
                     util.Set<vara> ret = new util.Set<vara>();
-                    throw new NotImplementedException();
-                    /* foreach (int idx in inst.dest_indices)
+
+                    foreach (libasm.hardware_location oput in inst.outputs)
                     {
-                        switch (ops[idx].VarType)
+                        if (oput is x86_64.x86_64_asm.op_loc)
                         {
-                            case vara.vara_type.AddrOf:
-                            case vara.vara_type.ContentsOf:
-                                ret.Add(vara.Logical(ops[idx].LogicalVar, ops[idx].SSA, CliType.native_int));
-                                break;
+                            int idx = ((x86_64.x86_64_asm.op_loc)oput).op_idx;
+
+                            switch (ops[idx].VarType)
+                            {
+                                case vara.vara_type.AddrOf:
+                                case vara.vara_type.ContentsOf:
+                                    ret.Add(vara.Logical(ops[idx].LogicalVar, ops[idx].SSA, CliType.native_int));
+                                    break;
+                            }
                         }
+                        else
+                            throw new NotImplementedException();
                     }
 
-                    foreach (int idx in inst.src_indices)
+                    foreach (libasm.hardware_location iput in inst.inputs)
                     {
-                        switch (ops[idx].VarType)
+                        if (iput is x86_64.x86_64_asm.op_loc)
                         {
-                            case vara.vara_type.Logical:
-                            case vara.vara_type.MachineReg:
-                                ret.Add(ops[idx]);
-                                break;
+                            int idx = ((x86_64.x86_64_asm.op_loc)iput).op_idx;
 
-                            case vara.vara_type.AddrOf:
-                            case vara.vara_type.ContentsOf:
-                                ret.Add(vara.Logical(ops[idx].LogicalVar, ops[idx].SSA, CliType.native_int));
-                                break;
+                            switch (ops[idx].VarType)
+                            {
+                                case vara.vara_type.Logical:
+                                case vara.vara_type.MachineReg:
+                                    ret.Add(ops[idx]);
+                                    break;
+
+                                case vara.vara_type.ContentsOf:
+                                case vara.vara_type.AddrOf:
+                                    ret.Add(vara.Logical(ops[idx].LogicalVar, ops[idx].SSA, CliType.native_int));
+                                    break;
+                            }
                         }
+                        else
+                            throw new NotImplementedException();
                     }
 
-                    return ret; */
+                    return ret;
                 }
             }
 

@@ -38,20 +38,36 @@ namespace libtysila.regalloc
         util.Set<vara> coloredNodes = new util.Set<vara>();
         util.Stack<vara> selectStack = new util.Stack<vara>();
 
-        util.Set<timple.TreeNode> coalescedMoves = new util.Set<timple.TreeNode>();
-        util.Set<timple.TreeNode> constrainedMoves = new util.Set<timple.TreeNode>();
-        util.Set<timple.TreeNode> frozenMoves = new util.Set<timple.TreeNode>();
-        util.Set<timple.TreeNode> worklistMoves = new util.Set<timple.TreeNode>();
-        util.Set<timple.TreeNode> activeMoves = new util.Set<timple.TreeNode>();
+        util.Set<timple.BaseNode> coalescedMoves = new util.Set<timple.BaseNode>();
+        util.Set<timple.BaseNode> constrainedMoves = new util.Set<timple.BaseNode>();
+        util.Set<timple.BaseNode> frozenMoves = new util.Set<timple.BaseNode>();
+        util.Set<timple.BaseNode> worklistMoves = new util.Set<timple.BaseNode>();
+        util.Set<timple.BaseNode> activeMoves = new util.Set<timple.BaseNode>();
 
         util.Set<InterferenceEdge> adjSet = new util.Set<InterferenceEdge>();
         Dictionary<vara, util.Set<vara>> adjList = new Dictionary<vara, util.Set<vara>>();
-        Dictionary<vara, util.Set<timple.TreeNode>> moveList = new Dictionary<vara, util.Set<timple.TreeNode>>();
+        Dictionary<vara, util.Set<timple.BaseNode>> moveList = new Dictionary<vara, util.Set<timple.BaseNode>>();
         Dictionary<vara, vara> alias = new Dictionary<vara, vara>();
         Dictionary<vara, int> color = new Dictionary<vara, int>();
+        Dictionary<vara, int> degree = new Dictionary<vara, int>();
 
-        public Dictionary<vara, int> Main(timple.Optimizer.OptimizeReturn code)
+        int K;
+
+        public Dictionary<vara, int> Main(tybel.Tybel.TybelCode code, int k)
         {
+            K = k;
+
+            /* init structures */
+            foreach (vara v in code.Liveness.defs.Keys)
+            {
+                adjList[v] = new util.Set<vara>();
+                moveList[v] = new util.Set<timple.BaseNode>();
+                degree[v] = 0;
+
+                if (v.VarType == vara.vara_type.MachineReg)
+                    precolored.Add(v);
+            }
+
             Build(code);
             MakeWorklist(code);
             do
@@ -64,8 +80,8 @@ namespace libtysila.regalloc
                     Freeze(code);
                 else if (spillWorklist.Count != 0)
                     SelectSpill(code);
-            } while ((simplifyWorklist.Count != 0) && (worklistMoves.Count != 0) &&
-            (freezeWorklist.Count != 0) && (spillWorklist.Count != 0));
+            } while ((simplifyWorklist.Count != 0) || (worklistMoves.Count != 0) ||
+            (freezeWorklist.Count != 0) || (spillWorklist.Count != 0));
 
             AssignColors(code);
 
@@ -77,8 +93,8 @@ namespace libtysila.regalloc
 
         public struct InterferenceEdge
         {
-            public timple.TreeNode u, v;
-            public InterferenceEdge(timple.TreeNode U, timple.TreeNode V)
+            public vara u, v;
+            public InterferenceEdge(vara U, vara V)
             { u = U; v = V; }
             public override bool Equals(object obj)
             {

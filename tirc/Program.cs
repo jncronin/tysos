@@ -54,10 +54,7 @@ namespace tirc
 
             /* Prepare register allocator */
             libtysila.regalloc.RegAlloc r = new libtysila.regalloc.RegAlloc();
-            r.AddMachineRegister(libtysila.x86_64_Assembler.Rax);
-            r.AddMachineRegister(libtysila.x86_64_Assembler.Rcx);
-            r.AddMachineRegister(libtysila.x86_64_Assembler.Rdx);
-            r.Main(opt);
+            r.Main(new libtysila.tybel.Tybel.TybelCode(tybel, tybel_l), 4);
         }
     }
 }

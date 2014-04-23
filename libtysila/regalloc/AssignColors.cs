@@ -26,9 +26,33 @@ namespace libtysila.regalloc
 {
     partial class RegAlloc
     {
-        void AssignColors(timple.Optimizer.OptimizeReturn code)
+        void AssignColors(tybel.Tybel.TybelCode code)
         {
-            throw new NotImplementedException();
+            while (selectStack.Count > 0)
+            {
+                vara n = selectStack.Pop();
+
+                util.Set<int> okColors = new util.Set<int>();
+                for (int i = 0; i < K; i++)
+                    okColors.Add(i);
+
+                foreach(vara w in adjList[n])
+                {
+                    if(coloredNodes.Union(precolored).Contains(GetAlias(w)))
+                        okColors.Remove(color[GetAlias(w)]);
+                }
+
+                if(okColors.Count == 0)
+                    spilledNodes.Add(n);
+                else
+                {
+                    coloredNodes.Add(n);
+                    color[n] = okColors.ItemAtIndex(0);
+                }
+            }
+
+            foreach(vara n in coalescedNodes)
+                color[n] = color[GetAlias(n)];
         }
     }
 }

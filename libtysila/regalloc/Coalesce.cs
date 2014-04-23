@@ -26,9 +26,66 @@ namespace libtysila.regalloc
 {
     partial class RegAlloc
     {
-        void Coalesce(timple.Optimizer.OptimizeReturn code)
+        void Coalesce(tybel.Tybel.TybelCode code)
         {
-            throw new NotImplementedException();
+            timple.BaseNode m = worklistMoves.ItemAtIndex(0);
+
+            IEnumerator<vara> enum_x = m.defs.GetEnumerator();
+            enum_x.MoveNext();
+            vara x = GetAlias(enum_x.Current);
+
+            IEnumerator<vara> enum_y = m.uses.GetEnumerator();
+            enum_y.MoveNext();
+            vara y = GetAlias(enum_y.Current);
+
+            vara u, v;
+            if (precolored.Contains(y))
+            {
+                u = y;
+                v = x;
+            }
+            else
+            {
+                u = x;
+                v = y;
+            }
+
+            worklistMoves.Remove(m);
+
+            /* Calculate part of the following in advance */
+            bool all_ok = true;
+            if (precolored.Contains(v))
+            {
+                foreach (vara t in Adjacent(v))
+                {
+                    if (OK(t, u) == false)
+                    {
+                        all_ok = false;
+                        break;
+                    }
+                }
+            }
+
+            if (u.Equals(v))
+            {
+                coalescedMoves.Add(m);
+                AddWorkList(u);
+            }
+            else if (precolored.Contains(v) || adjSet.Contains(new InterferenceEdge(u, v)))
+            {
+                constrainedMoves.Add(m);
+                AddWorkList(u);
+                AddWorkList(v);
+            }
+            else if ((precolored.Contains(v) && all_ok) ||
+                ((!precolored.Contains(v)) && Conservative(new util.Set<vara>(Adjacent(u)).Union(Adjacent(v)))))
+            {
+                coalescedMoves.Add(m);
+                Combine(u, v);
+                AddWorkList(u);
+            }
+            else
+                activeMoves.Add(m);
         }
     }
 }

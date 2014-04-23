@@ -62,6 +62,11 @@ namespace libasm
         {
             return new var_semantic { needs_int32 = true, needs_int64 = true, needs_intptr = true };
         }
+
+        public override int GetHashCode()
+        {
+            return (reg.GetHashCode() << 16) ^ bits32.GetHashCode();
+        }
     }
 
     public class x86_64_xmm : register, IEquatable<hardware_location>

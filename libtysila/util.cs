@@ -457,19 +457,19 @@ namespace libtysila
                 return l.GetEnumerator();
             }
 
-            void Push(T item)
+            public void Push(T item)
             {
                 l.Add(item);
             }
 
-            T Pop()
+            public T Pop()
             {
                 T ret = l[l.Count - 1];
                 l.RemoveAt(l.Count - 1);
                 return ret;
             }
 
-            T Peek()
+            public T Peek()
             {
                 return l[l.Count - 1];
             }

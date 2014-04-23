@@ -26,9 +26,36 @@ namespace libtysila.regalloc
 {
     partial class RegAlloc
     {
-        void Build(timple.Optimizer.OptimizeReturn code)
+        void Build(tybel.Tybel.TybelCode code)
         {
-            throw new NotImplementedException();
+            foreach (tybel.Node n in code.Code)
+            {
+                util.Set<vara> live = new util.Set<vara>(code.Liveness.live_out[n]);
+                if (n.IsMove)
+                {
+                    live = live.Except(n.uses);
+
+                    util.Set<vara> defs_and_uses = new util.Set<vara>(n.uses).Union(n.defs);
+                    foreach (vara def_or_use in defs_and_uses)
+                    {
+                        if (!moveList.ContainsKey(def_or_use))
+                            moveList[def_or_use] = new util.Set<timple.BaseNode>();
+                        moveList[def_or_use].Add(n);
+                    }
+
+                    worklistMoves.Add(n);
+                }
+
+                live = live.Union(n.defs);
+
+                foreach (vara d in n.defs)
+                {
+                    foreach (vara l in live)
+                    {
+                        AddEdge(l, d);
+                    }
+                }
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ namespace libtysila.regalloc
 {
     partial class RegAlloc
     {
-        void Freeze(timple.Optimizer.OptimizeReturn code)
+        void Freeze(tybel.Tybel.TybelCode code)
         {
             throw new NotImplementedException();
         }

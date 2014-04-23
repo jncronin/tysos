@@ -154,5 +154,13 @@ namespace libtysila.tybel
             }
         }
 
+        public class TybelCode
+        {
+            public timple.BaseGraph CodeGraph;
+            public IList<timple.BaseNode> Code { get { return CodeGraph.LinearStream; } }
+            public timple.Liveness Liveness;
+
+            public TybelCode(timple.BaseGraph code, timple.Liveness l) { CodeGraph = code; Liveness = l; }
+        }
     }
 }

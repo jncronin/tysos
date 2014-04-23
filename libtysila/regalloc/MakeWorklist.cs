@@ -26,9 +26,20 @@ namespace libtysila.regalloc
 {
     partial class RegAlloc
     {
-        void MakeWorklist(timple.Optimizer.OptimizeReturn code)
+        void MakeWorklist(tybel.Tybel.TybelCode code)
         {
-            throw new NotImplementedException();
+            foreach (vara n in code.Liveness.defs.Keys)
+            {
+                if (n.VarType == vara.vara_type.Logical)
+                {
+                    if (degree[n] >= K)
+                        spillWorklist.Add(n);
+                    else if (MoveRelated(n))
+                        freezeWorklist.Add(n);
+                    else
+                        simplifyWorklist.Add(n);
+                }
+            }
         }
     }
 }

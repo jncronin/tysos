@@ -26,9 +26,13 @@ namespace libtysila.regalloc
 {
     partial class RegAlloc
     {
-        void Simplify(timple.Optimizer.OptimizeReturn code)
+        void Simplify(tybel.Tybel.TybelCode code)
         {
-            throw new NotImplementedException();
+            vara n = simplifyWorklist.ItemAtIndex(0);
+            simplifyWorklist.Remove(n);
+            selectStack.Push(n);
+            foreach (vara m in Adjacent(n))
+                DecrementDegree(m);
         }
     }
 }

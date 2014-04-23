@@ -206,7 +206,7 @@ namespace libtysila
                 return false;
             if (ssa != other.ssa)
                 return false;
-            if (mreg != other.mreg)
+            if(mreg != null && !mreg.Equals(other.mreg))
                 return false;
             return true;
         }
