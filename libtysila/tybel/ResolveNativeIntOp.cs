@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2014 by John Cronin
+﻿/* Copyright (C) 2008 - 2012 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,45 +22,37 @@
 using System;
 using System.Collections.Generic;
 
-namespace libtysila.regalloc
+namespace libtysila
 {
-    partial class RegAlloc
+    partial class Assembler
     {
-        void Freeze(tybel.Tybel.TybelCode code)
+        protected virtual ThreeAddressCode.Op ResolveNativeIntOp(ThreeAddressCode.Op op)
         {
-            vara u = freezeWorklist.ItemAtIndex(0);
-            freezeWorklist.Remove(u);
-            simplifyWorklist.Add(u);
-            FreezeMoves(u);
-        }
-
-        void FreezeMoves(vara u)
-        {
-            foreach (timple.BaseNode m in NodeMoves(u))
+            switch (GetBitness())
             {
-                IEnumerator<vara> enum_x = m.defs.GetEnumerator();
-                enum_x.MoveNext();
-                vara x = enum_x.Current;
+                case Bitness.Bits32:
+                    switch (op)
+                    {
+                        case ThreeAddressCode.Op.assign_i:
+                            return ThreeAddressCode.Op.assign_i4;
+                        case ThreeAddressCode.Op.call_i:
+                            return ThreeAddressCode.Op.call_i4;
+                    }
+                    break;
 
-                IEnumerator<vara> enum_y = m.uses.GetEnumerator();
-                enum_y.MoveNext();
-                vara y = enum_y.Current;
-
-                vara v;
-                if (GetAlias(y).Equals(GetAlias(u)))
-                    v = GetAlias(x);
-                else
-                    v = GetAlias(y);
-
-                activeMoves.Remove(m);
-                frozenMoves.Add(m);
-
-                if ((NodeMoves(v).Count == 0) && (degree[v] < K))
-                {
-                    freezeWorklist.Remove(v);
-                    simplifyWorklist.Add(v);
-                }
+                case Bitness.Bits64:
+                    switch (op)
+                    {
+                        case ThreeAddressCode.Op.assign_i:
+                            return ThreeAddressCode.Op.assign_i8;
+                        case ThreeAddressCode.Op.call_i:
+                            return ThreeAddressCode.Op.call_i8;
+                    }
+                    break;
             }
+
+            return op;
         }
+
     }
 }

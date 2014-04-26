@@ -28,6 +28,10 @@ namespace libtysila.timple
     {
         public List<BaseNode> Starts = new List<BaseNode>();
         public List<BaseNode> Ends = new List<BaseNode>();
+        public Dictionary<BaseNode, BaseNode> InnerToOuter = new Dictionary<BaseNode, BaseNode>();
+
+        protected BaseGraph innergraph;
+        public BaseGraph InnerGraph { get { return innergraph; } }
 
         public int Count
         {
@@ -88,7 +92,6 @@ namespace libtysila.timple
     {
         //public List<TreeNode> Starts = new List<TreeNode>();
         //public List<TreeNode> Ends = new List<TreeNode>();
-        public Dictionary<TreeNode, TreeNode> InnerToOuter = new Dictionary<TreeNode, TreeNode>();
         //public int Count { get { return count; } }
         public Dictionary<int, Assembler.CliType> VarDataTypes = new Dictionary<int, Assembler.CliType>();
 
@@ -271,12 +274,12 @@ namespace libtysila.timple
         {
             TimpleGraph ret = dest;
 
-            Dictionary<TreeNode, TreeNode> old_to_new = new Dictionary<TreeNode, TreeNode>();
+            Dictionary<BaseNode, BaseNode> old_to_new = new Dictionary<BaseNode, BaseNode>();
 
             IList<BaseNode> nodes = LinearStream;
             foreach (TreeNode n in nodes)
             {
-                TreeNode newnode = n.MemberwiseClone();
+                TreeNode newnode = (TreeNode)n.MemberwiseClone();
                 newnode.prev = new List<BaseNode>();
                 newnode.next = new List<BaseNode>();
                 newnode.InnerNode = n;
@@ -287,7 +290,7 @@ namespace libtysila.timple
 
             foreach (TreeNode n in Starts)
             {
-                ret.AddStartNode(old_to_new[n]);
+                ret.AddStartNode((TreeNode)old_to_new[n]);
                 DFAdd(ret, n, old_to_new, visited);
             }
 
@@ -296,7 +299,7 @@ namespace libtysila.timple
             return ret;
         }
 
-        private void DFAdd(TimpleGraph ret, TreeNode n, Dictionary<TreeNode, TreeNode> old_to_new, util.Set<TreeNode> visited)
+        private void DFAdd(TimpleGraph ret, TreeNode n, Dictionary<BaseNode, BaseNode> old_to_new, util.Set<TreeNode> visited)
         {
             if (!visited.Contains(n))
             {
@@ -304,7 +307,7 @@ namespace libtysila.timple
 
                 foreach (TreeNode next in n.next)
                 {
-                    ret.AddTreeEdge(old_to_new[n], old_to_new[next]);
+                    ret.AddTreeEdge((TreeNode)old_to_new[n], (TreeNode)old_to_new[next]);
                     DFAdd(ret, next, old_to_new, visited);
                 }
             }

@@ -306,5 +306,15 @@ namespace libtysila.arm
             int stack_offset = -(sl.loc + 4) + sl.offset_within_loc;
             return new hardware_contentsof { base_loc = FP, const_offset = stack_offset, size = sl.size };
         }
+
+        public override util.Set<hardware_location> MachineRegisters
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override util.Set<hardware_location> MachineRegistersForDataType(CliType dt)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

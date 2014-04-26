@@ -196,8 +196,8 @@ namespace libtysila
                 return false;
             if (type != other.type)
                 return false;
-            if (ct != other.ct)
-                return false;
+            //if (ct != other.ct)
+            //    return false;
             if (c != other.c)
                 return false;
             if (offset != other.offset)
@@ -220,8 +220,8 @@ namespace libtysila
                 hc ^= type.GetHashCode();
                 hc <<= 5;
                 hc ^= offset.GetHashCode();
-                hc <<= 5;
-                hc ^= ct.GetHashCode();
+                //hc <<= 5;
+                //hc ^= ct.GetHashCode();
                 hc <<= 5;
                 hc ^= ssa.GetHashCode();
                 if (label != null)

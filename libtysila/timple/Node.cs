@@ -35,6 +35,11 @@ namespace libtysila.timple
         public abstract IList<BaseNode> Next { get; }
         public abstract ICollection<vara> uses { get; }
         public abstract ICollection<vara> defs { get; }
+
+        public new BaseNode MemberwiseClone()
+        {
+            return (BaseNode)base.MemberwiseClone();
+        }
     }
 
     public class TreeNode : BaseNode
@@ -48,11 +53,6 @@ namespace libtysila.timple
         public TreeNode InnerNode;
         public override IList<BaseNode> Prev { get { return prev; } }
         public override IList<BaseNode> Next { get { return next; } }
-
-        public new TreeNode MemberwiseClone()
-        {
-            return (TreeNode)base.MemberwiseClone();
-        }
     }
 
     public class ParentNode : TreeNode

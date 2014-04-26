@@ -1063,5 +1063,82 @@ namespace libtysila
         {
             return new hardware_stackloc { size = 0 };      // assign the next stack location for the methinfo pointer
         }
+
+        public override util.Set<hardware_location> MachineRegisters
+        {
+            get
+            {
+                util.Set<hardware_location> ret = new util.Set<hardware_location>();
+                ret.Add(Rax); ret.Add(Rcx); ret.Add(Rdx); ret.Add(Rbx); ret.Add(Rdi); ret.Add(Rsi);
+                if(GetBitness() == Bitness.Bits64)
+                    ret.Add(R8); ret.Add(R9); ret.Add(R10); ret.Add(R11); ret.Add(R12); ret.Add(R13); ret.Add(R14); ret.Add(R15);
+                ret.Add(Xmm0); ret.Add(Xmm1); ret.Add(Xmm2); ret.Add(Xmm3); ret.Add(Xmm4); ret.Add(Xmm5); ret.Add(Xmm6); ret.Add(Xmm7);
+                if (GetBitness() == Bitness.Bits64)
+                    ret.Add(Xmm8); ret.Add(Xmm9); ret.Add(Xmm10); ret.Add(Xmm11); ret.Add(Xmm12); ret.Add(Xmm13); ret.Add(Xmm14); ret.Add(Xmm15);
+
+                return ret;
+            }
+        }
+
+        public override util.Set<hardware_location> MachineRegistersForDataType(CliType dt)
+        {
+            if (dt == CliType.native_int)
+            {
+                if (GetBitness() == Bitness.Bits32)
+                    dt = CliType.int32;
+                else
+                    dt = CliType.int64;
+            }
+
+            util.Set<hardware_location> ret = new util.Set<hardware_location>();
+
+            switch (dt)
+            {
+                case CliType.F32:
+                case CliType.F64:
+                    ret.Add(Xmm0);
+                    ret.Add(Xmm1);
+                    ret.Add(Xmm2);
+                    ret.Add(Xmm3);
+                    ret.Add(Xmm4);
+                    ret.Add(Xmm5);
+                    ret.Add(Xmm6);
+                    ret.Add(Xmm7);
+                    ret.Add(Xmm8);
+                    ret.Add(Xmm9);
+                    ret.Add(Xmm10);
+                    ret.Add(Xmm11);
+                    ret.Add(Xmm12);
+                    ret.Add(Xmm13);
+                    ret.Add(Xmm14);
+                    ret.Add(Xmm15);
+                    break;
+
+                case CliType.int32:
+                case CliType.int64:
+                case CliType.O:
+                case CliType.reference:
+                    ret.Add(Rax);
+                    ret.Add(Rbx);
+                    ret.Add(Rcx);
+                    ret.Add(Rdx);
+                    ret.Add(Rdi);
+                    ret.Add(Rsi);
+                    ret.Add(R8);
+                    ret.Add(R9);
+                    ret.Add(R10);
+                    ret.Add(R11);
+                    ret.Add(R12);
+                    ret.Add(R13);
+                    ret.Add(R14);
+                    ret.Add(R15);
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+
+            return ret;
+        }
     }
 }

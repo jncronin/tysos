@@ -37,23 +37,17 @@ namespace libasm
 
         public override string ToString()
         {
-            if (bits32)
-                return reg.ToString().Replace('r', 'e');
-            else
-                return reg.ToString();
+            return reg.ToString();
         }
 
         public bool is_extended { get { if (((int)reg) >= 8) return true; return false; } }
         public byte base_val { get { return (byte)(((int)reg) % 8); } }
-        public bool bits32 = false;
 
         public override bool Equals(hardware_location other)
         {
             if (!(other is x86_64_gpr))
                 return false;
             if (this.reg != ((x86_64_gpr)other).reg)
-                return false;
-            if (this.bits32 != ((x86_64_gpr)other).bits32)
                 return false;
             return true;
         }
@@ -65,7 +59,7 @@ namespace libasm
 
         public override int GetHashCode()
         {
-            return (reg.GetHashCode() << 16) ^ bits32.GetHashCode();
+            return reg.GetHashCode() << 16;
         }
     }
 

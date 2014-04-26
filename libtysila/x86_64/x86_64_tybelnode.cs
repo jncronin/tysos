@@ -31,6 +31,10 @@ namespace libtysila
         {
             public x86_64.x86_64_asm inst;
             public List<vara> ops;
+            public override IList<vara> VarList
+            {
+                get { return ops; }
+            }
 
             static Dictionary<string, inst_def> instrs;
             public static Dictionary<string, List<inst_def>> instr_choices;
@@ -42,8 +46,8 @@ namespace libtysila
                     {
                         foreach (vara v in ops)
                         {
-                            if (v.VarType != vara.vara_type.Logical)
-                                return false;
+                            //if (v.VarType != vara.vara_type.Logical)
+                            //    return false;
                         }
                         return true;
                     }

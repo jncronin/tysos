@@ -33,17 +33,31 @@ namespace libtysila.regalloc
                 util.Set<vara> live = new util.Set<vara>(code.Liveness.live_out[n]);
                 if (n.IsMove)
                 {
-                    live = live.Except(n.uses);
-
-                    util.Set<vara> defs_and_uses = new util.Set<vara>(n.uses).Union(n.defs);
-                    foreach (vara def_or_use in defs_and_uses)
+                    /* Exclude those moves which reference non logical var locations */
+                    bool has_logical_defs_and_uses = true;
+                    foreach (vara v in n.VarList)
                     {
-                        if (!moveList.ContainsKey(def_or_use))
-                            moveList[def_or_use] = new util.Set<timple.BaseNode>();
-                        moveList[def_or_use].Add(n);
+                        if (v.VarType != vara.vara_type.Logical)
+                        {
+                            has_logical_defs_and_uses = false;
+                            break;
+                        }
                     }
 
-                    worklistMoves.Add(n);
+                    if (has_logical_defs_and_uses)
+                    {
+                        live = live.Except(n.uses);
+
+                        util.Set<vara> defs_and_uses = new util.Set<vara>(n.uses).Union(n.defs);
+                        foreach (vara def_or_use in defs_and_uses)
+                        {
+                            if (!moveList.ContainsKey(def_or_use))
+                                moveList[def_or_use] = new util.Set<timple.BaseNode>();
+                            moveList[def_or_use].Add(n);
+                        }
+
+                        worklistMoves.Add(n);
+                    }
                 }
 
                 live = live.Union(n.defs);

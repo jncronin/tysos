@@ -103,7 +103,7 @@ namespace libtysila.timple
         private static void Rename(TreeNode n, SSATree ssa, DomTree d, Dictionary<int, int> Count, Dictionary<int, List<int>> Stack)
         {
             /* Get the node in the ssa form (the one we alter) */
-            TreeNode S = ssa.InnerToOuter[n.InnerNode];
+            TreeNode S = (TreeNode)ssa.InnerToOuter[n.InnerNode];
 
             if (!(S is TimpleLabelNode))
             {
@@ -154,7 +154,7 @@ namespace libtysila.timple
             /* Replace successor phi function definitions */
             foreach (TreeNode Yold in n.InnerNode.next)
             {
-                TreeNode Y = ssa.InnerToOuter[Yold];
+                TreeNode Y = (TreeNode)ssa.InnerToOuter[Yold];
 
                 if (Y is TimpleLabelNode)
                 {
@@ -227,7 +227,7 @@ namespace libtysila.timple
             IList<BaseNode> nodes = LinearStream;
             foreach (TreeNode n in nodes)
             {
-                TreeNode newnode = n.MemberwiseClone();
+                TreeNode newnode = (TreeNode)n.MemberwiseClone();
                 newnode.prev = new List<BaseNode>();
                 newnode.next = new List<BaseNode>();
                 newnode.InnerNode = n;
@@ -242,14 +242,14 @@ namespace libtysila.timple
 
             foreach (TreeNode n in Starts)
             {
-                g.AddStartNode(g.InnerToOuter[n]);
+                g.AddStartNode((TreeNode)g.InnerToOuter[n]);
                 DFAdd(g, n, g.InnerToOuter, visited);
             }
 
             return g;
         }
 
-        private void DFAdd(TimpleGraph ret, TreeNode n, Dictionary<TreeNode, TreeNode> old_to_new, util.Set<TreeNode> visited)
+        private void DFAdd(TimpleGraph ret, TreeNode n, Dictionary<BaseNode, BaseNode> old_to_new, util.Set<TreeNode> visited)
         {
             if (!visited.Contains(n))
             {
@@ -279,33 +279,33 @@ namespace libtysila.timple
                         {
                             foreach (TreeNode prev in n.prev)
                             {
-                                TreeNode cur_prev = old_to_new[prev];
-                                ret.RemoveEdge(old_to_new[prev], old_to_new[n]);
+                                TreeNode cur_prev = (TreeNode)old_to_new[prev];
+                                ret.RemoveEdge((TreeNode)old_to_new[prev], (TreeNode)old_to_new[n]);
 
                                 foreach (TreeNode conv in convert_instrs)
                                 {
-                                    TreeNode new_conv = conv.MemberwiseClone();
+                                    TreeNode new_conv = (TreeNode)conv.MemberwiseClone();
                                     ret.AddTreeEdge(cur_prev, conv);
                                     cur_prev = conv;
                                 }
 
-                                ret.AddTreeEdge(cur_prev, old_to_new[n]);
+                                ret.AddTreeEdge(cur_prev, (TreeNode)old_to_new[n]);
                             }
-                            ret.AddTreeEdge(old_to_new[n], old_to_new[next]);
+                            ret.AddTreeEdge((TreeNode)old_to_new[n], (TreeNode)old_to_new[next]);
                         }
                         else
                         {
-                            TreeNode cur_prev = old_to_new[n];
+                            TreeNode cur_prev = (TreeNode)old_to_new[n];
                             foreach (TreeNode conv in convert_instrs)
                             {
                                 ret.AddTreeEdge(cur_prev, conv);
                                 cur_prev = conv;
                             }
-                            ret.AddTreeEdge(cur_prev, old_to_new[next]);
+                            ret.AddTreeEdge(cur_prev, (TreeNode)old_to_new[next]);
                         }
                     }
                     else
-                        ret.AddTreeEdge(old_to_new[n], old_to_new[next]);
+                        ret.AddTreeEdge((TreeNode)old_to_new[n], (TreeNode)old_to_new[next]);
 
                     DFAdd(ret, next, old_to_new, visited);
                 }

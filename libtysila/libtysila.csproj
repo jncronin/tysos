@@ -112,7 +112,11 @@
     <Compile Include="timple\Graph.cs" />
     <Compile Include="timple\Optimizer.cs" />
     <Compile Include="timple\SSA.cs" />
+    <Compile Include="tybel\ChooseCallInstruction.cs" />
     <Compile Include="tybel\Node.cs" />
+    <Compile Include="tybel\RenameRegisters.cs" />
+    <Compile Include="tybel\ResolveNativeIntOp.cs" />
+    <Compile Include="tybel\ResolveSpecialNode.cs" />
     <Compile Include="tybel\Tybel.cs" />
     <Compile Include="TyDbFile.cs" />
     <Compile Include="Layout3.cs" />

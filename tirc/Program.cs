@@ -45,7 +45,7 @@ namespace tirc
             TIRParse.Parser p = new TIRParse.Parser(new TIRParse.Scanner(f), ass);
             bool res = p.Parse();
 
-            libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(p.tacs["test2"]);
+            libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(p.tacs["test3"]);
             //ass.AssembleTIR2(p.tacs["unnamed_func"], null);
 
             /* Choose instructions */
@@ -54,7 +54,14 @@ namespace tirc
 
             /* Prepare register allocator */
             libtysila.regalloc.RegAlloc r = new libtysila.regalloc.RegAlloc();
-            r.Main(new libtysila.tybel.Tybel.TybelCode(tybel, tybel_l), 4);
+            Dictionary<vara, vara> regs = r.Main(new libtysila.tybel.Tybel.TybelCode(tybel, tybel_l), ass);
+
+            /* Rename registers in the code */
+            libtysila.tybel.Tybel tybel_2 = tybel.RenameRegisters(regs);
+
+            /* Resolve special instructions */
+            libtysila.timple.Liveness tybel2_l = libtysila.timple.Liveness.LivenessAnalysis(tybel_2);
+            libtysila.tybel.Tybel tybel_3 = tybel_2.ResolveSpecialNodes(tybel2_l, ass);
         }
     }
 }

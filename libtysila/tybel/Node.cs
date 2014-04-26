@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace libtysila.tybel
 {
@@ -30,10 +31,68 @@ namespace libtysila.tybel
         public override IList<timple.BaseNode> Next { get { return next; } }
         public override IList<timple.BaseNode> Prev { get { return prev; } }
         public timple.TreeNode TimpleInst;
+        public virtual IList<vara> VarList { get { return new vara[] { }; } set { throw new NotSupportedException(); } }
 
         public abstract IList<byte> Assemble();
 
         public abstract bool IsMove { get; }
+    }
+
+    public class SpecialNode : Node
+    {
+        public enum SpecialNodeType { SaveLive, Restore, SaveLiveExcept, SaveLiveIntersect, };
+        public SpecialNodeType Type;
+        IList<vara> varList;
+        public SpecialNode SaveNode;
+        public override IList<vara> VarList
+        {
+            get { return varList; }
+            set { varList = value; }
+        }
+
+        public int IntVal;
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(Type.ToString());
+
+            switch (Type)
+            {
+                case SpecialNodeType.SaveLiveExcept:
+                case SpecialNodeType.SaveLiveIntersect:
+                    sb.Append(" ");
+                    for (int i = 0; i < VarList.Count; i++)
+                    {
+                        if (i != 0)
+                            sb.Append(", ");
+                        sb.Append(VarList[i].ToString());
+                    }
+                    break;
+            }
+
+            return sb.ToString();
+        }
+
+        public override ICollection<vara> defs
+        {
+            get { return new vara[] { }; }
+        }
+
+        public override ICollection<vara> uses
+        {
+            get { return new vara[] { }; }
+        }
+
+        public override bool IsMove
+        {
+            get { return false; }
+        }
+
+        public override IList<byte> Assemble()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class LabelNode : Node

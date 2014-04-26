@@ -509,6 +509,8 @@ namespace libtysila
             bb_i4, bb_i8, bb_i, bb_r8, bb_r4, bb_r8_un, bb_r4_un,
             bbe_i4, bbe_i8, bbe_i, bbe_r8, bbe_r4, bbe_r8_un, bbe_r4_un,
 
+            adjstack, save, restore,
+
             misc
         }
 

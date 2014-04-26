@@ -39,15 +39,6 @@ namespace libtysila
         public static x86_64_gpr Rsp { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rsp }; } }
         public static x86_64_gpr Rbp { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rbp }; } }
 
-        public static x86_64_gpr Eax { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rax, bits32 = true }; } }
-        public static x86_64_gpr Ebx { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rbx, bits32 = true }; } }
-        public static x86_64_gpr Ecx { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rcx, bits32 = true }; } }
-        public static x86_64_gpr Edx { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rdx, bits32 = true }; } }
-        public static x86_64_gpr Esi { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rsi, bits32 = true }; } }
-        public static x86_64_gpr Edi { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rdi, bits32 = true }; } }
-        public static x86_64_gpr Esp { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rsp, bits32 = true }; } }
-        public static x86_64_gpr Ebp { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rbp, bits32 = true }; } }
-
         public static x86_64_gpr R8 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r8 }; } }
         public static x86_64_gpr R9 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r9 }; } }
         public static x86_64_gpr R10 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r10 }; } }

@@ -53,19 +53,46 @@ namespace libtysila.regalloc
 
         int K;
 
-        public Dictionary<vara, int> Main(tybel.Tybel.TybelCode code, int k)
+        public Dictionary<vara, vara> Main(tybel.Tybel.TybelCode code, Assembler ass)
         {
-            K = k;
+            util.Set<libasm.hardware_location> all_regs = ass.MachineRegisters;
+            K = all_regs.Count;
+
+            /* Precolor machine regs */
+            int c = 0;
+            Dictionary<int, libasm.hardware_location> c_hloc = new Dictionary<int, libasm.hardware_location>();
+            foreach (libasm.hardware_location hloc in all_regs)
+            {
+                vara v = vara.MachineReg(hloc);
+                precolored.Add(v);
+                adjList[v] = new util.Set<vara>();
+                moveList[v] = new util.Set<timple.BaseNode>();
+                degree[v] = 0;
+                color[v] = c++;
+                c_hloc[color[v]] = hloc;
+            }
 
             /* init structures */
+            List<InterferenceEdge> preset_ifedges = new List<InterferenceEdge>();
             foreach (vara v in code.Liveness.defs.Keys)
             {
                 adjList[v] = new util.Set<vara>();
                 moveList[v] = new util.Set<timple.BaseNode>();
                 degree[v] = 0;
 
-                if (v.VarType == vara.vara_type.MachineReg)
-                    precolored.Add(v);
+                if (v.VarType == vara.vara_type.Logical)
+                {
+                    /* Depending on type of variable, add interference edges to
+                     * the hardware registers it cannot access */
+
+                    foreach (libasm.hardware_location reg in all_regs.Except(ass.MachineRegistersForDataType(v.DataType)))
+                        preset_ifedges.Add(new InterferenceEdge(v, vara.MachineReg(reg)));
+                }
+            }
+
+            foreach (InterferenceEdge edge in preset_ifedges)
+            {
+                AddEdge(edge.u, edge.v);
             }
 
             Build(code);
@@ -88,7 +115,14 @@ namespace libtysila.regalloc
             if (spilledNodes.Count != 0)
                 throw new NotImplementedException();
 
-            return color;
+            Dictionary<vara, vara> ret = new Dictionary<vara, vara>();
+            foreach (vara v in code.Liveness.defs.Keys)
+            {
+                if (v.VarType == vara.vara_type.Logical)
+                    ret[v] = vara.MachineReg(c_hloc[color[v]]);
+            }
+
+            return ret;
         }
 
         public struct InterferenceEdge
@@ -111,6 +145,20 @@ namespace libtysila.regalloc
             {
                 return u.GetHashCode() ^ v.GetHashCode();
             }
+
+            public override string ToString()
+            {
+                return u.ToString() + ", " + v.ToString();
+            }
         }
+    }
+}
+
+namespace libtysila
+{
+    partial class Assembler
+    {
+        public abstract util.Set<libasm.hardware_location> MachineRegisters { get; }
+        public abstract util.Set<libasm.hardware_location> MachineRegistersForDataType(CliType dt);
     }
 }

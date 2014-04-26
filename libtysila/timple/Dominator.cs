@@ -41,9 +41,6 @@ namespace libtysila.timple
         /** <summary>Dominance frontiers of each node</summary> */
         public Dictionary<BaseNode, util.Set<BaseNode>> dfs = new Dictionary<BaseNode, util.Set<BaseNode>>();
 
-        TimpleGraph innergraph;
-        public TimpleGraph InnerGraph { get { return innergraph; } }
-
         public static DomTree BuildDomTree(TimpleGraph g)
         {
             /* Build a dominator tree from the graph g */

@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 namespace libtysila.tybel
 {
-    public class Tybel : timple.BaseGraph
+    public partial class Tybel : timple.BaseGraph
     {
         public Dictionary<timple.TreeNode, IList<Node>> TimpleMap;
         public int NextVar;
@@ -91,13 +91,18 @@ namespace libtysila.tybel
             if (c.prev == null)
                 c.prev = new List<timple.BaseNode>();
 
-            if (parent.next == null)
-                parent.next = new List<timple.BaseNode>();
-            if (parent.prev == null)
-                parent.prev = new List<timple.BaseNode>();
+            if (parent == null)
+                Starts.Add(c);
+            else
+            {
+                if (parent.next == null)
+                    parent.next = new List<timple.BaseNode>();
+                if (parent.prev == null)
+                    parent.prev = new List<timple.BaseNode>();
 
-            parent.Next.Add(c);
-            c.Prev.Add(parent);
+                parent.Next.Add(c);
+                c.Prev.Add(parent);
+            }
         }
 
         public int Count
