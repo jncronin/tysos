@@ -152,7 +152,7 @@ namespace libtysila.timple
             }
 
             /* Replace successor phi function definitions */
-            foreach (TreeNode Yold in n.InnerNode.next)
+            foreach (TreeNode Yold in ((TreeNode)n.InnerNode).next)
             {
                 TreeNode Y = (TreeNode)ssa.InnerToOuter[Yold];
 

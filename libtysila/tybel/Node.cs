@@ -33,7 +33,7 @@ namespace libtysila.tybel
         public timple.TreeNode TimpleInst;
         public virtual IList<vara> VarList { get { return new vara[] { }; } set { throw new NotSupportedException(); } }
 
-        public abstract IList<byte> Assemble();
+        public abstract IEnumerable<libasm.OutputBlock> Assemble(Assembler ass);
 
         public abstract bool IsMove { get; }
     }
@@ -43,7 +43,7 @@ namespace libtysila.tybel
         public enum SpecialNodeType { SaveLive, Restore, SaveLiveExcept, SaveLiveIntersect, };
         public SpecialNodeType Type;
         IList<vara> varList;
-        public SpecialNode SaveNode;
+        public Node SaveNode;
         public override IList<vara> VarList
         {
             get { return varList; }
@@ -89,7 +89,7 @@ namespace libtysila.tybel
             get { return false; }
         }
 
-        public override IList<byte> Assemble()
+        public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass)
         {
             throw new NotImplementedException();
         }
@@ -98,16 +98,20 @@ namespace libtysila.tybel
     public class LabelNode : Node
     {
         public string Label;
+        public bool Local;
         public override string ToString()
         {
             return Label + ":";
         }
 
-        public LabelNode(string label) { Label = label; }
+        public LabelNode(string label, bool local) { Label = label; Local = local; }
 
-        public override IList<byte> Assemble()
+        public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass)
         {
-            return new byte[] { };
+            if (Local)
+                return new libasm.OutputBlock[] { new libasm.LocalSymbol(Label, false) };
+            else
+                return new libasm.OutputBlock[] { new libasm.ExportedSymbol(Label, false, true) };
         }
 
         public override ICollection<vara> defs
@@ -131,6 +135,6 @@ namespace libtysila
 {
     partial class Assembler
     {
-        public abstract IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var);
+        public abstract IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var, IList<libasm.hardware_location> las);
     }
 }

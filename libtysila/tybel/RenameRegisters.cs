@@ -32,13 +32,18 @@ namespace libtysila.tybel
             ret.innergraph = this;
 
             util.Set<timple.BaseNode> visited = new util.Set<timple.BaseNode>();
+            util.Set<tybel.SpecialNode> missed_special = new util.Set<SpecialNode>();
             foreach (timple.BaseNode start in Starts)
-                RenameRegisters(ret, start, null, regs, visited);
+                RenameRegisters(ret, start, null, regs, visited, missed_special);
+
+            foreach (tybel.SpecialNode missed in missed_special)
+                missed.SaveNode = (Node)ret.InnerToOuter[missed.SaveNode];
 
             return ret;
         }
 
-        void RenameRegisters(Tybel ret, timple.BaseNode inner_node, timple.BaseNode outer_parent, Dictionary<vara, vara> regs, util.Set<timple.BaseNode> visited)
+        void RenameRegisters(Tybel ret, timple.BaseNode inner_node, timple.BaseNode outer_parent, Dictionary<vara, vara> regs,
+            util.Set<timple.BaseNode> visited, util.Set<tybel.SpecialNode> missed_special)
         {
             if(visited.Contains(inner_node))
                 return;
@@ -85,12 +90,17 @@ namespace libtysila.tybel
                 {
                     SpecialNode outer_sn = outer_node as SpecialNode;
                     if (outer_sn.SaveNode != null)
-                        outer_sn.SaveNode = (SpecialNode)ret.InnerToOuter[outer_sn.SaveNode];
+                    {
+                        if (ret.InnerToOuter.ContainsKey(outer_sn.SaveNode))
+                            outer_sn.SaveNode = (SpecialNode)ret.InnerToOuter[outer_sn.SaveNode];
+                        else
+                            missed_special.Add(outer_sn);
+                    }
                 }
             }
 
             foreach (timple.BaseNode inner_node_nexts in inner_node.Next)
-                RenameRegisters(ret, inner_node_nexts, outer_parent, regs, visited);
+                RenameRegisters(ret, inner_node_nexts, outer_parent, regs, visited, missed_special);
         }
 
         private vara RenameRegister(vara vara, Dictionary<vara, vara> regs)

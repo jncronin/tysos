@@ -26,7 +26,7 @@ namespace libtysila
 {
     partial class Assembler
     {
-        protected virtual void ChooseCallInstruction(List<tybel.Node> ret, timple.TimpleCallNode inst, ref int next_var)
+        protected virtual void ChooseCallInstruction(List<tybel.Node> ret, timple.TimpleCallNode inst, ref int next_var, IList<libasm.hardware_location> las)
         {
             CallConv cc = call_convs[inst.CallConv](new Assembler.MethodToCompile { msig = inst.MethSig }, CallConv.StackPOV.Caller, this, new ThreeAddressCode(inst.Op));
 
@@ -37,7 +37,7 @@ namespace libtysila
             tybel.SpecialNode save_node = new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.SaveLiveIntersect, VarList = isect_list };
             ret.Add(save_node);
             if (cc.StackSpaceUsed != 0)
-                ret.AddRange(SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.adjstack, vara.Void(), vara.Const(-cc.StackSpaceUsed, CliType.native_int), vara.Void()), ref next_var));
+                ret.AddRange(SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.adjstack, vara.Void(), vara.Const(-cc.StackSpaceUsed, CliType.native_int), vara.Void()), ref next_var, las));
 
             for(int i = 0; i < cc.Arguments.Count; i++)
             {
@@ -58,14 +58,15 @@ namespace libtysila
                         break;
                 }
 
-                ret.AddRange(SelectInstruction(new timple.TimpleNode(assign_op, vara.MachineReg(arg.ValueLocation), inst.VarArgs[i], vara.Void()), ref next_var));
+                ret.AddRange(SelectInstruction(new timple.TimpleNode(assign_op, vara.MachineReg(arg.ValueLocation), inst.VarArgs[i], vara.Void()), ref next_var, las));
             }
-            ret.AddRange(SelectInstruction(new timple.TimpleNode(cc.CallTac, inst.R, inst.O1, vara.Void()), ref next_var));
+            ret.AddRange(SelectInstruction(new timple.TimpleNode(cc.CallTac, inst.R, inst.O1, vara.Void()), ref next_var, las));
 
             if (cc.StackSpaceUsed != 0)
-                ret.AddRange(SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.adjstack, vara.Void(), vara.Const(cc.StackSpaceUsed, CliType.native_int), vara.Void()), ref next_var));
+                ret.AddRange(SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.adjstack, vara.Void(), vara.Const(cc.StackSpaceUsed, CliType.native_int), vara.Void()), ref next_var, las));
 
             ret.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.Restore, VarList = isect_list, SaveNode = save_node });
+            save_node.SaveNode = ret[ret.Count - 1];
         }
     }
 }

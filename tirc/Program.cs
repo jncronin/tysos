@@ -45,23 +45,48 @@ namespace tirc
             TIRParse.Parser p = new TIRParse.Parser(new TIRParse.Scanner(f), ass);
             bool res = p.Parse();
 
-            libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(p.tacs["test3"]);
-            //ass.AssembleTIR2(p.tacs["unnamed_func"], null);
+            /* Generate tybel code */
+            libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(p.tacs["test2"]);
+            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, ass, new List<libasm.hardware_location>());
 
-            /* Choose instructions */
-            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.BuildGraph(opt, ass);
-            libtysila.timple.Liveness tybel_l = libtysila.timple.Liveness.LivenessAnalysis(tybel);
+            /* Generate code */
+            List<byte> code = new List<byte>();
+            List<libasm.ExportedSymbol> syms = new List<libasm.ExportedSymbol>();
+            List<libasm.RelocationBlock> relocs = new List<libasm.RelocationBlock>();
+            tybel.Assemble(code, syms, relocs, ass);
 
-            /* Prepare register allocator */
-            libtysila.regalloc.RegAlloc r = new libtysila.regalloc.RegAlloc();
-            Dictionary<vara, vara> regs = r.Main(new libtysila.tybel.Tybel.TybelCode(tybel, tybel_l), ass);
+            /* Dump dissassembly */
+            tydisasm.tydisasm d = tydisasm.tydisasm.GetDisassembler(ass.Arch.InstructionSet);
+            CodeStream cs = new CodeStream { code = code };
+            if (d != null)
+            {
+                while (cs.MoreToRead)
+                {
+                    ulong offset = (ulong)cs.Offset;
 
-            /* Rename registers in the code */
-            libtysila.tybel.Tybel tybel_2 = tybel.RenameRegisters(regs);
+                    tydisasm.line disasm = d.GetNextLine(cs);
 
-            /* Resolve special instructions */
-            libtysila.timple.Liveness tybel2_l = libtysila.timple.Liveness.LivenessAnalysis(tybel_2);
-            libtysila.tybel.Tybel tybel_3 = tybel_2.ResolveSpecialNodes(tybel2_l, ass);
+                    Console.WriteLine("{0} {1,-30} {2}", offset.ToString("x16"), disasm.OpcodeString, disasm.ToString());
+                    if (disasm.opcodes == null)
+                        break;
+                }
+            }
+
+            Console.ReadKey();
+        }
+    }
+
+    class CodeStream : tydisasm.ByteProvider
+    {
+        public List<byte> code;
+        public int offset = 0;
+
+        public bool MoreToRead { get { return offset < code.Count; } }
+        public int Offset { get { return offset; } }
+
+        public override byte GetNextByte()
+        {
+            return code[offset++];
         }
     }
 }

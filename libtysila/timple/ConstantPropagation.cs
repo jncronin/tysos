@@ -162,7 +162,7 @@ namespace libtysila.timple
                 if (n is TimpleLabelNode)
                 {
                     TimpleLabelNode tln = n as TimpleLabelNode;
-                    if ((tln.Phis.Count) == 0 && (tln.prev.Count == 1) && (tln.next.Count == 1))
+                    if ((tln.Phis.Count) == 0 && (tln.prev.Count == 1) && (tln.next.Count == 1) && (!(tln.prev[0] is timple.TimpleBrNode)))
                         ssa.RemoveNode(tln, l);
                 }
             }

@@ -33,7 +33,50 @@ namespace libtysila.timple
         protected BaseGraph innergraph;
         public BaseGraph InnerGraph { get { return innergraph; } }
 
-        public int Count
+        public void Add(BaseNode n)
+        {
+            if (Starts.Count == 0)
+            {
+                if (Ends.Count != 0)
+                    throw new Exception();
+                Starts.Add(n);
+                Ends.Add(n);
+            }
+            else
+            {
+                if (Ends.Count != 1)
+                    throw new Exception();
+                else
+                    Append(n, Ends[0]);
+            }
+        }
+
+        private void Append(BaseNode n, BaseNode after)
+        {
+            n.Next.Clear();
+            n.Prev.Clear();
+            n.Prev.Add(after);
+
+            foreach (BaseNode next in after.Next)
+            {
+                int idx_of_after = next.Prev.IndexOf(after);
+                next.Prev[idx_of_after] = n;
+                n.Next.Add(next);
+            }
+
+            after.Next.Clear();
+            after.Next.Add(n);
+        }
+
+        public void AddStartNode(BaseNode n)
+        {
+            if (!Starts.Contains(n))
+                Starts.Add(n);
+            if (!Ends.Contains(n))
+                Ends.Add(n);
+        }
+
+        public virtual int Count
         {
             get
             {
@@ -58,7 +101,7 @@ namespace libtysila.timple
             }
         }
 
-        public IList<BaseNode> LinearStream
+        public virtual IList<BaseNode> LinearStream
         {
             get
             {
@@ -94,14 +137,6 @@ namespace libtysila.timple
         //public List<TreeNode> Ends = new List<TreeNode>();
         //public int Count { get { return count; } }
         public Dictionary<int, Assembler.CliType> VarDataTypes = new Dictionary<int, Assembler.CliType>();
-
-        public void AddStartNode(TreeNode n)
-        {
-            if (!Starts.Contains(n))
-                Starts.Add(n);
-            if (!Ends.Contains(n))
-                Ends.Add(n);
-        }
 
         public void AddTreeEdge(TreeNode from, TreeNode to)
         {
@@ -218,6 +253,48 @@ namespace libtysila.timple
             ret.AddStartNode(tacs[0]);
             AddChildren(ret, 0, tacs, block_starts);
 
+            /* Iterate through the linear stream, and reverse branch instructions if they are incorrect */
+            for(int i = 0; i < ret.LinearStream.Count; i++)
+            {
+                BaseNode n = ret.LinearStream[i];
+                if (n is TimpleBrNode)
+                {
+                    TimpleBrNode tbn = n as TimpleBrNode;
+
+                    if (tbn.Op == ThreeAddressCode.Op.br)
+                        continue;
+
+                    /* We are trying to make the false instruction be the default (i.e. fall through)
+                     * 
+                     * First, ensure this is not the case already */
+
+                    if (i == (ret.LinearStream.Count - 1))
+                        throw new Exception();
+                    TimpleLabelNode next = ret.LinearStream[i + 1] as TimpleLabelNode;
+                    if (next == null)
+                        throw new Exception();
+
+                    if (tbn.BlockTargetFalse == next.BlockId)
+                        continue;
+
+                    /* If not, ensure the true path is next instead */
+                    if (tbn.BlockTargetTrue != next.BlockId)
+                        throw new Exception();
+
+                    /* If it is, then swap the instruction and block targets */
+                    int old_true = tbn.BlockTargetTrue;
+                    int old_false = tbn.BlockTargetFalse;
+                    tbn.Op = TimpleBrNode.InvertBr(tbn.Op);
+                    tbn.BlockTargetFalse = old_true;
+                    tbn.BlockTargetTrue = old_false;
+
+                    BaseNode old_n_0 = tbn.Next[0];
+                    BaseNode old_n_1 = tbn.Next[1];
+                    tbn.Next[0] = old_n_1;
+                    tbn.Next[1] = old_n_0;                    
+                }
+            }
+
             return ret;
         }
 
@@ -243,8 +320,8 @@ namespace libtysila.timple
             if (tacs[idx] is TimpleBrNode)
             {
                 TimpleBrNode br = tacs[idx] as TimpleBrNode;
-                block_target = tacs[block_starts[br.BlockTarget]];
-                block_idx = block_starts[br.BlockTarget];
+                block_target = tacs[block_starts[br.BlockTargetTrue]];
+                block_idx = block_starts[br.BlockTargetTrue];
                 if (block_target == next_in_list)
                     block_target = null;
             }

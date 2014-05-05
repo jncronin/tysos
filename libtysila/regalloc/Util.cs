@@ -28,6 +28,11 @@ namespace libtysila.regalloc
     {
         void AddEdge(vara u, vara v)
         {
+            if ((u.VarType == vara.vara_type.MachineReg) && (u.MachineRegVal is libasm.hardware_contentsof))
+                return;
+            if ((v.VarType == vara.vara_type.MachineReg) && (v.MachineRegVal is libasm.hardware_contentsof))
+                return;
+
             if(!adjSet.Contains(new InterferenceEdge(u, v)) && !u.Equals(v))
             {
                 adjSet.Add(new InterferenceEdge(u, v));

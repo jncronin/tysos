@@ -85,14 +85,29 @@ namespace libtysila
             return AddrOf(Logical, 0);
         }
 
+        public static vara ContentsOf(int Logical, int SSA, long Offset, Assembler.CliType DataType)
+        {
+            return new vara { log = Logical, ssa = SSA, ct = DataType, type = vara_type.ContentsOf, offset = Offset };
+        }
+
         public static vara ContentsOf(int Logical, long Offset, Assembler.CliType DataType)
         {
-            return new vara { log = Logical, ct = DataType, type = vara_type.ContentsOf, offset = Offset };
+            return ContentsOf(Logical, 0, Offset, DataType);
         }
 
         public static vara ContentsOf(int Logical, Assembler.CliType DataType)
         {
-            return ContentsOf(Logical, 0, DataType);
+            return ContentsOf(Logical, 0, 0, DataType);
+        }
+
+        public static vara ContentsOf(vara v, long Offset, Assembler.CliType DataType)
+        {
+            return ContentsOf(v.log, v.ssa, Offset, DataType);
+        }
+
+        public static vara ContentsOf(vara v, Assembler.CliType DataType)
+        {
+            return ContentsOf(v.log, v.ssa, 0, DataType);
         }
 
         public static vara Label(string Label, long Offset)

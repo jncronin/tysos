@@ -2554,10 +2554,10 @@ namespace libtysila
         { return GetStObjTac(GetLdObjTac(ct)); }
         private ThreeAddressCode.Op GetCallTac(Token token, Assembler ass)
         { return GetCallTac(GetLdObjTac(token, ass)); }
-        private ThreeAddressCode.Op GetCallTac(CliType ct)
+        public static ThreeAddressCode.Op GetCallTac(CliType ct)
         { if (ct == CliType.void_) return ThreeAddressCode.Op.call_void; else return GetCallTac(GetLdObjTac(ct)); }
 
-        private ThreeAddressCode.Op GetStObjTac(ThreeAddressCode.Op ldobjtac)
+        public static ThreeAddressCode.Op GetStObjTac(ThreeAddressCode.Op ldobjtac)
         {
             switch (ldobjtac)
             {
@@ -2578,7 +2578,7 @@ namespace libtysila
             }
         }
 
-        private ThreeAddressCode.Op GetCallTac(ThreeAddressCode.Op ldobjtac)
+        public static ThreeAddressCode.Op GetCallTac(ThreeAddressCode.Op ldobjtac)
         {
             switch (ldobjtac)
             {
@@ -3038,7 +3038,7 @@ namespace libtysila
             }
         }
 
-        private static ThreeAddressCode.Op GetLdObjTac(CliType clitype)
+        public static ThreeAddressCode.Op GetLdObjTac(CliType clitype)
         {
             switch (clitype)
             {

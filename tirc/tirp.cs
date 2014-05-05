@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.0
 // Machine:  DESKTOP-JOHN
-// DateTime: 20/04/2014 13:18:18
+// DateTime: 05/05/2014 14:49:06
 // UserName: jncronin
-// Input file <d:\tysos\tirc\tir.y - 20/04/2014 13:17:32>
+// Input file <d:\tysos\tirc\tir.y - 02/05/2014 18:52:46>
 
 // options: lines gplex
 
@@ -1060,11 +1060,11 @@ internal partial class Parser: ShiftReduceParser<ValueType, LexLocation>
         break;
       case 31: // stat -> br_inst
 #line 427 "d:\tysos\tirc\tir.y"
-{ CurrentSemanticValue.tacval = new TimpleBrNode(ValueStack[ValueStack.Depth-1].pival.op, ValueStack[ValueStack.Depth-1].pival.block_target); }
+{ CurrentSemanticValue.tacval = new TimpleBrNode(ValueStack[ValueStack.Depth-1].pival.block_target); }
         break;
       case 32: // stat -> cmpbr_inst
 #line 428 "d:\tysos\tirc\tir.y"
-{ CurrentSemanticValue.tacval = new TimpleBrNode(ValueStack[ValueStack.Depth-1].pival.op, ValueStack[ValueStack.Depth-1].pival.block_target, var_if_exist(1, ValueStack[ValueStack.Depth-1].pival.args), var_if_exist(2, ValueStack[ValueStack.Depth-1].pival.args)); }
+{ CurrentSemanticValue.tacval = new TimpleBrNode(ValueStack[ValueStack.Depth-1].pival.op, ValueStack[ValueStack.Depth-1].pival.block_target, -1, var_if_exist(1, ValueStack[ValueStack.Depth-1].pival.args), var_if_exist(2, ValueStack[ValueStack.Depth-1].pival.args)); }
         break;
       case 33: // stat -> funcdef
 #line 429 "d:\tysos\tirc\tir.y"

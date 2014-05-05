@@ -154,7 +154,7 @@ namespace libtysila.timple
             /* Appel p. 434 */
             util.Set<BaseNode> S = new util.Set<BaseNode>();
 
-            foreach (TreeNode y in n.InnerNode.next)
+            foreach (TreeNode y in ((TreeNode)n.InnerNode).next)
             {
                 if (ret.idoms[y] != n.InnerNode)
                     S.Add(y);

@@ -263,8 +263,10 @@ namespace libtysila
             else
                 SetByteArray(target, t_offset, this.ToByteArray(v), 0, v_size);
         }
-
         public override ulong FromByteArrayU8(IList<byte> v, int offset)
+        { return FromByteArrayU8S(v, offset); }
+
+        public static ulong FromByteArrayU8S(IList<byte> v, int offset)
         {
             ulong ret = (ulong)v[offset + 0] + (((ulong)v[offset + 1]) << 8) +
                 (((ulong)v[offset + 2]) << 16) + (((ulong)v[offset + 3]) << 24) +
@@ -275,8 +277,11 @@ namespace libtysila
         public override ulong FromByteArrayU8(IList<byte> v)
         { return FromByteArrayU8(v, 0); }
         public override long FromByteArrayI8(IList<byte> v, int offset)
+        { return FromByteArrayI8S(v, offset); }
+
+        public static long FromByteArrayI8S(IList<byte> v, int offset)
         {
-            ulong us = FromByteArrayU8(v, offset);
+            ulong us = FromByteArrayU8S(v, offset);
             if (us >= 0x8000000000000000)
                 return (long)(Convert.ToInt64(us - 0x8000000000000000) - 0x4000000000000000
                     - 0x4000000000000000);
@@ -304,8 +309,11 @@ namespace libtysila
         { return FromByteArrayI4(v, 0); }
 
         public override int FromByteArrayI4(IList<byte> v, int offset)
+        { return FromByteArrayI4S(v, offset); }
+
+        public static int FromByteArrayI4S(IList<byte> v, int offset)
         {
-            uint us = FromByteArrayU4(v, offset);
+            uint us = FromByteArrayU4S(v, offset);
             if (us >= 0x80000000)
                 return (int)(Convert.ToInt32(us - 0x80000000) - 0x80000000);
             else
@@ -320,12 +328,17 @@ namespace libtysila
             return v[offset];
         }
 
+        public static byte FromByteArrayU1S(IList<byte> v, int offset)
+        { return v[offset]; }
+
         public override sbyte FromByteArrayI1(IList<byte> v)
         { return FromByteArrayI1(v, 0); }
 
         public override sbyte FromByteArrayI1(IList<byte> v, int offset)
+        { return FromByteArrayI1S(v, offset); }
+        public static sbyte FromByteArrayI1S(IList<byte> v, int offset)
         {
-            byte us = FromByteArrayU1(v, offset);
+            byte us = FromByteArrayU1S(v, offset);
             if (us >= 0x80)
                 return (sbyte)(Convert.ToSByte(us - 0x80) - 0x80);
             else
@@ -336,12 +349,14 @@ namespace libtysila
         { return FromByteArrayChar(v, 0); }
 
         public override char FromByteArrayChar(IList<byte> v, int offset)
-        { return (char)FromByteArrayU2(v, 0); }
+        { return (char)FromByteArrayU2(v, offset); }
 
         public override ushort FromByteArrayU2(IList<byte> v)
         { return FromByteArrayU2(v, 0); }
-
         public override ushort FromByteArrayU2(IList<byte> v, int offset)
+        { return FromByteArrayU2S(v, offset); }
+
+        public static ushort FromByteArrayU2S(IList<byte> v, int offset)
         {
             ushort ret = (ushort)((ushort)v[offset + 0] + (((ushort)v[offset + 1]) << 8));
             return ret;
@@ -349,10 +364,12 @@ namespace libtysila
 
         public override short FromByteArrayI2(IList<byte> v)
         { return FromByteArrayI2(v, 0); }
-
         public override short FromByteArrayI2(IList<byte> v, int offset)
+        { return FromByteArrayI2S(v, offset); }
+
+        public static short FromByteArrayI2S(IList<byte> v, int offset)
         {
-            ushort us = FromByteArrayU2(v, offset);
+            ushort us = FromByteArrayU2S(v, offset);
             if (us >= 0x8000)
                 return (short)(Convert.ToInt16(us - 0x8000) - 0x8000);
             else
@@ -361,8 +378,10 @@ namespace libtysila
 
         public override float FromByteArrayR4(IList<byte> v)
         { return FromByteArrayR4(v, 0); }
-
         public override float FromByteArrayR4(IList<byte> v, int offset)
+        { return FromByteArrayR4S(v, offset); }
+
+        public static float FromByteArrayR4S(IList<byte> v, int offset)
         {
             byte[] b = new byte[v.Count];
             v.CopyTo(b, 0);
@@ -371,8 +390,10 @@ namespace libtysila
 
         public override double FromByteArrayR8(IList<byte> v)
         { return FromByteArrayR8(v, 0); }
-
         public override double FromByteArrayR8(IList<byte> v, int offset)
+        { return FromByteArrayR8S(v, offset); }
+
+        public static double FromByteArrayR8S(IList<byte> v, int offset)
         {
             byte[] b = new byte[v.Count];
             v.CopyTo(b, 0);

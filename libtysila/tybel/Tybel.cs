@@ -31,7 +31,27 @@ namespace libtysila.tybel
         public Dictionary<timple.TreeNode, IList<Node>> TimpleMap;
         public int NextVar;
 
-        public static Tybel BuildGraph(timple.Optimizer.OptimizeReturn code, Assembler ass)
+        public static Tybel GenerateTybel(timple.Optimizer.OptimizeReturn code, Assembler ass, IList<libasm.hardware_location> las)
+        {
+            /* Choose instructions */
+            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.BuildGraph(code, ass, las);
+            libtysila.timple.Liveness tybel_l = libtysila.timple.Liveness.LivenessAnalysis(tybel);
+
+            /* Prepare register allocator */
+            libtysila.regalloc.RegAlloc r = new libtysila.regalloc.RegAlloc();
+            Dictionary<vara, vara> regs = r.Main(new libtysila.tybel.Tybel.TybelCode(tybel, tybel_l), ass);
+
+            /* Rename registers in the code */
+            libtysila.tybel.Tybel tybel_2 = tybel.RenameRegisters(regs);
+
+            /* Resolve special instructions */
+            libtysila.timple.Liveness tybel2_l = libtysila.timple.Liveness.LivenessAnalysis(tybel_2);
+            libtysila.tybel.Tybel tybel_3 = tybel_2.ResolveSpecialNodes(tybel2_l, ass, las);
+
+            return tybel_3;
+        }
+
+        private static Tybel BuildGraph(timple.Optimizer.OptimizeReturn code, Assembler ass, IList<libasm.hardware_location> las)
         {
             Tybel ret = new Tybel();
             ret.TimpleMap = new Dictionary<timple.TreeNode, IList<Node>>();
@@ -46,7 +66,7 @@ namespace libtysila.tybel
 
             foreach (timple.TreeNode n in code.Code)
             {
-                IList<Node> tybel = ass.SelectInstruction(n, ref ret.NextVar);
+                IList<Node> tybel = ass.SelectInstruction(n, ref ret.NextVar, las);
                 ret.TimpleMap[n] = tybel;
             }
 
@@ -102,60 +122,6 @@ namespace libtysila.tybel
 
                 parent.Next.Add(c);
                 c.Prev.Add(parent);
-            }
-        }
-
-        public int Count
-        {
-            get
-            {
-                util.Set<timple.BaseNode> visited = new util.Set<timple.BaseNode>();
-                int n = 0;
-                foreach (timple.BaseNode node in Starts)
-                    DFCount(node, visited, ref n);
-                return n;
-            }
-        }
-
-        private void DFCount(timple.BaseNode s, util.Set<timple.BaseNode> visited, ref int n)
-        {
-            if (!visited.Contains(s))
-            {
-                visited.Add(s);
-
-                foreach (timple.BaseNode suc in s.Next)
-                    DFCount(suc, visited, ref n);
-
-                n++;
-            }
-        }
-
-        public IList<timple.BaseNode> LinearStream
-        {
-            get
-            {
-                Node[] ret = new Node[Count];
-                util.Set<timple.BaseNode> visited = new util.Set<timple.BaseNode>();
-                int n = Count - 1;
-                foreach (timple.BaseNode s in Starts)
-                    DFS(s, ret, ref n, visited);
-                return ret;
-            }
-        }
-
-        private void DFS(timple.BaseNode s, timple.BaseNode[] ret, ref int n, util.Set<timple.BaseNode> visited)
-        {
-            /* algorithm 17.5 from Appel */
-            if (visited.Contains(s) == false)
-            {
-                visited.Add(s);
-
-                /* we do the last successor first, as that is the non-default path, and should come last */
-                for (int i = s.Next.Count - 1; i >= 0; i--)
-                    DFS(s.Next[i], ret, ref n, visited);
-
-                ret[n] = s;
-                n--;
             }
         }
 

@@ -473,6 +473,11 @@ namespace libtysila
             {
                 return l[l.Count - 1];
             }
+
+            public T Peek(int n)
+            {
+                return l[l.Count - 1 - n];
+            }
         }
     }
 }

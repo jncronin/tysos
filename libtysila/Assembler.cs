@@ -140,6 +140,14 @@ namespace libtysila
                     };
                 }
             }
+
+            public static AssemblerSecurity DefaultSecurity
+            {
+                get
+                {
+                    return new AssemblerSecurity();
+                }
+            }
         }
 
         public abstract class FileLoader
@@ -168,6 +176,7 @@ namespace libtysila
             public enum RegisterAllocatorType { graphcolour, fastreg };
             public RegisterAllocatorType RegAlloc = RegisterAllocatorType.graphcolour;
             public string CallingConvention = "default";
+            public bool AllowTysilaOpcodes = false;
         }
 
         public class AssemblerState
@@ -941,7 +950,7 @@ namespace libtysila
 
         public AssembleBlockOutput AssembleMethod(MethodToCompile mtc, IOutputFile output, List<string> unimplemented_internal_calls)
         { return AssembleMethod(mtc, output, unimplemented_internal_calls, true, false); }
-        public AssembleBlockOutput AssembleMethod(MethodToCompile mtc, IOutputFile output, List<string> unimplemented_internal_calls, bool cache_output, bool dry_run)
+        public AssembleBlockOutput AssembleMethod2(MethodToCompile mtc, IOutputFile output, List<string> unimplemented_internal_calls, bool cache_output, bool dry_run)
         {
             Metadata.MethodDefRow meth = mtc.meth;
             Signature.BaseMethod call_site = mtc.msig;

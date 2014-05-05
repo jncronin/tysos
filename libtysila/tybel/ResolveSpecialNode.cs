@@ -26,7 +26,7 @@ namespace libtysila.tybel
 {
     partial class Tybel
     {
-        public Tybel ResolveSpecialNodes(timple.Liveness l, Assembler ass)
+        public Tybel ResolveSpecialNodes(timple.Liveness l, Assembler ass, IList<libasm.hardware_location> las)
         {
             Tybel ret = new Tybel();
             ret.innergraph = this;
@@ -37,13 +37,14 @@ namespace libtysila.tybel
             util.Set<timple.BaseNode> visited = new util.Set<timple.BaseNode>();
 
             foreach (timple.BaseNode start in Starts)
-                ResolveSpecialNodes(ret, start, null, l, stored_vars, visited, ass, ref next_var);
+                ResolveSpecialNodes(ret, start, null, l, stored_vars, visited, ass, ref next_var, las);
             
             return ret;
         }
 
         void ResolveSpecialNodes(Tybel ret, timple.BaseNode inner_node, timple.BaseNode outer_parent, timple.Liveness l,
-            Dictionary<SpecialNode, List<vara>> stored_vars, util.Set<timple.BaseNode> visited, Assembler ass, ref int next_var)
+            Dictionary<SpecialNode, List<vara>> stored_vars, util.Set<timple.BaseNode> visited, Assembler ass, ref int next_var,
+            IList<libasm.hardware_location> las)
         {
             if (visited.Contains(inner_node))
                 return;
@@ -67,22 +68,22 @@ namespace libtysila.tybel
                             switch (outer_sn.Type)
                             {
                                 case SpecialNode.SpecialNodeType.SaveLive:
-                                    stored = new List<vara>(l.live_in[inner_node]);
+                                    stored = new List<vara>(l.live_out[outer_sn.SaveNode]);
                                     break;
 
                                 case SpecialNode.SpecialNodeType.SaveLiveExcept:
-                                    stored = new List<vara>(l.live_in[inner_node].Except(outer_sn.VarList));
+                                    stored = new List<vara>(l.live_out[outer_sn.SaveNode].Except(outer_sn.VarList));
                                     break;
 
                                 case SpecialNode.SpecialNodeType.SaveLiveIntersect:
-                                    stored = new List<vara>(l.live_in[inner_node].Intersect(outer_sn.VarList));
+                                    stored = new List<vara>(l.live_out[outer_sn.SaveNode].Intersect(outer_sn.VarList));
                                     break;
                             }
 
                             stored_vars[(SpecialNode)inner_node] = stored;
                             foreach (vara v in stored)
                             {
-                                IList<Node> save_instrs = ass.SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.save, vara.Void(), v, vara.Void()), ref next_var);
+                                IList<Node> save_instrs = ass.SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.save, vara.Void(), v, vara.Void()), ref next_var, las);
 
                                 foreach (Node n in save_instrs)
                                 {
@@ -95,11 +96,11 @@ namespace libtysila.tybel
 
                     case SpecialNode.SpecialNodeType.Restore:
                         {
-                            List<vara> stored = stored_vars[((SpecialNode)inner_node).SaveNode];
+                            List<vara> stored = stored_vars[(SpecialNode)((SpecialNode)inner_node).SaveNode];
 
                             for (int i = stored.Count - 1; i >= 0; i--)
                             {
-                                IList<Node> restore_instrs = ass.SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.restore, vara.Void(), stored[i], vara.Void()), ref next_var);
+                                IList<Node> restore_instrs = ass.SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.restore, vara.Void(), stored[i], vara.Void()), ref next_var, las);
 
                                 foreach (Node n in restore_instrs)
                                 {
@@ -122,7 +123,7 @@ namespace libtysila.tybel
             }
 
             foreach (timple.BaseNode next in inner_node.Next)
-                ResolveSpecialNodes(ret, next, outer_parent, l, stored_vars, visited, ass, ref next_var);
+                ResolveSpecialNodes(ret, next, outer_parent, l, stored_vars, visited, ass, ref next_var, las);
         }
     }
 }

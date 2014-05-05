@@ -589,6 +589,12 @@ namespace libtysila
                 case Op.br:
                 case Op.br_ehclause:
                 case Op.throw_:
+                case Op.ret_i:
+                case Op.ret_i4:
+                case Op.ret_i8:
+                case Op.ret_r8:
+                case Op.ret_void:
+                case Op.ret_vt:
                     return false;
                 default:
                     return true;

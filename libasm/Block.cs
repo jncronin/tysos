@@ -88,6 +88,13 @@ namespace libasm
         public IList<IList<OutputBlock>> Choices;
     }
 
+    public class RelativeReference : OutputBlock
+    {
+        public string Target;
+        public int Size;
+        public int Addend;
+    }
+
     public class CodeBlock : OutputBlock
     {
         public IList<byte> Code;

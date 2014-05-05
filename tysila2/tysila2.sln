@@ -59,6 +59,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "frontend_lib", "frontend_li
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "make_x86_opcodes", "..\tools\make_x86_opcodes\make_x86_opcodes.csproj", "{87CB7429-12A5-4E3C-96A3-113D1452836F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tysila3", "..\tysila3\tysila3.csproj", "{E1EB1B14-6361-4FD3-B827-842B7F0FA483}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Compile corlib|Any CPU = Compile corlib|Any CPU
@@ -1303,6 +1305,48 @@ Global
 		{87CB7429-12A5-4E3C-96A3-113D1452836F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{87CB7429-12A5-4E3C-96A3-113D1452836F}.Release|Win32.ActiveCfg = Release|Any CPU
 		{87CB7429-12A5-4E3C-96A3-113D1452836F}.Release|x86.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile corlib|Any CPU.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile corlib|Any CPU.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile corlib|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile corlib|Mixed Platforms.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile corlib|Win32.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile corlib|x86.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libsupcs|Any CPU.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libsupcs|Any CPU.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libsupcs|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libsupcs|Mixed Platforms.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libsupcs|Win32.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libsupcs|x86.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libtysila|Any CPU.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libtysila|Any CPU.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libtysila|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libtysila|Mixed Platforms.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libtysila|Win32.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile libtysila|x86.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile TestProcess|Any CPU.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile TestProcess|Any CPU.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile TestProcess|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile TestProcess|Mixed Platforms.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile TestProcess|Win32.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Compile TestProcess|x86.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Generate tloadkif|Any CPU.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Generate tloadkif|Any CPU.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Generate tloadkif|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Generate tloadkif|Mixed Platforms.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Generate tloadkif|Win32.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Generate tloadkif|x86.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Release|Win32.ActiveCfg = Release|Any CPU
+		{E1EB1B14-6361-4FD3-B827-842B7F0FA483}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -50,7 +50,7 @@ namespace libtysila.timple
         public override ICollection<vara> uses { get { return new vara[] { }; } }
         public override ICollection<vara> defs { get { return new vara[] { }; } }
         public ThreeAddressCode.Op Op;
-        public TreeNode InnerNode;
+        public BaseNode InnerNode;
         public override IList<BaseNode> Prev { get { return prev; } }
         public override IList<BaseNode> Next { get { return next; } }
     }
@@ -257,22 +257,42 @@ namespace libtysila.timple
 
     public class TimpleBrNode : TimpleNode
     {
-        public int BlockTarget;
+        public int BlockTargetTrue;
+        public int BlockTargetFalse;
 
-        public TimpleBrNode(ThreeAddressCode.Op op, int block_target)
+        public TimpleBrNode(int block_target)
         {
-            Op = op;
-            BlockTarget = block_target;
+            Op = ThreeAddressCode.Op.br;
+            BlockTargetTrue = block_target;
             O1 = vara.Void();
             O2 = vara.Void();
         }
 
-        public TimpleBrNode(ThreeAddressCode.Op op, int block_target, vara o1, vara o2)
+        public TimpleBrNode(ThreeAddressCode.Op op, int block_target_true, int block_target_false, vara o1, vara o2)
         {
             Op = op;
-            BlockTarget = block_target;
+            BlockTargetTrue = block_target_true;
+            BlockTargetFalse = block_target_false;
             O1 = o1;
             O2 = o2;
+        }
+
+        public TimpleBrNode(ThreeAddressCode.Op op, TimpleLabelNode block_target_true, TimpleLabelNode block_target_false, vara o1, vara o2)
+        {
+            Op = op;
+            BlockTargetTrue = block_target_true.BlockId;
+            BlockTargetFalse = block_target_false.BlockId;
+            O1 = o1;
+            O2 = o2;
+        }
+
+
+        public TimpleBrNode(TimpleLabelNode tln)
+        {
+            Op = ThreeAddressCode.Op.br;
+            BlockTargetTrue = tln.BlockId;
+            O1 = vara.Void();
+            O2 = vara.Void();
         }
 
         public override string ToString()
@@ -280,7 +300,7 @@ namespace libtysila.timple
             StringBuilder sb = new StringBuilder();
             sb.Append(Op.ToString());
             sb.Append("(L");
-            sb.Append(BlockTarget.ToString());
+            sb.Append(BlockTargetTrue.ToString());
 
             if(O1.VarType == vara.vara_type.Void)
             {
@@ -289,12 +309,133 @@ namespace libtysila.timple
             }
             else
             {
+                sb.Append(", L");
+                sb.Append(BlockTargetFalse.ToString());
                 sb.Append(": ");
                 sb.Append(O1.ToString());
                 sb.Append(", ");
                 sb.Append(O2.ToString());
                 sb.Append(")");
                 return sb.ToString();
+            }
+        }
+
+        public static ThreeAddressCode.Op InvertBr(ThreeAddressCode.Op op)
+        {
+            switch (op)
+            {
+                case ThreeAddressCode.Op.ba_i:
+                    return ThreeAddressCode.Op.bbe_i;
+                case ThreeAddressCode.Op.ba_i4:
+                    return ThreeAddressCode.Op.bbe_i4;
+                case ThreeAddressCode.Op.ba_i8:
+                    return ThreeAddressCode.Op.bbe_i8;
+                case ThreeAddressCode.Op.ba_r4:
+                    return ThreeAddressCode.Op.bbe_r4;
+                case ThreeAddressCode.Op.ba_r8:
+                    return ThreeAddressCode.Op.bbe_r8;
+
+                case ThreeAddressCode.Op.bae_i:
+                    return ThreeAddressCode.Op.bb_i;
+                case ThreeAddressCode.Op.bae_i4:
+                    return ThreeAddressCode.Op.bb_i4;
+                case ThreeAddressCode.Op.bae_i8:
+                    return ThreeAddressCode.Op.bb_i8;
+                case ThreeAddressCode.Op.bae_r4:
+                    return ThreeAddressCode.Op.bb_r4;
+                case ThreeAddressCode.Op.bae_r8:
+                    return ThreeAddressCode.Op.bb_r8;
+
+                case ThreeAddressCode.Op.bb_i:
+                    return ThreeAddressCode.Op.bae_i;
+                case ThreeAddressCode.Op.bb_i4:
+                    return ThreeAddressCode.Op.bae_i4;
+                case ThreeAddressCode.Op.bb_i8:
+                    return ThreeAddressCode.Op.bae_i8;
+                case ThreeAddressCode.Op.bb_r4:
+                    return ThreeAddressCode.Op.bae_r4;
+                case ThreeAddressCode.Op.bb_r8:
+                    return ThreeAddressCode.Op.bae_r8;
+
+                case ThreeAddressCode.Op.bbe_i:
+                    return ThreeAddressCode.Op.ba_i;
+                case ThreeAddressCode.Op.bbe_i4:
+                    return ThreeAddressCode.Op.ba_i4;
+                case ThreeAddressCode.Op.bbe_i8:
+                    return ThreeAddressCode.Op.ba_i8;
+                case ThreeAddressCode.Op.bbe_r4:
+                    return ThreeAddressCode.Op.ba_r4;
+                case ThreeAddressCode.Op.bbe_r8:
+                    return ThreeAddressCode.Op.ba_r8;
+
+                case ThreeAddressCode.Op.beq_i:
+                    return ThreeAddressCode.Op.bne_i;
+                case ThreeAddressCode.Op.beq_i4:
+                    return ThreeAddressCode.Op.bne_i4;
+                case ThreeAddressCode.Op.beq_i8:
+                    return ThreeAddressCode.Op.bne_i8;
+                case ThreeAddressCode.Op.beq_r4:
+                    return ThreeAddressCode.Op.bne_r4;
+                case ThreeAddressCode.Op.beq_r8:
+                    return ThreeAddressCode.Op.bne_r8;
+
+                case ThreeAddressCode.Op.bg_i:
+                    return ThreeAddressCode.Op.ble_i;
+                case ThreeAddressCode.Op.bg_i4:
+                    return ThreeAddressCode.Op.ble_i4;
+                case ThreeAddressCode.Op.bg_i8:
+                    return ThreeAddressCode.Op.ble_i8;
+                case ThreeAddressCode.Op.bg_r4:
+                    return ThreeAddressCode.Op.ble_r4;
+                case ThreeAddressCode.Op.bg_r8:
+                    return ThreeAddressCode.Op.ble_r8;
+
+                case ThreeAddressCode.Op.bge_i:
+                    return ThreeAddressCode.Op.bl_i;
+                case ThreeAddressCode.Op.bge_i4:
+                    return ThreeAddressCode.Op.bl_i4;
+                case ThreeAddressCode.Op.bge_i8:
+                    return ThreeAddressCode.Op.bl_i8;
+                case ThreeAddressCode.Op.bge_r4:
+                    return ThreeAddressCode.Op.bl_r4;
+                case ThreeAddressCode.Op.bge_r8:
+                    return ThreeAddressCode.Op.bl_r8;
+
+                case ThreeAddressCode.Op.bl_i:
+                    return ThreeAddressCode.Op.bge_i;
+                case ThreeAddressCode.Op.bl_i4:
+                    return ThreeAddressCode.Op.bge_i4;
+                case ThreeAddressCode.Op.bl_i8:
+                    return ThreeAddressCode.Op.bge_i8;
+                case ThreeAddressCode.Op.bl_r4:
+                    return ThreeAddressCode.Op.bge_r4;
+                case ThreeAddressCode.Op.bl_r8:
+                    return ThreeAddressCode.Op.bge_r8;
+
+                case ThreeAddressCode.Op.ble_i:
+                    return ThreeAddressCode.Op.bg_i;
+                case ThreeAddressCode.Op.ble_i4:
+                    return ThreeAddressCode.Op.bg_i4;
+                case ThreeAddressCode.Op.ble_i8:
+                    return ThreeAddressCode.Op.bg_i8;
+                case ThreeAddressCode.Op.ble_r4:
+                    return ThreeAddressCode.Op.bg_r4;
+                case ThreeAddressCode.Op.ble_r8:
+                    return ThreeAddressCode.Op.bg_r8;
+
+                case ThreeAddressCode.Op.bne_i:
+                    return ThreeAddressCode.Op.beq_i;
+                case ThreeAddressCode.Op.bne_i4:
+                    return ThreeAddressCode.Op.beq_i4;
+                case ThreeAddressCode.Op.bne_i8:
+                    return ThreeAddressCode.Op.beq_i8;
+                case ThreeAddressCode.Op.bne_r4:
+                    return ThreeAddressCode.Op.beq_r4;
+                case ThreeAddressCode.Op.bne_r8:
+                    return ThreeAddressCode.Op.beq_r8;
+
+                default:
+                    throw new NotSupportedException();
             }
         }
     }

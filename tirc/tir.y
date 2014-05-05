@@ -424,8 +424,8 @@ stat		:	label				{ $$ = $1; }
 			|	var EQUALS call_inst { $$ = new TimpleCallNode($3.op, $1, $3.call_target, $3.args, GetMethSig($3), GetCallConv($3)); }
 			|	inst				{ $$ = new TimpleNode($1.op, libtysila.vara.Void(), var_if_exist(1, $1.args), var_if_exist(2, $1.args)); }
 			|	call_inst			{ $$ = new TimpleCallNode($1.op, libtysila.vara.Void(), $1.call_target, $1.args, GetMethSig($1), GetCallConv($1)); }
-			|	br_inst				{ $$ = new TimpleBrNode($1.op, $1.block_target); }
-			|	cmpbr_inst			{ $$ = new TimpleBrNode($1.op, $1.block_target, var_if_exist(1, $1.args), var_if_exist(2, $1.args)); }
+			|	br_inst				{ $$ = new TimpleBrNode($1.block_target); }
+			|	cmpbr_inst			{ $$ = new TimpleBrNode($1.op, $1.block_target, -1, var_if_exist(1, $1.args), var_if_exist(2, $1.args)); }
 			|	funcdef				{ $$ = $1; }
 			;
 			

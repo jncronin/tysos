@@ -27,16 +27,16 @@ namespace libtysila
 {
     partial class x86_64_Assembler
     {
-        public override IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var)
+        public override IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var, IList<libasm.hardware_location> las)
         {
             List<tybel.Node> ret;
 
             if (inst is TimpleLabelNode)
-                return new tybel.Node[] { new tybel.LabelNode((((TimpleLabelNode)inst).Label == null) ? ("L" + ((TimpleLabelNode)inst).BlockId.ToString()) : ((TimpleLabelNode)inst).Label) };
+                return new tybel.Node[] { new tybel.LabelNode((((TimpleLabelNode)inst).Label == null) ? ("L" + ((TimpleLabelNode)inst).BlockId.ToString()) : ((TimpleLabelNode)inst).Label, ((TimpleLabelNode)inst).Label == null) };
             else if (inst is TimpleCallNode)
             {
                 ret = new List<tybel.Node>();
-                ChooseCallInstruction(ret, inst as TimpleCallNode, ref next_var);
+                ChooseCallInstruction(ret, inst as TimpleCallNode, ref next_var, las);
                 return ret;
             }
             else if (inst is TimpleBrNode)
@@ -46,10 +46,22 @@ namespace libtysila
 
                 switch (op)
                 {
+                    case ThreeAddressCode.Op.beq_i:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.CMPQ, ret, inst, tbn.O1, tbn.O2);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.JZ, ret, inst, vara.Label("L" + tbn.BlockTargetTrue));
+                        return ret;
+
                     case ThreeAddressCode.Op.ble_i4:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.CMPL, ret, inst, tbn.O1, tbn.O2);
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.JLE, ret, inst, vara.Label("L" + tbn.BlockTarget));
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.JLE, ret, inst, vara.Label("L" + tbn.BlockTargetTrue));
+                        return ret;
+
+                    case ThreeAddressCode.Op.bne_i:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.CMPQ, ret, inst, tbn.O1, tbn.O2);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.JNZ, ret, inst, vara.Label("L" + tbn.BlockTargetTrue));
                         return ret;
                 }
             }
@@ -115,6 +127,24 @@ namespace libtysila
                         ChooseInstruction(x86_64.x86_64_asm.opcode.POP, ret, inst, tn.O1);
                         return ret;
 
+                    case ThreeAddressCode.Op.localarg:
+                        ret = new List<tybel.Node>();
+                        switch (tn.R.DataType)
+                        {
+                            case CliType.int32:
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, tn.R, vara.MachineReg(las[(int)tn.O1.ConstVal]));
+                                break;
+                            case CliType.int64:
+                            case CliType.native_int:
+                            case CliType.O:
+                            case CliType.reference:
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, tn.R, vara.MachineReg(las[(int)tn.O1.ConstVal]));
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        return ret;
+
                     default:
                         throw new NotImplementedException("No encoding provided for " + op.ToString());
                 }
@@ -157,7 +187,7 @@ namespace libtysila
         private bool OpFits(vara vara, x86_64.x86_64_asm.optype optype)
         {
             Assembler.CliType dt = vara.DataType;
-            if(dt == CliType.native_int)
+            if((dt == CliType.native_int) || (dt == CliType.O) || (dt == CliType.reference))
             {
                 if(GetBitness() == Bitness.Bits64)
                     dt = CliType.int64;

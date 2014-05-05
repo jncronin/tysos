@@ -28,12 +28,17 @@ namespace libtysila
 {
     class x86_64_CallConv : CallConv
     {
-        static List<hardware_location> cdecl_i386_preserves = new List<hardware_location> {
+        static List<hardware_location> cdecl_i386_preserves_with_rax = new List<hardware_location> {
             x86_64_Assembler.Rax, x86_64_Assembler.Rcx, x86_64_Assembler.Rdx, x86_64_Assembler.Xmm0,
             x86_64_Assembler.Xmm1, x86_64_Assembler.Xmm2, x86_64_Assembler.Xmm3, x86_64_Assembler.Xmm4,
             x86_64_Assembler.Xmm5, x86_64_Assembler.Xmm6, x86_64_Assembler.Xmm7
         };
-        static List<hardware_location> cdecl_x86_64_preserves = new List<hardware_location> {
+        static List<hardware_location> cdecl_i386_preserves = new List<hardware_location> {
+            x86_64_Assembler.Rcx, x86_64_Assembler.Rdx, x86_64_Assembler.Xmm0,
+            x86_64_Assembler.Xmm1, x86_64_Assembler.Xmm2, x86_64_Assembler.Xmm3, x86_64_Assembler.Xmm4,
+            x86_64_Assembler.Xmm5, x86_64_Assembler.Xmm6, x86_64_Assembler.Xmm7
+        };
+        static List<hardware_location> cdecl_x86_64_preserves_with_rax = new List<hardware_location> {
             x86_64_Assembler.Rax, x86_64_Assembler.Rcx, x86_64_Assembler.Rdx, x86_64_Assembler.Xmm0,
             x86_64_Assembler.Xmm1, x86_64_Assembler.Xmm2, x86_64_Assembler.Xmm3, x86_64_Assembler.Xmm4,
             x86_64_Assembler.Xmm5, x86_64_Assembler.Xmm6, x86_64_Assembler.Xmm7,
@@ -42,6 +47,16 @@ namespace libtysila
             x86_64_Assembler.R8, x86_64_Assembler.R9, x86_64_Assembler.R10, x86_64_Assembler.R11,
             x86_64_Assembler.R12, x86_64_Assembler.R13, x86_64_Assembler.R14, x86_64_Assembler.R15
         };
+        static List<hardware_location> cdecl_x86_64_preserves = new List<hardware_location> {
+            x86_64_Assembler.Rcx, x86_64_Assembler.Rdx, x86_64_Assembler.Xmm0,
+            x86_64_Assembler.Xmm1, x86_64_Assembler.Xmm2, x86_64_Assembler.Xmm3, x86_64_Assembler.Xmm4,
+            x86_64_Assembler.Xmm5, x86_64_Assembler.Xmm6, x86_64_Assembler.Xmm7,
+            x86_64_Assembler.Xmm8, x86_64_Assembler.Xmm9, x86_64_Assembler.Xmm10, x86_64_Assembler.Xmm11,
+            x86_64_Assembler.Xmm12, x86_64_Assembler.Xmm13, x86_64_Assembler.Xmm14, x86_64_Assembler.Xmm15,
+            x86_64_Assembler.R8, x86_64_Assembler.R9, x86_64_Assembler.R10, x86_64_Assembler.R11,
+            x86_64_Assembler.R12, x86_64_Assembler.R13, x86_64_Assembler.R14, x86_64_Assembler.R15
+        };
+
     
         public static CallConv isr(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass, ThreeAddressCode call_tac)
         {
@@ -366,9 +381,19 @@ namespace libtysila
             ret.StackSpaceUsed = stack_pos;
 
             if (i586)
-                ret.CallerPreservesLocations = cdecl_i386_preserves;
+            {
+                if (ret.ReturnValue.Equals(x86_64_Assembler.Rax))
+                    ret.CallerPreservesLocations = cdecl_i386_preserves;
+                else
+                    ret.CallerPreservesLocations = cdecl_i386_preserves_with_rax;
+            }
             else
-                ret.CallerPreservesLocations = cdecl_x86_64_preserves;
+            {
+                if (ret.ReturnValue.Equals(x86_64_Assembler.Rax))
+                    ret.CallerPreservesLocations = cdecl_x86_64_preserves;
+                else
+                    ret.CallerPreservesLocations = cdecl_x86_64_preserves_with_rax;
+            }
 
             return ret;
         }
