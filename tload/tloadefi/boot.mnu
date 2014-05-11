@@ -1,0 +1,14 @@
+kernel {
+	path = boot/tysos.bin
+	cmdline = "cl"
+}
+
+module {
+	name = "module a"
+	path = "boot/modulea.bin"
+}
+
+module
+{
+}
+

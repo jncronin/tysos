@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{84067ED4-56CE-4BA0-8A0D-AE42B9FFB45A}</ProjectGuid>
+    <RootNamespace>tloadefi</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>D:\tysos\tload\tloadefi\efilibc\efi\inc;D:\tysos\tload\tloadefi\efilibc\efi\inc\x86_64;D:\tysos\tload\tloadefi\efilibc\efi\inc\protocol;D:\tysos\tload\tloadefi\confuse-2.7\src;D:\tysos\tload\tloadefi\efilibc\inc;D:\tysos\tload\tloadefi\efiwindow\inc;D:\tysos\tload\tloadefi\zlib;D:\tysos\tload\tloadefi\libpng-1.6.9;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>D:\tysos\tload\tloadefi\efilibc\efi\inc;D:\tysos\tload\tloadefi\efilibc\efi\inc\x86_64;D:\tysos\tload\tloadefi\efilibc\efi\inc\protocol;D:\tysos\tload\tloadefi\confuse-2.7\src;D:\tysos\tload\tloadefi\efilibc\inc;D:\tysos\tload\tloadefi\efiwindow\inc;D:\tysos\tload\tloadefi\zlib;D:\tysos\tload\tloadefi\libpng-1.6.9;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);HAVE_LIBPNG;IN_EW_LIB</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);HAVE_LIBPNG;IN_EW_LIB</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="confuse-2.7\src\confuse.c" />
+    <ClCompile Include="confuse-2.7\src\lexer.c" />
+    <ClCompile Include="efiwindow\ewmessage.c" />
+    <ClCompile Include="efiwindow\image.c" />
+    <ClCompile Include="efiwindow\mouse.c" />
+    <ClCompile Include="efiwindow\progress.c" />
+    <ClCompile Include="efiwindow\textbox.c" />
+    <ClCompile Include="efilibc\abort.c" />
+    <ClCompile Include="efilibc\atof.c" />
+    <ClCompile Include="efilibc\console.c" />
+    <ClCompile Include="efilibc\data.c" />
+    <ClCompile Include="efilibc\efilibc.c" />
+    <ClCompile Include="efilibc\misc.c" />
+    <ClCompile Include="efilibc\scanf.c" />
+    <ClCompile Include="efilibc\serial.c" />
+    <ClCompile Include="efilibc\strtod.c" />
+    <ClCompile Include="efilibc\strtol.c" />
+    <ClCompile Include="efilibc\strtoll.c" />
+    <ClCompile Include="efilibc\strtoull.c" />
+    <ClCompile Include="efiwindow\bitmap.c" />
+    <ClCompile Include="efiwindow\efiwindow.c" />
+    <ClCompile Include="efiwindow\ewrect.c" />
+    <ClCompile Include="efiwindow\screen.c" />
+    <ClCompile Include="efiwindow\windowlist.c" />
+    <ClCompile Include="elf.c" />
+    <ClCompile Include="efilibc\file.c" />
+    <ClCompile Include="main.c" />
+    <ClCompile Include="efilibc\malloc.c" />
+    <ClCompile Include="efilibc\printf.c" />
+    <ClCompile Include="efilibc\string.c" />
+    <ClCompile Include="efiwindow\psffont.c" />
+    <ClCompile Include="tloadkif.c" />
+    <ClCompile Include="vmem.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="efilibc\inc\assert.h" />
+    <ClInclude Include="efilibc\inc\ctype.h" />
+    <ClInclude Include="efilibc\inc\dirent.h" />
+    <ClInclude Include="efilibc\inc\efilibc.h" />
+    <ClInclude Include="efilibc\inc\errno.h" />
+    <ClInclude Include="efilibc\inc\stdio.h" />
+    <ClInclude Include="efilibc\inc\stdlib.h" />
+    <ClInclude Include="efilibc\inc\string.h" />
+    <ClInclude Include="efilibc\inc\sys\param.h" />
+    <ClInclude Include="efilibc\inc\unistd.h" />
+    <ClInclude Include="efilibc\inc\wchar.h" />
+    <ClInclude Include="efiwindow\inc\ewbitmap.h" />
+    <ClInclude Include="efiwindow\inc\efiwindow.h" />
+    <ClInclude Include="efiwindow\inc\ewcolor.h" />
+    <ClInclude Include="efiwindow\inc\ewmessageloop.h" />
+    <ClInclude Include="efiwindow\inc\ewmouse.h" />
+    <ClInclude Include="efiwindow\inc\ewprogress.h" />
+    <ClInclude Include="efiwindow\inc\ewrect.h" />
+    <ClInclude Include="efiwindow\inc\ewtextbox.h" />
+    <ClInclude Include="efiwindow\inc\ewimage.h" />
+    <ClInclude Include="efiwindow\inc\windowlist.h" />
+    <ClInclude Include="elf.h" />
+    <ClInclude Include="efiwindow\inc\ewfont.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
