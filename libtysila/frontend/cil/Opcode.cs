@@ -302,7 +302,17 @@ namespace libtysila.frontend.cil
         public ControlFlow ctrl;
 
         public delegate void EncodeFunc(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs);
+            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs);
+
+        public static int OpcodeVal(SingleOpcodes op)
+        {
+            return (int)op;
+        }
+        public static int OpcodeVal(DoubleOpcodes op)
+        {
+            return (int)op + (((int)SingleOpcodes.double_) << 8);
+        }
 
         public EncodeFunc Encoder;
     }

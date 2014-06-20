@@ -66,6 +66,11 @@ namespace libtysila.tybel
 
             foreach (timple.TreeNode n in code.Code)
             {
+                /* Convert operations on native ints to the appropriate instruction
+                 * depending on the bitness of the architecture */
+                SelectBitness(n, ass);
+
+                /* Generate tybel instructions */
                 IList<Node> tybel = ass.SelectInstruction(n, ref ret.NextVar, las);
                 ret.TimpleMap[n] = tybel;
             }
@@ -78,6 +83,20 @@ namespace libtysila.tybel
             }
 
             return ret;
+        }
+
+        private static void SelectBitness(timple.TreeNode n, Assembler ass)
+        {
+            switch (ass.GetBitness())
+            {
+                case Assembler.Bitness.Bits32:
+                    n.Op = ThreeAddressCode.Get32BitOp(n.Op);
+                    break;
+
+                case Assembler.Bitness.Bits64:
+                    n.Op = ThreeAddressCode.Get64BitOp(n.Op);
+                    break;
+            }
         }
 
         private void DFAdd(timple.TreeNode n, util.Set<timple.TreeNode> visited)

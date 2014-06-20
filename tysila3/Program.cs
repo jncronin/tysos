@@ -55,7 +55,7 @@ namespace tysila3
             // Compile to timple
             libtysila.frontend.cil.CilGraph g = libtysila.frontend.cil.CilGraph.BuildGraph(equals_mdr.Body, m, new Assembler.AssemblerOptions());
             ass.Options.CallingConvention = "gnu";
-            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(g, equals_mtc, ass);
+            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(g, equals_mtc, ass, new Assembler.MethodAttributes());
             
             // Compile to tybel
             libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(tacs);

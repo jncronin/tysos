@@ -425,6 +425,12 @@ namespace libtysila
             cmp_i4, cmp_i8, cmp_i, cmp_r8, cmp_r4, cmp_r8_un, cmp_r4_un,
             br, beq, bne, bg, bge, bl, ble, ba, bae, bb, bbe, br_ehclause,
             throweq, throwne, throw_ovf, throw_ovf_un, throwge_un, throwg_un,
+            
+            throweq_i4, throweq_i8, throweq_i, throweq_r4, throweq_r8,
+            throwne_i4, throwne_i8, throwne_i, throwne_r4, throwne_r8,
+            throwg_i4, throwg_i8, throwg_i, throwg_r4, throwg_r8,
+            throwge_i4, throwge_i8, throwge_i, throwge_r4, throwge_r8,
+
             break_, throw_,
             ldftn,
             call_i4, call_i8, call_i, call_r4, call_r8, call_void,
@@ -1400,6 +1406,284 @@ namespace libtysila
         internal var_semantic GetResultSemantic(Assembler ass)
         {
             return ass.GetSemantic(GetResultType(), VTSize);
+        }
+
+        internal static Op Get32BitOp(Op op)
+        {
+            switch (op)
+            {
+                case Op.add_i:
+                    return Op.add_i4;
+                case Op.add_ovf_i:
+                    return Op.add_ovf_i4;
+                case Op.add_ovf_un_i:
+                    return Op.add_ovf_un_i4;
+                case Op.alloca_i:
+                    return Op.alloca_i4;
+                case Op.and_i:
+                    return Op.and_i4;
+                case Op.assign_i:
+                    return Op.assign_i4;
+                case Op.assign_v_i:
+                    return Op.assign_v_i4;
+                case Op.ba_i:
+                    return Op.ba_i4;
+                case Op.bae_i:
+                    return Op.bae_i4;
+                case Op.bb_i:
+                    return Op.bb_i4;
+                case Op.bbe_i:
+                    return Op.bbe_i4;
+                case Op.beq_i:
+                    return Op.beq_i4;
+                case Op.bg_i:
+                    return Op.bg_i4;
+                case Op.bge_i:
+                    return Op.bge_i4;
+                case Op.bl_i:
+                    return Op.bl_i4;
+                case Op.ble_i:
+                    return Op.ble_i4;
+                case Op.bne_i:
+                    return Op.bne_i4;
+                case Op.call_i:
+                    return Op.call_i4;
+                case Op.cmp_i:
+                    return Op.cmp_i4;
+                case Op.conv_i_i1sx:
+                    return Op.conv_i4_i1sx;
+                case Op.conv_i_i2sx:
+                    return Op.conv_i4_i2sx;
+                case Op.conv_i_i4sx:
+                    return Op.assign_i4;
+                case Op.conv_i_i8sx:
+                    return Op.conv_i4_i8sx;
+                case Op.conv_i_isx:
+                    return Op.assign_i4;
+                case Op.conv_i_r4:
+                    return Op.conv_i4_r4;
+                case Op.conv_i_r8:
+                    return Op.conv_i4_r8;
+                case Op.conv_i_u1zx:
+                    return Op.conv_i4_u1zx;
+                case Op.conv_i_u2zx:
+                    return Op.conv_i4_u2zx;
+                case Op.conv_i_u4zx:
+                    return Op.assign_i4;
+                case Op.conv_i_u8zx:
+                    return Op.conv_i4_u8zx;
+                case Op.conv_i_uzx:
+                    return Op.assign_i4;
+                case Op.conv_i4_isx:
+                    return Op.assign_i4;
+                case Op.conv_i4_uzx:
+                    return Op.assign_i4;
+                case Op.conv_i8_isx:
+                    return Op.conv_i8_i4sx;
+                case Op.conv_i8_uzx:
+                    return Op.conv_i8_u4zx;
+                case Op.conv_r4_i:
+                    return Op.conv_r4_i4;
+                case Op.conv_r8_i:
+                    return Op.conv_r8_i4;
+                case Op.conv_u_r8:
+                    return Op.conv_u4_r8;
+                case Op.div_i:
+                    return Op.div_i4;
+                case Op.div_u:
+                    return Op.div_u4;
+                case Op.ldconst_i:
+                    return Op.ldconst_i4;
+                case Op.ldobj_i:
+                    return Op.ldobj_i4;
+                case Op.mul_i:
+                    return Op.mul_i4;
+                case Op.mul_ovf_i:
+                    return Op.mul_ovf_i4;
+                case Op.mul_ovf_un_i:
+                    return Op.mul_ovf_un_i4;
+                case Op.mul_un_i:
+                    return Op.mul_un_i4;
+                case Op.neg_i:
+                    return Op.neg_i4;
+                case Op.not_i:
+                    return Op.not_i4;
+                case Op.or_i:
+                    return Op.or_i4;
+                case Op.peek_u:
+                    return Op.peek_u4;
+                case Op.poke_u:
+                    return Op.poke_u4;
+                case Op.portin_u2_u:
+                    return Op.portin_u2_u4;
+                case Op.portout_u2_u:
+                    return Op.portout_u2_u4;
+                case Op.rem_i:
+                    return Op.rem_i4;
+                case Op.rem_un_i:
+                    return Op.rem_un_i4;
+                case Op.ret_i:
+                    return Op.ret_i4;
+                case Op.shl_i:
+                    return Op.shl_i4;
+                case Op.shr_i:
+                    return Op.shr_i4;
+                case Op.shr_un_i:
+                    return Op.shr_un_i4;
+                case Op.stobj_i:
+                    return Op.stobj_i4;
+                case Op.sub_i:
+                    return Op.sub_i4;
+                case Op.throweq_i:
+                    return Op.throweq_i4;
+                case Op.throwg_i:
+                    return Op.throwg_i4;
+                case Op.throwge_i:
+                    return Op.throwge_i4;
+                case Op.throwne_i:
+                    return Op.throwne_i4;
+                case Op.xor_i:
+                    return Op.xor_i4;
+            }
+            return op;
+        }
+
+        internal static Op Get64BitOp(Op op)
+        {
+            switch (op)
+            {
+                case Op.add_i:
+                    return Op.add_i8;
+                case Op.add_ovf_i:
+                    return Op.add_ovf_i8;
+                case Op.add_ovf_un_i:
+                    return Op.add_ovf_un_i8;
+                case Op.and_i:
+                    return Op.and_i8;
+                case Op.assign_i:
+                    return Op.assign_i8;
+                case Op.assign_v_i:
+                    return Op.assign_v_i8;
+                case Op.ba_i:
+                    return Op.ba_i8;
+                case Op.bae_i:
+                    return Op.bae_i8;
+                case Op.bb_i:
+                    return Op.bb_i8;
+                case Op.bbe_i:
+                    return Op.bbe_i8;
+                case Op.beq_i:
+                    return Op.beq_i8;
+                case Op.bg_i:
+                    return Op.bg_i8;
+                case Op.bge_i:
+                    return Op.bge_i8;
+                case Op.bl_i:
+                    return Op.bl_i8;
+                case Op.ble_i:
+                    return Op.ble_i8;
+                case Op.bne_i:
+                    return Op.bne_i8;
+                case Op.call_i:
+                    return Op.call_i8;
+                case Op.cmp_i:
+                    return Op.cmp_i8;
+                case Op.conv_i_i1sx:
+                    return Op.conv_i8_i1sx;
+                case Op.conv_i_i2sx:
+                    return Op.conv_i8_i2sx;
+                case Op.conv_i_i4sx:
+                    return Op.conv_i8_i4sx;
+                case Op.conv_i_i8sx:
+                    return Op.assign_i4;
+                case Op.conv_i_isx:
+                    return Op.conv_i8_i4sx;
+                case Op.conv_i_r4:
+                    return Op.conv_i8_r4;
+                case Op.conv_i_r8:
+                    return Op.conv_i8_r8;
+                case Op.conv_i_u1zx:
+                    return Op.conv_i8_u1zx;
+                case Op.conv_i_u2zx:
+                    return Op.conv_i8_u2zx;
+                case Op.conv_i_u4zx:
+                    return Op.conv_i8_u4zx;
+                case Op.conv_i_u8zx:
+                    return Op.assign_i4;
+                case Op.conv_i_uzx:
+                    return Op.assign_i4;
+                case Op.conv_i4_isx:
+                    return Op.conv_i4_i8sx;
+                case Op.conv_i4_uzx:
+                    return Op.conv_i4_u8zx;
+                case Op.conv_i8_isx:
+                    return Op.assign_i4;
+                case Op.conv_i8_uzx:
+                    return Op.assign_i4;
+                case Op.conv_r4_i:
+                    return Op.conv_r4_i8;
+                case Op.conv_r8_i:
+                    return Op.conv_r8_i8;
+                case Op.conv_u_r8:
+                    return Op.conv_u8_r8;
+                case Op.div_i:
+                    return Op.div_i8;
+                case Op.div_u:
+                    return Op.div_u8;
+                case Op.ldconst_i:
+                    return Op.ldconst_i8;
+                case Op.ldobj_i:
+                    return Op.ldobj_i8;
+                case Op.mul_i:
+                    return Op.mul_i8;
+                case Op.mul_ovf_i:
+                    return Op.mul_ovf_i8;
+                case Op.mul_ovf_un_i:
+                    return Op.mul_ovf_un_i8;
+                case Op.mul_un_i:
+                    return Op.mul_un_i8;
+                case Op.neg_i:
+                    return Op.neg_i8;
+                case Op.not_i:
+                    return Op.not_i8;
+                case Op.or_i:
+                    return Op.or_i8;
+                case Op.peek_u:
+                    return Op.peek_u8;
+                case Op.poke_u:
+                    return Op.poke_u8;
+                case Op.portin_u2_u:
+                    return Op.portin_u2_u8;
+                case Op.portout_u2_u:
+                    return Op.portout_u2_u8;
+                case Op.rem_i:
+                    return Op.rem_i8;
+                case Op.rem_un_i:
+                    return Op.rem_un_i8;
+                case Op.ret_i:
+                    return Op.ret_i8;
+                case Op.shl_i:
+                    return Op.shl_i8;
+                case Op.shr_i:
+                    return Op.shr_i8;
+                case Op.shr_un_i:
+                    return Op.shr_un_i8;
+                case Op.stobj_i:
+                    return Op.stobj_i8;
+                case Op.sub_i:
+                    return Op.sub_i8;
+                case Op.throweq_i:
+                    return Op.throweq_i8;
+                case Op.throwg_i:
+                    return Op.throwg_i8;
+                case Op.throwge_i:
+                    return Op.throwge_i8;
+                case Op.throwne_i:
+                    return Op.throwne_i8;
+                case Op.xor_i:
+                    return Op.xor_i8;
+            }
+            return op;
         }
     }
 

@@ -255,6 +255,34 @@ namespace libtysila.timple
         }
     }
 
+    public class TimpleThrowBrNode : TimpleNode
+    {
+        public vara ThrowTarget;
+
+        public TimpleThrowBrNode(ThreeAddressCode.Op op, vara o1, vara o2, vara target)
+        {
+            Op = op;
+            R = vara.Void();
+            O1 = o1;
+            O2 = o2;
+            ThrowTarget = target;
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(Op.ToString());
+            sb.Append("(");
+            sb.Append(ThrowTarget.ToString());
+            sb.Append(": ");
+            sb.Append(O1.ToString());
+            sb.Append(", ");
+            sb.Append(O2.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
+    }
+
     public class TimpleBrNode : TimpleNode
     {
         public int BlockTargetTrue;

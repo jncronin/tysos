@@ -713,6 +713,14 @@ namespace libtysila
                 type = new Signature.BaseType(BaseType_Type.VirtFtnPtr);
             else if (ReadString("u1P", c, ref x))
                 type = new Signature.BaseType(BaseType_Type.UninstantiatedGenericParam);
+            else if (ReadString("u1G", c, ref x))
+            {
+                int? gpi = ReadInteger(c, ref x);
+                if (gpi.HasValue)
+                    type = new Signature.GenericParam { _ass = ass, ParamNumber = gpi.Value };
+                else
+                    throw new Exception("Expected integer at position " + x.ToString());
+            }
             else if (ReadString("u1A", c, ref x))
             {
                 // Read ComplexArray
@@ -790,7 +798,7 @@ namespace libtysila
                 ct.Type = new Token(tdr);
                 type = ct;
             }
-            else if(ReadString("V", c, ref x))
+            else if (ReadString("V", c, ref x))
             {
                 // Read ComplexType
                 Signature.ComplexType ct = new Signature.ComplexType();

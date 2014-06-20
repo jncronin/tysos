@@ -96,9 +96,13 @@
     <Compile Include="frontend\cil\OpcodeEncodings\args.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\br.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\call.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\conv.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\fld.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\ind.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\intcall.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\ldc.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\loc.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\numop.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\ret.cs" />
     <Compile Include="frontend\cil\OpcodeList.cs" />
     <Compile Include="InstructionHeader.cs" />

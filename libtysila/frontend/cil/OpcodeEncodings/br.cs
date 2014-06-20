@@ -28,7 +28,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
     class br
     {
         public static void br_two(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs)
+            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs)
         {
             vara a = il.stack_vars_before.Peek(1);
             vara b = il.stack_vars_before.Peek(0);
@@ -47,7 +48,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
         }
 
         public static void br_one(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs)
+            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs)
         {
             vara a = il.stack_vars_after.Pop();
             il.stack_after.Pop();

@@ -203,7 +203,7 @@ namespace libtysila
                 }
             }
 
-            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(instrs, mtc, this);
+            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(instrs, mtc, this, attrs);
 
             // Compile to tybel
             libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(tacs);
@@ -264,6 +264,7 @@ namespace libtysila
 
         private bool GenerateDelegateFunction(MethodToCompile mtc, MethodAttributes attrs)
         {
+            return false;
             throw new NotImplementedException();
         }
 

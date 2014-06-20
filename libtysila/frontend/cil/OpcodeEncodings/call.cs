@@ -27,7 +27,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
     partial class call
     {
         public static void enc_call(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs)
+            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs)
         {
             /* Encode the opcodes call, calli, callvirt, ldftn and ldvirtftn */
 
@@ -61,7 +62,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             // If calling an internal call, then emit it as an inline instead if possible
             if (is_call)
             {
-                if (enc_intcall(il, ass, mtc, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs))
+                if (enc_intcall(il, ass, mtc, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs))
                     return;
             }
 
@@ -248,7 +249,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             // Make the actual call
             vara v_ret = (msigm.RetType.CliType(ass) == Assembler.CliType.void_) ? vara.Void() : vara.Logical(next_variable++, msigm.RetType.CliType(ass));
 
-            il.tacs.Add(new timple.TimpleCallNode(call_tac, v_ret, v_fptr, var_args, call_mtc.msig.Method, ass.Options.CallingConvention));
+            il.tacs.Add(new timple.TimpleCallNode(call_tac, v_ret, v_fptr, var_args, call_mtc.msig.Method, attrs.call_conv));
 
 
             /* Sort out the stack */

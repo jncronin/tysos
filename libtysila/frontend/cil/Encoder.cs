@@ -26,7 +26,8 @@ namespace libtysila.frontend.cil
 {
     public class Encoder
     {
-        public static List<timple.TreeNode> Encode(CilGraph instrs, Assembler.MethodToCompile mtc, Assembler ass)
+        public static List<timple.TreeNode> Encode(CilGraph instrs, Assembler.MethodToCompile mtc, Assembler ass,
+            Assembler.MethodAttributes attrs)
         {
             List<timple.TreeNode> ret = new List<timple.TreeNode>();
             int next_variable = 0;
@@ -50,7 +51,7 @@ namespace libtysila.frontend.cil
             {
                 start.il.stack_before = new util.Stack<Signature.Param>();
                 start.il.stack_vars_before = new util.Stack<vara>();
-                DFEncode(start, mtc, ass, visited, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs);
+                DFEncode(start, mtc, ass, visited, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs);
             }
 
             /* Now loop through again and insert label nodes at the appropriate positions */
@@ -111,7 +112,8 @@ namespace libtysila.frontend.cil
         }
 
         private static void DFEncode(CilNode n, Assembler.MethodToCompile mtc, Assembler ass, util.Set<CilNode> visited, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs)
+            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs)
         {
             if (visited.Contains(n))
                 return;
@@ -128,7 +130,7 @@ namespace libtysila.frontend.cil
                 for (int i = 0; i < la_vars.Count; i++)
                     n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.localarg, la_vars[i], vara.Const(i, Assembler.CliType.int32), vara.Void()));
             }
-            n.il.opcode.Encoder(n.il, ass, mtc, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs);
+            n.il.opcode.Encoder(n.il, ass, mtc, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs);
            
 
             foreach (CilNode next in n.Next)
@@ -145,7 +147,7 @@ namespace libtysila.frontend.cil
                     next.il.stack_vars_before = new util.Stack<vara>(n.il.stack_vars_after);
                 }
 
-                DFEncode(next, mtc, ass, visited, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs);
+                DFEncode(next, mtc, ass, visited, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs);
             }
         }
 

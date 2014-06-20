@@ -88,6 +88,12 @@ namespace libtysila
                         ChooseInstruction(x86_64.x86_64_asm.opcode.ADDL, ret, inst, tn.R, tn.O2);
                         return ret;
 
+                    case ThreeAddressCode.Op.add_i8:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, tn.R, tn.O1);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.ADDQ, ret, inst, tn.R, tn.O2);
+                        return ret;
+
                     case ThreeAddressCode.Op.ret_i4:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, vara.MachineReg(Rax), tn.O1);

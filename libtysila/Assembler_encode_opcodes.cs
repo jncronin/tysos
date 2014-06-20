@@ -1798,7 +1798,7 @@ namespace libtysila
                 var.AddrOfObject(ti_name, offset), var.Null));
         }
 
-        private ThreeAddressCode.Op GetPeekTac(Signature.Param val, Assembler assembler)
+        public static ThreeAddressCode.Op GetPeekTac(Signature.Param val, Assembler assembler)
         {
             ThreeAddressCode.Op poketac = GetPokeTac(val, assembler);
             switch (poketac)
@@ -1822,7 +1822,7 @@ namespace libtysila
             }
         }
 
-        private ThreeAddressCode.Op GetPokeTac(Signature.Param val, Assembler assembler)
+        public static ThreeAddressCode.Op GetPokeTac(Signature.Param val, Assembler assembler)
         {
             if (val.Type is Signature.BaseType)
             {
