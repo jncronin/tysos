@@ -151,6 +151,36 @@ namespace libtysila
                         }
                         return ret;
 
+                    case ThreeAddressCode.Op.peek_i1:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXB, ret, inst, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
+                        return ret;
+
+                    case ThreeAddressCode.Op.peek_i2:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXW, ret, inst, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
+                        return ret;
+
+                    case ThreeAddressCode.Op.peek_u1:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, inst, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
+                        return ret;
+
+                    case ThreeAddressCode.Op.peek_u2:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXW, ret, inst, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
+                        return ret;
+
+                    case ThreeAddressCode.Op.peek_u4:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
+                        return ret;
+
+                    case ThreeAddressCode.Op.peek_u8:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
+                        return ret;
+
                     default:
                         throw new NotImplementedException("No encoding provided for " + op.ToString());
                 }
@@ -224,7 +254,8 @@ namespace libtysila
                     return false;
 
                 case libtysila.vara.vara_type.ContentsOf:
-                    if ((optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM64))
+                    if ((optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM64)
+                        || (optype == x86_64.x86_64_asm.optype.RM8) || (optype == x86_64.x86_64_asm.optype.RM16))
                         return true;
                     return false;
 
