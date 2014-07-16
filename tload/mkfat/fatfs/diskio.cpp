@@ -65,10 +65,14 @@ DRESULT disk_read (
 )
 {
 	if((buf == NULL) || (pdrv != 0))
+	{
 		return RES_NOTRDY;
+	}
 
 	if((sector + count) > sector_count)
+	{
 		return RES_PARERR;
+	}
 
 	memcpy(buff, &buf[sector * SECTOR_SIZE], count * SECTOR_SIZE);
 
@@ -90,10 +94,14 @@ DRESULT disk_write (
 )
 {
 	if((buf == NULL) || (pdrv != 0))
+	{
 		return RES_NOTRDY;
+	}
 
 	if((sector + count) > sector_count)
+	{
 		return RES_PARERR;
+	}
 
 	memcpy(&buf[sector * SECTOR_SIZE], buff, count * SECTOR_SIZE);
 
@@ -114,7 +122,9 @@ DRESULT disk_ioctl (
 )
 {
 	if((buf == NULL) || (pdrv != 0))
+	{
 		return RES_NOTRDY;
+	}
 
 	switch(cmd)
 	{

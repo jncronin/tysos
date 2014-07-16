@@ -17,11 +17,17 @@ Optionally, the included Visual C++ project can be used on Windows.
 Usage
 -----
 
-mkfat [-o image_file] source
+mkfat [-o image_file] [-F32] source
 
 Make a FAT image from the files contained within 'source'.  If the -o option is
-specified, this is written to the file 'image_file', else it is writted to
+specified, this is written to the file 'image_file', else it is written to
 stdout.
+
+If -F32 is specified, then mkfat will guarantee that a fat32 image is created.
+This is required by some hardware UEFI implementations (not OVMF).  Note that
+this will require that the image file is at least ~32 MiB (it may well be
+somewhere between 32 and 64 MiB even if the size of the files contained on it
+sum to well less than 32 MiB).
 
 
 Acknowledgements

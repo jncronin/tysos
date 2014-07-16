@@ -3973,7 +3973,8 @@ FRESULT f_forward (
 FRESULT f_mkfs (
 	const TCHAR* path,	/* Logical drive number */
 	BYTE sfd,			/* Partitioning rule 0:FDISK, 1:SFD */
-	UINT au				/* Allocation unit [bytes] */
+	UINT au,			/* Allocation unit [bytes] */
+	int *fat_type		/* On return, contains the FAT type of the filesystem */
 )
 {
 	static const WORD vst[] = { 1024,   512,  256,  128,   64,    32,   16,    8,    4,    2,   0};
@@ -4018,7 +4019,9 @@ FRESULT f_mkfs (
 	} else {
 		/* Create a partition in this function */
 		if (disk_ioctl(pdrv, GET_SECTOR_COUNT, (void *)&n_vol) != RES_OK || n_vol < 128)
+		{
 			return FR_DISK_ERR;
+		}
 		b_vol = (sfd) ? 0 : 63;		/* Volume start sector */
 		n_vol -= b_vol;				/* Volume size */
 	}
@@ -4204,6 +4207,9 @@ FRESULT f_mkfs (
 		disk_write(pdrv, tbl, b_vol + 1, 1);	/* Write original (VBR+1) */
 		disk_write(pdrv, tbl, b_vol + 7, 1);	/* Write backup (VBR+7) */
 	}
+
+	if(fat_type != (void *)0)
+		*fat_type = (int)fmt;
 
 	return (disk_ioctl(pdrv, CTRL_SYNC, 0) == RES_OK) ? FR_OK : FR_DISK_ERR;
 }

@@ -40,6 +40,7 @@ void usage(TCHAR *epath);
 
 extern uint8_t *buf;
 extern int sector_count;
+int fat32 = 0;
 
 int _tmain(int argc, TCHAR *argv[])
 {
@@ -62,6 +63,8 @@ int _tmain(int argc, TCHAR *argv[])
 			i++;
 			dest_loc = new path(argv[i]);
 		}
+		else if(!_tstrcmp(argv[i], OPT_F32))
+			fat32 = 1;
 		else if(i == (argc - 1))
 		{
 			if(argv[i][0] == '-')
@@ -105,32 +108,79 @@ int _tmain(int argc, TCHAR *argv[])
 
 	while(!success)
 	{
-		/* Double the size of the image */
-		sec_count += sec_count;
+		int fat_type = 0;
+		int au = 128;
+
+		/* 1.5x the size of the image */
+		sec_count *= 3;
+		sec_count /= 2;
 
 		/* Round image size up to a multiple of 4096 */
-		sec_count *= sec_size;
-		sec_count = (sec_count + 4096 - 1) / 4096;
-		sec_count *= 4096;
-		sec_count /= sec_size;
+		if(sec_count % (4096 / sec_size))
+		{
+			sec_count -= (sec_count % (4096 / sec_size));
+			sec_count += (4096 / sec_size);
+		}
 		int byte_size = sec_count * sec_size;
 		buf = (uint8_t *)malloc(byte_size);
 		sector_count = sec_count;
 
 		/* Make a filesystem on it */
 		FATFS fatfs;
-		FRESULT res = f_mount(&fatfs, DRV_0, 0);
-		if(res != FR_OK)
-		{
-			cout << "f_mount failed: " << res << endl;
-			return -1;
-		}
+		FRESULT res;
 
-		res = f_mkfs(DRV_0, 1, 0);
-		if(res != FR_OK)
+		if(fat32)
 		{
-			cout << "f_mkfs failed: " << res << endl;
-			return -1;
+			while((fat_type != FS_FAT32) && (au > 1))
+			{
+				res = f_mount(&fatfs, DRV_0, 0);
+				if(res != FR_OK)
+				{
+					cout << "f_mount failed: " << res << endl;
+					return -1;
+				}
+
+				res = f_mkfs(DRV_0, 1, au, &fat_type);
+				if((res != FR_OK) && (res != FR_MKFS_ABORTED))
+				{
+					cout << "f_mkfs failed: " << res << endl;
+					return -1;
+				}
+
+				if(res == FR_MKFS_ABORTED)
+					fat_type = 0;
+
+				au /= 2;
+			}
+			if(fat_type != FS_FAT32)
+			{
+				success = false;
+				free(buf);
+				continue;
+			}
+		}
+		else
+		{
+			res = f_mount(&fatfs, DRV_0, 0);
+			if(res != FR_OK)
+			{
+				cout << "f_mount failed: " << res << endl;
+				return -1;
+			}
+
+			res = f_mkfs(DRV_0, 1, au, NULL);
+			if((res != FR_OK) && (res != FR_MKFS_ABORTED))
+			{
+				cout << "f_mkfs failed: " << res << endl;
+				return -1;
+			}
+
+			if(res == FR_MKFS_ABORTED)
+			{
+				success = false;
+				free(buf);
+				continue;
+			}
 		}
 
 		/* Copy the directory to it */
@@ -149,6 +199,7 @@ int _tmain(int argc, TCHAR *argv[])
 			cout.write((char *)buf, byte_size);
 
 		free(buf);
+		buf = NULL;
 
 		if(res == FR_OK)
 			success = 1;
@@ -166,5 +217,5 @@ int _tmain(int argc, TCHAR *argv[])
 
 void usage(TCHAR *epath)
 {
-	cout << "Usage: " << epath << " [-o output_file] input_directory" << endl << endl;
+	cout << "Usage: " << epath << " [-o output_file] [-F32] input_directory" << endl << endl;
 }

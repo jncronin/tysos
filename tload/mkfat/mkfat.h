@@ -28,6 +28,7 @@
 #define tstring wstring
 #define DRV_0 L"0"
 #define OPT_O L"-o"
+#define OPT_F32 L"-F32"
 #define _tstrcmp wcscmp
 #else
 #define _tmain main
@@ -35,6 +36,7 @@
 #define tstring string
 #define DRV_0 "0"
 #define OPT_O "-o"
+#define OPT_F32 "-F32"
 #define _tstrcmp strcmp
 #endif
 
