@@ -61,7 +61,7 @@ namespace tysila
         static List<string> include_files = new List<string>();
 
         /* Boiler plate */
-        const string year = "2009 - 2012";
+        const string year = "2009 - 2014";
         const string authors = "John Cronin <jncronin@tysos.org>";
         const string website = "http://www.tysos.org";
         const string nl = "\n";
@@ -269,8 +269,9 @@ namespace tysila
                     }
 
                     // Add in strings for the non compiled methods
+                    // TODO
                     IEnumerable<Metadata.MethodDefRow> non_compiled_meths = util.Except<Metadata.MethodDefRow>((Metadata.MethodDefRow[])m.Tables[(int)Metadata.TableId.MethodDef], non_generic_meths);
-                    foreach (Metadata.MethodDefRow ncm in non_compiled_meths)
+                    /*foreach (Metadata.MethodDefRow ncm in non_compiled_meths)
                     {
                         byte[] impl = ncm.Body.Body;
                         if (impl != null)
@@ -285,7 +286,7 @@ namespace tysila
                                 }
                             }
                         }
-                    }
+                    }*/
                 }
                 // Turn duplicate checks back on
                 ass.Requestor.SkipChecks(false);

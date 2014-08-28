@@ -96,13 +96,13 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 if (v_this_pointer.VarType != vara.vara_type.Logical)
                 {
                     vara new_this_pointer = vara.Logical(next_variable++, Assembler.CliType.native_int);
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_i, new_this_pointer, v_this_pointer, vara.Void()));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), new_this_pointer, v_this_pointer, vara.Void()));
                     v_this_pointer = new_this_pointer;
                 }
 
                 // get the vtable for the this_pointer object - v_vtable = [v_this_pointer]
                 vara v_vtable = vara.Logical(next_variable++, Assembler.CliType.native_int);
-                il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_i, v_vtable, vara.ContentsOf(v_this_pointer.LogicalVar, Assembler.CliType.native_int), vara.Void()));
+                il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_vtable, vara.ContentsOf(v_this_pointer.LogicalVar, Assembler.CliType.native_int), vara.Void()));
 
                 if (call_mtc_ttc.type.IsInterface)
                 {
@@ -110,12 +110,12 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
                     /* Find the interface typeinfo */
                     vara iface_ti_obj = vara.Logical(next_variable++, Assembler.CliType.native_int);
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_i, iface_ti_obj, vara.Label(call_mtc_ttc_l.typeinfo_object_name), vara.Void()));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), iface_ti_obj, vara.Label(call_mtc_ttc_l.typeinfo_object_name, true), vara.Void()));
                     ass.Requestor.RequestTypeInfo(call_mtc_ttc);
 
                     /* Find the itablepointer (2nd entry in vtable) */
                     vara itableptr_obj = vara.Logical(next_variable++, Assembler.CliType.native_int);
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_i, itableptr_obj, vara.ContentsOf(v_vtable.LogicalVar, ass.GetSizeOfIntPtr(), Assembler.CliType.native_int), vara.Void()));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), itableptr_obj, vara.ContentsOf(v_vtable.LogicalVar, ass.GetSizeOfIntPtr(), Assembler.CliType.native_int), vara.Void()));
 
                     /* The procedure from here is:
                      * 
@@ -141,15 +141,15 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     int offset_within_interface = iface.GetVirtualMethod(call_mtc, ass).offset;
 
                     il.tacs.Add(start_search);
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.cmp_i, vara.Void(), vara.ContentsOf(itableptr_obj, Assembler.CliType.native_int), vara.Const(0, Assembler.CliType.native_int)));
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.throweq, vara.Void(), vara.Const(Assembler.throw_MissingMethodException, Assembler.CliType.int32), vara.Void()));
-                    il.tacs.Add(new timple.TimpleBrNode(ThreeAddressCode.Op.beq_i, iface_found, do_loop, vara.ContentsOf(itableptr_obj, Assembler.CliType.native_int), iface_ti_obj));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.cmp), vara.Void(), vara.ContentsOf(itableptr_obj, Assembler.CliType.native_int), vara.Const(0, Assembler.CliType.native_int)));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.throweq), vara.Void(), vara.Const(Assembler.throw_MissingMethodException, Assembler.CliType.int32), vara.Void()));
+                    il.tacs.Add(new timple.TimpleBrNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.beq), iface_found, do_loop, vara.ContentsOf(itableptr_obj, Assembler.CliType.native_int), iface_ti_obj));
                     il.tacs.Add(do_loop);
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.add_i, itableptr_obj, itableptr_obj, vara.Const(ass.GetSizeOfIntPtr() * 2, Assembler.CliType.native_int)));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), itableptr_obj, itableptr_obj, vara.Const(ass.GetSizeOfIntPtr() * 2, Assembler.CliType.native_int)));
                     il.tacs.Add(new timple.TimpleBrNode(start_search));
                     il.tacs.Add(iface_found);
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_i, ifacemembers, vara.ContentsOf(itableptr_obj, ass.GetSizeOfIntPtr(), Assembler.CliType.native_int), vara.Void()));
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_i, v_fptr, vara.ContentsOf(ifacemembers, offset_within_interface, Assembler.CliType.native_int), vara.Void()));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), ifacemembers, vara.ContentsOf(itableptr_obj, ass.GetSizeOfIntPtr(), Assembler.CliType.native_int), vara.Void()));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_fptr, vara.ContentsOf(ifacemembers, offset_within_interface, Assembler.CliType.native_int), vara.Void()));
                 }
                 else
                 {
@@ -160,7 +160,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     int vmeth_offset = m.offset;
 
                     // At this point, fptr = [v_vtable + vmeth_offset]
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_i, v_fptr, vara.ContentsOf(v_vtable, vmeth_offset, Assembler.CliType.native_int), vara.Void()));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_fptr, vara.ContentsOf(v_vtable, vmeth_offset, Assembler.CliType.native_int), vara.Void()));
                 }
             }
             else if (is_calli)
@@ -171,7 +171,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     throw new Exception("calli used without valid virtftnptr on stack");
 
                 vara v_virtftnptr = il.stack_vars_before[il.stack_before.Count - 1];
-                il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_from_virtftnptr_ptr, v_fptr, v_virtftnptr, vara.Void()));
+                il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign_from_virtftnptr_ptr), v_fptr, v_virtftnptr, vara.Void()));
 
                 // The arguments are one place further back for a calli instruction
                 v_this_pointer = il.stack_vars_before[il.stack_before.Count - arg_count - 1];
@@ -186,7 +186,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     func_name = call_mtc.meth.ReferenceAlias;
                 else
                     func_name = Mangler2.MangleMethod(call_mtc, ass);
-                il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_i, v_fptr, vara.Label(func_name), vara.Void()));
+                il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_fptr, vara.Label(func_name, false), vara.Void()));
 
                 // Request the method to be compiled
                 ass.Requestor.RequestMethod(call_mtc);
@@ -204,7 +204,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             if (is_ldftn || is_ldvirtftn)
             {
                 vara v_virtftnptr = vara.Logical(next_variable++, Assembler.CliType.native_int);
-                il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_to_virtftnptr, v_virtftnptr, v_fptr, v_thisadjust));
+                il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign_to_virtftnptr), v_virtftnptr, v_fptr, v_thisadjust));
 
                 //i.pushes = new Signature.Param(BaseType_Type.VirtFtnPtr);
                 //i.pushes_variable = v_virtftnptr;
@@ -228,10 +228,10 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             // Get the calling convention
             ThreeAddressCode.Op call_tac;
-            if (Assembler.GetLdObjTac(msigm.RetType.CliType(ass)) == ThreeAddressCode.Op.ldobj_vt)
+            if (Assembler.GetLdObjTac(msigm.RetType.CliType(ass)).Type == Assembler.CliType.vt)
             {
                 is_vt_call = true;
-                call_tac = ThreeAddressCode.Op.call_vt;
+                call_tac = ThreeAddressCode.Op.OpVT(ThreeAddressCode.OpName.call);
             }
             else
             {
@@ -249,6 +249,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             // Make the actual call
             vara v_ret = (msigm.RetType.CliType(ass) == Assembler.CliType.void_) ? vara.Void() : vara.Logical(next_variable++, msigm.RetType.CliType(ass));
 
+            exceptions.eh_store_lvs_las(mtc, il, lv_vars, la_vars);
             il.tacs.Add(new timple.TimpleCallNode(call_tac, v_ret, v_fptr, var_args, call_mtc.msig.Method, attrs.call_conv));
 
 

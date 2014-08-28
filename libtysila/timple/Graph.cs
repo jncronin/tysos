@@ -108,8 +108,8 @@ namespace libtysila.timple
                 BaseNode[] ret = new BaseNode[Count];
                 util.Set<BaseNode> visited = new util.Set<BaseNode>();
                 int n = Count - 1;
-                foreach (BaseNode s in Starts)
-                    DFS(s, ret, ref n, visited);
+                for (int i = Starts.Count - 1; i >= 0; i--)
+                    DFS(Starts[i], ret, ref n, visited);
                 return ret;
             }
         }
@@ -230,6 +230,7 @@ namespace libtysila.timple
 
             /* Identify block starts, and reset visited count */
             Dictionary<int, int> block_starts = new Dictionary<int, int>();
+            List<int> start_nodes = new List<int>();
             for (int i = 0; i < tacs.Count; i++)
             {
                 if (tacs[i] is TimpleLabelNode)
@@ -237,6 +238,8 @@ namespace libtysila.timple
                     TimpleLabelNode l = tacs[i] as TimpleLabelNode;
                     if (l.BlockId != -1)
                         block_starts.Add(l.BlockId, i);
+                    if (l.prev.Count == 0)
+                        start_nodes.Add(i);
                 }
                 tacs[i].visited = false;
 
@@ -249,9 +252,14 @@ namespace libtysila.timple
                 }
             }
 
-            /* Add the root node */
-            ret.AddStartNode(tacs[0]);
-            AddChildren(ret, 0, tacs, block_starts);
+            /* Add the root nodes */
+            //ret.AddStartNode(tacs[0]);
+            //AddChildren(ret, 0, tacs, block_starts);
+            foreach (int i in start_nodes)
+            {
+                ret.AddStartNode(tacs[i]);
+                AddChildren(ret, i, tacs, block_starts);
+            }
 
             /* Iterate through the linear stream, and reverse branch instructions if they are incorrect */
             for(int i = 0; i < ret.LinearStream.Count; i++)
@@ -261,7 +269,7 @@ namespace libtysila.timple
                 {
                     TimpleBrNode tbn = n as TimpleBrNode;
 
-                    if (tbn.Op == ThreeAddressCode.Op.br)
+                    if (tbn.Op.Operator == ThreeAddressCode.OpName.br)
                         continue;
 
                     /* We are trying to make the false instruction be the default (i.e. fall through)

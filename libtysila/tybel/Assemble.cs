@@ -26,21 +26,23 @@ namespace libtysila.tybel
 {
     partial class Tybel
     {
-        public void Assemble(List<byte> code, List<libasm.ExportedSymbol> syms, List<libasm.RelocationBlock> relocs, Assembler ass)
+        public void Assemble(List<byte> code, List<libasm.ExportedSymbol> syms, List<libasm.RelocationBlock> relocs, Assembler ass,
+            Assembler.MethodAttributes attrs)
         {
             List<libasm.OutputBlock> obs = new List<libasm.OutputBlock>();
 
             foreach (Node n in LinearStream)
-                obs.AddRange(n.Assemble(ass));
+                obs.AddRange(n.Assemble(ass, attrs));
 
             /* Identify labels and their offsets */
             int cur_offset = code.Count;
             Dictionary<string, int> loc_labels = new Dictionary<string,int>();
             foreach (libasm.OutputBlock b in obs)
             {
-                if(b is libasm.CodeBlock)
+                if (b is libasm.CodeBlock)
                     cur_offset += ((libasm.CodeBlock)b).Code.Count;
-
+                else if (b is libasm.PrefixBlock)
+                    cur_offset += ((libasm.PrefixBlock)b).Code.Count;
                 else if (b is libasm.LocalSymbol)
                 {
                     libasm.LocalSymbol ls = b as libasm.LocalSymbol;
@@ -53,11 +55,16 @@ namespace libtysila.tybel
                     es.Offset = cur_offset;
                     loc_labels[es.Name] = cur_offset;
                     syms.Add(es);
-                }                
+                }
                 else if (b is libasm.RelativeReference)
                 {
                     libasm.RelativeReference rr = b as libasm.RelativeReference;
                     cur_offset += rr.Size;
+                }
+                else if (b is libasm.RelocationBlock)
+                {
+                    libasm.RelocationBlock rb = b as libasm.RelocationBlock;
+                    cur_offset += rb.Size;
                 }
             }
 
@@ -66,6 +73,8 @@ namespace libtysila.tybel
             {
                 if (b is libasm.CodeBlock)
                     code.AddRange(((libasm.CodeBlock)b).Code);
+                else if (b is libasm.PrefixBlock)
+                    code.AddRange(((libasm.PrefixBlock)b).Code);
                 else if (b is libasm.RelativeReference)
                 {
                     libasm.RelativeReference rr = b as libasm.RelativeReference;
@@ -78,10 +87,21 @@ namespace libtysila.tybel
                     }
                     else
                     {
-                        relocs.Add(new libasm.RelocationBlock { Offset = code.Count, Size = rr.Size, Value = rr.Addend, Target = rr.Target });
+                        relocs.Add(new libasm.RelocationBlock { Offset = code.Count, Size = rr.Size, Value = rr.Addend, Target = rr.Target,
+                            RelType = rr.RelType });
 
                         code.AddRange(ass.ToByteArraySignExtend(0, rr.Size));
                     }
+                }
+                else if (b is libasm.RelocationBlock)
+                {
+                    libasm.RelocationBlock rb = b as libasm.RelocationBlock;
+
+                    rb.Offset = code.Count;
+
+                    byte[] rbs = ass.ToByteArraySignExtend(rb.Value, rb.Size);
+                    code.AddRange(rbs);
+                    relocs.Add(rb);
                 }
             }
         }

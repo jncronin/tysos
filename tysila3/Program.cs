@@ -55,22 +55,23 @@ namespace tysila3
             // Compile to timple
             libtysila.frontend.cil.CilGraph g = libtysila.frontend.cil.CilGraph.BuildGraph(equals_mdr.Body, m, new Assembler.AssemblerOptions());
             ass.Options.CallingConvention = "gnu";
-            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(g, equals_mtc, ass, new Assembler.MethodAttributes());
+            Assembler.MethodAttributes attrs = new Assembler.MethodAttributes(ass);
+            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(g, equals_mtc, ass, attrs);
             
             // Compile to tybel
             libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(tacs);
-            CallConv cc = ass.call_convs["gnu"](equals_mtc, CallConv.StackPOV.Callee, ass, new ThreeAddressCode(ThreeAddressCode.Op.call_i4));
+            CallConv cc = ass.call_convs["gnu"](equals_mtc, CallConv.StackPOV.Callee, ass, new ThreeAddressCode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.call, equals_mtc.msig.Method.RetType.CliType(ass))));
             List<libasm.hardware_location> las = new List<libasm.hardware_location>();
             foreach(CallConv.ArgumentLocation arg in cc.Arguments)
                 las.Add(arg.ValueLocation);
             
-            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, ass, las);
+            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, ass, las, null, attrs);
 
             // Generate machine code
             List<byte> code = new List<byte>();
             List<libasm.ExportedSymbol> syms = new List<libasm.ExportedSymbol>();
             List<libasm.RelocationBlock> relocs = new List<libasm.RelocationBlock>();
-            tybel.Assemble(code, syms, relocs, ass);
+            tybel.Assemble(code, syms, relocs, ass, attrs);
 
             /* Dump dissassembly */
             tydisasm.tydisasm d = tydisasm.tydisasm.GetDisassembler(ass.Arch.InstructionSet);
@@ -99,7 +100,7 @@ namespace tysila3
         public int offset = 0;
 
         public bool MoreToRead { get { return offset < code.Count; } }
-        public int Offset { get { return offset; } }
+        public override ulong Offset { get { return (ulong)offset; } }
 
         public override byte GetNextByte()
         {

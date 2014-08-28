@@ -102,7 +102,7 @@ namespace libtysila
             throw new NotSupportedException();
         }
 
-        bool can_cast(Signature.BaseOrComplexType dest, Signature.BaseOrComplexType src)
+        internal bool can_cast(Signature.BaseOrComplexType dest, Signature.BaseOrComplexType src)
         {
             if (src.IsRefGenericParam && dest.IsObject)
                 return true;
@@ -119,17 +119,17 @@ namespace libtysila
             return can_cast(Metadata.GetTypeDef(dest, this), Metadata.GetTypeDef(src, this));    
         }
 
-        bool can_cast(Signature.BaseType dest, Signature.BaseType src)
+        internal bool can_cast(Signature.BaseType dest, Signature.BaseType src)
         {
             if (dest.Type == src.Type)
                 return true;
             return false;
         }
 
-        bool can_cast(Token dest, Token src)
+        internal bool can_cast(Token dest, Token src)
         { return can_cast(Metadata.GetTypeDef(dest, this), Metadata.GetTypeDef(src, this)); }
 
-        bool can_cast(Metadata.TypeDefRow tdd, Metadata.TypeDefRow tds)
+        internal bool can_cast(Metadata.TypeDefRow tdd, Metadata.TypeDefRow tds)
         {
             if (tdd == tds)
                 return true;

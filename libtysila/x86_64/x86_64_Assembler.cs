@@ -35,6 +35,189 @@ namespace libtysila
         OutputType OType;
         internal IA ia;
 
+        const int HIGH_REG_START = 8;
+
+        public static x86_64_gpr Rax { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rax }; } }
+        public static x86_64_gpr Rbx { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rbx }; } }
+        public static x86_64_gpr Rcx { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rcx }; } }
+        public static x86_64_gpr Rdx { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rdx }; } }
+        public static x86_64_gpr Rsi { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rsi }; } }
+        public static x86_64_gpr Rdi { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rdi }; } }
+        public static x86_64_gpr Rsp { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rsp }; } }
+        public static x86_64_gpr Rbp { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rbp }; } }
+
+        public static x86_64_gpr R8 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r8 }; } }
+        public static x86_64_gpr R9 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r9 }; } }
+        public static x86_64_gpr R10 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r10 }; } }
+        public static x86_64_gpr R11 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r11 }; } }
+        public static x86_64_gpr R12 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r12 }; } }
+        public static x86_64_gpr R13 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r13 }; } }
+        public static x86_64_gpr R14 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r14 }; } }
+        public static x86_64_gpr R15 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r15 }; } }
+
+        public static x86_64_xmm Xmm0 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm0 }; } }
+        public static x86_64_xmm Xmm1 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm1 }; } }
+        public static x86_64_xmm Xmm2 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm2 }; } }
+        public static x86_64_xmm Xmm3 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm3 }; } }
+        public static x86_64_xmm Xmm4 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm4 }; } }
+        public static x86_64_xmm Xmm5 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm5 }; } }
+        public static x86_64_xmm Xmm6 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm6 }; } }
+        public static x86_64_xmm Xmm7 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm7 }; } }
+        public static x86_64_xmm Xmm8 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm8 }; } }
+        public static x86_64_xmm Xmm9 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm9 }; } }
+        public static x86_64_xmm Xmm10 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm10 }; } }
+        public static x86_64_xmm Xmm11 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm11 }; } }
+        public static x86_64_xmm Xmm12 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm12 }; } }
+        public static x86_64_xmm Xmm13 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm13 }; } }
+        public static x86_64_xmm Xmm14 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm14 }; } }
+        public static x86_64_xmm Xmm15 { get { return new x86_64_xmm { xmm = x86_64_xmm.XmmId.xmm15 }; } }
+
+        hloc_constraint CRax { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = Rax }; } }
+        hloc_constraint CRbx { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = Rbx }; } }
+        hloc_constraint CRcx { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = Rcx }; } }
+        hloc_constraint CRdx { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = Rdx }; } }
+        hloc_constraint CRsi { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = Rsi }; } }
+        hloc_constraint CRdi { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = Rdi }; } }
+        hloc_constraint CRsp { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = Rsp }; } }
+        hloc_constraint CRbp { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = Rbp }; } }
+        hloc_constraint CR8 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = R8 }; } }
+        hloc_constraint CR9 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = R9 }; } }
+        hloc_constraint CR10 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = R10 }; } }
+        hloc_constraint CR11 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = R11 }; } }
+        hloc_constraint CR12 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = R12 }; } }
+        hloc_constraint CR13 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = R13 }; } }
+        hloc_constraint CR14 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = R14 }; } }
+        hloc_constraint CR15 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = R15 }; } }
+
+        hloc_constraint CXmm0 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Specific, specific = Xmm0 }; } }
+
+        hloc_constraint CGpr { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new x86_64_gpr() }; } }
+        hloc_constraint C2Gpr { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new multiple_hardware_location { hlocs = new x86_64_gpr[2] } }; } }
+        hloc_constraint CXmm { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new x86_64_xmm() }; } }
+        hloc_constraint CMem { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_stackloc() }; } }
+        hloc_constraint CMem32 { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_stackloc { size = 4 } }; } }
+        hloc_constraint CMem64 { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_stackloc { size = 8 } }; } }
+        hloc_constraint COp1 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Operand1 }; } }
+        hloc_constraint COp2 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Operand2 }; } }
+        hloc_constraint CNone { get { return new hloc_constraint { constraint = hloc_constraint.c_.None }; } }
+        hloc_constraint CConst { get { return new hloc_constraint { constraint = hloc_constraint.c_.Immediate }; } }
+        hloc_constraint CConstByte { get { return new hloc_constraint { constraint = hloc_constraint.c_.Immediate, const_bitsize = 8 }; } }
+        hloc_constraint CConstInt32 { get { return new hloc_constraint { constraint = hloc_constraint.c_.Immediate, const_bitsize = 32 }; } }
+        hloc_constraint CGprMem { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CGpr, CMem } }; } }
+        hloc_constraint CGprMem32 { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CGpr, CMem32 } }; } }
+        hloc_constraint CGprMem32ExceptRbx { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CGprExceptRbx, CMem32 } }; } }
+        hloc_constraint CGprMem64 { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CGpr, CMem64 } }; } }
+        hloc_constraint CGprPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_contentsof { base_loc = new x86_64_gpr() } }; } }
+        hloc_constraint CStackPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_addressof { base_loc = new hardware_stackloc() } }; } }
+        hloc_constraint CAddrOfGprPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_addressof { base_loc = new hardware_contentsof { base_loc = new x86_64_gpr() } } }; } }
+        hloc_constraint CAnyPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CStackPtr, CAddrOfGprPtr } }; } }
+        hloc_constraint CLabel { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_addressoflabel() }; } }
+        hloc_constraint CGprMemPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CGpr, CMem, CGprPtr } }; } }
+        hloc_constraint CGprMemConst { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CGpr, CMem, CConst } }; } }
+        hloc_constraint CXmmMem { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CXmm, CMem64 } }; } }
+        hloc_constraint CXmmPtrMem { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CXmm, CGprPtr, CMem } }; } }
+        hloc_constraint CMemPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CMem, CGprPtr } }; } }
+
+        hloc_constraint CGprExceptRax { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CRbx, CRcx, CRdx, CRdi, CRsi, CR8, CR9, CR10, CR11, CR12, CR13, CR14, CR15 } }; } }
+        hloc_constraint CGprExceptRbx { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CRax, CRcx, CRdx, CRdi, CRsi, CR8, CR9, CR10, CR11, CR12, CR13, CR14, CR15 } }; } }
+        hloc_constraint CGprExceptRcx { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CRax, CRbx, CRdx, CRdi, CRsi, CR8, CR9, CR10, CR11, CR12, CR13, CR14, CR15 } }; } }
+        hloc_constraint CGprExceptRdx { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CRax, CRbx, CRcx, CRdi, CRsi, CR8, CR9, CR10, CR11, CR12, CR13, CR14, CR15 } }; } }
+        hloc_constraint CGprExceptRsi { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CRax, CRbx, CRcx, CRdx, CRdi, CR8, CR9, CR10, CR11, CR12, CR13, CR14, CR15 } }; } }
+        hloc_constraint CGprExceptRdi { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CRax, CRbx, CRcx, CRdx, CRsi, CR8, CR9, CR10, CR11, CR12, CR13, CR14, CR15 } }; } }
+
+        public class x86_64_RelocationType : RelocationBlock.RelocationType
+        {
+            internal string name;
+            public override string ToString()
+            {
+                return name;
+            }
+        }
+
+        internal static x86_64_RelocationType R_X86_64_64 { get { return new x86_64_RelocationType { name = "R_X86_64_64", type = 1 }; } }
+        internal static x86_64_RelocationType R_X86_64_PC32 { get { return new x86_64_RelocationType { name = "R_X86_64_PC32", type = 2 }; } }
+        internal static x86_64_RelocationType R_X86_64_GOT32 { get { return new x86_64_RelocationType { name = "R_X86_64_GOT32", type = 3 }; } }
+        internal static x86_64_RelocationType R_X86_64_PLT32 { get { return new x86_64_RelocationType { name = "R_X86_64_PLT32", type = 4 }; } }
+        internal static x86_64_RelocationType R_X86_64_COPY { get { return new x86_64_RelocationType { name = "R_X86_64_COPY", type = 5 }; } }
+        internal static x86_64_RelocationType R_X86_64_GLOB_DAT { get { return new x86_64_RelocationType { name = "R_X86_64_GLOB_DAT", type = 6 }; } }
+        internal static x86_64_RelocationType R_X86_64_JUMP_SLOT { get { return new x86_64_RelocationType { name = "R_X86_64_JUMP_SLOT", type = 7 }; } }
+        internal static x86_64_RelocationType R_X86_64_RELATIVE { get { return new x86_64_RelocationType { name = "R_X86_64_RELATIVE", type = 8 }; } }
+        internal static x86_64_RelocationType R_X86_64_GOTPCREL { get { return new x86_64_RelocationType { name = "R_X86_64_GOTPCREL", type = 9 }; } }
+        internal static x86_64_RelocationType R_X86_64_32 { get { return new x86_64_RelocationType { name = "R_X86_64_32", type = 10 }; } }
+        internal static x86_64_RelocationType R_X86_64_32S { get { return new x86_64_RelocationType { name = "R_X86_64_32S", type = 11 }; } }
+        internal static x86_64_RelocationType R_X86_64_16 { get { return new x86_64_RelocationType { name = "R_X86_64_16", type = 12 }; } }
+        internal static x86_64_RelocationType R_X86_64_PC16 { get { return new x86_64_RelocationType { name = "R_X86_64_PC16", type = 13 }; } }
+        internal static x86_64_RelocationType R_X86_64_8 { get { return new x86_64_RelocationType { name = "R_X86_64_8", type = 14 }; } }
+        internal static x86_64_RelocationType R_X86_64_PC8 { get { return new x86_64_RelocationType { name = "R_X86_64_PC8", type = 15 }; } }
+
+        public override RelocationBlock.RelocationType GetCodeToCodeRelocType()
+        {
+            return R_X86_64_PC32;
+        }
+
+        public override RelocationBlock.RelocationType GetCodeToDataRelocType()
+        {
+            if (Options.PIC)
+                return R_X86_64_GOTPCREL;
+            else
+            {
+                if (Arch.InstructionSet == "x86_64s")
+                    return R_X86_64_32;
+                else
+                    return R_X86_64_64;
+            }
+        }
+
+        public override RelocationBlock.RelocationType GetDataToCodeRelocType()
+        {
+            return R_X86_64_64;
+        }
+
+        public override RelocationBlock.RelocationType GetDataToDataRelocType()
+        {
+            return R_X86_64_64;
+        }
+
+        internal override void arch_init_opcodes()
+        {
+            // ia may not be initialized yet so we have to do it instead
+            if (Arch.InstructionSet == "i586")
+                ia = IA.i586;
+            else
+                ia = IA.x86_64;
+        }
+
+        internal override hloc_constraint GetConstraintFromSemantic(var_semantic vs)
+        {
+            if (vs.needs_memloc || vs.needs_vtype || vs.needs_virtftnptr)
+            {
+                hloc_constraint ret = CMem;
+                ((hardware_stackloc)ret.specific).size = vs.vtype_size;
+                return ret;
+            }
+            if (vs.needs_float)
+                return CXmmMem;
+            if (vs.needs_int32)
+            {
+                if (ia == IA.x86_64)
+                    return CGprMem32;
+                else
+                    return CGprMem32ExceptRbx;
+            }
+            if (vs.needs_intptr)
+            {
+                if (ia == IA.x86_64)
+                    return CGprMem64;
+                else
+                    return CGprMem32ExceptRbx;
+            }
+            if (vs.needs_int64 && (ia == IA.x86_64))
+                return CGprMem64;
+            if (vs.needs_int64 && (ia == IA.i586))
+                return C2Gpr;
+            throw new NotSupportedException();
+        }
+
         public x86_64_Assembler(Architecture arch, FileLoader fileLoader, MemberRequestor memberRequestor, AssemblerOptions options) : base(arch, fileLoader, memberRequestor, options)
         {
             if (((arch.InstructionSet == "x86_64l") || (arch.InstructionSet == "x86_64")) && (arch.OutputFormat == "elf64"))
@@ -170,166 +353,6 @@ namespace libtysila
             if ((ia == IA.i586) && (hloc is x86_64_gpr) && (((x86_64_gpr)hloc).is_extended))
                 return false;
             return true;
-        }
-
-        private List<ThreeAddressCode.Op> exclude_from_twoaddress = new List<ThreeAddressCode.Op>
-        {
-            ThreeAddressCode.Op.rem_i,
-            ThreeAddressCode.Op.rem_i4,
-            ThreeAddressCode.Op.rem_i8,
-            ThreeAddressCode.Op.rem_un_i,
-            ThreeAddressCode.Op.rem_un_i4,
-            ThreeAddressCode.Op.rem_un_i8,
-            ThreeAddressCode.Op.div_i,
-            ThreeAddressCode.Op.div_i4,
-            ThreeAddressCode.Op.div_i8,
-            ThreeAddressCode.Op.div_u,
-            ThreeAddressCode.Op.div_u4,
-            ThreeAddressCode.Op.div_u8
-        };
-
-        internal override void ArchSpecific(List<ThreeAddressCode> ir, List<cfg_node> nodes, AssemblerState state, MethodToCompile mtc)
-        {
-            foreach (cfg_node node in nodes)
-            {
-                ConvertToTwoAddress(node.optimized_ir, exclude_from_twoaddress);
-                node.live_vars_at_end.Clear();
-                node.live_vars_done = false;
-
-                if (node.optimized_ir != null)
-                {
-                    for (int i = 0; i < node.optimized_ir.Count; i++)
-                    {
-                        ThreeAddressCode inst = node.optimized_ir[i];
-                        // insert workarounds for instructions which we cannot encode
-
-                        switch (inst.Operator)
-                        {
-                            case ThreeAddressCode.Op.conv_u4_r8:
-                                node.optimized_ir[i] = new CallEx(inst.Result, new var[] { inst.Operand1 }, "_conv_u4_r8", callconv_conv_u4_r8);
-                                break;
-                            case ThreeAddressCode.Op.conv_u8_r8:
-                            case ThreeAddressCode.Op.conv_u_r8:
-                                node.optimized_ir[i] = new CallEx(inst.Result, new var[] { inst.Operand1 }, "_conv_u8_r8", callconv_conv_u8_r8);
-                                break;
-                            case ThreeAddressCode.Op.zeromem:
-                                {
-                                    switch ((int)inst.Operand2.constant_val)
-                                    {
-                                        case 1:
-                                            node.optimized_ir[i] = new ThreeAddressCode(ThreeAddressCode.Op.poke_u1, var.Null, inst.Operand1, var.Const((byte)0));
-                                            break;
-                                        case 2:
-                                            node.optimized_ir[i] = new ThreeAddressCode(ThreeAddressCode.Op.poke_u2, var.Null, inst.Operand1, var.Const((UInt16)0));
-                                            break;
-                                        case 4:
-                                            node.optimized_ir[i] = new ThreeAddressCode(ThreeAddressCode.Op.poke_u4, var.Null, inst.Operand1, var.Const((UInt32)0));
-                                            break;
-                                        case 8:
-                                            if (ia == IA.i586)
-                                            {
-                                                node.optimized_ir[i] = new ThreeAddressCode(ThreeAddressCode.Op.poke_u4, var.Null, inst.Operand1, var.Const((UInt32)0));
-                                                var v2 = inst.Operand1;
-                                                v2.constant_offset += 4;
-                                                node.optimized_ir.Insert(i + 1, new ThreeAddressCode(ThreeAddressCode.Op.poke_u4, var.Null, v2, var.Const((UInt32)0)));
-                                            }
-                                            else
-                                                node.optimized_ir[i] = new ThreeAddressCode(ThreeAddressCode.Op.poke_u8, var.Null, inst.Operand1, var.Const((UInt64)0));
-                                            break;
-                                    }
-                                }
-                                break;
-                        }
-
-                        //Un-nest instructions that reference [la/v1 + x] to a = la/v1, b = [a + x]
-                        if ((inst.Operand1.type == var.var_type.ContentsOf || inst.Operand1.type == var.var_type.ContentsOfPlusConstant) &&
-                            (inst.Operand1.base_var.v.type == var.var_type.LocalArg || inst.Operand1.base_var.v.type == var.var_type.LocalVar))
-                        {
-                            var intermediate = state.next_variable++;
-                            node.optimized_ir.Insert(i, new ThreeAddressCode(ThreeAddressCode.Op.assign_i, intermediate, inst.Operand1.base_var.v, var.Null));
-                            inst.Operand1.base_var.v = intermediate;
-                            i++;
-                        }
-                        if ((inst.Operand2.type == var.var_type.ContentsOf || inst.Operand2.type == var.var_type.ContentsOfPlusConstant) &&
-                            (inst.Operand2.base_var.v.type == var.var_type.LocalArg || inst.Operand2.base_var.v.type == var.var_type.LocalVar))
-                        {
-                            var intermediate = state.next_variable++;
-                            node.optimized_ir.Insert(i, new ThreeAddressCode(ThreeAddressCode.Op.assign_i, intermediate, inst.Operand2.base_var.v, var.Null));
-                            inst.Operand2.base_var.v = intermediate;
-                            i++;
-                        }
-                        if ((inst.Result.type == var.var_type.ContentsOf || inst.Result.type == var.var_type.ContentsOfPlusConstant) &&
-                            (inst.Result.base_var.v.type == var.var_type.LocalArg || inst.Result.base_var.v.type == var.var_type.LocalVar))
-                        {
-                            var intermediate = state.next_variable++;
-                            node.optimized_ir.Insert(i, new ThreeAddressCode(ThreeAddressCode.Op.assign_i, intermediate, inst.Result.base_var.v, var.Null));
-                            inst.Result.base_var.v = intermediate;
-                            i++;
-                        }
-                        if (inst is CallEx)
-                        {
-                            CallEx ce = inst as CallEx;
-                            for (int j = 0; j < ce.Var_Args.Length; j++)
-                            {
-                                if ((ce.Var_Args[j].type == var.var_type.ContentsOf || ce.Var_Args[j].type == var.var_type.ContentsOfPlusConstant) &&
-                                    (ce.Var_Args[j].base_var.v.type == var.var_type.LocalArg || ce.Var_Args[j].base_var.v.type == var.var_type.LocalVar))
-                                {
-                                    var intermediate = state.next_variable++;
-                                    node.optimized_ir.Insert(i, new ThreeAddressCode(ThreeAddressCode.Op.assign_i, intermediate, ce.Var_Args[j].base_var.v, var.Null));
-                                    ce.Var_Args[j].base_var.v = intermediate;
-                                    i++;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Repeat liveness analysis for new code
-            LivenessAnalysis(InsertPseudoEnd(nodes, state, mtc), nodes);
-
-            ir.Clear();
-            foreach (cfg_node node in nodes)
-            {
-                if(node.optimized_ir != null)
-                    ir.AddRange(node.optimized_ir);
-            }
-        }
-
-        private void ConvertToTwoAddress(List<ThreeAddressCode> ir, List<ThreeAddressCode.Op> excludes)
-        {
-            int i = 0;
-            if (ir == null)
-                return;
-            while (i < ir.Count)
-            {
-                ThreeAddressCode.OpType optype = ir[i].GetOpType();
-
-                if (((optype == ThreeAddressCode.OpType.BinNumOp) || (optype == ThreeAddressCode.OpType.UnNumOp)) && (!excludes.Contains(ir[i].Operator)))
-                {
-                    // we need to convert a line of the form v1 = v2 op v3 to:
-                    //  v1 = v2, v1 = v1 op v3
-
-                    if (ir[i].Result.logical_var != ir[i].Operand1.logical_var)
-                    {
-                        var v1 = ir[i].Result.CloneVar();
-                        var v2 = ir[i].Operand1.CloneVar();
-                        var v3 = ir[i].Operand2.CloneVar();
-
-                        ir.Insert(i, new ThreeAddressCode
-                        {
-                            Operator = GetAssignTac(ir[i].GetResultType()),
-                            Result = v1,
-                            Operand1 = v2,
-                            Operand2 = var.Undefined
-                        });
-
-                        ir[i + 1].Operand1 = v1;
-                        i++;
-                    }
-                }
-                i++;
-            }
         }
 
         internal override int GetSizeOf(Signature.Param p)
@@ -792,158 +815,7 @@ namespace libtysila
 
         internal override List<OutputBlock> ArchSpecificProlog(AssemblerState state)
         {
-            List<OutputBlock> blocks = new List<OutputBlock>();
-            // Insert an x86_64 prolog
-
-            int offset = 0;
-            blocks.Insert(offset++, new CodeBlock(new byte[] { 0x55 }, new x86_64_Instruction { opcode = "push", Operand1 = Rbp }));
-            if(ia == IA.x86_64)
-                blocks.Insert(offset++, new CodeBlock(new byte[] { 0x48, 0x89, 0xe5 }, new x86_64_Instruction { opcode = "mov", Operand1 = Rsp, Operand2 = Rbp }));
-            else
-                blocks.Insert(offset++, new CodeBlock(new byte[] { 0x89, 0xe5 }, new x86_64_Instruction { opcode = "mov", Operand1 = Rsp, Operand2 = Rbp }));
-
-            if (state.stack_space_used > 0)
-            {
-                if (FitsSByte(state.stack_space_used))
-                {
-                    blocks.Insert(offset++, new CodeBlock(EncOpcode(5, Rsp, 3, (ia == IA.x86_64), 0, 0x83), ToByteArraySignExtend(state.stack_space_used, 1),
-                        new x86_64_Instruction[] { new x86_64_Instruction { opcode = "sub", Operand1 = Rsp, Operand2 = new const_location { c = state.stack_space_used } } }));
-                }
-                else if (FitsInt32(state.stack_space_used))
-                {
-                    blocks.Insert(offset++, new CodeBlock(EncOpcode(5, Rsp, 3, (ia == IA.x86_64), 0, 0x81), ToByteArraySignExtend(state.stack_space_used, 4),
-                        new x86_64_Instruction[] { new x86_64_Instruction { opcode = "sub", Operand1 = Rsp, Operand2 = new const_location { c = state.stack_space_used } } }));
-                }
-                else
-                    throw new NotSupportedException();
-            }
-
-            if ((ia == IA.i586) && (((x86_64_AssemblerState)state).i586_stored_ebp != null))
-            {
-                List<OutputBlock> temp = new List<OutputBlock>();
-                // store previous ebx
-                x86_64_assign(((x86_64_AssemblerState)state).i586_stored_ebp, Rbx, temp);
-                foreach (OutputBlock t in temp)
-                    blocks.Insert(offset++, t);
-            }
-
-            if (((x86_64_AssemblerState)state).isr)
-            {
-                // For an ISR we need to save all the registers (there is no pushad command on x86_64)
-                blocks.Insert(offset++, new CodeBlock(EncAddOpcode(Rax, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = Rax }));
-                blocks.Insert(offset++, new CodeBlock(EncAddOpcode(Rbx, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = Rbx }));
-                blocks.Insert(offset++, new CodeBlock(EncAddOpcode(Rcx, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = Rcx }));
-                blocks.Insert(offset++, new CodeBlock(EncAddOpcode(Rdx, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = Rdx }));
-                blocks.Insert(offset++, new CodeBlock(EncAddOpcode(Rdi, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = Rdi }));
-                blocks.Insert(offset++, new CodeBlock(EncAddOpcode(Rsi, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = Rsi }));
-
-                if (ia == IA.x86_64)
-                {
-                    blocks.Insert(offset++, new CodeBlock(EncAddOpcode(R8, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = R8 }));
-                    blocks.Insert(offset++, new CodeBlock(EncAddOpcode(R9, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = R9 }));
-                    blocks.Insert(offset++, new CodeBlock(EncAddOpcode(R10, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = R10 }));
-                    blocks.Insert(offset++, new CodeBlock(EncAddOpcode(R11, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = R11 }));
-                    blocks.Insert(offset++, new CodeBlock(EncAddOpcode(R12, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = R12 }));
-                    blocks.Insert(offset++, new CodeBlock(EncAddOpcode(R13, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = R13 }));
-                    blocks.Insert(offset++, new CodeBlock(EncAddOpcode(R14, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = R14 }));
-                    blocks.Insert(offset++, new CodeBlock(EncAddOpcode(R15, false, 0x50), new x86_64_Instruction { opcode = "push", Operand1 = R15 }));
-                }
-            }
-
-            if (state.syscall)
-            {
-                // Syscalls on the x86_64 platform are currently non-interruptible
-                blocks.Insert(offset++, new CodeBlock(new byte[] { 0x9c }, new x86_64_Instruction { opcode = "pushfq" }));
-                blocks.Insert(offset++, new CodeBlock(new byte[] { 0xfa }, new x86_64_Instruction { opcode = "cli" }));
-            }
-            else if (state.uninterruptible_method)
-            {
-                blocks.Insert(offset++, new CodeBlock(new byte[] { 0x9c }, new x86_64_Instruction { opcode = "pushfq" }));
-                blocks.Insert(offset++, new CodeBlock(new byte[] { 0xfa }, new x86_64_Instruction { opcode = "cli" }));
-            }
-
-            int stack_space_to_clear = state.stack_space_used;
-            if (Options.EnableRTTI)
-                stack_space_to_clear -= GetSizeOfPointer();
-            if ((ia == IA.i586) && (((x86_64_AssemblerState)state).i586_stored_ebp != null))
-                stack_space_to_clear -= 4;
-
-            if (stack_space_to_clear > 0)
-            {
-                /* Initialise the local variables 
-                 * 
-                 * Mov rcx, stack space / 8
-                 * clear rax
-                 * lea rdi, [rbp - stack_space]
-                 * rep stosq
-                 */
-
-                // If the arguments are passed in registers we may need to save rdi and rcx
-                bool save_rdi = false;
-                bool save_rcx = false;
-
-                if (state.cc != null)
-                {
-                    foreach (CallConv.ArgumentLocation arg in state.cc.Arguments)
-                    {
-                        if (arg.ValueLocation.Equals(Rdi))
-                            save_rdi = true;
-                        if (arg.ValueLocation.Equals(Rcx))
-                            save_rcx = true;
-                    }
-                }
-
-                if (save_rdi)
-                    blocks.Insert(offset++, new CodeBlock(SaveLocation(Rdi)));
-                if (save_rcx)
-                    blocks.Insert(offset++, new CodeBlock(SaveLocation(Rcx)));
-
-                if (ia == IA.x86_64)
-                {
-                    blocks.Insert(offset++, new CodeBlock(EncOpcode(0, Rcx, 3, true, 0, 0xc7), ToByteArraySignExtend((stack_space_to_clear / 8), 4), new CodeBlock.CompiledInstruction[] { new x86_64_Instruction { opcode = "mov", Operand1 = Rcx, Operand2 = new const_location { c = stack_space_to_clear / 8 } } }));
-                    blocks.Insert(offset++, new CodeBlock(EncOpcode(Rax, Rax, 3, true, 0, 0x31), new x86_64_Instruction { opcode = "xor", Operand1 = Rax, Operand2 = Rax }));
-                    blocks.Insert(offset++, new CodeBlock(EncOpcode(Rdi, new hardware_contentsof { base_loc = Rbp, const_offset = -state.stack_space_used }, 0, true, 0, 0x8d), new x86_64_Instruction { opcode = "lea", Operand1 = Rdi, Operand2 = new hardware_contentsof { base_loc = Rbp, const_offset = -state.stack_space_used } }));
-                    blocks.Insert(offset++, new CodeBlock(new byte[] { 0xf3, 0x48, 0xab }, new x86_64_Instruction { opcode = "rep stosq" }));
-                }
-                else
-                {
-                    blocks.Insert(offset++, new CodeBlock(EncOpcode(0, Rcx, 3, false, 0, 0xc7), ToByteArraySignExtend((stack_space_to_clear / 4), 4), new CodeBlock.CompiledInstruction[] { new x86_64_Instruction { opcode = "mov", Operand1 = Rcx, Operand2 = new const_location { c = stack_space_to_clear / 4 } } }));
-                    blocks.Insert(offset++, new CodeBlock(EncOpcode(Rax, Rax, 3, false, 0, 0x31), new x86_64_Instruction { opcode = "xor", Operand1 = Rax, Operand2 = Rax }));
-                    blocks.Insert(offset++, new CodeBlock(EncOpcode(Rdi, new hardware_contentsof { base_loc = Rbp, const_offset = -state.stack_space_used }, 0, false, 0, 0x8d), new x86_64_Instruction { opcode = "lea", Operand1 = Rdi, Operand2 = new hardware_contentsof { base_loc = Rbp, const_offset = -state.stack_space_used } }));
-                    blocks.Insert(offset++, new CodeBlock(new byte[] { 0xf3, 0xab }, new x86_64_Instruction { opcode = "rep stosd" }));
-                }
-
-                if (save_rcx)
-                    blocks.Insert(offset++, new CodeBlock(RestoreLocation(Rcx)));
-                if (save_rdi)
-                    blocks.Insert(offset++, new CodeBlock(RestoreLocation(Rdi)));
-            }
-
-            if ((ia == IA.i586) && (((x86_64_AssemblerState)state).i586_stored_ebp != null))
-            {
-                // set up the GOT pointer
-
-                /* code is:
-                    * 
-                    * e8 00 00 00 00     call 0 (i.e. call start of next instruction)
-                    * 5b                 pop ebx (ebx = address of current function)
-                    * 81 c3 03 00 00 00  add ebx, [_GLOBAL_OFFSET_TABLE_ + 3] <- ebx = absolute GOT address
-                    */
-                blocks.Insert(offset++, new CodeBlock(new byte[] { 0xe8, 0x00, 0x00, 0x00, 0x00, 0x5b, 0x81, 0xc3 }));
-                switch (OType)
-                {
-                    case OutputType.i586_elf:
-                        blocks.Insert(offset++, new RelocationBlock { RelType = x86_64.x86_64_elf32.R_386_GOTPC, Target = "_GLOBAL_OFFSET_TABLE_", Value = 0x03, Size = 4 });
-                        break;
-                    case OutputType.i586_elf64:
-                        blocks.Insert(offset++, new RelocationBlock { RelType = x86_64.x86_64_elf64.R_X86_64_GOTPC32, Target = "_GLOBAL_OFFSET_TABLE_", Value = 0x03, Size = 4 });
-                        break;
-                    default:
-                        throw new NotSupportedException();
-                }
-            }
-
-            return blocks;
+            return new List<OutputBlock>();
         }
 
         internal class x86_64_AssemblerState : AssemblerState
@@ -1080,8 +952,17 @@ namespace libtysila
             }
         }
 
-        public override util.Set<hardware_location> MachineRegistersForDataType(CliType dt)
+        public override util.Set<hardware_location> MachineRegistersForDataType(CliType dt, bool needs_memloc, Assembler.MethodAttributes attrs)
         {
+            if (needs_memloc)
+            {
+                util.Set<hardware_location> memlocs = new util.Set<hardware_location>();
+                int size = GetSizeOf(new Signature.Param(dt));
+                memlocs.Add(new hardware_stackloc { loc = attrs.next_stackloc++, size = size });
+                attrs.MachineRegistersStackLocSizes[attrs.next_stackloc - 1] = size;
+                return memlocs;
+            }
+
             if (dt == CliType.native_int)
             {
                 if (GetBitness() == Bitness.Bits32)
@@ -1137,6 +1018,45 @@ namespace libtysila
                 default:
                     throw new NotImplementedException();
             }
+
+            return ret;
+        }
+
+        internal override List<hardware_location> GetLocalVarsLocations(List<Signature.Param> lvs_p, Assembler.MethodAttributes attrs)
+        {
+            /* Local vars at rbp - offset */
+            List<hardware_location> ret = new List<hardware_location>();
+            int cur_offset = 0;
+
+            foreach (Signature.Param p in lvs_p)
+            {
+                int size = GetSizeOf(p);
+                int memsize = util.align(size, ia == IA.i586 ? 4 : 8);
+                cur_offset -= memsize;
+                ret.Add(new hardware_contentsof { base_loc = Rbp, const_offset = cur_offset, size = size });
+            }
+
+            attrs.lv_stack_space = -cur_offset;
+
+            return ret;
+        }
+
+        internal override Dictionary<hardware_location, hardware_location> AllocateStackLocations(MethodAttributes attrs)
+        {
+            Dictionary<hardware_location, hardware_location> ret = new Dictionary<hardware_location, hardware_location>();
+
+            int cur_offset = -attrs.lv_stack_space;
+
+            foreach (int sl in attrs.MachineRegistersStackLocSizes.Keys)
+            {
+                int size = attrs.MachineRegistersStackLocSizes[sl];
+                int memsize = util.align(size, ia == IA.i586 ? 4 : 8);
+                cur_offset -= memsize;
+                hardware_stackloc hsl = new hardware_stackloc { loc = sl, size = size };
+                ret[hsl] = new hardware_contentsof { base_loc = Rbp, const_offset = cur_offset, size = size };
+            }
+
+            attrs.lv_stack_space = -cur_offset;
 
             return ret;
         }

@@ -32,6 +32,8 @@ namespace libtysila
             public bool calls_ref_implementation = false;
             public bool is_ref_implementation = false;
 
+            public bool is_weak_implementation = false;
+
             public AssemblerSecurity security = new AssemblerSecurity();
 
             public bool profile = false;
@@ -49,6 +51,16 @@ namespace libtysila
             public string call_conv;
 
             public string mangled_name;
+
+            public int lv_stack_space = 0;
+            public int spill_stack_space = 0;
+
+            public Dictionary<int, int> MachineRegistersStackLocSizes;
+            public int next_stackloc = 0;
+
+            public Assembler ass;
+
+            public MethodAttributes(Assembler _ass) { ass = _ass; }
         }
 
         public AssembleBlockOutput AssembleMethod(MethodToCompile mtc, IOutputFile output, List<string> unimplemented_internal_calls, bool cache_output, bool dry_run)
@@ -59,7 +71,7 @@ namespace libtysila
             Signature.BaseOrComplexType tsig = mtc.tsig;
             Metadata m = meth.m;
 
-            MethodAttributes attrs = new MethodAttributes();
+            MethodAttributes attrs = new MethodAttributes(this);
             ParseAttributes(m, mtc, attrs);
             attrs.mangled_name = Mangler2.MangleMethod(mtc, this);
 
@@ -207,21 +219,40 @@ namespace libtysila
 
             // Compile to tybel
             libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(tacs);
-            CallConv cc = call_convs[attrs.call_conv](mtc, CallConv.StackPOV.Callee, this, new ThreeAddressCode(ThreeAddressCode.Op.call_i4));
+            CallConv cc = call_convs[attrs.call_conv](mtc, CallConv.StackPOV.Callee, this, new ThreeAddressCode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.call, mtc.msig.Method.RetType.CliType(this))));
             List<libasm.hardware_location> las = new List<libasm.hardware_location>();
             foreach (CallConv.ArgumentLocation arg in cc.Arguments)
                 las.Add(arg.ValueLocation);
 
-            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, this, las);
+            List<libasm.hardware_location> lvs = GetLocalVarsLocations(frontend.cil.Encoder.GetLocalVars(mtc, this), attrs);
+
+            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, this, las, lvs, attrs);
 
             // Generate machine code
             List<byte> code = new List<byte>();
             List<libasm.ExportedSymbol> syms = new List<libasm.ExportedSymbol>();
             List<libasm.RelocationBlock> relocs = new List<libasm.RelocationBlock>();
-            tybel.Assemble(code, syms, relocs, this);
+            tybel.Assemble(code, syms, relocs, this, attrs);
 
+            // Write code to output stream
+            int text_base = output.GetText().Count;
+            attrs.method_aliases.Add(attrs.mangled_name);
+            foreach (string alias in attrs.method_aliases)
+                output.AddTextSymbol(text_base, alias, false, true, attrs.is_weak_implementation);
 
-            throw new NotImplementedException();
+            foreach (byte b in code)
+                output.GetText().Add(b);
+
+            foreach (libasm.ExportedSymbol sym in syms)
+            {
+                if (sym.LocalOnly == false)
+                    output.AddTextSymbol(text_base + sym.Offset, sym.Name, false, false, false);
+            }
+
+            foreach (libasm.RelocationBlock reloc in relocs)
+                output.AddTextRelocation(text_base + reloc.Offset, reloc.Target, reloc.RelType, reloc.Value);
+
+            return new AssembleBlockOutput { code = code, compiled_code_length = code.Count, relocs = relocs };
         }
 
         private frontend.cil.CilGraph RewriteInternalCall(MethodToCompile mtc)
@@ -377,6 +408,23 @@ namespace libtysila
                         ParseArchAttibutes(mtc, car, attrs);
                 }
             }
+        }
+
+        private int get_arg_count(Signature.BaseMethod m)
+        {
+            Signature.Method meth;
+            if (m is Signature.Method)
+                meth = m as Signature.Method;
+            else if (m is Signature.GenericMethod)
+                meth = ((Signature.GenericMethod)m).GenMethod;
+            else
+                throw new NotSupportedException();
+
+            int arg_count = meth.Params.Count;
+            if ((meth.HasThis == true) && (meth.ExplicitThis == false))
+                arg_count++;
+
+            return arg_count;
         }
     }
 }

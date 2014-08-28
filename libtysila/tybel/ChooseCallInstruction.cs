@@ -26,7 +26,8 @@ namespace libtysila
 {
     partial class Assembler
     {
-        protected virtual void ChooseCallInstruction(List<tybel.Node> ret, timple.TimpleCallNode inst, ref int next_var, IList<libasm.hardware_location> las)
+        protected virtual void ChooseCallInstruction(List<tybel.Node> ret, timple.TimpleCallNode inst, ref int next_var, IList<libasm.hardware_location> las,
+            IList<libasm.hardware_location> lvs)
         {
             CallConv cc = call_convs[inst.CallConv](new Assembler.MethodToCompile { msig = inst.MethSig }, CallConv.StackPOV.Caller, this, new ThreeAddressCode(inst.Op));
 
@@ -37,33 +38,47 @@ namespace libtysila
             tybel.SpecialNode save_node = new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.SaveLiveIntersect, VarList = isect_list };
             ret.Add(save_node);
             if (cc.StackSpaceUsed != 0)
-                ret.AddRange(SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.adjstack, vara.Void(), vara.Const(-cc.StackSpaceUsed, CliType.native_int), vara.Void()), ref next_var, las));
+                ret.AddRange(SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.adjstack), vara.Void(), vara.Const(-cc.StackSpaceUsed, CliType.native_int), vara.Void()), ref next_var, las, lvs));
 
             for(int i = 0; i < cc.Arguments.Count; i++)
             {
                 CallConv.ArgumentLocation arg = cc.Arguments[i];
-                ThreeAddressCode.Op assign_op = ThreeAddressCode.Op.invalid;
+                ThreeAddressCode.Op assign_op = ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.invalid);
                 switch (arg.ValueSize)
                 {
                     case 4:
-                        assign_op = ThreeAddressCode.Op.assign_i4;
+                        assign_op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign);
                         break;
 
                     case 8:
-                        assign_op = ThreeAddressCode.Op.assign_i8;
+                        assign_op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.assign);
                         break;
 
                     default:
-                        assign_op = ThreeAddressCode.Op.assign_vt;
+                        assign_op = ThreeAddressCode.Op.OpVT(ThreeAddressCode.OpName.assign, inst.MethSig.Params[i]);
                         break;
                 }
 
-                ret.AddRange(SelectInstruction(new timple.TimpleNode(assign_op, vara.MachineReg(arg.ValueLocation), inst.VarArgs[i], vara.Void()), ref next_var, las));
+                timple.TimpleNode assign_inst = new timple.TimpleNode(assign_op, vara.MachineReg(arg.ValueLocation, inst.VarArgs[i].DataType), inst.VarArgs[i], vara.Void());
+                IList<tybel.Node> assign_ops = SelectInstruction(assign_inst, ref next_var, las, lvs);
+                if (assign_ops == null)
+                {
+                    List<timple.TreeNode> rewrite_insts = tybel.Tybel.RewriteInst(assign_inst, ref next_var);
+                    foreach (timple.TreeNode rewrite_inst in rewrite_insts)
+                    {
+                        IList<tybel.Node> rewrite_ops = SelectInstruction(rewrite_inst, ref next_var, las, lvs);
+                        if (rewrite_ops == null)
+                            throw new Exception("Cannot encode call");
+                        ret.AddRange(rewrite_ops);
+                    }
+                }
+                else
+                    ret.AddRange(assign_ops);
             }
-            ret.AddRange(SelectInstruction(new timple.TimpleNode(cc.CallTac, inst.R, inst.O1, vara.Void()), ref next_var, las));
+            ret.AddRange(SelectInstruction(new timple.TimpleNode(cc.CallTac, inst.R, inst.O1, vara.Void()), ref next_var, las, lvs));
 
             if (cc.StackSpaceUsed != 0)
-                ret.AddRange(SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.adjstack, vara.Void(), vara.Const(cc.StackSpaceUsed, CliType.native_int), vara.Void()), ref next_var, las));
+                ret.AddRange(SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.adjstack), vara.Void(), vara.Const(cc.StackSpaceUsed, CliType.native_int), vara.Void()), ref next_var, las, lvs));
 
             ret.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.Restore, VarList = isect_list, SaveNode = save_node });
             save_node.SaveNode = ret[ret.Count - 1];

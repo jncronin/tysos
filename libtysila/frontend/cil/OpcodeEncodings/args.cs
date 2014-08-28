@@ -59,5 +59,38 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.tacs.Add(new timple.TimpleNode(Assembler.GetAssignTac(la_vars[p].DataType), v, la_vars[p], vara.Void()));
             il.stack_vars_after.Push(v);
         }
+
+        public static void ldarga(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
+            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs)
+        {
+            int p = 0;
+
+            switch (il.opcode.opcode1)
+            {
+                case Opcode.SingleOpcodes.ldarga_s:
+                    p = il.inline_int;
+                    break;
+                case Opcode.SingleOpcodes.double_:
+                    switch (il.opcode.opcode2)
+                    {
+                        case Opcode.DoubleOpcodes.ldarg:
+                            p = il.inline_int;
+                            break;
+                        default:
+                            throw new NotSupportedException();
+                    }
+                    break;
+                default:
+                    throw new NotSupportedException();
+            }
+
+            vara vref = vara.AddrOf(la_vars[p]);
+            vara v = vara.Logical(next_variable, Assembler.CliType.native_int);
+            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v, vref, vara.Void()));
+
+            il.stack_after.Push(new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = las[p].Type }, ass));
+            il.stack_vars_after.Push(v);
+        }
     }
 }

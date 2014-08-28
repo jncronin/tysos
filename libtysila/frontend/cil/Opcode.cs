@@ -289,7 +289,7 @@ namespace libtysila.frontend.cil
         {
             get
             {
-                if (opcode1 == SingleOpcodes.double_)
+                if (opcode1 == SingleOpcodes.double_ || opcode1 == SingleOpcodes.tysila)
                     return (int)opcode2 + (((int)opcode1) << 8);
                 else
                     return (int)opcode1;
@@ -300,6 +300,16 @@ namespace libtysila.frontend.cil
         public int push;
         public InlineVar inline;
         public ControlFlow ctrl;
+
+        public override string ToString()
+        {
+            if (name != null)
+                return name;
+
+            if (opcode1 == SingleOpcodes.double_ || opcode1 == SingleOpcodes.tysila)
+                return opcode2.ToString();
+            return opcode1.ToString();
+        }
 
         public delegate void EncodeFunc(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
             ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
@@ -312,6 +322,28 @@ namespace libtysila.frontend.cil
         public static int OpcodeVal(DoubleOpcodes op)
         {
             return (int)op + (((int)SingleOpcodes.double_) << 8);
+        }
+
+        public static implicit operator int(Opcode op)
+        {
+            return op.opcode;
+        }
+
+        public Opcode() { }
+        public Opcode(SingleOpcodes op) { opcode1 = op; }
+        public Opcode(SingleOpcodes op, DoubleOpcodes dop) { opcode1 = op; opcode2 = dop; }
+        public Opcode(int op)
+        {
+            if ((op & 0xff00) != 0)
+            {
+                opcode1 = (SingleOpcodes)((op >> 8) & 0xff);
+                opcode2 = (DoubleOpcodes)(op & 0xff);
+            }
+            else
+            {
+                opcode1 = (SingleOpcodes)(op & 0xff);
+                opcode2 = DoubleOpcodes.arglist;
+            }
         }
 
         public EncodeFunc Encoder;

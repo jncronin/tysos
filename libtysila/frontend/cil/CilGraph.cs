@@ -36,14 +36,30 @@ namespace libtysila.frontend.cil
             List<int> starts = new List<int>();
             int offset = 0;
 
-            /* Parse method body */
+            /* Add start nodes: first instruction and any exception clause */
             starts.Add(0);
+            if (method.exceptions != null)
+            {
+                foreach (Metadata.MethodBody.EHClause ehclause in method.exceptions)
+                {
+                    starts.Add((int)ehclause.HandlerOffset);
+                }
+            }
+
+            /* Parse method body */
             ParseCode(method.Body, ref offset, offset_map, m, opts);
            
             /* Add the instructions to the graph */
             util.Set<int> visited = new util.Set<int>();
             foreach (int start in starts)
                 DFAdd(ret, start, null, offset_map, visited);
+
+            /* Add exception handler start node hints */
+            if (method.exceptions != null)
+            {
+                foreach (Metadata.MethodBody.EHClause ehclause in method.exceptions)
+                    offset_map[(int)ehclause.HandlerOffset].ehclause_start = ehclause;
+            }
 
             /* Build our linear stream in the original order of the IL */
             foreach (CilNode n in offset_map.Values)
@@ -52,7 +68,7 @@ namespace libtysila.frontend.cil
             return ret;
         }
 
-        List<timple.BaseNode> linear_stream = new List<timple.BaseNode>();
+        internal List<timple.BaseNode> linear_stream = new List<timple.BaseNode>();
         public override IList<timple.BaseNode> LinearStream
         {
             get
@@ -247,6 +263,7 @@ namespace libtysila.frontend.cil
                         break;
                 }
 
+                line.il_offset_after = offset + base_offset;
                 offset_map[line.il_offset] = new CilNode { il = line };
             }
 

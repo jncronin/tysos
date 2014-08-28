@@ -63,7 +63,7 @@ namespace libtysila
             CallConv ret = new CallConv();
 
             ret.CallerCleansStack = true;
-            ret.CallTac = ThreeAddressCode.Op.call_void;
+            ret.CallTac = ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call);
 
             /* For an isr on the x86_64, the stack is either:
              * 
@@ -222,7 +222,7 @@ namespace libtysila
 
             if (call_tac != null)
             {
-                if (call_tac.Operator == ThreeAddressCode.Op.call_void)
+                if (call_tac.Operator.Type == Assembler.CliType.void_)
                     ret.ReturnValue = null;
                 else
                 {
@@ -337,7 +337,7 @@ namespace libtysila
 
             if (call_tac != null)
             {
-                if (call_tac.Operator == ThreeAddressCode.Op.call_void)
+                if (call_tac.Operator.Type == Assembler.CliType.void_)
                     ret.ReturnValue = null;
                 else
                 {
@@ -382,14 +382,14 @@ namespace libtysila
 
             if (i586)
             {
-                if (ret.ReturnValue.Equals(x86_64_Assembler.Rax))
+                if ((ret.ReturnValue != null) && (ret.ReturnValue.Equals(x86_64_Assembler.Rax)))
                     ret.CallerPreservesLocations = cdecl_i386_preserves;
                 else
                     ret.CallerPreservesLocations = cdecl_i386_preserves_with_rax;
             }
             else
             {
-                if (ret.ReturnValue.Equals(x86_64_Assembler.Rax))
+                if ((ret.ReturnValue != null) && (ret.ReturnValue.Equals(x86_64_Assembler.Rax)))
                     ret.CallerPreservesLocations = cdecl_x86_64_preserves;
                 else
                     ret.CallerPreservesLocations = cdecl_x86_64_preserves_with_rax;
@@ -421,14 +421,14 @@ namespace libtysila
         {
             get
             {
-                return MakeStaticCall("default", new Signature.Param(BaseType_Type.R8), new List<Signature.Param> { new Signature.Param(BaseType_Type.U4) }, ThreeAddressCode.Op.call_r8);
+                return MakeStaticCall("default", new Signature.Param(BaseType_Type.R8), new List<Signature.Param> { new Signature.Param(BaseType_Type.U4) }, ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.call));
             }
         }
         internal CallConv callconv_conv_u8_r8
         {
             get
             {
-                return MakeStaticCall("default", new Signature.Param(BaseType_Type.R8), new List<Signature.Param> { new Signature.Param(BaseType_Type.U8) }, ThreeAddressCode.Op.call_r8);
+                return MakeStaticCall("default", new Signature.Param(BaseType_Type.R8), new List<Signature.Param> { new Signature.Param(BaseType_Type.U8) }, ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.call));
             }
         }
     }

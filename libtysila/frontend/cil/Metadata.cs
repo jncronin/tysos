@@ -644,7 +644,6 @@ namespace libtysila
             public bool ExcludedByArch = false;
 
             public MethodBody Body = new MethodBody();
-            public List<Assembler.cfg_node> nodes = null;
             public frontend.cil.CilGraph instrs = null;
 
             public string ReferenceAlias = null;
@@ -720,6 +719,8 @@ namespace libtysila
                 public uint HandlerLength;
                 public Token ClassToken;
                 public uint FilterOffset;
+
+                public int BlockId = -1;
 
                 public bool IsCatch { get { if (Flags == 0x0) return true; return false; } }
                 public bool IsFinally { get { if (Flags == 0x2) return true; return false; } }
@@ -1456,7 +1457,9 @@ namespace libtysila
                 Signature.ZeroBasedArray zba = bct as Signature.ZeroBasedArray;
                 if (zba.ArrayType == null)
                 {
-                    Assembler.TypeToCompile arr_ttc = ass.CreateArray(new Signature.Param(zba, ass), 1, new Assembler.TypeToCompile { type = GetTypeDef(zba.ElemType, ass, request_types), tsig = new Signature.Param(zba.ElemType, ass), _ass = ass }, false);
+                    Assembler.TypeToCompile arr_ttc = frontend.cil.Array.CreateArray(new Signature.Param(zba, ass), 1, 
+                        new Assembler.TypeToCompile { type = GetTypeDef(zba.ElemType, ass, request_types), 
+                            tsig = new Signature.Param(zba.ElemType, ass), _ass = ass }, false, ass);
                     zba.ArrayType = arr_ttc.type;
                     if(request_types)
                         ass.Requestor.RequestTypeInfo(arr_ttc);
@@ -1475,7 +1478,9 @@ namespace libtysila
                 if (ca.ArrayType == null)
                 {
                     Assembler.TypeToCompile arr_ttc =
-                        ass.CreateArray(new Signature.Param(ca, ass), ca.Rank, new Assembler.TypeToCompile { type = GetTypeDef(ca.ElemType, ass, request_types), tsig = new Signature.Param(ca.ElemType, ass), _ass = ass }, false);
+                        frontend.cil.Array.CreateArray(new Signature.Param(ca, ass), ca.Rank, 
+                        new Assembler.TypeToCompile { type = GetTypeDef(ca.ElemType, ass, request_types), 
+                            tsig = new Signature.Param(ca.ElemType, ass), _ass = ass }, false, ass);
                     ca.ArrayType = arr_ttc.type;
                     if(request_types)
                         ass.Requestor.RequestTypeInfo(arr_ttc);

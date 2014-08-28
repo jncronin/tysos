@@ -31,27 +31,46 @@ namespace libtysila.tybel
         public Dictionary<timple.TreeNode, IList<Node>> TimpleMap;
         public int NextVar;
 
-        public static Tybel GenerateTybel(timple.Optimizer.OptimizeReturn code, Assembler ass, IList<libasm.hardware_location> las)
+        public static Tybel GenerateTybel(timple.Optimizer.OptimizeReturn code, Assembler ass, IList<libasm.hardware_location> las,
+            IList<libasm.hardware_location> lvs, Assembler.MethodAttributes attrs)
         {
             /* Choose instructions */
-            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.BuildGraph(code, ass, las);
+            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.BuildGraph(code, ass, las, lvs);
             libtysila.timple.Liveness tybel_l = libtysila.timple.Liveness.LivenessAnalysis(tybel);
 
             /* Prepare register allocator */
             libtysila.regalloc.RegAlloc r = new libtysila.regalloc.RegAlloc();
-            Dictionary<vara, vara> regs = r.Main(new libtysila.tybel.Tybel.TybelCode(tybel, tybel_l), ass);
+            Dictionary<vara, vara> regs = r.Main(new libtysila.tybel.Tybel.TybelCode(tybel, tybel_l), ass, attrs);
+
+            /* Generate stackloc mappings */
+            Dictionary<libasm.hardware_location, libasm.hardware_location> stackloc_map = ass.AllocateStackLocations(attrs);
+            CombineStackLocMap(regs, stackloc_map);
 
             /* Rename registers in the code */
             libtysila.tybel.Tybel tybel_2 = tybel.RenameRegisters(regs);
 
             /* Resolve special instructions */
             libtysila.timple.Liveness tybel2_l = libtysila.timple.Liveness.LivenessAnalysis(tybel_2);
-            libtysila.tybel.Tybel tybel_3 = tybel_2.ResolveSpecialNodes(tybel2_l, ass, las);
+            libtysila.tybel.Tybel tybel_3 = tybel_2.ResolveSpecialNodes(tybel2_l, ass, las, lvs);
 
             return tybel_3;
         }
 
-        private static Tybel BuildGraph(timple.Optimizer.OptimizeReturn code, Assembler ass, IList<libasm.hardware_location> las)
+        private static void CombineStackLocMap(Dictionary<vara, vara> regs, Dictionary<libasm.hardware_location, libasm.hardware_location> stackloc_map)
+        {
+            List<vara> reg_list = new List<vara>(regs.Keys);
+            foreach (vara r in reg_list)
+            {
+                if (regs[r].MachineRegVal is libasm.hardware_stackloc)
+                {
+                    vara r2 = vara.MachineReg(stackloc_map[regs[r].MachineRegVal], regs[r].DataType);
+                    regs[r] = r2;
+                }
+            }
+        }
+
+        private static Tybel BuildGraph(timple.Optimizer.OptimizeReturn code, Assembler ass, IList<libasm.hardware_location> las,
+            IList<libasm.hardware_location> lvs)
         {
             Tybel ret = new Tybel();
             ret.TimpleMap = new Dictionary<timple.TreeNode, IList<Node>>();
@@ -64,14 +83,96 @@ namespace libtysila.tybel
                     ret.NextVar = v.LogicalVar + 1;
             }
 
+            /* Determine those variables which need memory locations */
+            util.Set<vara> memlocs = new util.Set<vara>();
+            foreach (vara v in code.Liveness.defs.Keys)
+            {
+                foreach (timple.BaseNode n in code.Liveness.defs[v])
+                {
+                    if (n is timple.TimpleNode)
+                    {
+                        timple.TimpleNode tn = n as timple.TimpleNode;
+                        if (tn.O1.VarType == vara.vara_type.AddrOf)
+                        {
+                            memlocs.Add(vara.Logical(tn.O1.LogicalVar, tn.O1.SSA, Assembler.CliType.none));
+                            tn.O1.needs_memloc = true;
+                        }
+                        if (tn.O2.VarType == vara.vara_type.AddrOf)
+                        {
+                            memlocs.Add(vara.Logical(tn.O2.LogicalVar, tn.O2.SSA, Assembler.CliType.none));
+                            tn.O2.needs_memloc = true;
+                        }
+                    }
+                    if (n is timple.TimpleCallNode)
+                    {
+                        timple.TimpleCallNode tcn = n as timple.TimpleCallNode;
+                        for(int i = 0; i < tcn.VarArgs.Count; i++)
+                        {
+                            if (tcn.VarArgs[i].VarType == vara.vara_type.AddrOf)
+                            {
+                                memlocs.Add(vara.Logical(tcn.VarArgs[i].LogicalVar, tcn.VarArgs[i].SSA, Assembler.CliType.none));
+                                vara v2 = tcn.VarArgs[i];
+                                v2.needs_memloc = true;
+                                tcn.VarArgs[i] = v2;
+                            }
+                        }
+                    }
+                }
+            }
+            
             foreach (timple.TreeNode n in code.Code)
             {
                 /* Convert operations on native ints to the appropriate instruction
                  * depending on the bitness of the architecture */
                 SelectBitness(n, ass);
 
+                /* Set all needs_memloc vars as required */
+                if (n is timple.TimpleNode)
+                {
+                    timple.TimpleNode tn = n as timple.TimpleNode;
+
+                    if (tn.R.VarType == vara.vara_type.Logical && memlocs.Contains(vara.Logical(tn.R.LogicalVar, tn.R.SSA, Assembler.CliType.none)))
+                        tn.R.needs_memloc = true;
+                    if (tn.O1.VarType == vara.vara_type.Logical && memlocs.Contains(vara.Logical(tn.O1.LogicalVar, tn.O1.SSA, Assembler.CliType.none)))
+                        tn.O1.needs_memloc = true;
+                    if (tn.O2.VarType == vara.vara_type.Logical && memlocs.Contains(vara.Logical(tn.O2.LogicalVar, tn.O2.SSA, Assembler.CliType.none)))
+                        tn.O2.needs_memloc = true;
+                }
+                if (n is timple.TimpleCallNode)
+                {
+                    timple.TimpleCallNode tcn = n as timple.TimpleCallNode;
+                    for (int i = 0; i < tcn.VarArgs.Count; i++)
+                    {
+                        if (tcn.VarArgs[i].VarType == vara.vara_type.Logical && memlocs.Contains(vara.Logical(tcn.VarArgs[i].LogicalVar, tcn.VarArgs[i].SSA, Assembler.CliType.none)))
+                        {
+                            vara v2 = tcn.VarArgs[i];
+                            v2.needs_memloc = true;
+                            tcn.VarArgs[i] = v2;
+                        }
+                    }
+                }
+
                 /* Generate tybel instructions */
-                IList<Node> tybel = ass.SelectInstruction(n, ref ret.NextVar, las);
+                IList<Node> tybel = ass.SelectInstruction(n, ref ret.NextVar, las, lvs);
+
+                if (tybel == null)
+                {
+                    /* The instruction cannot be encoded as-is.
+                     * 
+                     * Rewrite it */
+                    List<timple.TreeNode> new_code = RewriteInst(n, ref ret.NextVar);
+                    if(new_code == null)
+                        throw new Exception("Unable to encode " + n.ToString());
+                    tybel = new List<Node>();
+                    foreach (timple.TreeNode new_n in new_code)
+                    {
+                        IList<Node> new_tybel = ass.SelectInstruction(new_n, ref ret.NextVar, las, lvs);
+                        if(new_tybel == null)
+                            throw new Exception("Unable to encode " + new_n.ToString() + " (rewritten from " + n.ToString() + ")");
+                        ((List<Node>)tybel).AddRange(new_tybel);
+                    }
+                }
+
                 ret.TimpleMap[n] = tybel;
             }
 
@@ -83,6 +184,36 @@ namespace libtysila.tybel
             }
 
             return ret;
+        }
+
+        internal static List<timple.TreeNode> RewriteInst(timple.TreeNode n, ref int next_var)
+        {
+            /* Rewrite an instruction of form R op A, B to:
+             *   new_R op A, B
+             *   R = new_R
+             * Where new_R is a logical value */
+
+            if (n is timple.TimpleNode)
+            {
+                timple.TimpleNode tn = n as timple.TimpleNode;
+
+                if (tn.R.VarType != vara.vara_type.Void)
+                {
+                    vara new_R = vara.Logical(next_var++, tn.R.DataType);
+
+                    List<timple.TreeNode> ret = new List<timple.TreeNode>();
+                    timple.TimpleNode line1 = new timple.TimpleNode(n.Op, new_R, tn.O1, tn.O2);
+                    timple.TimpleNode line2 = new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, tn.R.DataType, tn.R.vt_type),
+                        tn.R, new_R, vara.Void());
+
+                    ret.Add(line1);
+                    ret.Add(line2);
+
+                    return ret;
+                }
+            }
+
+            return null;
         }
 
         private static void SelectBitness(timple.TreeNode n, Assembler ass)

@@ -27,7 +27,7 @@ namespace libtysila
 {
     partial class x86_64_Assembler
     {
-        partial class x86_64_TybelNode : tybel.Node
+        internal partial class x86_64_TybelNode : tybel.Node
         {
             public x86_64.x86_64_asm inst;
             public List<vara> ops;
@@ -165,8 +165,11 @@ namespace libtysila
                 return sb.ToString();
             }
 
-            public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass)
+            public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
             {
+                if (inst.OverrideFunc != null)
+                    return inst.OverrideFunc(inst, attrs);
+
                 List<libasm.OutputBlock> ret = new List<libasm.OutputBlock>();
                 List<byte> a = new List<byte>();
 
@@ -196,6 +199,9 @@ namespace libtysila
                 int imm_len = 0;
                 string rel = null;
                 int rel_len = 0;
+                int rel_val = 0;
+                libasm.RelocationBlock.RelocationType rel_type = null;
+                libasm.RelocationBlock disp_reloc = null;
                 for (int i = 0; i < inst.ops.Length; i++)
                 {
                     x86_64.x86_64_asm.optype opt = inst.ops[i];
@@ -206,6 +212,7 @@ namespace libtysila
                         case x86_64.x86_64_asm.optype.R16:
                         case x86_64.x86_64_asm.optype.R32:
                         case x86_64.x86_64_asm.optype.R64:
+                        case x86_64.x86_64_asm.optype.R8163264:
                             r = ops[i].MachineRegVal;
                             break;
 
@@ -213,7 +220,24 @@ namespace libtysila
                         case x86_64.x86_64_asm.optype.RM16:
                         case x86_64.x86_64_asm.optype.RM32:
                         case x86_64.x86_64_asm.optype.RM64:
-                            rm = ops[i].MachineRegVal;
+                        case x86_64.x86_64_asm.optype.RM8163264:
+                            switch (ops[i].VarType)
+                            {
+                                case vara.vara_type.MachineReg:
+                                    rm = ops[i].MachineRegVal;
+                                    break;
+
+                                case vara.vara_type.Label:
+                                    {
+                                        // TODO: decide on the exact encoding depending on PIC/non-PIC etc
+                                        rm = new libasm.hardware_contentsof { base_loc = Rbp };  // RIP
+                                        disp_reloc = new libasm.RelocationBlock { RelType = ass.GetCodeToDataRelocType(), Size = 4, Target = ops[i].LabelVal, Value = (int)ops[i].Offset };
+                                    }
+                                    break;
+
+                                default:
+                                    throw new NotImplementedException();
+                            }
                             break;
 
                         case x86_64.x86_64_asm.optype.Imm8:
@@ -227,15 +251,38 @@ namespace libtysila
                             break;
 
                         case x86_64.x86_64_asm.optype.Imm32:
-                            imm = ops[i].ConstVal;
-                            imm_len = 4;
+                            switch (ops[i].VarType)
+                            {
+                                case vara.vara_type.Label:
+                                    rel = ops[i].LabelVal;
+                                    rel_len = 4;
+                                    break;
+                                case vara.vara_type.Const:
+                                    imm = ops[i].ConstVal;
+                                    imm_len = 4;
+                                    break;
+                                default:
+                                    throw new NotSupportedException();
+                            }
+                            rel_type = R_X86_64_32;
                             break;
 
                         case x86_64.x86_64_asm.optype.Imm64:
-                            imm = ops[i].ConstVal;
-                            imm_len = 8;
+                            switch (ops[i].VarType)
+                            {
+                                case vara.vara_type.Label:
+                                    rel = ops[i].LabelVal;
+                                    rel_len = 8;
+                                    break;
+                                case vara.vara_type.Const:
+                                    imm = ops[i].ConstVal;
+                                    imm_len = 8;
+                                    break;
+                                default:
+                                    throw new NotSupportedException();
+                            }
+                            rel_type = R_X86_64_64;
                             break;
-
                         case x86_64.x86_64_asm.optype.Rel8:
                             rel = ops[i].LabelVal;
                             rel_len = 1;
@@ -249,11 +296,14 @@ namespace libtysila
                         case x86_64.x86_64_asm.optype.Rel32:
                             rel = ops[i].LabelVal;
                             rel_len = 4;
+                            rel_type = ass.GetCodeToCodeRelocType();
+                            rel_val = -4;
                             break;
 
                         case x86_64.x86_64_asm.optype.Rel64:
                             rel = ops[i].LabelVal;
                             rel_len = 8;
+                            rel_val = -8;
                             break;
                     }
                 }
@@ -342,6 +392,12 @@ namespace libtysila
                     /* Add disp */
                     if (disp != null)
                         a.AddRange(disp);
+                    if (disp_reloc != null)
+                    {
+                        ret.Add(new libasm.CodeBlock(a));
+                        ret.Add(disp_reloc);
+                        a = new List<byte>();
+                    }
                 }
 
                 /* Add imm */
@@ -351,7 +407,7 @@ namespace libtysila
                 ret.Add(new libasm.CodeBlock(a));
 
                 if (rel != null)
-                    ret.Add(new libasm.RelativeReference { Target = rel, Size = rel_len, Addend = -rel_len });
+                    ret.Add(new libasm.RelativeReference { Target = rel, Size = rel_len, Addend = rel_val, RelType = rel_type });
 
                 return ret;
             }

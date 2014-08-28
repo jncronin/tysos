@@ -764,7 +764,7 @@ namespace libtysila
             else if (ReadString("N", c, ref x))
             {
                 // Read ComplexType
-                Signature.ComplexType ct = new Signature.ComplexType();
+                Signature.ComplexType ct = new Signature.ComplexType(ass);
                 ct._ass = ass;
 
                 string mod = ReadStringWithLength(c, ref x);
@@ -781,7 +781,7 @@ namespace libtysila
             else if (ReadString("U", c, ref x))
             {
                 // Read ComplexType
-                Signature.ComplexType ct = new Signature.ComplexType();
+                Signature.ComplexType ct = new Signature.ComplexType(ass);
                 ct._ass = ass;
 
                 if (state.cur_module == null)
@@ -801,7 +801,7 @@ namespace libtysila
             else if (ReadString("V", c, ref x))
             {
                 // Read ComplexType
-                Signature.ComplexType ct = new Signature.ComplexType();
+                Signature.ComplexType ct = new Signature.ComplexType(ass);
                 ct._ass = ass;
 
                 if (state.cur_module == null)
@@ -821,7 +821,7 @@ namespace libtysila
             else if (ReadString("W", c, ref x))
             {
                 // Read ComplexType
-                Signature.ComplexType ct = new Signature.ComplexType();
+                Signature.ComplexType ct = new Signature.ComplexType(ass);
                 ct._ass = ass;
 
                 string mod = "mscorlib";
@@ -840,7 +840,7 @@ namespace libtysila
             else if (ReadString("X", c, ref x))
             {
                 // Read ComplexType
-                Signature.ComplexType ct = new Signature.ComplexType();
+                Signature.ComplexType ct = new Signature.ComplexType(ass);
                 ct._ass = ass;
 
                 string mod = "libsupcs";

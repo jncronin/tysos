@@ -31,6 +31,10 @@ namespace libtysila.frontend.cil
         List<timple.BaseNode> next = new List<timple.BaseNode>();
         public InstructionLine il;
 
+        public List<CilNode> replaced_by = null;
+
+        public Metadata.MethodBody.EHClause ehclause_start;
+
         public override IList<timple.BaseNode> Prev
         {
             get { return prev; }
@@ -54,6 +58,45 @@ namespace libtysila.frontend.cil
         public override string ToString()
         {
             return il.ToString();
-        }     
+        }
+
+        public override timple.BaseNode InsertAfter(timple.BaseNode new_node)
+        {
+            new_node.Next.Clear();
+            new_node.Prev.Clear();
+
+            foreach (timple.BaseNode next in this.Next)
+            {
+                new_node.Next.Add(next);
+                next.Prev.Remove(this);
+                next.Prev.Add(new_node);
+            }
+            this.Next.Clear();
+            this.Next.Add(new_node);
+
+            new_node.Prev.Add(this);
+
+            return new_node;
+        }
+
+        public override void Remove()
+        {
+            if (Next.Count > 1 && Prev.Count > 1)
+                throw new Exception("Cannot remove node with more than one predecessors and successors");
+
+            foreach (timple.BaseNode next in Next)
+            {
+                next.Prev.Remove(this);
+                foreach (timple.BaseNode prev in Prev)
+                    next.Prev.Add(prev);
+            }
+
+            foreach (timple.BaseNode prev in Prev)
+            {
+                prev.Next.Remove(this);
+                foreach (timple.BaseNode next in Next)
+                    prev.Next.Add(next);
+            }
+        }
     }
 }

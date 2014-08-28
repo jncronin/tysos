@@ -27,9 +27,9 @@ namespace libtysila
 {
     public class StringTable
     {
-        public var GetStringAddress(string s, Assembler ass)
+        public vara GetStringAddress(string s, Assembler ass)
         {
-            return var.AddrOfObject(Label, _GetStringAddress(s, ass));
+            return vara.Label(Label, _GetStringAddress(s, ass), true);
         }
 
         private int _GetStringAddress(string s, Assembler ass)

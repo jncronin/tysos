@@ -61,231 +61,68 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.tacs.Add(new timple.TimpleBrNode(br_op, -1, -1, a, v_c));
         }
 
+        public static void br_none(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
+            ref int next_block, List<vara> la_vara, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs)
+        {
+            il.tacs.Add(new timple.TimpleBrNode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.br), -1, -1, vara.Void(), vara.Void()));
+        }
+
         private static ThreeAddressCode.Op GetCmpOp(Assembler.CliType ct, Opcode.SingleOpcodes op)
         {
+            ThreeAddressCode.Op ret = new ThreeAddressCode.Op();
             switch (op)
             {
-                case Opcode.SingleOpcodes.beq:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.beq_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.beq_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.beq_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.beq_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.beq_i;
-                    }
-                    return ThreeAddressCode.Op.beq;
-
-                case Opcode.SingleOpcodes.bge:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.bge_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.bge_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.bge_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.bge_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.bge_i;
-                    }
-                    return ThreeAddressCode.Op.bge;
-
-                case Opcode.SingleOpcodes.bge_un:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.bae_r4_un;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.bae_r8_un;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.bae_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.bae_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.bae_i;
-                    }
-                    return ThreeAddressCode.Op.bae;
-
-                case Opcode.SingleOpcodes.bgt:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.bg_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.bg_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.bg_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.bg_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.bg_i;
-                    }
-                    return ThreeAddressCode.Op.bg;
-
-                case Opcode.SingleOpcodes.bgt_un:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.ba_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.ba_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.ba_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.ba_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.ba_i;
-                    }
-                    return ThreeAddressCode.Op.ba;
-
-                case Opcode.SingleOpcodes.ble:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.ble_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.ble_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.ble_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.ble_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.ble_i;
-                    }
-                    return ThreeAddressCode.Op.ble;
-
-                case Opcode.SingleOpcodes.ble_un:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.bbe_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.bbe_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.bbe_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.bbe_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.bbe_i;
-                    }
-                    return ThreeAddressCode.Op.bbe;
-
-                case Opcode.SingleOpcodes.blt:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.bl_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.bl_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.bl_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.bl_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.bl_i;
-                    }
-                    return ThreeAddressCode.Op.bl;
-
-                case Opcode.SingleOpcodes.blt_un:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.bb_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.bb_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.bb_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.bb_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.bb_i;
-                    }
-                    return ThreeAddressCode.Op.bb;
-
-                case Opcode.SingleOpcodes.bne_un:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.bne_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.bne_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.bne_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.bne_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.bne_i;
-                    }
-                    return ThreeAddressCode.Op.bne;
-
                 case Opcode.SingleOpcodes.brfalse:
                 case Opcode.SingleOpcodes.brfalse_s:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.beq_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.beq_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.beq_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.beq_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.beq_i;
-                    }
-                    return ThreeAddressCode.Op.beq;
+                case Opcode.SingleOpcodes.beq:
+                    ret.Operator = ThreeAddressCode.OpName.beq;
+                    break;
 
+                case Opcode.SingleOpcodes.bge:
+                    ret.Operator = ThreeAddressCode.OpName.bge;
+                    break;
+
+                case Opcode.SingleOpcodes.bge_un:
+                    ret.Operator = ThreeAddressCode.OpName.bae;
+                    break;
+
+                case Opcode.SingleOpcodes.bgt:
+                    ret.Operator = ThreeAddressCode.OpName.bg;
+                    break;
+
+                case Opcode.SingleOpcodes.bgt_un:
+                    ret.Operator = ThreeAddressCode.OpName.ba;
+                    break;
+
+                case Opcode.SingleOpcodes.ble:
+                    ret.Operator = ThreeAddressCode.OpName.ble;
+                    break;
+
+                case Opcode.SingleOpcodes.ble_un:
+                    ret.Operator = ThreeAddressCode.OpName.bbe;
+                    break;
+
+                case Opcode.SingleOpcodes.blt:
+                    ret.Operator = ThreeAddressCode.OpName.bl;
+                    break;
+
+                case Opcode.SingleOpcodes.blt_un:
+                    ret.Operator = ThreeAddressCode.OpName.bb;
+                    break;
+
+                case Opcode.SingleOpcodes.bne_un:
                 case Opcode.SingleOpcodes.brtrue:
                 case Opcode.SingleOpcodes.brtrue_s:
-                    switch (ct)
-                    {
-                        case Assembler.CliType.F32:
-                            return ThreeAddressCode.Op.bne_r4;
-                        case Assembler.CliType.F64:
-                            return ThreeAddressCode.Op.bne_r8;
-                        case Assembler.CliType.int32:
-                            return ThreeAddressCode.Op.bne_i4;
-                        case Assembler.CliType.int64:
-                            return ThreeAddressCode.Op.bne_i8;
-                        case Assembler.CliType.native_int:
-                        case Assembler.CliType.O:
-                        case Assembler.CliType.reference:
-                            return ThreeAddressCode.Op.bne_i;
-                    }
-                    return ThreeAddressCode.Op.bne;
+                    ret.Operator = ThreeAddressCode.OpName.bne;
+                    break;
 
                 default:
                     throw new NotImplementedException();
             }
+
+            ret.Type = ct;
+            return ret;
         }
 
         private static ThreeAddressCode.Op GetCmpOp(Assembler.CliType cliType)
@@ -293,21 +130,15 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             switch (cliType)
             {
                 case Assembler.CliType.F32:
-                    return ThreeAddressCode.Op.cmp_r4;
-
                 case Assembler.CliType.F64:
-                    return ThreeAddressCode.Op.cmp_r8;
-
                 case Assembler.CliType.int32:
-                    return ThreeAddressCode.Op.cmp_i4;
-
                 case Assembler.CliType.int64:
-                    return ThreeAddressCode.Op.cmp_i8;
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.cmp, cliType);
 
                 case Assembler.CliType.native_int:
                 case Assembler.CliType.O:
                 case Assembler.CliType.reference:
-                    return ThreeAddressCode.Op.cmp_i;
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.cmp, Assembler.CliType.native_int);
 
                 case Assembler.CliType.vt:
                 case Assembler.CliType.void_:

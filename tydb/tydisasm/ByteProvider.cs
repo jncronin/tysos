@@ -30,5 +30,6 @@ namespace tydisasm
         public abstract byte GetNextByte();
         public virtual bool ProvidesCurPC() { return false; }
         public virtual ulong GetCurPC() { return 0; }
+        public abstract ulong Offset { get; }
     }
 }

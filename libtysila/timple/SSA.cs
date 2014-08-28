@@ -275,7 +275,7 @@ namespace libtysila.timple
                          * be required for the phi)
                          */
 
-                        if (n is TimpleBrNode)
+                        if ((n is TimpleBrNode) || ((n is TimpleNode) && (((TimpleNode)n).Op.Operator == ThreeAddressCode.OpName.endfinally)))
                         {
                             foreach (TreeNode prev in n.prev)
                             {

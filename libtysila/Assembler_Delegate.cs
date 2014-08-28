@@ -88,7 +88,10 @@ namespace libtysila
              * Then run calli
              */
 
+            throw new NotImplementedException();
 
+
+#if false
             /* Create method signatures for both static and instance methods for the
              * called method */
             Signature.Method del_meth_inst = new Signature.Method();
@@ -171,6 +174,7 @@ namespace libtysila
             mtc.meth.nodes.Add(inst_node);
             mtc.meth.nodes.Add(static_node);
             mtc.meth.nodes.Add(end_node);
+#endif
         }
 
         void GenerateDelegateCtor(Assembler.MethodToCompile mtc, AssemblerState state)
@@ -195,6 +199,9 @@ namespace libtysila
              * ret
              */
 
+            throw new NotImplementedException();
+
+#if false
             ((Signature.Method)mtc.msig).Params[1] = new Signature.Param(BaseType_Type.VirtFtnPtr);
 
             Layout l = Layout.GetLayout(mtc.GetTTC(this), this);
@@ -216,6 +223,7 @@ namespace libtysila
 
             mtc.meth.nodes = new List<cfg_node>();
             mtc.meth.nodes.Add(node);
+#endif
         }
     }
 }

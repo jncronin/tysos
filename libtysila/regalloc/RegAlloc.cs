@@ -53,10 +53,26 @@ namespace libtysila.regalloc
 
         int K;
 
-        public Dictionary<vara, vara> Main(tybel.Tybel.TybelCode code, Assembler ass)
+        public Dictionary<vara, vara> Main(tybel.Tybel.TybelCode code, Assembler ass, Assembler.MethodAttributes attrs)
         {
             util.Set<libasm.hardware_location> all_regs = ass.MachineRegisters;
+            ass.MachineRegistersResetStack(attrs);
+
+            /* Determine maximum number of stack locations needed */
+            foreach (vara v in code.Liveness.defs.Keys)
+            {
+                if (v.VarType == vara.vara_type.Logical)
+                {
+                    foreach (libasm.hardware_location hloc in ass.MachineRegistersForDataType(v.DataType, v.needs_memloc, attrs))
+                    {
+                        if (hloc is libasm.hardware_stackloc)
+                            all_regs.Add(hloc);
+                    }
+                }
+            }
+
             K = all_regs.Count;
+            ass.MachineRegistersResetStack(attrs);
 
             /* Precolor machine regs */
             int c = 0;
@@ -85,7 +101,7 @@ namespace libtysila.regalloc
                     /* Depending on type of variable, add interference edges to
                      * the hardware registers it cannot access */
 
-                    foreach (libasm.hardware_location reg in all_regs.Except(ass.MachineRegistersForDataType(v.DataType)))
+                    foreach (libasm.hardware_location reg in all_regs.Except(ass.MachineRegistersForDataType(v.DataType, v.needs_memloc, attrs)))
                         preset_ifedges.Add(new InterferenceEdge(v, vara.MachineReg(reg)));
                 }
             }
@@ -159,6 +175,16 @@ namespace libtysila
     partial class Assembler
     {
         public abstract util.Set<libasm.hardware_location> MachineRegisters { get; }
-        public abstract util.Set<libasm.hardware_location> MachineRegistersForDataType(CliType dt);
+        public abstract util.Set<libasm.hardware_location> MachineRegistersForDataType(CliType dt, bool needs_memloc, Assembler.MethodAttributes attrs);
+
+        public virtual void MachineRegistersResetStack(Assembler.MethodAttributes attrs)
+        {
+            attrs.MachineRegistersStackLocSizes = new Dictionary<int, int>();
+            attrs.next_stackloc = 0;
+        }
+        public virtual int MachineRegistersGetStackLocCount(Assembler.MethodAttributes attrs)
+        {
+            return attrs.next_stackloc;
+        }
     }
 }

@@ -267,6 +267,11 @@ namespace libasm
             return true;
         }
 
+        public override int GetHashCode()
+        {
+            return loc.GetHashCode() ^ (size.GetHashCode() << 3) ^ (offset_within_loc.GetHashCode() << 6);
+        }
+
         public override string ToString()
         {
             return "stack(" + loc.ToString() + ")" + ((offset_within_loc == 0) ? "" : (" + " + offset_within_loc.ToString()));

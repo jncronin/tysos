@@ -35,6 +35,7 @@ namespace libtysila.regalloc
                 {
                     /* Exclude those moves which reference non logical var locations */
                     bool has_logical_defs_and_uses = true;
+                    int memloc_count = 0;
                     foreach (vara v in n.VarList)
                     {
                         if (v.VarType != vara.vara_type.Logical)
@@ -42,7 +43,12 @@ namespace libtysila.regalloc
                             has_logical_defs_and_uses = false;
                             break;
                         }
+                        if (v.needs_memloc)
+                            memloc_count++;
                     }
+                    /* don't coalesce moves from a memloc to a non-memloc or vice versa */
+                    if (memloc_count == 1)
+                        has_logical_defs_and_uses = false;
 
                     if (has_logical_defs_and_uses)
                     {

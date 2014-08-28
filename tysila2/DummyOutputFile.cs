@@ -132,6 +132,6 @@ namespace tysila
             return (ulong)line_offset;
         }
 
-        public int Offset { get { return offset; } }
+        public override ulong Offset { get { return (ulong)offset; } }
     }
 }

@@ -57,6 +57,7 @@ namespace tydisasm
         public ulong opcode;
         public location[] arguments;
         public ulong[] prefixes;
+        public ulong offset_start, offset_end;
 
         public byte[] opcodes;
 

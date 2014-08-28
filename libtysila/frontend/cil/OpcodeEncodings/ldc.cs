@@ -85,7 +85,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             vara v_c = vara.Const(p, Assembler.CliType.int32);
             vara v = vara.Logical(next_variable++, Assembler.CliType.int32);
-            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.assign_i4, v, v_c, vara.Void()));
+            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v, v_c, vara.Void()));
 
             il.stack_after.Push(new Signature.Param(BaseType_Type.I4));
             il.stack_vars_after.Push(v);

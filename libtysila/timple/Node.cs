@@ -40,6 +40,9 @@ namespace libtysila.timple
         {
             return (BaseNode)base.MemberwiseClone();
         }
+
+        public abstract BaseNode InsertAfter(BaseNode new_node);
+        public abstract void Remove(); 
     }
 
     public class TreeNode : BaseNode
@@ -53,6 +56,16 @@ namespace libtysila.timple
         public BaseNode InnerNode;
         public override IList<BaseNode> Prev { get { return prev; } }
         public override IList<BaseNode> Next { get { return next; } }
+
+        public override void Remove()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override BaseNode InsertAfter(BaseNode new_node)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class ParentNode : TreeNode
@@ -109,9 +122,9 @@ namespace libtysila.timple
                         sb.Append(", ");
                         sb.Append(O2.ToString());
                     }
-
-                    sb.Append(")");
                 }
+
+                sb.Append(")");
             }
 
             return sb.ToString();
@@ -288,9 +301,15 @@ namespace libtysila.timple
         public int BlockTargetTrue;
         public int BlockTargetFalse;
 
+        public TimpleBrNode(ThreeAddressCode.Op op)
+        {
+            if (op.Operator != ThreeAddressCode.OpName.endfinally)
+                throw new Exception("Need to specify a block number for any branch instruction other than endfinally");
+        }
+
         public TimpleBrNode(int block_target)
         {
-            Op = ThreeAddressCode.Op.br;
+            Op = ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.br);
             BlockTargetTrue = block_target;
             O1 = vara.Void();
             O2 = vara.Void();
@@ -317,7 +336,7 @@ namespace libtysila.timple
 
         public TimpleBrNode(TimpleLabelNode tln)
         {
-            Op = ThreeAddressCode.Op.br;
+            Op = ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.br);
             BlockTargetTrue = tln.BlockId;
             O1 = vara.Void();
             O2 = vara.Void();
@@ -327,6 +346,13 @@ namespace libtysila.timple
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(Op.ToString());
+
+            if (Op.Operator == ThreeAddressCode.OpName.endfinally)
+            {
+                sb.Append("()");
+                return sb.ToString();
+            }
+
             sb.Append("(L");
             sb.Append(BlockTargetTrue.ToString());
 
@@ -350,117 +376,28 @@ namespace libtysila.timple
 
         public static ThreeAddressCode.Op InvertBr(ThreeAddressCode.Op op)
         {
-            switch (op)
+            switch (op.Operator)
             {
-                case ThreeAddressCode.Op.ba_i:
-                    return ThreeAddressCode.Op.bbe_i;
-                case ThreeAddressCode.Op.ba_i4:
-                    return ThreeAddressCode.Op.bbe_i4;
-                case ThreeAddressCode.Op.ba_i8:
-                    return ThreeAddressCode.Op.bbe_i8;
-                case ThreeAddressCode.Op.ba_r4:
-                    return ThreeAddressCode.Op.bbe_r4;
-                case ThreeAddressCode.Op.ba_r8:
-                    return ThreeAddressCode.Op.bbe_r8;
-
-                case ThreeAddressCode.Op.bae_i:
-                    return ThreeAddressCode.Op.bb_i;
-                case ThreeAddressCode.Op.bae_i4:
-                    return ThreeAddressCode.Op.bb_i4;
-                case ThreeAddressCode.Op.bae_i8:
-                    return ThreeAddressCode.Op.bb_i8;
-                case ThreeAddressCode.Op.bae_r4:
-                    return ThreeAddressCode.Op.bb_r4;
-                case ThreeAddressCode.Op.bae_r8:
-                    return ThreeAddressCode.Op.bb_r8;
-
-                case ThreeAddressCode.Op.bb_i:
-                    return ThreeAddressCode.Op.bae_i;
-                case ThreeAddressCode.Op.bb_i4:
-                    return ThreeAddressCode.Op.bae_i4;
-                case ThreeAddressCode.Op.bb_i8:
-                    return ThreeAddressCode.Op.bae_i8;
-                case ThreeAddressCode.Op.bb_r4:
-                    return ThreeAddressCode.Op.bae_r4;
-                case ThreeAddressCode.Op.bb_r8:
-                    return ThreeAddressCode.Op.bae_r8;
-
-                case ThreeAddressCode.Op.bbe_i:
-                    return ThreeAddressCode.Op.ba_i;
-                case ThreeAddressCode.Op.bbe_i4:
-                    return ThreeAddressCode.Op.ba_i4;
-                case ThreeAddressCode.Op.bbe_i8:
-                    return ThreeAddressCode.Op.ba_i8;
-                case ThreeAddressCode.Op.bbe_r4:
-                    return ThreeAddressCode.Op.ba_r4;
-                case ThreeAddressCode.Op.bbe_r8:
-                    return ThreeAddressCode.Op.ba_r8;
-
-                case ThreeAddressCode.Op.beq_i:
-                    return ThreeAddressCode.Op.bne_i;
-                case ThreeAddressCode.Op.beq_i4:
-                    return ThreeAddressCode.Op.bne_i4;
-                case ThreeAddressCode.Op.beq_i8:
-                    return ThreeAddressCode.Op.bne_i8;
-                case ThreeAddressCode.Op.beq_r4:
-                    return ThreeAddressCode.Op.bne_r4;
-                case ThreeAddressCode.Op.beq_r8:
-                    return ThreeAddressCode.Op.bne_r8;
-
-                case ThreeAddressCode.Op.bg_i:
-                    return ThreeAddressCode.Op.ble_i;
-                case ThreeAddressCode.Op.bg_i4:
-                    return ThreeAddressCode.Op.ble_i4;
-                case ThreeAddressCode.Op.bg_i8:
-                    return ThreeAddressCode.Op.ble_i8;
-                case ThreeAddressCode.Op.bg_r4:
-                    return ThreeAddressCode.Op.ble_r4;
-                case ThreeAddressCode.Op.bg_r8:
-                    return ThreeAddressCode.Op.ble_r8;
-
-                case ThreeAddressCode.Op.bge_i:
-                    return ThreeAddressCode.Op.bl_i;
-                case ThreeAddressCode.Op.bge_i4:
-                    return ThreeAddressCode.Op.bl_i4;
-                case ThreeAddressCode.Op.bge_i8:
-                    return ThreeAddressCode.Op.bl_i8;
-                case ThreeAddressCode.Op.bge_r4:
-                    return ThreeAddressCode.Op.bl_r4;
-                case ThreeAddressCode.Op.bge_r8:
-                    return ThreeAddressCode.Op.bl_r8;
-
-                case ThreeAddressCode.Op.bl_i:
-                    return ThreeAddressCode.Op.bge_i;
-                case ThreeAddressCode.Op.bl_i4:
-                    return ThreeAddressCode.Op.bge_i4;
-                case ThreeAddressCode.Op.bl_i8:
-                    return ThreeAddressCode.Op.bge_i8;
-                case ThreeAddressCode.Op.bl_r4:
-                    return ThreeAddressCode.Op.bge_r4;
-                case ThreeAddressCode.Op.bl_r8:
-                    return ThreeAddressCode.Op.bge_r8;
-
-                case ThreeAddressCode.Op.ble_i:
-                    return ThreeAddressCode.Op.bg_i;
-                case ThreeAddressCode.Op.ble_i4:
-                    return ThreeAddressCode.Op.bg_i4;
-                case ThreeAddressCode.Op.ble_i8:
-                    return ThreeAddressCode.Op.bg_i8;
-                case ThreeAddressCode.Op.ble_r4:
-                    return ThreeAddressCode.Op.bg_r4;
-                case ThreeAddressCode.Op.ble_r8:
-                    return ThreeAddressCode.Op.bg_r8;
-
-                case ThreeAddressCode.Op.bne_i:
-                    return ThreeAddressCode.Op.beq_i;
-                case ThreeAddressCode.Op.bne_i4:
-                    return ThreeAddressCode.Op.beq_i4;
-                case ThreeAddressCode.Op.bne_i8:
-                    return ThreeAddressCode.Op.beq_i8;
-                case ThreeAddressCode.Op.bne_r4:
-                    return ThreeAddressCode.Op.beq_r4;
-                case ThreeAddressCode.Op.bne_r8:
-                    return ThreeAddressCode.Op.beq_r8;
+                case ThreeAddressCode.OpName.ba:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.bbe, op.Type, op.VT_Type);
+                case ThreeAddressCode.OpName.bae:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.bb, op.Type, op.VT_Type);
+                case ThreeAddressCode.OpName.bb:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.bae, op.Type, op.VT_Type);
+                case ThreeAddressCode.OpName.bbe:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.ba, op.Type, op.VT_Type);
+                case ThreeAddressCode.OpName.beq:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.bne, op.Type, op.VT_Type);
+                case ThreeAddressCode.OpName.bg:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.ble, op.Type, op.VT_Type);
+                case ThreeAddressCode.OpName.bge:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.bl, op.Type, op.VT_Type);
+                case ThreeAddressCode.OpName.bl:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.bge, op.Type, op.VT_Type);
+                case ThreeAddressCode.OpName.ble:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.bg, op.Type, op.VT_Type);
+                case ThreeAddressCode.OpName.bne:
+                    return new ThreeAddressCode.Op(ThreeAddressCode.OpName.beq, op.Type, op.VT_Type);
 
                 default:
                     throw new NotSupportedException();

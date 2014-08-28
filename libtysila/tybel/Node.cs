@@ -33,9 +33,19 @@ namespace libtysila.tybel
         public timple.TreeNode TimpleInst;
         public virtual IList<vara> VarList { get { return new vara[] { }; } set { throw new NotSupportedException(); } }
 
-        public abstract IEnumerable<libasm.OutputBlock> Assemble(Assembler ass);
+        public abstract IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs);
 
         public abstract bool IsMove { get; }
+
+        public override timple.BaseNode InsertAfter(timple.BaseNode new_node)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Remove()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class SpecialNode : Node
@@ -89,7 +99,7 @@ namespace libtysila.tybel
             get { return false; }
         }
 
-        public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass)
+        public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
         {
             throw new NotImplementedException();
         }
@@ -106,7 +116,7 @@ namespace libtysila.tybel
 
         public LabelNode(string label, bool local) { Label = label; Local = local; }
 
-        public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass)
+        public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
         {
             if (Local)
                 return new libasm.OutputBlock[] { new libasm.LocalSymbol(Label, false) };
@@ -135,6 +145,7 @@ namespace libtysila
 {
     partial class Assembler
     {
-        public abstract IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var, IList<libasm.hardware_location> las);
+        public abstract IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var, IList<libasm.hardware_location> las,
+            IList<libasm.hardware_location> lvs);
     }
 }

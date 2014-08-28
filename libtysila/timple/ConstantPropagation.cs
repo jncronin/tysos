@@ -175,11 +175,20 @@ namespace libtysila.timple
             if (S_cmpbr.O2.VarType != vara.vara_type.Const)
                 return false;
 
-            switch (S_cmpbr.Op)
+            switch (S_cmpbr.Op.Operator)
             {
-                case ThreeAddressCode.Op.bge_i4:
-                    pass = (int)S_cmpbr.O1.ConstVal >= (int)S_cmpbr.O2.ConstVal;
-                    return true;
+                case ThreeAddressCode.OpName.bge:
+                    switch (S_cmpbr.Op.Type)
+                    {
+                        case Assembler.CliType.int32:
+                            pass = (int)S_cmpbr.O1.ConstVal >= (int)S_cmpbr.O2.ConstVal;
+                            return true;
+
+                        case Assembler.CliType.int64:
+                            pass = (long)S_cmpbr.O1.ConstVal >= (long)S_cmpbr.O2.ConstVal;
+                            return true;
+                    }
+                    break;
             }
 
             return false;
@@ -247,14 +256,9 @@ namespace libtysila.timple
             {
                 TimpleNode tn = S as TimpleNode;
 
-                switch (tn.Op)
+                switch (tn.Op.Operator)
                 {
-                    case ThreeAddressCode.Op.assign_i4:
-                    case ThreeAddressCode.Op.assign_i:
-                    case ThreeAddressCode.Op.assign_i8:
-                    case ThreeAddressCode.Op.assign_r4:
-                    case ThreeAddressCode.Op.assign_r8:
-                    case ThreeAddressCode.Op.assign_vt:
+                    case ThreeAddressCode.OpName.assign:
                         if (tn.O1.VarType == vara.vara_type.Const)
                         {
                             cval = tn.O1.ConstVal;
@@ -262,18 +266,23 @@ namespace libtysila.timple
                         }
                         break;
 
-                    case ThreeAddressCode.Op.add_i4:
-                        if (tn.O1.VarType == vara.vara_type.Const && tn.O2.VarType == vara.vara_type.Const)
+                    case ThreeAddressCode.OpName.add:
+                        switch (tn.Op.Type)
                         {
-                            cval = (int)tn.O1.ConstVal + (int)tn.O2.ConstVal;
-                            return true;
-                        }
-                        break;
-                    case ThreeAddressCode.Op.add_i8:
-                        if (tn.O1.VarType == vara.vara_type.Const && tn.O2.VarType == vara.vara_type.Const)
-                        {
-                            cval = (long)tn.O1.ConstVal + (long)tn.O2.ConstVal;
-                            return true;
+                            case Assembler.CliType.int32:
+                                if (tn.O1.VarType == vara.vara_type.Const && tn.O2.VarType == vara.vara_type.Const)
+                                {
+                                    cval = (int)tn.O1.ConstVal + (int)tn.O2.ConstVal;
+                                    return true;
+                                }
+                                break;
+                            case Assembler.CliType.int64:
+                                if (tn.O1.VarType == vara.vara_type.Const && tn.O2.VarType == vara.vara_type.Const)
+                                {
+                                    cval = (long)tn.O1.ConstVal + (long)tn.O2.ConstVal;
+                                    return true;
+                                }
+                                break;
                         }
                         break;
                 }

@@ -7,8 +7,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tload_efi", "efi\tload_efi\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mkfat", "mkfat\mkfat.vcxproj", "{FFAD8CE1-5C29-4345-88B7-DAC52E2D993E}"
 EndProject
+<<<<<<< .mine
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mkgpt", "mkgpt\mkgpt.vcxproj", "{40443019-486A-4245-8816-9F1FEEB9FE9D}"
+EndProject
+=======
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tloadefi", "tloadefi\tloadefi.vcxproj", "{84067ED4-56CE-4BA0-8A0D-AE42B9FFB45A}"
 EndProject
+>>>>>>> .r546
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -27,10 +32,17 @@ Global
 		{FFAD8CE1-5C29-4345-88B7-DAC52E2D993E}.Debug|Win32.Build.0 = Debug|Win32
 		{FFAD8CE1-5C29-4345-88B7-DAC52E2D993E}.Release|Win32.ActiveCfg = Release|Win32
 		{FFAD8CE1-5C29-4345-88B7-DAC52E2D993E}.Release|Win32.Build.0 = Release|Win32
+<<<<<<< .mine
+		{40443019-486A-4245-8816-9F1FEEB9FE9D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{40443019-486A-4245-8816-9F1FEEB9FE9D}.Debug|Win32.Build.0 = Debug|Win32
+		{40443019-486A-4245-8816-9F1FEEB9FE9D}.Release|Win32.ActiveCfg = Release|Win32
+		{40443019-486A-4245-8816-9F1FEEB9FE9D}.Release|Win32.Build.0 = Release|Win32
+=======
 		{84067ED4-56CE-4BA0-8A0D-AE42B9FFB45A}.Debug|Win32.ActiveCfg = Debug|Win32
 		{84067ED4-56CE-4BA0-8A0D-AE42B9FFB45A}.Debug|Win32.Build.0 = Debug|Win32
 		{84067ED4-56CE-4BA0-8A0D-AE42B9FFB45A}.Release|Win32.ActiveCfg = Release|Win32
 		{84067ED4-56CE-4BA0-8A0D-AE42B9FFB45A}.Release|Win32.Build.0 = Release|Win32
+>>>>>>> .r546
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

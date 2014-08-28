@@ -45,6 +45,7 @@ namespace tydisasm.x86_64
         {
             x86_64_line l = new x86_64_line();
             List<byte> os = new List<byte>();
+            l.offset_start = bp.Offset;
 
             byte rex = 0x0;
             bool has_prefix_66 = false;
@@ -127,7 +128,10 @@ namespace tydisasm.x86_64
                 o = opcodes[l.opcode];
 
             if (o == null)
+            {
+                l.offset_end = bp.Offset;
                 return l;
+            }
             else
             {
                 byte modrm;
@@ -151,7 +155,10 @@ namespace tydisasm.x86_64
                         if (opcodes.ContainsKey(l.opcode))
                             o = opcodes[l.opcode];
                         else
+                        {
+                            l.offset_end = bp.Offset;
                             return l;
+                        }
                     }
 
                     // decide if we need an sib byte
@@ -214,7 +221,7 @@ namespace tydisasm.x86_64
                                         reg_no = osrc.Fixed_Location.reg_no;
                                     args.Add(new location { type = location.location_type.Register, reg_no = reg_no });
                                 }
-                                else                                
+                                else
                                     args.Add(osrc.Fixed_Location);
                                 break;
                             case opcode.operand_source.src_type.Imm:
@@ -339,7 +346,7 @@ namespace tydisasm.x86_64
 
                                                     List<location> sib_args = new List<location>();
                                                     bool need_plus = false;
-                                                    
+
                                                     // the special combination of base = 5, mod = 0, rex_b = 0 means no base
                                                     if (!((s_base == 5) && (mod == 0) && ((rex & rex_b) == rex_b)))
                                                     {
@@ -470,6 +477,7 @@ namespace tydisasm.x86_64
             l.o = o;
             l.opcodes = os.ToArray();
             l.bp = bp;
+            l.offset_end = bp.Offset;
 
             return l;
         }

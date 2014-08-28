@@ -30,37 +30,37 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
             Assembler.MethodAttributes attrs)
         {
-            ThreeAddressCode.Op ret_op = ThreeAddressCode.Op.invalid;
+            ThreeAddressCode.Op ret_op = new ThreeAddressCode.Op(ThreeAddressCode.OpName.invalid, Assembler.CliType.none);
 
             switch (mtc.msig.Method.RetType.CliType(ass))
             {
                 case Assembler.CliType.void_:
                     if (il.stack_before.Count != 0)
                         throw new Exception("ret instruction from method returning void with non-empty stack");
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.ret_void, vara.Void(), vara.Void(), vara.Void()));
+                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.ret), vara.Void(), vara.Void(), vara.Void()));
                     return;
 
                 case Assembler.CliType.F32:
                 case Assembler.CliType.F64:
-                    ret_op = ThreeAddressCode.Op.ret_r8;
+                    ret_op = ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.ret);
                     break;
 
                 case Assembler.CliType.int32:
-                    ret_op = ThreeAddressCode.Op.ret_i4;
+                    ret_op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.ret);
                     break;
 
                 case Assembler.CliType.int64:
-                    ret_op = ThreeAddressCode.Op.ret_i8;
+                    ret_op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.ret);
                     break;
 
                 case Assembler.CliType.native_int:
                 case Assembler.CliType.O:
                 case Assembler.CliType.reference:
-                    ret_op = ThreeAddressCode.Op.ret_i;
+                    ret_op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.ret);
                     break;
 
                 case Assembler.CliType.vt:
-                    ret_op = ThreeAddressCode.Op.ret_vt;
+                    ret_op = ThreeAddressCode.Op.OpVT(ThreeAddressCode.OpName.ret, il.stack_before.Peek());
                     break;
             }
 

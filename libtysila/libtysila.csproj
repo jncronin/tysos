@@ -51,59 +51,57 @@
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile BareBones|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Compile BareBones\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
-    <Compile Include="arm\arm_alloca.cs" />
-    <Compile Include="arm\arm_Assembler.cs" />
-    <Compile Include="arm\arm_Assembler_opcodes.cs" />
-    <Compile Include="arm\arm_assign.cs" />
-    <Compile Include="arm\arm_Callconv.cs" />
-    <Compile Include="arm\arm_callret.cs" />
-    <Compile Include="arm\arm_cmpbr.cs" />
-    <Compile Include="arm\arm_conv.cs" />
-    <Compile Include="arm\arm_numop.cs" />
-    <Compile Include="arm\arm_throw.cs" />
-    <Compile Include="arm\arm_tybel.cs" />
     <Compile Include="Assembler.cs" />
-    <Compile Include="Assembler_Array.cs" />
     <Compile Include="Assembler_AssembleTIR.cs" />
     <Compile Include="Assembler_casting.cs" />
-    <Compile Include="Assembler_code_generator.cs" />
-    <Compile Include="Assembler_code_generator_coercion.cs" />
-    <Compile Include="Assembler_code_generator_register_allocator.cs" />
-    <Compile Include="Assembler_control_flow_graph.cs" />
     <Compile Include="Assembler_Delegate.cs" />
     <Compile Include="Assembler_DoCompile.cs" />
-    <Compile Include="Assembler_dominance.cs" />
-    <Compile Include="Assembler_emit_library_call.cs" />
-    <Compile Include="Assembler_encode_opcodes.cs" />
-    <Compile Include="Assembler_fastregalloc2.cs" />
+    <Compile Include="Assembler_GetTac.cs" />
     <Compile Include="Assembler_InfoStructures.cs" />
-    <Compile Include="Assembler_intcall.cs" />
+    <Compile Include="Assembler_intcall2.cs" />
     <Compile Include="Assembler_list_assemblers.cs" />
-    <Compile Include="Assembler_liveness.cs" />
     <Compile Include="Assembler_method.cs" />
     <Compile Include="Assembler_opcodes.cs" />
     <Compile Include="Assembler_Requestor.cs" />
-    <Compile Include="Assembler_ssa.cs" />
-    <Compile Include="Assembler_stack.cs" />
     <Compile Include="Assembler_type.cs" />
     <Compile Include="Assembler_var.cs" />
+    <Compile Include="frontend\cil\Array.cs" />
     <Compile Include="frontend\cil\CilGraph.cs" />
     <Compile Include="frontend\cil\CilNode.cs" />
+    <Compile Include="frontend\cil\DecomposeOpcodes\isinst.cs" />
+    <Compile Include="frontend\cil\DecomposeOpcodes\newobj.cs" />
     <Compile Include="frontend\cil\Encoder.cs" />
     <Compile Include="frontend\cil\InstructionLine.cs" />
     <Compile Include="frontend\cil\Opcode.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\args.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\br.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\call.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\castclass.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\conv.cs" />
+    <Compile Include="frontend\cil\DecomposeComplexOpcodes.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\exceptions.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\fld.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\ind.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\intcall.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\ldc.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\loc.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\newobj.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\nop.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\numop.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\ret.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\set.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\stack.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\str.cs" />
     <Compile Include="frontend\cil\OpcodeList.cs" />
     <Compile Include="InstructionHeader.cs" />
     <Compile Include="CallConv.cs" />
@@ -157,20 +155,10 @@
     <Compile Include="x86_64\x86_64_Assembler.cs" />
     <Compile Include="x86_64\x86_64_Assembler_CompiledInstruction.cs" />
     <Compile Include="x86_64\x86_64_Assembler_intcall.cs" />
-    <Compile Include="x86_64\x86_64_Assembler_mutex.cs" />
-    <Compile Include="x86_64\x86_64_Assembler_numop.cs" />
-    <Compile Include="x86_64\x86_64_assign.cs" />
-    <Compile Include="x86_64\x86_64_call.cs" />
     <Compile Include="x86_64\x86_64_CallConv.cs" />
-    <Compile Include="x86_64\x86_64_cmpbr.cs" />
-    <Compile Include="x86_64\x86_64_conv.cs" />
-    <Compile Include="x86_64\x86_64_memcpy.cs" />
     <Compile Include="x86_64\x86_64_MiniAssembler.cs" />
-    <Compile Include="x86_64\x86_64_opcodes.cs" />
-    <Compile Include="x86_64\x86_64_throw.cs" />
     <Compile Include="x86_64\x86_64_tybel.cs" />
     <Compile Include="x86_64\x86_64_tybelnode.cs" />
-    <Compile Include="x86_64\x86_64_xmm_numop.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libasm\libasm.csproj">
@@ -184,6 +172,12 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="arm\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Assembler_StringArrayFields.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

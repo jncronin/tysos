@@ -42,6 +42,10 @@ namespace libtysila
         Assembler.CliType ct;
         int ssa;
         libasm.hardware_location mreg;
+        public Signature.Param vt_type;
+        public bool vt_addr_of;
+        public bool needs_memloc;
+        bool is_object;
 
         public bool HasLogicalVar
         {
@@ -59,6 +63,15 @@ namespace libtysila
                 }
             }
         }
+
+        public vara GetLogicalVar()
+        {
+            if (!HasLogicalVar)
+                throw new Exception("Cannot get logical var of var type " + VarType.ToString());
+            return vara.Logical(LogicalVar, SSA, DataType);
+        }
+
+        public bool IsObject { get { return is_object; } }
 
         public static vara Void()
         {
@@ -83,6 +96,16 @@ namespace libtysila
         public static vara AddrOf(int Logical)
         {
             return AddrOf(Logical, 0);
+        }
+
+        public static vara AddrOf(vara v, long Offset)
+        {
+            return new vara { log = v.log, ssa = v.ssa, ct = Assembler.CliType.native_int, type = vara_type.AddrOf, offset = Offset };
+        }
+
+        public static vara AddrOf(vara v)
+        {
+            return AddrOf(v, 0);
         }
 
         public static vara ContentsOf(int Logical, int SSA, long Offset, Assembler.CliType DataType)
@@ -110,14 +133,14 @@ namespace libtysila
             return ContentsOf(v.log, v.ssa, 0, DataType);
         }
 
-        public static vara Label(string Label, long Offset)
+        public static vara Label(string Label, long Offset, bool is_object)
         {
-            return new vara { label = Label, ct = Assembler.CliType.native_int, type = vara_type.Label, offset = Offset };
+            return new vara { label = Label, ct = Assembler.CliType.native_int, type = vara_type.Label, offset = Offset, is_object = is_object };
         }
 
-        public static vara Label(string Label)
+        public static vara Label(string Label, bool is_object)
         {
-            return vara.Label(Label, 0);
+            return vara.Label(Label, 0, is_object);
         }
 
         public static vara Const(object Const, Assembler.CliType DataType)
@@ -144,6 +167,11 @@ namespace libtysila
         public static vara MachineReg(libasm.hardware_location reg)
         {
             return new vara { mreg = reg, type = vara_type.MachineReg, DataType = Assembler.CliType.void_ };
+        }
+
+        public static vara MachineReg(libasm.hardware_location reg, Assembler.CliType dt)
+        {
+            return new vara { mreg = reg, type = vara_type.MachineReg, DataType = dt };
         }
 
         public int LogicalVar { get { return log; } }

@@ -325,12 +325,23 @@ namespace tysila
                                 {
                                     Console.WriteLine();
                                     Console.Write("IL_" + il_offset.ToString("X4") + ": ", il_offset);
-                                    if (abo.instrs.ContainsKey(il_offset))
-                                        Console.Write(abo.instrs[il_offset].instr.ToString());
+                                    /*if (abo.instrs.ContainsKey(il_offset))
+                                        Console.Write(abo.instrs[il_offset].instr.ToString());*/
                                     Console.WriteLine();
                                 }
 
                                 Console.WriteLine("{0} {1,-30} {2}", offset.ToString("x16"), disasm.OpcodeString, disasm.ToString());
+
+                                /* See if there are any relocations here */
+                                foreach (libasm.RelocationBlock reloc in abo.relocs)
+                                {
+                                    if ((ulong)reloc.Offset >= disasm.offset_start && (ulong)reloc.Offset < disasm.offset_end)
+                                    {
+                                        Console.WriteLine("        {0} {1} t:{2} s:{3} v:{4}", reloc.Offset.ToString("x16"), reloc.Target.ToString(),
+                                            reloc.RelType.ToString(), reloc.Size.ToString(), reloc.Value.ToString());
+                                    }
+
+                                }
                                 if (disasm.opcodes == null)
                                     break;
                             }
@@ -392,6 +403,8 @@ namespace tysila
                     }
                     else if (tok[0] == "createarray")
                     {
+                        throw new NotImplementedException();
+                        /*
                         int rank = -1;
                         if (tok.Length >= 2)
                             rank = Int32.Parse(tok[1]);
@@ -404,13 +417,15 @@ namespace tysila
 
                         Signature.ComplexArray ca = new Signature.ComplexArray { ElemType = cur_type.Value.tsig.Type, LoBounds = new int[rank], Rank = rank, Sizes = new int[rank] };
                         Assembler.TypeToCompile new_ttc = ass.CreateArray(new Signature.Param(ca, ass), rank, cur_type.Value);
-                        cur_type = new_ttc;
+                        cur_type = new_ttc;*/
                     }
                     else if (tok[0] == "createzba")
                     {
+                        throw new NotImplementedException();
+                        /*
                         Signature.ZeroBasedArray zba = new Signature.ZeroBasedArray { ElemType = cur_type.Value.tsig.Type };
                         Assembler.TypeToCompile new_ttc = ass.CreateArray(new Signature.Param(zba, ass), 1, cur_type.Value);
-                        cur_type = new_ttc;
+                        cur_type = new_ttc;*/
                     }
                     else
                         uc();

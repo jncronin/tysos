@@ -52,6 +52,15 @@
   <PropertyGroup>
     <StartupObject>tyasm.Program</StartupObject>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile BareBones|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Compile BareBones\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="AsmOpcodes.cs" />
     <Compile Include="AsmParser.cs" />

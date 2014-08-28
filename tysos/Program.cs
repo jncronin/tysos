@@ -314,49 +314,49 @@ namespace tysos
 
         private static void test_my_hcp()
         {
-            MyEqComparer<libtysila.ThreeAddressCode.Op> hcp = new MyEqComparer<libtysila.ThreeAddressCode.Op>();
+            MyEqComparer<libtysila.ThreeAddressCode.OpName> hcp = new MyEqComparer<libtysila.ThreeAddressCode.OpName>();
 
-            int hc = hcp.GetHashCode(libtysila.ThreeAddressCode.Op.label);
+            int hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.label);
             Formatter.WriteLine("test_my_hcp: hash code 1: " + hc.ToString(), Program.arch.DebugOutput);
-            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.Op.ldarga);
+            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.ldarga);
             Formatter.WriteLine("test_my_hcp: hash code 2: " + hc.ToString(), Program.arch.DebugOutput);
-            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.Op.label);
+            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.label);
             Formatter.WriteLine("test_my_hcp: hash code 3: " + hc.ToString(), Program.arch.DebugOutput);
 
-            bool t1 = hcp.Equals(libtysila.ThreeAddressCode.Op.label, libtysila.ThreeAddressCode.Op.ldarga);
+            bool t1 = hcp.Equals(libtysila.ThreeAddressCode.OpName.label, libtysila.ThreeAddressCode.OpName.ldarga);
             Formatter.WriteLine("test_my_hcp: should be false: " + t1.ToString(), Program.arch.DebugOutput);
 
-            bool t2 = hcp.Equals(libtysila.ThreeAddressCode.Op.label, libtysila.ThreeAddressCode.Op.label);
+            bool t2 = hcp.Equals(libtysila.ThreeAddressCode.OpName.label, libtysila.ThreeAddressCode.OpName.label);
             Formatter.WriteLine("test_my_hcp: should be true: " + t2.ToString(), Program.arch.DebugOutput);
         }
 
         private static void test_hcp()
         {
-            EqualityComparer<libtysila.ThreeAddressCode.Op> hcp = EqualityComparer<libtysila.ThreeAddressCode.Op>.Default;
+            EqualityComparer<libtysila.ThreeAddressCode.OpName> hcp = EqualityComparer<libtysila.ThreeAddressCode.OpName>.Default;
 
-            int hc = hcp.GetHashCode(libtysila.ThreeAddressCode.Op.label);
+            int hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.label);
             Formatter.WriteLine("test_hcp: hash code 1: " + hc.ToString(), Program.arch.DebugOutput);
-            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.Op.ldarga);
+            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.ldarga);
             Formatter.WriteLine("test_hcp: hash code 2: " + hc.ToString(), Program.arch.DebugOutput);
-            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.Op.label);
+            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.label);
             Formatter.WriteLine("test_hcp: hash code 3: " + hc.ToString(), Program.arch.DebugOutput);
 
-            bool t1 = hcp.Equals(libtysila.ThreeAddressCode.Op.label, libtysila.ThreeAddressCode.Op.ldarga);
+            bool t1 = hcp.Equals(libtysila.ThreeAddressCode.OpName.label, libtysila.ThreeAddressCode.OpName.ldarga);
             Formatter.WriteLine("test_hcp: should be false: " + t1.ToString(), Program.arch.DebugOutput);
 
-            bool t2 = hcp.Equals(libtysila.ThreeAddressCode.Op.label, libtysila.ThreeAddressCode.Op.label);
+            bool t2 = hcp.Equals(libtysila.ThreeAddressCode.OpName.label, libtysila.ThreeAddressCode.OpName.label);
             Formatter.WriteLine("test_hcp: should be true: " + t2.ToString(), Program.arch.DebugOutput);
         }
 
         private static void test_dict()
         {
-            Dictionary<libtysila.ThreeAddressCode.Op, int> d = new Dictionary<libtysila.ThreeAddressCode.Op, int>();
+            Dictionary<libtysila.ThreeAddressCode.OpName, int> d = new Dictionary<libtysila.ThreeAddressCode.OpName, int>();
 
             // Add an item
-            d.Add(libtysila.ThreeAddressCode.Op.label, 6);
+            d.Add(libtysila.ThreeAddressCode.OpName.label, 6);
 
             // Check an item
-            int val = d[libtysila.ThreeAddressCode.Op.label];
+            int val = d[libtysila.ThreeAddressCode.OpName.label];
             Formatter.WriteLine("test_dict: " + val.ToString(), Program.arch.DebugOutput);
         }
 

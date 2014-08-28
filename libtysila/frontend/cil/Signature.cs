@@ -551,6 +551,23 @@ namespace libtysila
         {
             public Token Type;
             public bool isValueType = false;
+            bool? isEnum;
+            public Assembler a;
+
+            public bool IsEnum
+            {
+                get
+                {
+                    if (isEnum.HasValue)
+                        return isEnum.Value;
+                    else
+                    {
+                        Metadata.TypeDefRow tdr = Metadata.GetTypeDef(this, a);
+                        isEnum = tdr.IsEnum(a);
+                        return isEnum.Value;
+                    }
+                }
+            }
 
             public override bool IsConcreteType
             {
@@ -565,9 +582,10 @@ namespace libtysila
                 return new BaseOrComplexType[] { };
             }
 
-            public ComplexType() { }
+            public ComplexType(Assembler ass) { a = ass; }
             public ComplexType(Token t, Assembler ass)
             {
+                a = ass;
                 if (t.Value is Metadata.TypeRefRow)
                     t = new Token(Metadata.GetTypeDef(t, ass));
 
@@ -576,6 +594,8 @@ namespace libtysila
                 Metadata.TypeDefRow tdr = Metadata.GetTypeDef(t, ass);
                 if (tdr.IsValueType(ass))
                     isValueType = true;
+                if (tdr.IsEnum(ass))
+                    isEnum = true;
 
                 if (t.Value is Metadata.TypeSpecRow)
                     Signature = ((Metadata.TypeSpecRow)t.Value).Signature;
@@ -1132,7 +1152,7 @@ namespace libtysila
             }
             else if ((s[offset] == 0x11) || (s[offset] == 0x12))
             {
-                ComplexType ret = new ComplexType();
+                ComplexType ret = new ComplexType(ass);
                 if (s[offset] == 0x11)
                     ret.isValueType = true;
                 offset++;

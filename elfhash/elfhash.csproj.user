@@ -6,4 +6,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <StartArguments>-v1 ../../../libsupcs/libsupcs.obj</StartArguments>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile BareBones|x86'">
+    <StartArguments>-v1 ../../../libsupcs/libsupcs.obj</StartArguments>
+  </PropertyGroup>
 </Project>

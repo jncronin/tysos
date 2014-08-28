@@ -58,14 +58,14 @@ namespace libtysila
                 var obj_var = i.stack_before[i.stack_before.Count - 1].contains_variable;
                 if (obj_var.type != var.var_type.LogicalVar)
                 {
-                    i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, state.next_variable++, obj_var, var.Null));
+                    i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), state.next_variable++, obj_var, var.Null));
                     obj_var = state.next_variable - 1;
                 }
                 var obj_id_var = state.next_variable++;
 
                 int fld_offset = Layout.GetLayout(ttc, this, false).GetField("Int32 __object_id", false).offset;
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, obj_id_var, var.ContentsOf(obj_var, fld_offset), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.mul_i4, state.next_variable++, obj_id_var,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), obj_id_var, var.ContentsOf(obj_var, fld_offset), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), state.next_variable++, obj_id_var,
                     var.Const((UInt32)0x1E3779B1)));
             }
             else if (methname == "_Zu1OM_0_15MemberwiseClone_Ru1O_P1u1t")
@@ -92,18 +92,18 @@ namespace libtysila
 
                 TypeToCompile str_ttc = Metadata.GetTTC(new Signature.Param(BaseType_Type.String), new TypeToCompile { _ass = this, tsig = tsig, type = tdr }, null, this);
 
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_obj_vt, var.ContentsOf(v_obj, 0), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_obj_ti, var.ContentsOf(v_obj_vt, 0), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_str_ti, var.AddrOfObject(Mangler2.MangleTypeInfo(str_ttc, this)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_obj_vt, var.ContentsOf(v_obj, 0), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_obj_ti, var.ContentsOf(v_obj_vt, 0), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_str_ti, var.AddrOfObject(Mangler2.MangleTypeInfo(str_ttc, this)), var.Null));
                 Requestor.RequestTypeInfo(str_ttc);
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.cmp_i, var.Null, v_obj_vt, v_str_ti));
-                i.tacs.Add(new BrEx(ThreeAddressCode.Op.bne, blk_notstring));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.cmp), var.Null, v_obj_vt, v_str_ti));
+                i.tacs.Add(new BrEx(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.bne), blk_notstring));
 
                 /* It is a string */
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_length, var.ContentsOf(v_obj, GetStringFieldOffset(StringFields.length)), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.mul_i4, v_length, v_length, var.Const(2)));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.add_i4, v_length, v_length, var.Const(GetStringFieldOffset(StringFields.data_offset))));
-                i.tacs.Add(new BrEx(ThreeAddressCode.Op.br, blk_lengthfound));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_length, var.ContentsOf(v_obj, GetStringFieldOffset(StringFields.length)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), v_length, v_length, var.Const(2)));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), v_length, v_length, var.Const(GetStringFieldOffset(StringFields.data_offset))));
+                i.tacs.Add(new BrEx(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.br), blk_lengthfound));
 
                 /* Its not a string */
                 i.tacs.Add(LabelEx.LocalLabel(blk_notstring));
@@ -111,7 +111,7 @@ namespace libtysila
                 var v_globallength = v_length;
                 v_globallength.is_global = true;        // this prevents the assembler from marking the variable dead and stops it removing the above code which
                 // also assigns to v_length
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_globallength, var.ContentsOf(v_obj_ti, tysos_type_offsets["Int32 ClassSize"]), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_globallength, var.ContentsOf(v_obj_ti, tysos_type_offsets["Int32 ClassSize"]), var.Null));
 
                 /* Get the memory and do the memcpy */
                 i.tacs.Add(LabelEx.LocalLabel(blk_lengthfound));
@@ -120,172 +120,172 @@ namespace libtysila
 
                 /* Store the new object id */
                 i.tacs.Add(new CallEx(v_objid, new var[] { }, "__get_new_obj_id", callconv_getobjid));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, var.ContentsOf(v_newobj, GetStringFieldOffset(StringFields.objid)), v_objid, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), var.ContentsOf(v_newobj, GetStringFieldOffset(StringFields.objid)), v_objid, var.Null));
 
                 i.pushes_variable = v_newobj;
                 i_pushes_set = true;
             }
             else if (methname == "_ZX16MemoryOperationsM_0_6PeekU1_Rh_P1u1U")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.peek_u1, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.peek_u1), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, 0));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_6PeekU2_Rt_P1u1U")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.peek_u2, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.peek_u2), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, 0));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_6PeekU4_Rj_P1u1U")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.peek_u4, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.peek_u4), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, 0));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_6PeekU8_Ry_P1u1U")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.peek_u8, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.peek_u8), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, 0));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_6PeekU1_Rh_P1y")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.peek_u1, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.peek_u1), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, 0));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_6PeekU2_Rt_P1y")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.peek_u2, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.peek_u2), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, 0));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_6PeekU4_Rj_P1y")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.peek_u4, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.peek_u4), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, 0));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_6PeekU8_Ry_P1y")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.peek_u8, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.peek_u8), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, 0));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_4Poke_Rv_P2yh")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.poke_u1, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.poke_u1), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_4Poke_Rv_P2yt")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.poke_u2, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.poke_u2), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_4Poke_Rv_P2yj")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.poke_u4, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.poke_u4), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_4Poke_Rv_P2yy")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.poke_u8, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.poke_u8), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Uh")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.poke_u1, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.poke_u1), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Ut")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.poke_u2, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.poke_u2), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Uj")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.poke_u4, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.poke_u4), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Uy")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.poke_u8, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.poke_u8), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_4Poke_Rv_P2yu1U")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.poke_u, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.poke_u), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX15OtherOperationsM_0_3Add_Ru1I_P2u1Iu1I")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.add_i, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));                    
             }
             else if (methname == "_ZX15OtherOperationsM_0_3Add_Ru1U_P2u1Uu1U")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.add_i, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX15OtherOperationsM_0_3Mul_Ru1I_P2u1Iu1I")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.mul_i, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.mul), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX15OtherOperationsM_0_3Mul_Ru1U_P2u1Uu1U")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.mul_un_i, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.mul_un), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX15OtherOperationsM_0_3Sub_Ru1I_P2u1Iu1I")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.sub_i, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.sub), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX15OtherOperationsM_0_3Sub_Ru1U_P2u1Uu1U")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.sub_i, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.sub), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX12IoOperationsM_0_7PortOut_Rv_P2th")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.portout_u2_u1, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.portout_u2_u1), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX12IoOperationsM_0_7PortOut_Rv_P2tt")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.portout_u2_u2, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.portout_u2_u2), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX12IoOperationsM_0_7PortOut_Rv_P2tj")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.portout_u2_u4, 0,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.portout_u2_u4), 0,
                     i.stack_before[i.stack_before.Count - 2].contains_variable,
                     i.stack_before[i.stack_before.Count - 1].contains_variable));
             }
             else if (methname == "_ZX12IoOperationsM_0_7PortInb_Rh_P1t")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.portin_u2_u1, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.portin_u2_u1), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, var.Null));
             }
             else if (methname == "_ZX12IoOperationsM_0_7PortInw_Rt_P1t")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.portin_u2_u2, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.portin_u2_u2), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, var.Null));
             }
             else if (methname == "_ZX12IoOperationsM_0_7PortInd_Rj_P1t")
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.portin_u2_u4, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.portin_u2_u4), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, var.Null));
             }
             else if (methname == "_ZX16MemoryOperationsM_0_16GetInternalArray_RPv_P1W6System5Array")
@@ -293,27 +293,27 @@ namespace libtysila
                 /* static void *GetInternalArray(System.Array array) */
 
                 var v_ret = state.next_variable++;
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_ret, i.stack_before[i.stack_before.Count - 1].contains_variable, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_ret, var.ContentsOf(v_ret, GetArrayFieldOffset(ArrayFields.inner_array)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_ret, i.stack_before[i.stack_before.Count - 1].contains_variable, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_ret, var.ContentsOf(v_ret, GetArrayFieldOffset(ArrayFields.inner_array)), var.Null));
             }
             else if (mdr.IsInternalCall && mdr.Name.StartsWith("ReinterpretAs"))
             {
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, state.next_variable++,
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), state.next_variable++,
                     i.stack_before[i.stack_before.Count - 1].contains_variable, 0));
             }
             else if (methname.StartsWith("_ZX14CastOperationsM_0_9GetArg"))
             {
                 char arg_c = methname["_ZX14CastOperationsM_0_9GetArg".Length];
                 var la = var.LocalArg(Int32.Parse(new String(new char[] { arg_c })));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, state.next_variable++, la, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), state.next_variable++, la, var.Null));
             }
             else if (methname == "_ZX15OtherOperationsM_0_5CallI_Rv_P1u1U")
             {
-                i.tacs.Add(new CallEx(var.Null, new var[] { }, i.stack_before[i.stack_before.Count - 1].contains_variable, MakeStaticCall(Options.CallingConvention, new Signature.Param(BaseType_Type.Void), new List<Signature.Param>(), ThreeAddressCode.Op.call_void)));
+                i.tacs.Add(new CallEx(var.Null, new var[] { }, i.stack_before[i.stack_before.Count - 1].contains_variable, MakeStaticCall(Options.CallingConvention, new Signature.Param(BaseType_Type.Void), new List<Signature.Param>(), ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call))));
             }
             else if (methname == "_ZX15OtherOperationsM_0_5CallI_Rv_P1y")
             {
-                i.tacs.Add(new CallEx(var.Null, new var[] { }, i.stack_before[i.stack_before.Count - 1].contains_variable, MakeStaticCall(Options.CallingConvention, new Signature.Param(BaseType_Type.Void), new List<Signature.Param>(), ThreeAddressCode.Op.call_void)));
+                i.tacs.Add(new CallEx(var.Null, new var[] { }, i.stack_before[i.stack_before.Count - 1].contains_variable, MakeStaticCall(Options.CallingConvention, new Signature.Param(BaseType_Type.Void), new List<Signature.Param>(), ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call))));
             }
             else if (methname == "_ZW6System5ArrayM_0_9GetLength_Ri_P2u1ti")
             {
@@ -337,24 +337,24 @@ namespace libtysila
                 enc_checknullref(i, v_obj);
 
                 // Range check
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_rank, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.rank)), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.cmp_i4, var.Null, v_dimension, v_rank));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.throwge_un, var.Null, var.Const(throw_IndexOutOfRangeException), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_rank, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.rank)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.cmp), var.Null, v_dimension, v_rank));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.throwge_un), var.Null, var.Const(throw_IndexOutOfRangeException), var.Null));
 
                 // Load the correct element within the sizes array (== array_start + dimension * packedsizeof(I4))
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_sizes, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.sizes)), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_offset, v_dimension, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.mul_i4, v_offset, v_offset, var.Const(GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)))));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.conv_i4_isx, v_offset_i, v_offset, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.add_i, v_sizes, v_sizes, v_offset));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, state.next_variable++, var.ContentsOf(v_sizes), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_sizes, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.sizes)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_offset, v_dimension, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), v_offset, v_offset, var.Const(GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)))));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.conv_i4_isx), v_offset_i, v_offset, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), v_sizes, v_sizes, v_offset));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), state.next_variable++, var.ContentsOf(v_sizes), var.Null));
             }
             else if (methname == "_ZW6System5ArrayM_0_7GetRank_Ri_P1u1t")
             {
                 var v_obj = i.stack_before[i.stack_before.Count - 1].contains_variable;
 
                 enc_checknullref(i, v_obj);
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, state.next_variable++, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.rank)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), state.next_variable++, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.rank)), var.Null));
             }
             else if (methname == "_ZW6System5ArrayM_0_13GetLowerBound_Ri_P2u1ti")
             {
@@ -368,17 +368,17 @@ namespace libtysila
                 enc_checknullref(i, v_obj);
 
                 // Range check
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_rank, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.rank)), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.cmp_i4, var.Null, v_dimension, v_rank));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.throwge_un, var.Null, var.Const(throw_IndexOutOfRangeException), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_rank, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.rank)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.cmp), var.Null, v_dimension, v_rank));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.throwge_un), var.Null, var.Const(throw_IndexOutOfRangeException), var.Null));
 
                 // Load the correct element within the sizes array (== dimension * packedsizeof(I4))
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_lobounds, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.lobounds)), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_offset, v_dimension, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.mul_i4, v_offset, v_offset, var.Const(GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)))));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.conv_i4_isx, v_offset_i, v_offset, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.add_i, v_lobounds, v_lobounds, v_offset));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, state.next_variable++, var.ContentsOf(v_lobounds), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_lobounds, var.ContentsOf(v_obj, GetArrayFieldOffset(ArrayFields.lobounds)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_offset, v_dimension, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), v_offset, v_offset, var.Const(GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)))));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.conv_i4_isx), v_offset_i, v_offset, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), v_lobounds, v_lobounds, v_offset));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), state.next_variable++, var.ContentsOf(v_lobounds), var.Null));
             }
             else if (methname == "_ZW6System5ArrayM_0_12GetValueImpl_Ru1O_P2u1ti")
             {
@@ -393,7 +393,7 @@ namespace libtysila
                 var v_vtbl = state.next_variable++;
                 var v_ret = state.next_variable++;
 
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_vtbl, var.ContentsOf(v_obj), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_vtbl, var.ContentsOf(v_obj), var.Null));
                 int vtbl_offset = GetArrayFieldOffset(ArrayFields.getvalueimpl_vtbl_offset);
                 i.tacs.Add(new CallEx(v_ret, new var[] { v_obj, v_pos }, var.ContentsOf(v_vtbl, vtbl_offset), callconv_getvalueimpl));
 
@@ -458,50 +458,50 @@ namespace libtysila
                 enc_checknullref(i, v_srcArray);
                 enc_checknullref(i, v_destArray);
 
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_retval, var.Const(0), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_retval, var.Const(0), var.Null));
 
                 var v_srcET = state.next_variable++;
                 var v_destET = state.next_variable++;
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_srcET, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.elemtype)), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i, v_destET, var.ContentsOf(v_destArray, GetArrayFieldOffset(ArrayFields.elemtype)), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.cmp_i, var.Null, v_srcET, v_destET));
-                i.tacs.Add(new BrEx(ThreeAddressCode.Op.bne, blk_end));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_srcET, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.elemtype)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_destET, var.ContentsOf(v_destArray, GetArrayFieldOffset(ArrayFields.elemtype)), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.cmp), var.Null, v_srcET, v_destET));
+                i.tacs.Add(new BrEx(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.bne), blk_end));
 
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_retval, var.Const(-1), var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.cmp_i4, var.Null, v_length, var.Const(0)));
-                i.tacs.Add(new BrEx(ThreeAddressCode.Op.beq, blk_end));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_retval, var.Const(-1), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.cmp), var.Null, v_length, var.Const(0)));
+                i.tacs.Add(new BrEx(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.beq), blk_end));
 
                 var v_srcEnd = state.next_variable++;
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.add_i4, v_srcEnd, v_srcIndex, v_length));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.cmp_i4, var.Null, v_srcEnd, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.inner_array_length), 4)));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.throwg_un, var.Null, var.Const(throw_IndexOutOfRangeException), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), v_srcEnd, v_srcIndex, v_length));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.cmp), var.Null, v_srcEnd, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.inner_array_length), 4)));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.throwg_un), var.Null, var.Const(throw_IndexOutOfRangeException), var.Null));
                 var v_destEnd = state.next_variable++;
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.add_i4, v_destEnd, v_destIndex, v_length));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.cmp_i4, var.Null, v_destEnd, var.ContentsOf(v_destArray, GetArrayFieldOffset(ArrayFields.inner_array_length), 4)));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.throwg_un, var.Null, var.Const(throw_IndexOutOfRangeException), var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), v_destEnd, v_destIndex, v_length));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.cmp), var.Null, v_destEnd, var.ContentsOf(v_destArray, GetArrayFieldOffset(ArrayFields.inner_array_length), 4)));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.throwg_un), var.Null, var.Const(throw_IndexOutOfRangeException), var.Null));
 
                 var v_srcIntIndex = state.next_variable++;
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_srcIntIndex, v_srcIndex, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.mul_i4, v_srcIntIndex, v_srcIntIndex, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.elem_size), 4)));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.conv_i4_isx, v_srcIntIndex, v_srcIntIndex, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.add_i, v_srcIntIndex, v_srcIntIndex, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.inner_array))));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_srcIntIndex, v_srcIndex, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), v_srcIntIndex, v_srcIntIndex, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.elem_size), 4)));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.conv_i4_isx), v_srcIntIndex, v_srcIntIndex, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), v_srcIntIndex, v_srcIntIndex, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.inner_array))));
                 var v_destIntIndex = state.next_variable++;
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_destIntIndex, v_destIndex, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.mul_i4, v_destIntIndex, v_destIntIndex, var.ContentsOf(v_destArray, GetArrayFieldOffset(ArrayFields.elem_size), 4)));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.conv_i4_isx, v_destIntIndex, v_destIntIndex, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.add_i, v_destIntIndex, v_destIntIndex, var.ContentsOf(v_destArray, GetArrayFieldOffset(ArrayFields.inner_array))));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_destIntIndex, v_destIndex, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), v_destIntIndex, v_destIntIndex, var.ContentsOf(v_destArray, GetArrayFieldOffset(ArrayFields.elem_size), 4)));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.conv_i4_isx), v_destIntIndex, v_destIntIndex, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), v_destIntIndex, v_destIntIndex, var.ContentsOf(v_destArray, GetArrayFieldOffset(ArrayFields.inner_array))));
                 var v_bytelength = state.next_variable++;
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i4, v_bytelength, v_length, var.Null));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.mul_i4, v_bytelength, v_bytelength, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.elem_size), 4)));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_bytelength, v_length, var.Null));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), v_bytelength, v_bytelength, var.ContentsOf(v_srcArray, GetArrayFieldOffset(ArrayFields.elem_size), 4)));
 
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.cmp_i, var.Null, v_srcArray, v_destArray));
-                i.tacs.Add(new BrEx(ThreeAddressCode.Op.bne, blk_memcpy));
-                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.cmp_i4, var.Null, v_srcIndex, v_destIndex));
-                i.tacs.Add(new BrEx(ThreeAddressCode.Op.ba, blk_memcpy));
-                i.tacs.Add(new BrEx(ThreeAddressCode.Op.beq, blk_end));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.cmp), var.Null, v_srcArray, v_destArray));
+                i.tacs.Add(new BrEx(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.bne), blk_memcpy));
+                i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.cmp), var.Null, v_srcIndex, v_destIndex));
+                i.tacs.Add(new BrEx(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.ba), blk_memcpy));
+                i.tacs.Add(new BrEx(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.beq), blk_end));
 
                 i.tacs.Add(new CallEx(var.Null, new var[] { v_destIntIndex, v_srcIntIndex, v_bytelength }, "__memmove", callconv_memmove));
-                i.tacs.Add(new BrEx(ThreeAddressCode.Op.br, blk_end));
+                i.tacs.Add(new BrEx(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.br), blk_end));
 
                 i.tacs.Add(LabelEx.LocalLabel(blk_memcpy));
                 i.tacs.Add(new CallEx(var.Null, new var[] { v_destIntIndex, v_srcIntIndex, v_bytelength }, "__memcpy", callconv_memcpy));

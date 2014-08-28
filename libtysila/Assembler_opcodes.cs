@@ -293,16 +293,6 @@ namespace libtysila
             public ControlFlow ctrl;
         }
 
-        internal class InstructionLabel : InstructionLine
-        {
-            public InstructionHeader instr;
-            public InstructionLabel(Assembler ass, InstructionLine inst) { opcode = ass.Opcodes[0xfd2e]; instr = new InstructionHeader { ass = ass, il_offset = inst.il_offset, instr = inst }; }
-            public override string ToString()
-            {
-                return "label: " + instr.instr.ToString();
-            }
-        }
-
         public enum PopBehaviour { Pop0 = 1, Pop1 = 2, PopI = 8, PopI8 = 32, PopR4 = 64, PopR8 = 128, PopRef = 256, VarPop = 512 };
         public enum PushBehaviour { Push0 = 1, Push1 = 2, PushI = 8, PushI8 = 16, PushR4 = 32, PushR8 = 64, PushRef = 128, VarPush = 256 };
         public enum InlineVar

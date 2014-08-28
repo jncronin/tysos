@@ -413,28 +413,116 @@ namespace libtysila
         public IList<var> uses, defs;
         public ThreeAddressCode[] remove_if_optimized;
         internal bool optimized_out_by_removal_of_another_instruction = false;
-        public enum Op
+
+        public struct Op
+        {
+            public OpName Operator;
+            public Assembler.CliType Type;
+            public Signature.Param VT_Type;
+
+            public Op(OpName op, Assembler.CliType type) { Operator = op; Type = type; VT_Type = null; chk_vt(); }
+            public Op(OpName op, Assembler.CliType type, Signature.Param vt_type) { Operator = op; Type = type; VT_Type = vt_type; chk_vt(); }
+            public static Op OpI4(OpName op) { return new Op(op, Assembler.CliType.int32); }
+            public static Op OpI8(OpName op) { return new Op(op, Assembler.CliType.int64); }
+            public static Op OpI(OpName op) { return new Op(op, Assembler.CliType.native_int); }
+            public static Op OpR4(OpName op) { return new Op(op, Assembler.CliType.F32); }
+            public static Op OpR8(OpName op) { return new Op(op, Assembler.CliType.F64); }
+            public static Op OpVoid(OpName op) { return new Op(op, Assembler.CliType.void_); }
+            public static Op OpNull(OpName op) { return new Op(op, Assembler.CliType.none); }
+            public static Op OpVT(OpName op, Signature.Param vt_type) { return new Op(op, Assembler.CliType.vt, vt_type); }
+            public static Op OpVT(OpName op) { return new Op(op, Assembler.CliType.vt, null); }
+
+            private void chk_vt()
+            {
+                if (Type == Assembler.CliType.vt && VT_Type == null)
+                    throw new Exception("VT Type required");
+            }
+
+            public static bool operator== (Op a, Op b)
+            {
+                return a.Operator == b.Operator && a.Type == b.Type;
+            }
+
+            public static bool operator !=(Op a, Op b)
+            {
+                return a.Operator != b.Operator || a.Type != b.Type;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (!(obj is Op))
+                    return false;
+                Op b = (Op)obj;
+                return this == b;
+            }
+
+            public override int GetHashCode()
+            {
+                return Operator.GetHashCode() ^ Type.GetHashCode();
+            }
+
+            public override string ToString()
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append(Operator.ToString());
+                if (Type != Assembler.CliType.none)
+                {
+                    sb.Append(" ");
+                    switch (Type)
+                    {
+                        case Assembler.CliType.F32:
+                            sb.Append("R4");
+                            break;
+                        case Assembler.CliType.F64:
+                            sb.Append("R8");
+                            break;
+                        case Assembler.CliType.int32:
+                            sb.Append("I4");
+                            break;
+                        case Assembler.CliType.int64:
+                            sb.Append("I8");
+                            break;
+                        case Assembler.CliType.native_int:
+                        case Assembler.CliType.O:
+                        case Assembler.CliType.reference:
+                            sb.Append("I");
+                            break;
+
+                        case Assembler.CliType.void_:
+                            sb.Append("void");
+                            break;
+
+                        case Assembler.CliType.vt:
+                            sb.Append("VT{");
+                            sb.Append(VT_Type.ToString());
+                            sb.Append("}");
+                            break;
+                    }
+                }
+
+                return sb.ToString();
+            }
+
+            public OpType OpType
+            { get { return ThreeAddressCode.GetOpType(this); } }
+        }
+            
+        public enum OpName
         {
             invalid,
-            ldconst_i4, ldconst_i8, ldconst_r4, ldconst_r8, ldconst_i,
-            add_i4, add_i8, add_r8, add_r4, add_i,
-            add_ovf_i4, add_ovf_i8, add_ovf_i,
-            add_ovf_un_i4, add_ovf_un_i8, add_ovf_un_i,
-            and_i4, and_i8, and_i,
+            ldconst,
+            add,
+            add_ovf,
+            add_ovf_un,
+            and,
             arglist,
-            cmp_i4, cmp_i8, cmp_i, cmp_r8, cmp_r4, cmp_r8_un, cmp_r4_un,
-            br, beq, bne, bg, bge, bl, ble, ba, bae, bb, bbe, br_ehclause,
+            cmp, cmp_un,
+            br, br_ehclause,
             throweq, throwne, throw_ovf, throw_ovf_un, throwge_un, throwg_un,
             
-            throweq_i4, throweq_i8, throweq_i, throweq_r4, throweq_r8,
-            throwne_i4, throwne_i8, throwne_i, throwne_r4, throwne_r8,
-            throwg_i4, throwg_i8, throwg_i, throwg_r4, throwg_r8,
-            throwge_i4, throwge_i8, throwge_i, throwge_r4, throwge_r8,
-
             break_, throw_,
             ldftn,
-            call_i4, call_i8, call_i, call_r4, call_r8, call_void,
-            call_vt,
+            call,
             seteq, setne, setg, setge, setl, setle, seta, setae, setb, setbe,
             examinef, brfinite,
             conv_i4_u1zx, conv_i4_i1sx, conv_i4_u2zx, conv_i4_i2sx,
@@ -451,44 +539,43 @@ namespace libtysila
             conv_r8_r4, conv_r4_r8,
             conv_u4_r8, conv_u8_r8, conv_u_r8,
             movstring,
-            div_i4, div_i8, div_i, div_r8, div_r4, div_u4, div_u8, div_u,
+            div, div_un,
             setstring_value,
             getstring_value,
             storestring,
             jmpmethod,
-            ldobj_i4, ldobj_i8, ldobj_r4, ldobj_r8, ldobj_i, ldobj_vt, ldobja_ex_i,
-            stobj_i4, stobj_i8, stobj_r4, stobj_r8, stobj_i, stobj_vt,
+            ldobj, ldobja_ex,
+            stobj,
             ldarga, ldloca, ldstra, lddataa,
-            mul_i4, mul_i8, mul_i, mul_r8, mul_r4,
-            mul_ovf_i4, mul_ovf_i8, mul_ovf_i,
-            mul_ovf_un_i4, mul_ovf_un_i8, mul_ovf_un_i,
-            mul_un_i4, mul_un_i8, mul_un_i,
-            neg_i4, neg_i8, neg_i, neg_r8, neg_r4,
-            not_i4, not_i8, not_i,
-            or_i4, or_i8, or_i,
-            rem_i4, rem_i8, rem_i, rem_r8, rem_r4,
-            rem_un_i4, rem_un_i8, rem_un_i,
-            ret_void, ret_i4, ret_i8, ret_i, ret_r8, ret_vt,
-            shl_i4, shl_i8, shl_i,
-            shr_i4, shr_i8, shr_i,
-            shr_un_i4, shr_un_i8, shr_un_i,
-            sub_i4, sub_i8, sub_i, sub_r8, sub_r4,
-            sub_ovf_i, sub_ovf_un_i,
+            mul,
+            mul_ovf,
+            mul_ovf_un,
+            mul_un,
+            neg,
+            not,
+            or,
+            rem,
+            rem_un,
+            ret,
+            shl,
+            shr,
+            shr_un,
+            sub,
+            sub_ovf, sub_ovf_un,
             switch_,
-            xor_i4, xor_i8, xor_i,
+            xor,
             sizeof_,
             malloc,
-            assign_i4, assign_i8, assign_r4, assign_r8, assign_i, assign_vt,
-            assign_v_i4, assign_v_i8, assign_v_i,
+            assign,
             assign_to_virtftnptr,
             assign_from_virtftnptr_ptr, assign_from_virtftnptr_thisadjust,
             assign_virtftnptr,
             ldobj_virtftnptr,
             label, loc_label, instruction_label, enter, nop,
-            phi_i, phi_i4, phi_i8, phi_r4, phi_r8, phi_vt,
+            phi,
 
-            peek_u1, peek_u2, peek_u4, peek_u8, peek_u, peek_i1, peek_i2, peek_r4, peek_r8,
-            poke_u1, poke_u2, poke_u4, poke_u8, poke_u, poke_r4, poke_r8,
+            peek_u1, peek_u2, peek_u4, peek_u8, peek_u, peek_i1, peek_i2, peek_r4, peek_r8, peek_vt,
+            poke_u1, poke_u2, poke_u4, poke_u8, poke_u, poke_r4, poke_r8, poke_vt,
 
             portout_u2_u1, portout_u2_u2, portout_u2_u4, portout_u2_u8, portout_u2_u,
             portin_u2_u1, portin_u2_u2, portin_u2_u4, portin_u2_u8, portin_u2_u,
@@ -497,23 +584,24 @@ namespace libtysila
 
             sqrt_r8,
 
-            alloca_i4, alloca_i,
+            alloca,
             zeromem,
 
             ldcatchobj, ldmethinfo, endfinally,
 
-            localarg,
+            la_load, la_store,
+            lv_load, lv_store,
 
-            beq_i4, beq_i8, beq_i, beq_r8, beq_r4, beq_r8_un, beq_r4_un,
-            bne_i4, bne_i8, bne_i, bne_r8, bne_r4, bne_r8_un, bne_r4_un,
-            bg_i4, bg_i8, bg_i, bg_r8, bg_r4, bg_r8_un, bg_r4_un,
-            bge_i4, bge_i8, bge_i, bge_r8, bge_r4, bge_r8_un, bge_r4_un,
-            bl_i4, bl_i8, bl_i, bl_r8, bl_r4, bl_r8_un, bl_r4_un,
-            ble_i4, ble_i8, ble_i, ble_r8, ble_r4, ble_r8_un, ble_r4_un,
-            ba_i4, ba_i8, ba_i, ba_r8, ba_r4, ba_r8_un, ba_r4_un,
-            bae_i4, bae_i8, bae_i, bae_r8, bae_r4, bae_r8_un, bae_r4_un,
-            bb_i4, bb_i8, bb_i, bb_r8, bb_r4, bb_r8_un, bb_r4_un,
-            bbe_i4, bbe_i8, bbe_i, bbe_r8, bbe_r4, bbe_r8_un, bbe_r4_un,
+            beq, beq_un,
+            bne, bneun,
+            bg, bg_un,
+            bge, bge_un,
+            bl, bl_un,
+            ble, ble_un,
+            ba, ba_un,
+            bae, bae_un,
+            bb, bb_un,
+            bbe, bbe_un,
 
             adjstack, save, restore,
 
@@ -529,8 +617,6 @@ namespace libtysila
 
         internal var Result, Operand1, Operand2;
         public Op Operator;
-
-        public Assembler.cfg_node node;
 
         public bool is_float = false;
 
@@ -557,22 +643,16 @@ namespace libtysila
         {
             get
             {
-                switch (Operator)
+                switch (Operator.Operator)
                 {
-                    case Op.call_i:
-                    case Op.call_i4:
-                    case Op.call_i8:
-                    case Op.call_r4:
-                    case Op.call_r8:
-                    case Op.call_void:
-                    case Op.call_vt:
-                    case Op.throw_:
-                    case Op.throw_ovf:
-                    case Op.throw_ovf_un:
-                    case Op.throweq:
-                    case Op.throwg_un:
-                    case Op.throwge_un:
-                    case Op.throwne:
+                    case OpName.call:
+                    case OpName.throw_:
+                    case OpName.throw_ovf:
+                    case OpName.throw_ovf_un:
+                    case OpName.throweq:
+                    case OpName.throwg_un:
+                    case OpName.throwge_un:
+                    case OpName.throwne:
                         return true;
                     default:
                         return false;
@@ -590,17 +670,11 @@ namespace libtysila
 
         public static bool OpFallsThrough(Op op)
         {
-            switch (op)
+            switch (op.Operator)
             {
-                case Op.br:
-                case Op.br_ehclause:
-                case Op.throw_:
-                case Op.ret_i:
-                case Op.ret_i4:
-                case Op.ret_i8:
-                case Op.ret_r8:
-                case Op.ret_void:
-                case Op.ret_vt:
+                case OpName.br:
+                case OpName.throw_:
+                case OpName.ret:
                     return false;
                 default:
                     return true;
@@ -619,8 +693,8 @@ namespace libtysila
 
         public override string ToString()
         {
-            if ((GetOpType() == OpType.AssignOp) && (Operator != Op.assign_from_virtftnptr_ptr) && (Operator != Op.assign_from_virtftnptr_thisadjust) &&
-                (Operator != Op.assign_to_virtftnptr))
+            if ((GetOpType() == OpType.AssignOp) && (Operator.Operator != OpName.assign_from_virtftnptr_ptr) && (Operator.Operator != OpName.assign_from_virtftnptr_thisadjust) &&
+                (Operator.Operator != OpName.assign_to_virtftnptr))
                 return Result.ToString() + " = " + Operand1.ToString() + ((IsVolatile) ? " [volatile]" : "");
             /*return ((Result > 0) ? (Result.ToString() + " = ") : "") + Operator.ToString() + "(" +
                 ((Operand1.constant_val != null) ? ("$" + Operand1.constant_val.ToString()) : ((Operand1 > 0) ? Operand1.ToString() : "")) +
@@ -628,7 +702,10 @@ namespace libtysila
                 ((Operand2.constant_val != null) ? ("$" + Operand2.constant_val.ToString()) : Operand2.ToString())) : "") + ")";*/
 
             string op = Operator.ToString();
-            if ((Operator == Op.misc) && (this is MiscEx))
+            if (Operator.Type != Assembler.CliType.none)
+                op += " " + Operator.ToString();
+                
+            if ((Operator.Operator == OpName.misc) && (this is MiscEx))
                 op = ((MiscEx)this).Name;
 
             return ((Result.type == var.var_type.Void) ? "" : (Result.ToString() + " = ")) +
@@ -641,9 +718,9 @@ namespace libtysila
 
         public string IndentedString()
         {
-            if (Operator == Op.instruction_label)
+            if (Operator.Operator == OpName.instruction_label)
                 return this.ToString();
-            else if (Operator == Op.label)
+            else if (Operator.Operator == OpName.label)
                 return "  " + this.ToString();
             else
                 return "    " + this.ToString();
@@ -666,12 +743,8 @@ namespace libtysila
         {
             get
             {
-                switch (Operator)
+                switch (Operator.Operator)
                 {
-                    case Op.assign_v_i:
-                    case Op.assign_v_i4:
-                    case Op.assign_v_i8:
-                        return true;
                     default:
                         return false;
                 }
@@ -686,269 +759,114 @@ namespace libtysila
 
         public static OpType GetOpType(Op op)
         {
-            switch(op)
+            switch(op.Operator)
             {
-                case Op.add_i:
-                case Op.add_i4:
-                case Op.add_i8:
-                case Op.add_ovf_i:
-                case Op.add_ovf_i4:
-                case Op.add_ovf_i8:
-                case Op.add_ovf_un_i:
-                case Op.add_ovf_un_i4:
-                case Op.add_ovf_un_i8:
-                case Op.add_r8:
-                case Op.add_r4:
-                case Op.and_i:
-                case Op.and_i4:
-                case Op.and_i8:
-                case Op.div_i:
-                case Op.div_i4:
-                case Op.div_i8:
-                case Op.div_r8:
-                case Op.div_r4:
-                case Op.div_u:
-                case Op.div_u4:
-                case Op.div_u8:
-                case Op.mul_i:
-                case Op.mul_i4:
-                case Op.mul_i8:
-                case Op.mul_ovf_i:
-                case Op.mul_ovf_i4:
-                case Op.mul_ovf_i8:
-                case Op.mul_ovf_un_i:
-                case Op.mul_ovf_un_i4:
-                case Op.mul_ovf_un_i8:
-                case Op.mul_r8:
-                case Op.mul_r4:
-                case Op.mul_un_i:
-                case Op.mul_un_i4:
-                case Op.mul_un_i8:
-                case Op.or_i:
-                case Op.or_i4:
-                case Op.or_i8:
-                case Op.rem_i:
-                case Op.rem_i4:
-                case Op.rem_i8:
-                case Op.rem_r8:
-                case Op.rem_r4:
-                case Op.rem_un_i:
-                case Op.rem_un_i4:
-                case Op.rem_un_i8:
-                case Op.shl_i:
-                case Op.shl_i4:
-                case Op.shl_i8:
-                case Op.shr_i:
-                case Op.shr_i4:
-                case Op.shr_i8:
-                case Op.shr_un_i:
-                case Op.shr_un_i4:
-                case Op.shr_un_i8:
-                case Op.sub_i:
-                case Op.sub_i4:
-                case Op.sub_i8:
-                case Op.sub_ovf_i:
-                case Op.sub_ovf_un_i:
-                case Op.sub_r8:
-                case Op.sub_r4:
-                case Op.xor_i:
-                case Op.xor_i4:
-                case Op.xor_i8:
+                case OpName.add:
+                case OpName.add_ovf:
+                case OpName.add_ovf_un:
+                case OpName.and:
+                case OpName.div:
+                case OpName.div_un:
+                case OpName.mul:
+                case OpName.mul_ovf:
+                case OpName.mul_ovf_un:
+                case OpName.or:
+                case OpName.rem:
+                case OpName.rem_un:
+                case OpName.shl:
+                case OpName.shr:
+                case OpName.shr_un:
+                case OpName.sub:
+                case OpName.sub_ovf:
+                case OpName.sub_ovf_un:
+                case OpName.xor:
                     return OpType.BinNumOp;
 
-                case Op.neg_i:
-                case Op.neg_i4:
-                case Op.neg_i8:
-                case Op.neg_r8:
-                case Op.not_i:
-                case Op.not_i4:
-                case Op.not_i8:
+                case OpName.neg:
+                case OpName.not:
                     return OpType.UnNumOp;
 
-                case Op.conv_i_i1sx:
-                case Op.conv_i_i2sx:
-                case Op.conv_i_i4sx:
-                case Op.conv_i_i8sx:
-                case Op.conv_i_isx:
-                case Op.conv_i_r4:
-                case Op.conv_i_r8:
-                case Op.conv_i_u1zx:
-                case Op.conv_i_u2zx:
-                case Op.conv_i_u4zx:
-                case Op.conv_i_u8zx:
-                case Op.conv_i_uzx:
-                case Op.conv_i4_i1sx:
-                case Op.conv_i4_i2sx:
-                case Op.conv_i4_i8sx:
-                case Op.conv_i4_isx:
-                case Op.conv_i4_r4:
-                case Op.conv_i4_r8:
-                case Op.conv_i4_u1zx:
-                case Op.conv_i4_u2zx:
-                case Op.conv_i4_u8zx:
-                case Op.conv_i4_uzx:
-                case Op.conv_i8_i1sx:
-                case Op.conv_i8_i2sx:
-                case Op.conv_i8_i4sx:
-                case Op.conv_i8_isx:
-                case Op.conv_i8_r4:
-                case Op.conv_i8_r8:
-                case Op.conv_i8_u1zx:
-                case Op.conv_i8_u2zx:
-                case Op.conv_i8_u4zx:
-                case Op.conv_i8_uzx:
-                case Op.conv_r8_i4:
-                case Op.conv_r8_i8:
+                case OpName.conv_i_i1sx:
+                case OpName.conv_i_i2sx:
+                case OpName.conv_i_i4sx:
+                case OpName.conv_i_i8sx:
+                case OpName.conv_i_isx:
+                case OpName.conv_i_r4:
+                case OpName.conv_i_r8:
+                case OpName.conv_i_u1zx:
+                case OpName.conv_i_u2zx:
+                case OpName.conv_i_u4zx:
+                case OpName.conv_i_u8zx:
+                case OpName.conv_i_uzx:
+                case OpName.conv_i4_i1sx:
+                case OpName.conv_i4_i2sx:
+                case OpName.conv_i4_i8sx:
+                case OpName.conv_i4_isx:
+                case OpName.conv_i4_r4:
+                case OpName.conv_i4_r8:
+                case OpName.conv_i4_u1zx:
+                case OpName.conv_i4_u2zx:
+                case OpName.conv_i4_u8zx:
+                case OpName.conv_i4_uzx:
+                case OpName.conv_i8_i1sx:
+                case OpName.conv_i8_i2sx:
+                case OpName.conv_i8_i4sx:
+                case OpName.conv_i8_isx:
+                case OpName.conv_i8_r4:
+                case OpName.conv_i8_r8:
+                case OpName.conv_i8_u1zx:
+                case OpName.conv_i8_u2zx:
+                case OpName.conv_i8_u4zx:
+                case OpName.conv_i8_uzx:
+                case OpName.conv_r8_i4:
+                case OpName.conv_r8_i8:
                     return OpType.ConvOp;
 
-                case Op.ldconst_i:
-                case Op.ldconst_i4:
-                case Op.ldconst_i8:
-                case Op.ldconst_r4:
-                case Op.ldconst_r8:
+                case OpName.ldconst:
                     return OpType.ConstOp;
 
-                case Op.cmp_i:
-                case Op.cmp_i4:
-                case Op.cmp_i8:
-                case Op.cmp_r8:
-                case Op.cmp_r4:
-                case Op.cmp_r4_un:
-                case Op.cmp_r8_un:
+                case OpName.cmp:
+                case OpName.cmp_un:
                     return OpType.CmpOp;
 
-                case Op.call_i:
-                case Op.call_i4:
-                case Op.call_i8:
-                case Op.call_r4:
-                case Op.call_r8:
-                case Op.call_void:
-                case Op.call_vt:
+                case OpName.call:
                     return OpType.CallOp;
 
-                case Op.assign_i:
-                case Op.assign_i4:
-                case Op.assign_i8:
-                case Op.assign_r4:
-                case Op.assign_r8:
-                case Op.assign_vt:
-                case Op.assign_virtftnptr:
-                case Op.assign_v_i:
-                case Op.assign_v_i4:
-                case Op.assign_v_i8:
+                case OpName.assign:
+                case OpName.assign_virtftnptr:
                     return OpType.AssignOp;
 
-                case Op.poke_u:
-                case Op.poke_u1:
-                case Op.poke_u2:
-                case Op.poke_u4:
-                case Op.poke_u8:
-                case Op.peek_u:
-                case Op.peek_u1:
-                case Op.peek_u2:
-                case Op.peek_u4:
-                case Op.peek_u8:
+                case OpName.poke_u:
+                case OpName.poke_u1:
+                case OpName.poke_u2:
+                case OpName.poke_u4:
+                case OpName.poke_u8:
+                case OpName.peek_u:
+                case OpName.peek_u1:
+                case OpName.peek_u2:
+                case OpName.peek_u4:
+                case OpName.peek_u8:
                     return OpType.InternalOp;
 
-                case Op.phi_i:
-                case Op.phi_i4:
-                case Op.phi_i8:
-                case Op.phi_r4:
-                case Op.phi_r8:
-                case Op.phi_vt:
+                case OpName.phi:
                     return OpType.PhiOp;
 
-                case Op.ret_i:
-                case Op.ret_i4:
-                case Op.ret_i8:
-                case Op.ret_r8:
+                case OpName.ret:
                     return OpType.ReturnOp;
 
-                case Op.br:
-                case Op.br_ehclause:
-                case Op.brfinite:
-                case Op.ba:
-                case Op.bae:
-                case Op.bb:
-                case Op.bbe:
-                case Op.beq:
-                case Op.bg:
-                case Op.bge:
-                case Op.bl:
-                case Op.ble:
-                case Op.bne:
-                    return OpType.BrOp;
-
-                case Op.beq_i4:
-                case Op.beq_i8:
-                case Op.beq_i:
-                case Op.beq_r8:
-                case Op.beq_r4:
-                case Op.beq_r8_un:
-                case Op.beq_r4_un:
-                case Op.bne_i4:
-                case Op.bne_i8:
-                case Op.bne_i:
-                case Op.bne_r8:
-                case Op.bne_r4:
-                case Op.bne_r8_un:
-                case Op.bne_r4_un:
-                case Op.bg_i4:
-                case Op.bg_i8:
-                case Op.bg_i:
-                case Op.bg_r8:
-                case Op.bg_r4:
-                case Op.bg_r8_un:
-                case Op.bg_r4_un:
-                case Op.bge_i4:
-                case Op.bge_i8:
-                case Op.bge_i:
-                case Op.bge_r8:
-                case Op.bge_r4:
-                case Op.bge_r8_un:
-                case Op.bge_r4_un:
-                case Op.bl_i4:
-                case Op.bl_i8:
-                case Op.bl_i:
-                case Op.bl_r8:
-                case Op.bl_r4:
-                case Op.bl_r8_un:
-                case Op.bl_r4_un:
-                case Op.ble_i4:
-                case Op.ble_i8:
-                case Op.ble_i:
-                case Op.ble_r8:
-                case Op.ble_r4:
-                case Op.ble_r8_un:
-                case Op.ble_r4_un:
-                case Op.ba_i4:
-                case Op.ba_i8:
-                case Op.ba_i:
-                case Op.ba_r8:
-                case Op.ba_r4:
-                case Op.ba_r8_un:
-                case Op.ba_r4_un:
-                case Op.bae_i4:
-                case Op.bae_i8:
-                case Op.bae_i:
-                case Op.bae_r8:
-                case Op.bae_r4:
-                case Op.bae_r8_un:
-                case Op.bae_r4_un:
-                case Op.bb_i4:
-                case Op.bb_i8:
-                case Op.bb_i:
-                case Op.bb_r8:
-                case Op.bb_r4:
-                case Op.bb_r8_un:
-                case Op.bb_r4_un:
-                case Op.bbe_i4:
-                case Op.bbe_i8:
-                case Op.bbe_i:
-                case Op.bbe_r8:
-                case Op.bbe_r4:
-                case Op.bbe_r8_un:
-                case Op.bbe_r4_un:
+                case OpName.br:
+                case OpName.br_ehclause:
+                case OpName.brfinite:
+                case OpName.ba:
+                case OpName.bae:
+                case OpName.bb:
+                case OpName.bbe:
+                case OpName.beq:
+                case OpName.bg:
+                case OpName.bge:
+                case OpName.bl:
+                case OpName.ble:
+                case OpName.bne:
                     return OpType.CmpBrOp;
 
                 default:
@@ -958,448 +876,43 @@ namespace libtysila
 
         internal virtual libtysila.Assembler.CliType GetOp1Type()
         {
-            switch (Operator)
+            switch (GetOpType())
             {
-                case Op.add_i:
-                case Op.add_ovf_i:
-                case Op.add_ovf_un_i:
-                case Op.and_i:
-                case Op.assign_i:
-                case Op.cmp_i:
-                case Op.conv_i_i1sx:
-                case Op.conv_i_i2sx:
-                case Op.conv_i_i4sx:
-                case Op.conv_i_i8sx:
-                case Op.conv_i_isx:
-                case Op.conv_i_r4:
-                case Op.conv_i_r8:
-                case Op.conv_i_u1zx:
-                case Op.conv_i_u2zx:
-                case Op.conv_i_u4zx:
-                case Op.conv_i_u8zx:
-                case Op.conv_i_uzx:
-                case Op.conv_u_r8:
-                case Op.div_i:
-                case Op.div_u:
-                case Op.mul_i:
-                case Op.mul_ovf_i:
-                case Op.mul_ovf_un_i:
-                case Op.mul_un_i:
-                case Op.neg_i:
-                case Op.not_i:
-                case Op.or_i:
-                case Op.rem_i:
-                case Op.shl_i:
-                case Op.shr_i:
-                case Op.shr_un_i:
-                case Op.sub_i:
-                case Op.sub_ovf_i:
-                case Op.sub_ovf_un_i:
-                case Op.xor_i:
-                case Op.zeromem:
-                    return Assembler.CliType.native_int;
-
-                case Op.add_i4:
-                case Op.add_ovf_i4:
-                case Op.add_ovf_un_i4:
-                case Op.and_i4:
-                case Op.assign_i4:
-                case Op.cmp_i4:
-                case Op.conv_i4_i1sx:
-                case Op.conv_i4_i2sx:
-                case Op.conv_i4_i8sx:
-                case Op.conv_i4_isx:
-                case Op.conv_i4_r4:
-                case Op.conv_i4_r8:
-                case Op.conv_i4_u1zx:
-                case Op.conv_i4_u2zx:
-                case Op.conv_i4_u8zx:
-                case Op.conv_i4_uzx:
-                case Op.conv_u4_r8:
-                case Op.div_i4:
-                case Op.div_u4:
-                case Op.mul_i4:
-                case Op.mul_ovf_i4:
-                case Op.mul_ovf_un_i4:
-                case Op.mul_un_i4:
-                case Op.neg_i4:
-                case Op.not_i4:
-                case Op.or_i4:
-                case Op.rem_i4:
-                case Op.rem_un_i4:
-                case Op.shl_i4:
-                case Op.shr_i4:
-                case Op.shr_un_i4:
-                case Op.sub_i4:
-                case Op.xor_i4:
-                    return Assembler.CliType.int32;
-
-                case Op.add_i8:
-                case Op.add_ovf_i8:
-                case Op.add_ovf_un_i8:
-                case Op.assign_i8:
-                case Op.cmp_i8:
-                case Op.conv_i8_i1sx:
-                case Op.conv_i8_i2sx:
-                case Op.conv_i8_i4sx:
-                case Op.conv_i8_isx:
-                case Op.conv_i8_r4:
-                case Op.conv_i8_r8:
-                case Op.conv_i8_u1zx:
-                case Op.conv_i8_u2zx:
-                case Op.conv_i8_u4zx:
-                case Op.conv_i8_uzx:
-                case Op.div_i8:
-                case Op.div_u8:
-                case Op.mul_i8:
-                case Op.mul_ovf_i8:
-                case Op.mul_ovf_un_i8:
-                case Op.mul_un_i8:
-                case Op.neg_i8:
-                case Op.not_i8:
-                case Op.or_i8:
-                case Op.rem_i8:
-                case Op.rem_un_i8:
-                case Op.ret_i8:
-                case Op.shl_i8:
-                case Op.shr_i8:
-                case Op.shr_un_i8:
-                case Op.sub_i8:
-                case Op.xor_i8:
-                    return Assembler.CliType.int64;
+                case OpType.AssignOp:
+                case OpType.BinNumOp:
+                case OpType.UnNumOp:
+                    return Operator.Type;
 
                 default:
-                    throw new NotSupportedException();
+                    throw new NotImplementedException();
             }
         }
 
         internal virtual libtysila.Assembler.CliType GetOp2Type()
         {
-            switch (Operator)
+            switch (GetOpType())
             {
-                case Op.add_i:
-                case Op.add_ovf_i:
-                case Op.add_ovf_un_i:
-                case Op.and_i:
-                case Op.cmp_i:
-                case Op.div_i:
-                case Op.div_u:
-                case Op.mul_i:
-                case Op.mul_ovf_i:
-                case Op.mul_ovf_un_i:
-                case Op.mul_un_i:
-                case Op.or_i:
-                case Op.rem_i:
-                case Op.sub_i:
-                case Op.sub_ovf_i:
-                case Op.sub_ovf_un_i:
-                case Op.xor_i:
-                    return Assembler.CliType.native_int;
-
-                case Op.add_i4:
-                case Op.add_ovf_i4:
-                case Op.add_ovf_un_i4:
-                case Op.and_i4:
-                case Op.cmp_i4:
-                case Op.div_i4:
-                case Op.div_u4:
-                case Op.mul_i4:
-                case Op.mul_ovf_i4:
-                case Op.mul_ovf_un_i4:
-                case Op.mul_un_i4:
-                case Op.or_i4:
-                case Op.rem_i4:
-                case Op.rem_un_i4:
-                case Op.shl_i4:
-                case Op.shr_i4:
-                case Op.shr_un_i4:
-                case Op.shl_i:
-                case Op.shl_i8:
-                case Op.shr_i:
-                case Op.shr_i8:
-                case Op.shr_un_i:
-                case Op.shr_un_i8:
-                case Op.sub_i4:
-                case Op.xor_i4:
-                case Op.zeromem:
-                    return Assembler.CliType.int32;
-
-                case Op.add_i8:
-                case Op.add_ovf_i8:
-                case Op.add_ovf_un_i8:
-                case Op.cmp_i8:
-                case Op.div_i8:
-                case Op.div_u8:
-                case Op.mul_i8:
-                case Op.mul_ovf_i8:
-                case Op.mul_ovf_un_i8:
-                case Op.mul_un_i8:
-                case Op.or_i8:
-                case Op.rem_i8:
-                case Op.rem_un_i8:
-                case Op.ret_i8:
-                case Op.sub_i8:
-                case Op.xor_i8:
-                    return Assembler.CliType.int64;
-
-                case Op.assign_i:
-                case Op.assign_i4:
-                case Op.assign_i8:
-                case Op.assign_r4:
-                case Op.assign_r8:
-                case Op.conv_i_i1sx:
-                case Op.conv_i_i2sx:
-                case Op.conv_i_i4sx:
-                case Op.conv_i_i8sx:
-                case Op.conv_i_isx:
-                case Op.conv_i_r4:
-                case Op.conv_i_r8:
-                case Op.conv_i_u1zx:
-                case Op.conv_i_u2zx:
-                case Op.conv_i_u4zx:
-                case Op.conv_i_u8zx:
-                case Op.conv_i_uzx:
-                case Op.conv_i4_i1sx:
-                case Op.conv_i4_i2sx:
-                case Op.conv_i4_i8sx:
-                case Op.conv_i4_isx:
-                case Op.conv_i4_r4:
-                case Op.conv_i4_r8:
-                case Op.conv_i4_u1zx:
-                case Op.conv_i4_u2zx:
-                case Op.conv_i4_u8zx:
-                case Op.conv_i4_uzx:
-                case Op.conv_i8_i1sx:
-                case Op.conv_i8_i2sx:
-                case Op.conv_i8_i4sx:
-                case Op.conv_i8_isx:
-                case Op.conv_i8_r4:
-                case Op.conv_i8_r8:
-                case Op.conv_i8_u1zx:
-                case Op.conv_i8_u2zx:
-                case Op.conv_i8_u4zx:
-                case Op.conv_i8_uzx:
-                case Op.conv_r4_i:
-                case Op.conv_r4_i4:
-                case Op.conv_r4_i8:
-                case Op.conv_r4_r8:
-                case Op.conv_r8_i:
-                case Op.conv_r8_i4:
-                case Op.conv_r8_i8:
-                case Op.conv_r8_r4:
-                case Op.conv_u_r8:
-                case Op.conv_u4_r8:
-                case Op.conv_u8_r8:
-                    return Assembler.CliType.void_;
+                case OpType.AssignOp:
+                case OpType.BinNumOp:
+                    return Operator.Type;
 
                 default:
-                    throw new NotSupportedException();
+                    throw new NotImplementedException();
             }
         }
 
         internal virtual libtysila.Assembler.CliType GetResultType()
         {
-            switch (Operator)
+            switch (GetOpType())
             {
-                case Op.add_i:
-                case Op.add_ovf_i:
-                case Op.add_ovf_un_i:
-                case Op.and_i:
-                case Op.assign_i:
-                case Op.assign_v_i:
-                case Op.call_i:
-                case Op.conv_i_isx:
-                case Op.conv_i_uzx:
-                case Op.conv_i4_isx:
-                case Op.conv_i4_uzx:
-                case Op.conv_i8_isx:
-                case Op.conv_i8_uzx:
-                case Op.div_i:
-                case Op.div_u:
-                case Op.ldarga:
-                case Op.ldconst_i:
-                case Op.lddataa:
-                case Op.ldftn:
-                case Op.ldloca:
-                case Op.ldobj_i:
-                case Op.ldstra:
-                case Op.mul_i:
-                case Op.mul_ovf_i:
-                case Op.mul_ovf_un_i:
-                case Op.mul_un_i:
-                case Op.neg_i:
-                case Op.not_i:
-                case Op.or_i:
-                case Op.rem_i:
-                case Op.rem_un_i:
-                case Op.shl_i:
-                case Op.shr_i:
-                case Op.shr_un_i:
-                case Op.sub_i:
-                case Op.sub_ovf_i:
-                case Op.sub_ovf_un_i:
-                case Op.xor_i:
-                case Op.malloc:
-                case Op.peek_u:
-                case Op.assign_from_virtftnptr_ptr:
-                case Op.assign_from_virtftnptr_thisadjust:
-                case Op.portin_u2_u:
-                case Op.ldcatchobj:
-                case Op.ldmethinfo:
-                    return Assembler.CliType.native_int;
-
-                case Op.alloca_i:
-                case Op.alloca_i4:
-                    return Assembler.CliType.reference;
-
-                case Op.add_i4:
-                case Op.add_ovf_i4:
-                case Op.add_ovf_un_i4:
-                case Op.and_i4:
-                case Op.assign_i4:
-                case Op.assign_v_i4:
-                case Op.call_i4:
-                case Op.conv_i_i1sx:
-                case Op.conv_i_i2sx:
-                case Op.conv_i_i4sx:
-                case Op.conv_i_u1zx:
-                case Op.conv_i_u2zx:
-                case Op.conv_i_u4zx:
-                case Op.conv_i4_i1sx:
-                case Op.conv_i4_i2sx:
-                case Op.conv_i4_u1zx:
-                case Op.conv_i4_u2zx:
-                case Op.conv_i8_i1sx:
-                case Op.conv_i8_i2sx:
-                case Op.conv_i8_i4sx:
-                case Op.conv_i8_u1zx:
-                case Op.conv_i8_u2zx:
-                case Op.conv_i8_u4zx:
-                case Op.conv_r8_i4:
-                case Op.conv_r4_i4:
-                case Op.div_i4:
-                case Op.div_u4:
-                case Op.ldconst_i4:
-                case Op.ldobj_i4:
-                case Op.mul_i4:
-                case Op.mul_ovf_i4:
-                case Op.mul_ovf_un_i4:
-                case Op.mul_un_i4:
-                case Op.neg_i4:
-                case Op.not_i4:
-                case Op.or_i4:
-                case Op.rem_i4:
-                case Op.rem_un_i4:
-                case Op.shl_i4:
-                case Op.shr_i4:
-                case Op.shr_un_i4:
-                case Op.sub_i4:
-                case Op.xor_i4:
-                case Op.seta:
-                case Op.setae:
-                case Op.setb:
-                case Op.setbe:
-                case Op.seteq:
-                case Op.setg:
-                case Op.setge:
-                case Op.setl:
-                case Op.setle:
-                case Op.setne:
-                case Op.peek_u4:
-                case Op.peek_u2:
-                case Op.peek_u1:
-                case Op.peek_i2:
-                case Op.peek_i1:
-                case Op.portin_u2_u4:
-                case Op.portin_u2_u2:
-                case Op.portin_u2_u1:
-                case Op.try_acquire_i8:
-                    return Assembler.CliType.int32;
-
-                case Op.add_i8:
-                case Op.add_ovf_i8:
-                case Op.add_ovf_un_i8:
-                case Op.and_i8:
-                case Op.assign_i8:
-                case Op.assign_v_i8:
-                case Op.call_i8:
-                case Op.conv_i_i8sx:
-                case Op.conv_i_u8zx:
-                case Op.conv_i4_i8sx:
-                case Op.conv_i4_u8zx:
-                case Op.conv_r8_i8:
-                case Op.div_i8:
-                case Op.div_u8:
-                case Op.ldconst_i8:
-                case Op.ldobj_i8:
-                case Op.mul_i8:
-                case Op.mul_ovf_i8:
-                case Op.mul_ovf_un_i8:
-                case Op.mul_un_i8:
-                case Op.neg_i8:
-                case Op.not_i8:
-                case Op.or_i8:
-                case Op.rem_i8:
-                case Op.rem_un_i8:
-                case Op.shl_i8:
-                case Op.shr_i8:
-                case Op.shr_un_i8:
-                case Op.sub_i8:
-                case Op.xor_i8:
-                case Op.peek_u8:
-                case Op.portin_u2_u8:
-                    return Assembler.CliType.int64;
-
-                case Op.add_r8:
-                case Op.assign_r8:
-                case Op.call_r8:
-                case Op.conv_i_r8:
-                case Op.conv_i4_r8:
-                case Op.conv_i8_r8:
-                case Op.conv_r4_r8:
-                case Op.div_r8:
-                case Op.ldconst_r8:
-                case Op.ldobj_r8:
-                case Op.mul_r8:
-                case Op.neg_r8:
-                case Op.rem_r8:
-                case Op.sub_r8:
-                case Op.sqrt_r8:
-                case Op.peek_r8:
-                    return Assembler.CliType.F64;
-
-                case Op.add_r4:
-                case Op.assign_r4:
-                case Op.conv_r8_r4:
-                case Op.div_r4:
-                case Op.mul_r4:
-                case Op.neg_r4:
-                case Op.rem_r4:
-                case Op.sub_r4:
-                case Op.call_r4:
-                case Op.conv_i_r4:
-                case Op.conv_i4_r4:
-                case Op.conv_i8_r4:
-                case Op.ldconst_r4:
-                case Op.ldobj_r4:
-                case Op.peek_r4:
-                    return Assembler.CliType.F32;
-
-                case Op.ldobj_vt:
-                case Op.assign_vt:
-                case Op.call_vt:
-                    return Assembler.CliType.vt;
-
-                case Op.assign_to_virtftnptr:
-                case Op.assign_virtftnptr:
-                    return Assembler.CliType.virtftnptr;
-
-                case Op.misc:
-                case Op.zeromem:
-                    return Assembler.CliType.void_;
+                case OpType.AssignOp:
+                case OpType.BinNumOp:
+                case OpType.UnNumOp:
+                case OpType.CallOp:
+                    return Operator.Type;
 
                 default:
-                    throw new NotSupportedException();
+                    throw new NotImplementedException();
             }
         }
 
@@ -1410,280 +923,18 @@ namespace libtysila
 
         internal static Op Get32BitOp(Op op)
         {
-            switch (op)
-            {
-                case Op.add_i:
-                    return Op.add_i4;
-                case Op.add_ovf_i:
-                    return Op.add_ovf_i4;
-                case Op.add_ovf_un_i:
-                    return Op.add_ovf_un_i4;
-                case Op.alloca_i:
-                    return Op.alloca_i4;
-                case Op.and_i:
-                    return Op.and_i4;
-                case Op.assign_i:
-                    return Op.assign_i4;
-                case Op.assign_v_i:
-                    return Op.assign_v_i4;
-                case Op.ba_i:
-                    return Op.ba_i4;
-                case Op.bae_i:
-                    return Op.bae_i4;
-                case Op.bb_i:
-                    return Op.bb_i4;
-                case Op.bbe_i:
-                    return Op.bbe_i4;
-                case Op.beq_i:
-                    return Op.beq_i4;
-                case Op.bg_i:
-                    return Op.bg_i4;
-                case Op.bge_i:
-                    return Op.bge_i4;
-                case Op.bl_i:
-                    return Op.bl_i4;
-                case Op.ble_i:
-                    return Op.ble_i4;
-                case Op.bne_i:
-                    return Op.bne_i4;
-                case Op.call_i:
-                    return Op.call_i4;
-                case Op.cmp_i:
-                    return Op.cmp_i4;
-                case Op.conv_i_i1sx:
-                    return Op.conv_i4_i1sx;
-                case Op.conv_i_i2sx:
-                    return Op.conv_i4_i2sx;
-                case Op.conv_i_i4sx:
-                    return Op.assign_i4;
-                case Op.conv_i_i8sx:
-                    return Op.conv_i4_i8sx;
-                case Op.conv_i_isx:
-                    return Op.assign_i4;
-                case Op.conv_i_r4:
-                    return Op.conv_i4_r4;
-                case Op.conv_i_r8:
-                    return Op.conv_i4_r8;
-                case Op.conv_i_u1zx:
-                    return Op.conv_i4_u1zx;
-                case Op.conv_i_u2zx:
-                    return Op.conv_i4_u2zx;
-                case Op.conv_i_u4zx:
-                    return Op.assign_i4;
-                case Op.conv_i_u8zx:
-                    return Op.conv_i4_u8zx;
-                case Op.conv_i_uzx:
-                    return Op.assign_i4;
-                case Op.conv_i4_isx:
-                    return Op.assign_i4;
-                case Op.conv_i4_uzx:
-                    return Op.assign_i4;
-                case Op.conv_i8_isx:
-                    return Op.conv_i8_i4sx;
-                case Op.conv_i8_uzx:
-                    return Op.conv_i8_u4zx;
-                case Op.conv_r4_i:
-                    return Op.conv_r4_i4;
-                case Op.conv_r8_i:
-                    return Op.conv_r8_i4;
-                case Op.conv_u_r8:
-                    return Op.conv_u4_r8;
-                case Op.div_i:
-                    return Op.div_i4;
-                case Op.div_u:
-                    return Op.div_u4;
-                case Op.ldconst_i:
-                    return Op.ldconst_i4;
-                case Op.ldobj_i:
-                    return Op.ldobj_i4;
-                case Op.mul_i:
-                    return Op.mul_i4;
-                case Op.mul_ovf_i:
-                    return Op.mul_ovf_i4;
-                case Op.mul_ovf_un_i:
-                    return Op.mul_ovf_un_i4;
-                case Op.mul_un_i:
-                    return Op.mul_un_i4;
-                case Op.neg_i:
-                    return Op.neg_i4;
-                case Op.not_i:
-                    return Op.not_i4;
-                case Op.or_i:
-                    return Op.or_i4;
-                case Op.peek_u:
-                    return Op.peek_u4;
-                case Op.poke_u:
-                    return Op.poke_u4;
-                case Op.portin_u2_u:
-                    return Op.portin_u2_u4;
-                case Op.portout_u2_u:
-                    return Op.portout_u2_u4;
-                case Op.rem_i:
-                    return Op.rem_i4;
-                case Op.rem_un_i:
-                    return Op.rem_un_i4;
-                case Op.ret_i:
-                    return Op.ret_i4;
-                case Op.shl_i:
-                    return Op.shl_i4;
-                case Op.shr_i:
-                    return Op.shr_i4;
-                case Op.shr_un_i:
-                    return Op.shr_un_i4;
-                case Op.stobj_i:
-                    return Op.stobj_i4;
-                case Op.sub_i:
-                    return Op.sub_i4;
-                case Op.throweq_i:
-                    return Op.throweq_i4;
-                case Op.throwg_i:
-                    return Op.throwg_i4;
-                case Op.throwge_i:
-                    return Op.throwge_i4;
-                case Op.throwne_i:
-                    return Op.throwne_i4;
-                case Op.xor_i:
-                    return Op.xor_i4;
-            }
-            return op;
+            if (op.Type == Assembler.CliType.native_int)
+                return new Op(op.Operator, Assembler.CliType.int32);
+            else
+                return op;
         }
 
         internal static Op Get64BitOp(Op op)
         {
-            switch (op)
-            {
-                case Op.add_i:
-                    return Op.add_i8;
-                case Op.add_ovf_i:
-                    return Op.add_ovf_i8;
-                case Op.add_ovf_un_i:
-                    return Op.add_ovf_un_i8;
-                case Op.and_i:
-                    return Op.and_i8;
-                case Op.assign_i:
-                    return Op.assign_i8;
-                case Op.assign_v_i:
-                    return Op.assign_v_i8;
-                case Op.ba_i:
-                    return Op.ba_i8;
-                case Op.bae_i:
-                    return Op.bae_i8;
-                case Op.bb_i:
-                    return Op.bb_i8;
-                case Op.bbe_i:
-                    return Op.bbe_i8;
-                case Op.beq_i:
-                    return Op.beq_i8;
-                case Op.bg_i:
-                    return Op.bg_i8;
-                case Op.bge_i:
-                    return Op.bge_i8;
-                case Op.bl_i:
-                    return Op.bl_i8;
-                case Op.ble_i:
-                    return Op.ble_i8;
-                case Op.bne_i:
-                    return Op.bne_i8;
-                case Op.call_i:
-                    return Op.call_i8;
-                case Op.cmp_i:
-                    return Op.cmp_i8;
-                case Op.conv_i_i1sx:
-                    return Op.conv_i8_i1sx;
-                case Op.conv_i_i2sx:
-                    return Op.conv_i8_i2sx;
-                case Op.conv_i_i4sx:
-                    return Op.conv_i8_i4sx;
-                case Op.conv_i_i8sx:
-                    return Op.assign_i4;
-                case Op.conv_i_isx:
-                    return Op.conv_i8_i4sx;
-                case Op.conv_i_r4:
-                    return Op.conv_i8_r4;
-                case Op.conv_i_r8:
-                    return Op.conv_i8_r8;
-                case Op.conv_i_u1zx:
-                    return Op.conv_i8_u1zx;
-                case Op.conv_i_u2zx:
-                    return Op.conv_i8_u2zx;
-                case Op.conv_i_u4zx:
-                    return Op.conv_i8_u4zx;
-                case Op.conv_i_u8zx:
-                    return Op.assign_i4;
-                case Op.conv_i_uzx:
-                    return Op.assign_i4;
-                case Op.conv_i4_isx:
-                    return Op.conv_i4_i8sx;
-                case Op.conv_i4_uzx:
-                    return Op.conv_i4_u8zx;
-                case Op.conv_i8_isx:
-                    return Op.assign_i4;
-                case Op.conv_i8_uzx:
-                    return Op.assign_i4;
-                case Op.conv_r4_i:
-                    return Op.conv_r4_i8;
-                case Op.conv_r8_i:
-                    return Op.conv_r8_i8;
-                case Op.conv_u_r8:
-                    return Op.conv_u8_r8;
-                case Op.div_i:
-                    return Op.div_i8;
-                case Op.div_u:
-                    return Op.div_u8;
-                case Op.ldconst_i:
-                    return Op.ldconst_i8;
-                case Op.ldobj_i:
-                    return Op.ldobj_i8;
-                case Op.mul_i:
-                    return Op.mul_i8;
-                case Op.mul_ovf_i:
-                    return Op.mul_ovf_i8;
-                case Op.mul_ovf_un_i:
-                    return Op.mul_ovf_un_i8;
-                case Op.mul_un_i:
-                    return Op.mul_un_i8;
-                case Op.neg_i:
-                    return Op.neg_i8;
-                case Op.not_i:
-                    return Op.not_i8;
-                case Op.or_i:
-                    return Op.or_i8;
-                case Op.peek_u:
-                    return Op.peek_u8;
-                case Op.poke_u:
-                    return Op.poke_u8;
-                case Op.portin_u2_u:
-                    return Op.portin_u2_u8;
-                case Op.portout_u2_u:
-                    return Op.portout_u2_u8;
-                case Op.rem_i:
-                    return Op.rem_i8;
-                case Op.rem_un_i:
-                    return Op.rem_un_i8;
-                case Op.ret_i:
-                    return Op.ret_i8;
-                case Op.shl_i:
-                    return Op.shl_i8;
-                case Op.shr_i:
-                    return Op.shr_i8;
-                case Op.shr_un_i:
-                    return Op.shr_un_i8;
-                case Op.stobj_i:
-                    return Op.stobj_i8;
-                case Op.sub_i:
-                    return Op.sub_i8;
-                case Op.throweq_i:
-                    return Op.throweq_i8;
-                case Op.throwg_i:
-                    return Op.throwg_i8;
-                case Op.throwge_i:
-                    return Op.throwge_i8;
-                case Op.throwne_i:
-                    return Op.throwne_i8;
-                case Op.xor_i:
-                    return Op.xor_i8;
-            }
-            return op;
+            if (op.Type == Assembler.CliType.native_int)
+                return new Op(op.Operator, Assembler.CliType.int64);
+            else
+                return op;
         }
     }
 
@@ -1694,7 +945,7 @@ namespace libtysila
         protected OpType _optype;
 
         internal MiscEx(string name, var result, var operand1, var operand2, Assembler.CliType result_type, Assembler.CliType op1_type,
-            Assembler.CliType op2_type, OpType op_type) : base(Op.misc, result, operand1, operand2)
+            Assembler.CliType op2_type, OpType op_type) : base(Op.OpNull(OpName.misc), result, operand1, operand2)
         { 
             Name = name;
             _op1_type = op1_type;
@@ -1727,9 +978,9 @@ namespace libtysila
     public class LabelEx : ThreeAddressCode
     {
         public int Block_id;
-        public LabelEx(int block_id) { Operator = Op.label; Block_id = block_id; }
+        public LabelEx(int block_id) { Operator = Op.OpNull(OpName.label); Block_id = block_id; }
         private LabelEx() { }
-        public static LabelEx LocalLabel(int block_id) { return new LabelEx { Operator = Op.loc_label, Block_id = block_id }; }
+        public static LabelEx LocalLabel(int block_id) { return new LabelEx { Operator = Op.OpNull(OpName.loc_label), Block_id = block_id }; }
         public override string ToString()
         {
             return "L" + Block_id.ToString() + ":";
@@ -1785,19 +1036,7 @@ namespace libtysila
             return sb.ToString();
         }
 
-        public SwitchEx() { Operator = Op.switch_; }
-    }
-
-    class InstructionLabelEx : ThreeAddressCode
-    {
-        public InstructionHeader instr;
-
-        public override string ToString()
-        {
-            return instr.ToString();
-        }
-
-        public InstructionLabelEx(InstructionHeader inst) : base(Op.instruction_label, var.Null, var.Null, var.Null) { instr = inst; }
+        public SwitchEx() { Operator = Op.OpNull(OpName.switch_); }
     }
 
     public class CallEx : ThreeAddressCode
@@ -1858,14 +1097,14 @@ namespace libtysila
 
         public PhiEx2(var v, int param_count)
         {
-            Operator = Op.phi_i;
+            Operator = Op.OpI(OpName.phi);
             Var_Args = new var[param_count];
             for (int i = 0; i < param_count; i++)
                 Var_Args[i] = v;
             Result = v;
         }
 
-        public PhiEx2(var v, IList<var> phi_params) { Operator = Op.phi_i; Var_Args = phi_params; Result = v; }
+        public PhiEx2(var v, IList<var> phi_params) { Operator = Op.OpI(OpName.phi); Var_Args = phi_params; Result = v; }
 
         public override ThreeAddressCode Clone()
         {
@@ -1913,33 +1152,5 @@ namespace libtysila
             return ((Result > 0) ? (Result.ToString() + " = ") : "") + Operator.ToString() + "(" + p + ")";
         }
 
-    }
-
-    class IrDump
-    {
-        IEnumerable<libtysila.Assembler.cfg_node> _nodes;
-        public IrDump(IEnumerable<libtysila.Assembler.cfg_node> nodes) { _nodes = nodes; }
-
-        public string Ir
-        {
-            get
-            {
-                StringBuilder dbg1sb = new StringBuilder();
-                foreach (Assembler.cfg_node node in _nodes)
-                {
-                    if (node.optimized_ir != null)
-                    {
-                        foreach (ThreeAddressCode ir1 in node.optimized_ir)
-                            dbg1sb.Append(ir1.IndentedString() + Environment.NewLine);
-                    }
-                    else
-                    {
-                        foreach (ThreeAddressCode ir1 in node.tacs)
-                            dbg1sb.Append(ir1.IndentedString() + Environment.NewLine);
-                    }
-                }
-                return dbg1sb.ToString();
-            }
-        }
     }
 }

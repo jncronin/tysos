@@ -1859,7 +1859,14 @@ namespace libtysila
             {
                 Signature.ComplexType ct = val.Type as Signature.ComplexType;
                 if (ct.isValueType)
-                    throw new NotSupportedException();
+                {
+                    if (ct.IsEnum)
+                    {
+                        Assembler.CliType et = ct.CliType(assembler);
+                        return GetPokeTac(new Signature.Param(et), assembler);
+                    }
+                    return ThreeAddressCode.Op.poke_vt;
+                }
                 return ThreeAddressCode.Op.poke_u;
             }
             else if (val.Type is Signature.BoxedType)

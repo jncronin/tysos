@@ -38,6 +38,11 @@ namespace libasm
     {
     }
 
+    public class PrefixBlock : OutputBlock
+    {
+        public virtual IList<byte> Code { get { return new byte[] { }; } }
+    }
+
     public class NodeReference : OutputBlock
     {
         public int block_id;
@@ -93,6 +98,7 @@ namespace libasm
         public string Target;
         public int Size;
         public int Addend;
+        public RelocationBlock.RelocationType RelType;
     }
 
     public class CodeBlock : OutputBlock
@@ -160,13 +166,33 @@ namespace libasm
     {
         public int Size = 4;
 
-        public uint RelType;
+        public RelocationType RelType;
         public string Target;
 
         public int Offset;
         public int Value;
 
         public byte[] OutputBytes;
+
+        public class RelocationType
+        {
+            public uint type;
+
+            public static implicit operator uint(RelocationType rt)
+            {
+                return rt.type;
+            }
+
+            public static implicit operator RelocationType(uint rt)
+            {
+                return new RelocationType { type = rt };
+            }
+
+            public override string ToString()
+            {
+                return type.ToString();
+            }
+        }
     }
 
 }

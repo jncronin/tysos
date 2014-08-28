@@ -28,38 +28,9 @@ namespace libtysila
 {
     public class InstructionHeader : OutputBlock
     {
-        public Assembler.InstructionLine instr;
         public int il_offset;
         public int compiled_offset;
         internal Assembler ass;
-
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append("IL_" + il_offset.ToString("x4") + ": " + instr.opcode.name);
-
-            try
-            {
-                switch (instr.opcode.inline)
-                {
-                    case Assembler.InlineVar.InlineMethod:
-                        {
-                            Token t = instr.inline_tok;
-
-                            if ((t.Value is Metadata.MethodDefRow) || (t.Value is Metadata.MethodSpecRow) || (t.Value is Metadata.MemberRefRow))
-                            {
-                                sb.Append(" ");
-                                sb.Append(Mangler2.MangleMethod(Metadata.GetMTC(new Metadata.TableIndex(t), instr.cfg_node.containing_meth.GetTTC(ass), instr.cfg_node.containing_meth.msig, ass), ass));
-                            }
-                        }
-                        break;
-                }
-            }
-            catch (Exception) { }
-
-            return sb.ToString();            
-        }
     }
 
 }

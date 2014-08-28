@@ -30,7 +30,7 @@ namespace libtysila
     {
         protected override bool Arch_enc_intcall(string mangled_name, InstructionLine i, Metadata.MethodDefRow mdr, Signature.BaseMethod msig, Metadata.TypeDefRow tdr, Signature.Param tsig, AssemblerState state, bool provides, ref bool i_pushes_set)
         {
-            if (mangled_name == "_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_RSP_Rv_P1y")
+            /*if (mangled_name == "_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_RSP_Rv_P1y")
             {
                 // set_RSP(ulong v)
                 i.tacs.Add(new MiscEx("set_RSP", var.Null, i.stack_before[i.stack_before.Count - 1].contains_variable, var.Null, CliType.void_, CliType.int64, CliType.void_, ThreeAddressCode.OpType.OtherOp));
@@ -168,133 +168,9 @@ namespace libtysila
                 i.tacs.Add(new MiscEx("round_double", state.next_variable++, i.stack_before[i.stack_before.Count - 1].contains_variable, var.Null, CliType.F64, CliType.F64, CliType.void_, ThreeAddressCode.OpType.ConvOp));
                 return true;
             }
-            else
+            else */
                 return false;
         }
 
-        internal IEnumerable<OutputBlock> x86_64_set_RSP(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            List<OutputBlock> ret = new List<OutputBlock>();
-            x86_64_assign(Rsp, op1.hardware_loc, ret);
-            return ret;
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_set_RBP(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            List<OutputBlock> ret = new List<OutputBlock>();
-            x86_64_assign(Rbp, op1.hardware_loc, ret);
-            return ret;
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_get_RSP(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            List<OutputBlock> ret = new List<OutputBlock>();
-            x86_64_assign(result.hardware_loc, Rsp, ret);
-            return ret;
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_get_RBP(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            List<OutputBlock> ret = new List<OutputBlock>();
-            x86_64_assign(result.hardware_loc, Rbp, ret);
-            return ret;
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_get_Cr0(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(EncOpcode(0, result.hardware_loc, 3, false, 0, 0x0f, 0x20));
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_set_Cr0(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(EncOpcode(0, op1.hardware_loc, 3, false, 0, 0x0f, 0x22));
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_get_Cr2(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(EncOpcode(2, result.hardware_loc, 3, false, 0, 0x0f, 0x20));
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_set_Cr2(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(EncOpcode(2, op1.hardware_loc, 3, false, 0, 0x0f, 0x22));
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_get_Cr3(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(EncOpcode(3, result.hardware_loc, 3, false, 0, 0x0f, 0x20));
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_set_Cr3(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(EncOpcode(3, op1.hardware_loc, 3, false, 0, 0x0f, 0x22));
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_get_Cr4(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(EncOpcode(4, result.hardware_loc, 3, false, 0, 0x0f, 0x20));
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_set_Cr4(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(EncOpcode(4, op1.hardware_loc, 3, false, 0, 0x0f, 0x22));
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_Sti(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(new byte[] { 0xfb });
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_Cli(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            return OBList(new byte[] { 0xfa });
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_Break(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            // int3
-            return OBList(new byte[] { 0xcc });
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_Lidt(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            /* void Lidt(UIntPtr idt_ptr)
-             * idt_ptr is in a gpr
-             * lidt [idt_ptr]
-             */
-
-            List<OutputBlock> ret = new List<OutputBlock>();
-            ret.Add(new CodeBlock(EncOpcode(3, op1.hardware_loc, 0, false, 0, 0x0f, 0x01)));
-            return ret;
-        }
-
-        internal IEnumerable<OutputBlock> x86_64_round_double_xmm_xmm(ThreeAddressCode.Op op, var result, var op1, var op2,
-            ThreeAddressCode tac, AssemblerState state)
-        {
-            /* cvtsd2si rax, xmm
-             * cvtsi2si xmm, rax
-             */
-
-            List<OutputBlock> ret = new List<OutputBlock>();
-            ret.Add(new CodeBlock(EncOpcode(Rax, op1.hardware_loc, 3, true, 0, 0xf2, 0x0f, 0x2d)));
-            ret.Add(new CodeBlock(EncOpcode(result.hardware_loc, Rax, 3, true, 0, 0xf2, 0x0f, 0x2a)));
-            return ret;
-        }
     }
 }

@@ -54,29 +54,6 @@ namespace libtysila
             }
         }
 
-        public AssembleBlockOutput AssembleTIR2(IList<ThreeAddressCode> tacs, AssemblerState state)
-        {
-            if (state == null)
-                state = GetNewAssemblerState();
-
-            /* Initialize a taclist */
-            TACList unopt = new TACList(tacs);
-
-            /* Determine defs and uses */
-            DetermineUsesAndDefs(unopt);
-
-            /* Determine join points */
-            DetermineJoinPoints(unopt);
-
-            /* Calculate dominators */
-            GenerateDominatorTree(unopt);
-
-            /* Convert to SSA */
-            TACList ssa = ConvertToSSA(unopt);
-
-            throw new NotImplementedException();
-        }
-
         private void DetermineJoinPoints(TACList t)
         {
             /* Determine the successors and predecessors of each block */

@@ -54,12 +54,30 @@ namespace libtysila.frontend.cil
                 DFEncode(start, mtc, ass, visited, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs);
             }
 
+            /* Reorder the linear stream for rewritten nodes */
+            for (int i = 0; i < instrs.linear_stream.Count; i++)
+            {
+                if (((CilNode)instrs.linear_stream[i]).replaced_by != null)
+                {
+                    CilNode old = instrs.linear_stream[i] as CilNode;
+
+                    instrs.linear_stream.RemoveAt(i);
+                    foreach (CilNode repl in old.replaced_by)
+                        instrs.linear_stream.Insert(i++, repl);
+                }
+            }
+
             /* Now loop through again and insert label nodes at the appropriate positions */
             visited.Clear();
             foreach (CilNode start in instrs.Starts)
             {
                 DFInsertLabels(start, ref next_block, visited);
             }
+
+            /* Loop through and add branch instructions at the end of basic blocks */
+            visited.Clear();
+            foreach (CilNode start in instrs.Starts)
+                DFInsertBranches(start, visited);
 
             /* Finally loop through again and add the tacs to the output stream */
             foreach (CilNode n in instrs.LinearStream)
@@ -72,6 +90,32 @@ namespace libtysila.frontend.cil
             }
 
             return ret;
+        }
+
+        private static void DFInsertBranches(CilNode n, util.Set<CilNode> visited)
+        {
+            if (visited.Contains(n))
+                return;
+            visited.Add(n);
+
+            if (n.Next.Count == 1)
+            {
+                CilNode next = n.Next[0] as CilNode;
+                if (next.il.tacs.Count >= 1 && (next.il.tacs[0] is timple.TimpleLabelNode))
+                {
+                    if (n.il.tacs.Count == 0 || !(n.il.tacs[n.il.tacs.Count - 1] is timple.TimpleBrNode))
+                    {
+                        if (ThreeAddressCode.OpFallsThrough(n.il.tacs[n.il.tacs.Count - 1].Op))
+                        {
+                            timple.TimpleLabelNode tln = next.il.tacs[0] as timple.TimpleLabelNode;
+                            n.il.tacs.Add(new timple.TimpleBrNode(tln));
+                        }
+                    }
+                }
+            }
+
+            foreach (CilNode next in n.Next)
+                DFInsertBranches(next, visited);
         }
 
         private static void DFInsertLabels(CilNode n, ref int next_block, util.Set<CilNode> visited)
@@ -119,6 +163,10 @@ namespace libtysila.frontend.cil
                 return;
             visited.Add(n);
 
+            n = DecomposeComplexOpcodes.DecomposeComplexOpts(n, ass, mtc, ref next_variable, ref next_block,
+                la_vars, lv_vars, las, lvs, attrs);
+            visited.Add(n);
+            
             if (n.il.opcode.Encoder == null)
                 throw new Exception("No encoding available for " + n.il.ToString());
             n.il.stack_after = new util.Stack<Signature.Param>(n.il.stack_before);
@@ -126,15 +174,56 @@ namespace libtysila.frontend.cil
             n.il.tacs = new List<timple.TreeNode>();
             if (n.Prev.Count == 0)
             {
-                n.il.tacs.Add(new timple.TimpleLabelNode(next_block++));
-                for (int i = 0; i < la_vars.Count; i++)
-                    n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.localarg, la_vars[i], vara.Const(i, Assembler.CliType.int32), vara.Void()));
-            }
-            n.il.opcode.Encoder(n.il, ass, mtc, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs);
-           
+                int block_id;
+                if (n.ehclause_start != null)
+                {
+                    if (n.ehclause_start.BlockId == -1)
+                    {
+                        block_id = next_block++;
+                        n.ehclause_start.BlockId = block_id;
+                    }
+                    else
+                        block_id = n.ehclause_start.BlockId;
+                }
+                else
+                    block_id = next_block++;
 
-            foreach (CilNode next in n.Next)
+                n.il.tacs.Add(new timple.TimpleLabelNode(block_id));
+
+                if(block_id == 0)
+                    n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.enter), vara.Void(), vara.Label(Mangler2.MangleMethod(mtc, ass), false), vara.Void()));
+
+                for (int i = 0; i < la_vars.Count; i++)
+                    n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.la_load), la_vars[i], vara.Const(i, Assembler.CliType.int32), vara.Void()));
+                for (int i = 0; i < lv_vars.Count; i++)
+                    n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.lv_load), lv_vars[i], vara.Const(i, Assembler.CliType.int32), vara.Void()));
+
+                if (block_id == 0 && mtc.meth.Body.InitLocals)
+                {
+                    foreach (vara lv_var in lv_vars)
+                        n.il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, lv_var.DataType), lv_var, vara.Const(0, lv_var.DataType), vara.Void()));
+                }
+            }
+
+            n.il.opcode.Encoder(n.il, ass, mtc, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs);
+
+            util.Set<timple.BaseNode> next_visited = new util.Set<timple.BaseNode>();
+
+            while(true)
             {
+                CilNode next = null;
+                for (int i = 0; i < n.Next.Count; i++)
+                {
+                    if (!next_visited.Contains(n.Next[i]))
+                    {
+                        next = n.Next[i] as CilNode;
+                        next_visited.Add(next);
+                        break;
+                    }
+                }
+                if (next == null)
+                    break;
+
                 if (next.il.stack_before == null)
                 {
                     next.il.stack_before = new util.Stack<Signature.Param>(n.il.stack_after);
@@ -198,16 +287,15 @@ namespace libtysila.frontend.cil
             return las;
         }
 
-        private static List<Signature.Param> GetLocalVars(Assembler.MethodToCompile mtc, Assembler ass)
+        internal static List<Signature.Param> GetLocalVars(Assembler.MethodToCompile mtc, Assembler ass)
         { return GetLocalVars(mtc.meth, mtc.tsig, mtc.msig, ass); }
 
-        private static List<Signature.Param> GetLocalVars(Metadata.MethodDefRow meth, Signature.BaseOrComplexType containing_type, 
+        internal static List<Signature.Param> GetLocalVars(Metadata.MethodDefRow meth, Signature.BaseOrComplexType containing_type, 
             Signature.BaseMethod containing_meth, Assembler ass)
         {
             List<Signature.Param> lvs = new List<Signature.Param>();
 
             Signature.LocalVars sig = meth.GetLocalVars(ass);
-            int var_no = 0;
             foreach (Signature.Param p in sig.Vars)
                 lvs.Add(Signature.ResolveGenericParam(p, containing_type, containing_meth, ass));
 
