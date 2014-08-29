@@ -142,6 +142,13 @@ namespace libsupcs
         public ExtendsOverrideAttribute(string extends) { }
     }
 
+    /** <summary> Marks the class as having no base class (not even System.Object)</summary> */
+    [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+    public sealed class NoBaseClassAttribute : System.Attribute
+    {
+        public NoBaseClassAttribute() { }
+    }
+
     public class MemoryOperations
     {
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]

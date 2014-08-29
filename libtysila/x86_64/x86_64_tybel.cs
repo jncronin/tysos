@@ -98,6 +98,24 @@ namespace libtysila
                         ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.ADDL, x86_64.x86_64_asm.opcode.ADDQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
                         if(success) return ret; break;
 
+                    case ThreeAddressCode.OpName.and:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.ANDL, x86_64.x86_64_asm.opcode.ANDQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
+                        if (success) return ret; break;
+
+                    case ThreeAddressCode.OpName.or:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.ORL, x86_64.x86_64_asm.opcode.ORQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
+                        if (success) return ret; break;
+
+                    case ThreeAddressCode.OpName.xor:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.XORL, x86_64.x86_64_asm.opcode.XORQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
+                        if (success) return ret; break;
+
                     case ThreeAddressCode.OpName.ret:
                         switch (op.Type)
                         {

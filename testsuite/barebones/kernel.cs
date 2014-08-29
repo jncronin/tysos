@@ -1,5 +1,6 @@
 namespace BareBones
 {
+	[libsupcs.NoBaseClass]
 	class Program
 	{
 		static int pos = 0;

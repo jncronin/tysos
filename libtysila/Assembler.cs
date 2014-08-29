@@ -733,6 +733,10 @@ namespace libtysila
                         Assembler.TypeToCompile new_base = Mangler2.DemangleType(s, this);
                         tdr.Extends = new Metadata.TableIndex(new_base.type);
                     }
+                    else if (caname == "_ZX20NoBaseClassAttributeM_0_7#2Ector_Rv_P1u1t")
+                    {
+                        tdr.Extends = new Metadata.TableIndex(tdr.m, 0, tdr.m.Tables[(int)Metadata.TableId.TypeDef]);
+                    }
 
                     ForThisArchitecture(car, caname, ref for_this_arch, ref for_any_arch);
                 }

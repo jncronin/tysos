@@ -90,5 +90,17 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after.Push(new Signature.Param(BaseType_Type.I4));
             il.stack_vars_after.Push(v);
         }
+
+        public static void ldnull(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
+            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs)
+        {
+            vara v_c = vara.Const((IntPtr)0, Assembler.CliType.O);
+            vara v = vara.Logical(next_variable++, Assembler.CliType.O);
+            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v, v_c, vara.Void()));
+
+            il.stack_after.Push(new Signature.Param(BaseType_Type.Object));
+            il.stack_vars_after.Push(v);
+        }
     }
 }
