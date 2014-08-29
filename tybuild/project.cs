@@ -62,6 +62,7 @@ namespace tybuild
 
         public List<string> Sources = new List<string>();
         public List<string> References = new List<string>();
+        public List<string> ExtraLibDirs = new List<string>();
         public List<ProjectId> ProjectReferences = new List<ProjectId>();
 
         public string CommandLineArgs
@@ -96,7 +97,10 @@ namespace tybuild
         {
             StringBuilder ret = new StringBuilder();
             foreach (string r in References)
-                ret.Append("/r:\"" + tybuild.AppendDirSplit(tybuild.ref_dir(tools_ver)) + AppendDll(r) + "\" ");
+                ret.Append("/r:\"" + tybuild.ReplaceDirSplit(AppendDll(r), true) + "\" ");
+            foreach (string l in ExtraLibDirs)
+                ret.Append("/lib:\"" + l + "\" ");
+            ret.Append("/lib:\"" + tybuild.RemoveDirSplit(tybuild.ref_dir(tools_ver)) + "\" ");
             foreach (ProjectId pr in ProjectReferences)
                 ret.Append("/r:\"" + tybuild.ReplaceDirSplit(pr.OutputFile, unix_splits) +
 					 "\" ");

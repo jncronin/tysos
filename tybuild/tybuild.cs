@@ -113,6 +113,8 @@ namespace tybuild
             bool _debug = false;
             List<string> extra_add = new List<string>();
             List<string> extra_defines = new List<string>();
+            List<string> extra_refs = null;
+            List<string> extra_libdirs = null;
 
 	        List<string> project_names = null;
 
@@ -146,6 +148,18 @@ namespace tybuild
                     {
                         if (!dump(arg.Substring("/d:".Length)))
                             return 0;
+                    }
+                    else if (arg.StartsWith("/r:"))
+                    {
+                        if (extra_refs == null)
+                            extra_refs = new List<string>();
+                        extra_refs.Add(arg.Substring("/r:".Length));
+                    }
+                    else if (arg.StartsWith("/lib:"))
+                    {
+                        if (extra_libdirs == null)
+                            extra_libdirs = new List<string>();
+                        extra_libdirs.Add(arg.Substring("/lib:".Length));
                     }
                     else if ((arg == "/t") || (arg == "/temp"))
                         use_temp = true;
@@ -203,16 +217,31 @@ namespace tybuild
 				Solution s;
 				if (fname.EndsWith(".csproj") || fname.EndsWith(".sources"))
 				{
+                    if (extra_refs != null)
+                        throw new Exception("Cannot specify extra references for project file");
 					s = new Solution(new Project(new FileStream(fname, FileMode.Open, FileAccess.Read), config,
 						GetBaseDir(fname)), config);
 
 				}
                 else if (fname.EndsWith(".cs"))
                 {
-                    s = new Solution(new Project(new string[] { fname }, fname.Substring(0, fname.Length - 3) + ".exe"), config);
+                    Project p = new Project(new string[] { fname }, fname.Substring(0, fname.Length - 3) + ".exe");
+                    if(extra_refs != null)
+                    {
+                        foreach(string extra_ref in extra_refs)
+                            p.References.Add(extra_ref);
+                    }
+                    if (extra_libdirs != null)
+                    {
+                        foreach (string extra_libdir in extra_libdirs)
+                            p.ExtraLibDirs.Add(extra_libdir);
+                    }
+                    s = new Solution(p, config);
                 }
                 else
                 {
+                    if (extra_refs != null)
+                        throw new Exception("Cannot specify extra references for project file");
                     s = new Solution(new FileStream(fname, FileMode.Open,
                         FileAccess.Read), config, GetBaseDir(fname));
                 }
@@ -301,6 +330,13 @@ namespace tybuild
             if (!dir.Contains(dir_split))
                 return "." + dir_split;
             return dir.Substring(0, dir.LastIndexOf(dir_split) + 1);
+        }
+
+        public static string RemoveDirSplit(string dir)
+        {
+            if (dir.EndsWith(dir_split))
+                return dir.Substring(0, dir.Length - dir_split.Length);
+            return dir;
         }
 
         public static string AppendDirSplit(string dir)
