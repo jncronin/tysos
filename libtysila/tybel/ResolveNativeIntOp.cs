@@ -126,6 +126,26 @@ namespace libtysila
                                 return ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.assign);
                         }
                         break;
+
+                    case ThreeAddressCode.OpName.conv_i4_uzx:
+                        switch (bt)
+                        {
+                            case Bitness.Bits32:
+                                return ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign);
+                            case Bitness.Bits64:
+                                return ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.conv_i4_u8zx);
+                        }
+                        break;
+
+                    case ThreeAddressCode.OpName.conv_i8_uzx:
+                        switch (bt)
+                        {
+                            case Bitness.Bits32:
+                                return ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.conv_i8_u4zx);
+                            case Bitness.Bits64:
+                                return ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.assign);
+                        }
+                        break;
                 }
             }
             else if (op.Type == CliType.native_int || op.Type == CliType.O || op.Type == CliType.reference)

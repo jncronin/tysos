@@ -168,29 +168,29 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                                 second_dest_v = enc_conv(il, BaseType_Type.U4, dest_p, dest_v, true, ref next_variable, ass, attrs);
                             else
                                 second_dest_v = enc_conv(il, BaseType_Type.I4, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Const(Assembler.throw_OverflowException)));
+                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
                             break;
                         case Assembler.CliType.int64:
                             if (un)
                                 second_dest_v = enc_conv(il, BaseType_Type.U8, dest_p, dest_v, true, ref next_variable, ass, attrs);
                             else
                                 second_dest_v = enc_conv(il, BaseType_Type.I8, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Const(Assembler.throw_OverflowException)));
+                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
                             break;
                         case Assembler.CliType.native_int:
                             if (un)
                                 second_dest_v = enc_conv(il, BaseType_Type.U, dest_p, dest_v, true, ref next_variable, ass, attrs);
                             else
                                 second_dest_v = enc_conv(il, BaseType_Type.I, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Const(Assembler.throw_OverflowException)));
+                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
                             break;
                         case Assembler.CliType.F64:
                             second_dest_v = enc_conv(il, BaseType_Type.R8, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Const(Assembler.throw_OverflowException)));
+                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
                             break;
                         case Assembler.CliType.F32:
                             second_dest_v = enc_conv(il, BaseType_Type.R4, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpR4(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Const(Assembler.throw_OverflowException)));
+                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpR4(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
                             break;
                     }
                 }

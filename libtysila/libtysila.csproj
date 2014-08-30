@@ -68,7 +68,6 @@
     <Compile Include="Assembler_DoCompile.cs" />
     <Compile Include="Assembler_GetTac.cs" />
     <Compile Include="Assembler_InfoStructures.cs" />
-    <Compile Include="Assembler_intcall2.cs" />
     <Compile Include="Assembler_list_assemblers.cs" />
     <Compile Include="Assembler_method.cs" />
     <Compile Include="Assembler_opcodes.cs" />

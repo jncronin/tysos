@@ -149,7 +149,7 @@ namespace libtysila
 
                     if (meth.IsInternalCall || meth.IsPinvokeImpl)
                     {
-                        if (provides_intcall(mtc))
+                        if (frontend.cil.OpcodeEncodings.call.ProvidesIntcall(mtc, this))
                         {
                             provides = true;
                             instrs = RewriteInternalCall(mtc);
@@ -215,7 +215,8 @@ namespace libtysila
                 }
             }
 
-            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(instrs, mtc, this, attrs);
+            int next_var, next_block;
+            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(instrs, mtc, this, attrs, out next_var, out next_block);
 
             // Compile to tybel
             libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(tacs);
@@ -226,7 +227,7 @@ namespace libtysila
 
             List<libasm.hardware_location> lvs = GetLocalVarsLocations(frontend.cil.Encoder.GetLocalVars(mtc, this), attrs);
 
-            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, this, las, lvs, attrs);
+            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, this, las, lvs, attrs, ref next_var, ref next_block);
 
             // Generate machine code
             List<byte> code = new List<byte>();

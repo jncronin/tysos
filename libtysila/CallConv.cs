@@ -113,7 +113,7 @@ namespace libtysila
         {
             get
             {
-                return new Signature.Method { ParamCount = 1, Params = new List<Signature.Param> { new Signature.Param(BaseType_Type.Object) }, RetType = new Signature.Param(BaseType_Type.Void) };
+                return new Signature.Method { ParamCount = 1, Params = new List<Signature.Param> { new Signature.Param(BaseType_Type.Object) }, RetType = new Signature.Param(BaseType_Type.Void), Returns = false };
             }
         }
 

@@ -271,14 +271,16 @@ namespace libtysila.timple
     public class TimpleThrowBrNode : TimpleNode
     {
         public vara ThrowTarget;
+        public vara ThrowObj;
 
-        public TimpleThrowBrNode(ThreeAddressCode.Op op, vara o1, vara o2, vara target)
+        public TimpleThrowBrNode(ThreeAddressCode.Op op, vara o1, vara o2, vara target, vara obj)
         {
             Op = op;
             R = vara.Void();
             O1 = o1;
             O2 = o2;
             ThrowTarget = target;
+            ThrowObj = obj;
         }
 
         public override string ToString()
@@ -291,6 +293,8 @@ namespace libtysila.timple
             sb.Append(O1.ToString());
             sb.Append(", ");
             sb.Append(O2.ToString());
+            sb.Append(": ");
+            sb.Append(ThrowObj.ToString());
             sb.Append(")");
             return sb.ToString();
         }

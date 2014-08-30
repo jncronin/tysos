@@ -27,8 +27,8 @@ namespace libtysila
 {
     partial class x86_64_Assembler
     {
-        public override IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var, IList<libasm.hardware_location> las,
-            IList<libasm.hardware_location> lvs)
+        public override IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var, ref int next_block, 
+            IList<libasm.hardware_location> las, IList<libasm.hardware_location> lvs)
         {
             List<tybel.Node> ret;
             bool success = true;
@@ -38,7 +38,7 @@ namespace libtysila
             else if (inst is TimpleCallNode)
             {
                 ret = new List<tybel.Node>();
-                ChooseCallInstruction(ret, inst as TimpleCallNode, ref next_var, las, lvs);
+                ChooseCallInstruction(ret, inst as TimpleCallNode, ref next_var, ref next_block, las, lvs);
                 if(success) return ret;
             }
             else if (inst is TimpleBrNode)
@@ -76,6 +76,44 @@ namespace libtysila
                         throw new NotImplementedException("No encoding provided for " + op.ToString());
                 }
             }
+            else if (inst is TimpleThrowBrNode)
+            {
+                TimpleThrowBrNode tn = inst as TimpleThrowBrNode;
+                ThreeAddressCode.Op op = ResolveNativeIntOp(tn.Op);
+                tn.Op = op;
+
+                x86_64.x86_64_asm.opcode jmp_op;
+                int blk_id = next_block++;
+
+                switch (op.Operator)
+                {
+                    case ThreeAddressCode.OpName.throwge_un:
+                        jmp_op = x86_64.x86_64_asm.opcode.JB;
+                        break;
+                    case ThreeAddressCode.OpName.throwg_un:
+                        jmp_op = x86_64.x86_64_asm.opcode.JBE;
+                        break;
+                    case ThreeAddressCode.OpName.throweq:
+                        jmp_op = x86_64.x86_64_asm.opcode.JNZ;
+                        break;
+                    case ThreeAddressCode.OpName.throwne:
+                        jmp_op = x86_64.x86_64_asm.opcode.JZ;
+                        break;
+                    default:
+                        throw new NotImplementedException("No encoding provided for " + tn.Op.ToString());
+                }
+
+                ret = new List<tybel.Node>();
+                ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.CMPL, x86_64.x86_64_asm.opcode.CMPQ), ret, inst, ref next_var, ref success, tn.O1, tn.O2);
+                ChooseInstruction(jmp_op, ret, inst, ref next_var, ref success, vara.Label("L" + blk_id.ToString(), false));
+
+                TimpleCallNode tcn = new TimpleCallNode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call), vara.Void(), tn.ThrowTarget, new vara[] { tn.ThrowObj }, msig_throw);
+                ChooseCallInstruction(ret, tcn, ref next_var, ref next_block, las, lvs);
+
+                ret.Add(new tybel.LabelNode("L" + blk_id.ToString(), true));
+
+                if (success) return ret;
+            }
             else if (inst is TimpleNode)
             {
                 TimpleNode tn = inst as TimpleNode;
@@ -90,13 +128,13 @@ namespace libtysila
                             ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.LEAL, x86_64.x86_64_asm.opcode.LEAQ), ret, inst, ref next_var, ref success, tn.R, tn.O1.GetLogicalVar());
                         else
                             ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.add:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
                         ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.ADDL, x86_64.x86_64_asm.opcode.ADDQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.and:
                         ret = new List<tybel.Node>();
@@ -124,20 +162,20 @@ namespace libtysila
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, vara.MachineReg(Rax), tn.O1);
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.LEAVE, ret, inst, ref next_var, ref success);
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.RETN, ret, inst, ref next_var, ref success, vara.MachineReg(Rax));
-                                if(success) return ret; break;
+                                if (success) return ret; break;
 
                             case CliType.int64:
                                 ret = new List<tybel.Node>();
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, vara.MachineReg(Rax), tn.O1);
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.LEAVE, ret, inst, ref next_var, ref success);
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.RETN, ret, inst, ref next_var, ref success, vara.MachineReg(Rax));
-                                if(success) return ret; break;
+                                if (success) return ret; break;
 
                             case CliType.void_:
                                 ret = new List<tybel.Node>();
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.LEAVE, ret, inst, ref next_var, ref success);
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.RETN, ret, inst, ref next_var, ref success);
-                                if(success) return ret; break;
+                                if (success) return ret; break;
                         }
                         break;
 
@@ -148,18 +186,18 @@ namespace libtysila
                                 ret = new List<tybel.Node>();
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.CALL, ret, inst, ref next_var, ref success, vara.MachineReg(Rax), tn.O1);
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(Rax));
-                                if(success) return ret; break;
+                                if (success) return ret; break;
 
                             case CliType.int64:
                                 ret = new List<tybel.Node>();
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.CALL, ret, inst, ref next_var, ref success, vara.MachineReg(Rax), tn.O1);
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(Rax));
-                                if(success) return ret; break;
+                                if (success) return ret; break;
 
                             case CliType.void_:
                                 ret = new List<tybel.Node>();
                                 ChooseInstruction(x86_64.x86_64_asm.opcode.CALL, ret, inst, ref next_var, ref success, tn.O1);
-                                if(success) return ret; break;
+                                if (success) return ret; break;
                         }
                         break;
 
@@ -176,17 +214,17 @@ namespace libtysila
                             ChooseInstruction(x86_64.x86_64_asm.GetBitnessOpcode(GetBitness(), x86_64.x86_64_asm.opcode.SUBL, x86_64.x86_64_asm.opcode.SUBQ), ret, inst, ref next_var, ref success, vara.MachineReg(Rsp), vara.Const(-((int)tn.O1.ConstVal), tn.O1.DataType));
                         else
                             ChooseInstruction(x86_64.x86_64_asm.GetBitnessOpcode(GetBitness(), x86_64.x86_64_asm.opcode.ADDL, x86_64.x86_64_asm.opcode.ADDQ), ret, inst, ref next_var, ref success, vara.MachineReg(Rsp), tn.O1);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.save:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, inst, ref next_var, ref success, tn.O1);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.restore:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.POP, ret, inst, ref next_var, ref success, tn.O1);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.la_load:
                         ret = new List<tybel.Node>();
@@ -204,7 +242,7 @@ namespace libtysila
                             default:
                                 throw new NotImplementedException();
                         }
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.la_store:
                         ret = new List<tybel.Node>();
@@ -222,7 +260,7 @@ namespace libtysila
                             default:
                                 throw new NotImplementedException();
                         }
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.lv_load:
                         ret = new List<tybel.Node>();
@@ -240,7 +278,7 @@ namespace libtysila
                             default:
                                 throw new NotImplementedException();
                         }
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.lv_store:
                         ret = new List<tybel.Node>();
@@ -258,87 +296,103 @@ namespace libtysila
                             default:
                                 throw new NotImplementedException();
                         }
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.peek_i1:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXB, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.peek_i2:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXW, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.peek_u1:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.peek_u2:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXW, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.peek_u4:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.peek_u8:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.poke_u1:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int32), tn.O2);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.poke_u2:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int32), tn.O2);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.poke_u4:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int32), tn.O2);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.poke_u8:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int64), tn.O2);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.conv_i4_i8sx:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXD, ret, inst, ref next_var, ref success, tn.R, tn.O1);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.conv_i4_i1sx:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXB, ret, inst, ref next_var, ref success, tn.R, tn.O1);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.conv_i4_u1zx:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, inst, ref next_var, ref success, tn.R, tn.O1);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.conv_i8_i4sx:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, tn.R, tn.O1);
                         if (success) return ret; break;
 
+                    case ThreeAddressCode.OpName.conv_i4_u8zx:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXL, ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                        if (success) return ret; break;
+
                     case ThreeAddressCode.OpName.br_ehclause:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.CALL, ret, inst, ref next_var, ref success, vara.Label("L" + tn.O1.ConstVal.ToString(), false));
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.endfinally:
                         ret = new List<tybel.Node>();
                         ChooseInstruction(x86_64.x86_64_asm.opcode.RETN, ret, inst, ref next_var, ref success);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
+
+                    case ThreeAddressCode.OpName.mul:
+                        ret = new List<tybel.Node>();
+                        if (tn.O2.VarType == vara.vara_type.Const)
+                            ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.IMULL, x86_64.x86_64_asm.opcode.IMULQ), ret, inst, ref next_var, ref success, tn.R, tn.O1, tn.O2);
+                        else
+                        {
+                            ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                            ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.IMULL, x86_64.x86_64_asm.opcode.IMULQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
+                        }
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.setl:
                         ret = new List<tybel.Node>();
@@ -355,7 +409,7 @@ namespace libtysila
                                 throw new NotImplementedException();
                         }
                         ChooseInstruction(x86_64.x86_64_asm.opcode.SETL, ret, inst, ref next_var, ref success, tn.R);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.seteq:
                         ret = new List<tybel.Node>();
@@ -372,7 +426,7 @@ namespace libtysila
                                 throw new NotImplementedException();
                         }
                         ChooseInstruction(x86_64.x86_64_asm.opcode.SETZ, ret, inst, ref next_var, ref success, tn.R);
-                        if(success) return ret; break;
+                        if (success) return ret; break;
 
                     default:
                         throw new NotImplementedException("No encoding provided for " + op.ToString());

@@ -868,6 +868,8 @@ namespace libtysila
             public bool HasThis = false;
             public bool ExplicitThis = false;
 
+            public bool Returns = true;
+
             public enum CallConv { Default, VarArg, Generic };
             public CallConv CallingConvention;
 

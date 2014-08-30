@@ -56,7 +56,8 @@ namespace tysila3
             libtysila.frontend.cil.CilGraph g = libtysila.frontend.cil.CilGraph.BuildGraph(equals_mdr.Body, m, new Assembler.AssemblerOptions());
             ass.Options.CallingConvention = "gnu";
             Assembler.MethodAttributes attrs = new Assembler.MethodAttributes(ass);
-            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(g, equals_mtc, ass, attrs);
+            int next_var, next_block;
+            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(g, equals_mtc, ass, attrs, out next_var, out next_block);
             
             // Compile to tybel
             libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(tacs);
@@ -65,7 +66,7 @@ namespace tysila3
             foreach(CallConv.ArgumentLocation arg in cc.Arguments)
                 las.Add(arg.ValueLocation);
             
-            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, ass, las, null, attrs);
+            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, ass, las, null, attrs, ref next_var, ref next_block);
 
             // Generate machine code
             List<byte> code = new List<byte>();

@@ -30,12 +30,13 @@ namespace libtysila.tybel
     {
         public Dictionary<timple.TreeNode, IList<Node>> TimpleMap;
         public int NextVar;
+        public int NextBlock;
 
         public static Tybel GenerateTybel(timple.Optimizer.OptimizeReturn code, Assembler ass, IList<libasm.hardware_location> las,
-            IList<libasm.hardware_location> lvs, Assembler.MethodAttributes attrs)
+            IList<libasm.hardware_location> lvs, Assembler.MethodAttributes attrs, ref int next_var, ref int next_block)
         {
             /* Choose instructions */
-            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.BuildGraph(code, ass, las, lvs);
+            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.BuildGraph(code, ass, las, lvs, ref next_var, ref next_block);
             libtysila.timple.Liveness tybel_l = libtysila.timple.Liveness.LivenessAnalysis(tybel);
 
             /* Prepare register allocator */
@@ -70,11 +71,12 @@ namespace libtysila.tybel
         }
 
         private static Tybel BuildGraph(timple.Optimizer.OptimizeReturn code, Assembler ass, IList<libasm.hardware_location> las,
-            IList<libasm.hardware_location> lvs)
+            IList<libasm.hardware_location> lvs, ref int next_var, ref int next_block)
         {
             Tybel ret = new Tybel();
             ret.TimpleMap = new Dictionary<timple.TreeNode, IList<Node>>();
-            ret.NextVar = 0;
+            ret.NextVar = next_var;
+            ret.NextBlock = next_block;
 
             /* Determine the greatest logical var in use */
             foreach (vara v in code.Liveness.defs.Keys)
@@ -153,7 +155,7 @@ namespace libtysila.tybel
                 }
 
                 /* Generate tybel instructions */
-                IList<Node> tybel = ass.SelectInstruction(n, ref ret.NextVar, las, lvs);
+                IList<Node> tybel = ass.SelectInstruction(n, ref ret.NextVar, ref ret.NextBlock, las, lvs);
 
                 if (tybel == null)
                 {
@@ -166,7 +168,7 @@ namespace libtysila.tybel
                     tybel = new List<Node>();
                     foreach (timple.TreeNode new_n in new_code)
                     {
-                        IList<Node> new_tybel = ass.SelectInstruction(new_n, ref ret.NextVar, las, lvs);
+                        IList<Node> new_tybel = ass.SelectInstruction(new_n, ref ret.NextVar, ref ret.NextBlock, las, lvs);
                         if(new_tybel == null)
                             throw new Exception("Unable to encode " + new_n.ToString() + " (rewritten from " + n.ToString() + ")");
                         ((List<Node>)tybel).AddRange(new_tybel);
@@ -183,6 +185,8 @@ namespace libtysila.tybel
                 ret.DFAdd(n, visited);
             }
 
+            next_var = ret.NextVar;
+            next_block = ret.NextBlock;
             return ret;
         }
 

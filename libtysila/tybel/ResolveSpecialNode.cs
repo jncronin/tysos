@@ -33,19 +33,20 @@ namespace libtysila.tybel
             ret.innergraph = this;
 
             int next_var = 0;
+            int next_block = 0;
 
             Dictionary<SpecialNode, List<vara>> stored_vars = new Dictionary<SpecialNode, List<vara>>();
             util.Set<timple.BaseNode> visited = new util.Set<timple.BaseNode>();
 
             foreach (timple.BaseNode start in Starts)
-                ResolveSpecialNodes(ret, start, null, l, stored_vars, visited, ass, ref next_var, las, lvs);
+                ResolveSpecialNodes(ret, start, null, l, stored_vars, visited, ass, ref next_var, ref next_block, las, lvs);
             
             return ret;
         }
 
         void ResolveSpecialNodes(Tybel ret, timple.BaseNode inner_node, timple.BaseNode outer_parent, timple.Liveness l,
             Dictionary<SpecialNode, List<vara>> stored_vars, util.Set<timple.BaseNode> visited, Assembler ass, ref int next_var,
-            IList<libasm.hardware_location> las, IList<libasm.hardware_location> lvs)
+            ref int next_block, IList<libasm.hardware_location> las, IList<libasm.hardware_location> lvs)
         {
             if (visited.Contains(inner_node))
                 return;
@@ -84,7 +85,7 @@ namespace libtysila.tybel
                             stored_vars[(SpecialNode)inner_node] = stored;
                             foreach (vara v in stored)
                             {
-                                IList<Node> save_instrs = ass.SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.save), vara.Void(), v, vara.Void()), ref next_var, las, lvs);
+                                IList<Node> save_instrs = ass.SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.save), vara.Void(), v, vara.Void()), ref next_var, ref next_block, las, lvs);
 
                                 foreach (Node n in save_instrs)
                                 {
@@ -101,7 +102,7 @@ namespace libtysila.tybel
 
                             for (int i = stored.Count - 1; i >= 0; i--)
                             {
-                                IList<Node> restore_instrs = ass.SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.restore), vara.Void(), stored[i], vara.Void()), ref next_var, las, lvs);
+                                IList<Node> restore_instrs = ass.SelectInstruction(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.restore), vara.Void(), stored[i], vara.Void()), ref next_var, ref next_block, las, lvs);
 
                                 foreach (Node n in restore_instrs)
                                 {
@@ -124,7 +125,7 @@ namespace libtysila.tybel
             }
 
             foreach (timple.BaseNode next in inner_node.Next)
-                ResolveSpecialNodes(ret, next, outer_parent, l, stored_vars, visited, ass, ref next_var, las, lvs);
+                ResolveSpecialNodes(ret, next, outer_parent, l, stored_vars, visited, ass, ref next_var, ref next_block, las, lvs);
         }
     }
 }

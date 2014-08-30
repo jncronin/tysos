@@ -104,6 +104,14 @@ namespace libtysila.frontend.cil
             }
         }
 
+        public override void Add(timple.BaseNode n)
+        {
+            base.Add(n);
+            if (!(n is CilNode))
+                throw new Exception("Can only add CilNodes to a CilGraph");
+            linear_stream.Add(n);
+        }
+
         static void ParseCode(IList<byte> code, ref int base_offset, Dictionary<int, CilNode> offset_map, Metadata m, Assembler.AssemblerOptions opts)
         {
             int offset = 0;

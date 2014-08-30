@@ -145,7 +145,7 @@ namespace libtysila
 {
     partial class Assembler
     {
-        public abstract IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var, IList<libasm.hardware_location> las,
-            IList<libasm.hardware_location> lvs);
+        public abstract IList<tybel.Node> SelectInstruction(timple.TreeNode inst, ref int next_var, ref int next_block,
+            IList<libasm.hardware_location> las, IList<libasm.hardware_location> lvs);
     }
 }

@@ -72,12 +72,12 @@ namespace libtysila
 
         public class AssemblerException : Exception
         {
-            InstructionLine _inst;
-            internal InstructionLine Instruction { get { return _inst; } }
+            libtysila.frontend.cil.InstructionLine _inst;
+            internal libtysila.frontend.cil.InstructionLine Instruction { get { return _inst; } }
             MethodToCompile _mtc;
             internal MethodToCompile Method { get { return _mtc; } }
 
-            public AssemblerException(string msg, InstructionLine inst, MethodToCompile mtc) : base(msg) { _inst = inst; _mtc = mtc; }
+            public AssemblerException(string msg, libtysila.frontend.cil.InstructionLine inst, MethodToCompile mtc) : base(msg) { _inst = inst; _mtc = mtc; }
 
             public override string Message
             {

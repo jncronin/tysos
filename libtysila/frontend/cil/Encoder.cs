@@ -27,7 +27,7 @@ namespace libtysila.frontend.cil
     public class Encoder
     {
         public static List<timple.TreeNode> Encode(CilGraph instrs, Assembler.MethodToCompile mtc, Assembler ass,
-            Assembler.MethodAttributes attrs)
+            Assembler.MethodAttributes attrs, out int next_var, out int next_blk)
         {
             List<timple.TreeNode> ret = new List<timple.TreeNode>();
             int next_variable = 0;
@@ -89,6 +89,8 @@ namespace libtysila.frontend.cil
                 }
             }
 
+            next_blk = next_block;
+            next_var = next_variable;
             return ret;
         }
 

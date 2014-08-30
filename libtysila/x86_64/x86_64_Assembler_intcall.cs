@@ -28,8 +28,8 @@ namespace libtysila
 {
     partial class x86_64_Assembler
     {
-        protected override bool Arch_enc_intcall(string mangled_name, InstructionLine i, Metadata.MethodDefRow mdr, Signature.BaseMethod msig, Metadata.TypeDefRow tdr, Signature.Param tsig, AssemblerState state, bool provides, ref bool i_pushes_set)
-        {
+        //protected override bool Arch_enc_intcall(string mangled_name, InstructionLine i, Metadata.MethodDefRow mdr, Signature.BaseMethod msig, Metadata.TypeDefRow tdr, Signature.Param tsig, AssemblerState state, bool provides, ref bool i_pushes_set)
+        //{
             /*if (mangled_name == "_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_RSP_Rv_P1y")
             {
                 // set_RSP(ulong v)
@@ -169,8 +169,8 @@ namespace libtysila
                 return true;
             }
             else */
-                return false;
-        }
+        //        return false;
+        //}
 
     }
 }

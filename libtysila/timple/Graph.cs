@@ -33,7 +33,7 @@ namespace libtysila.timple
         protected BaseGraph innergraph;
         public BaseGraph InnerGraph { get { return innergraph; } }
 
-        public void Add(BaseNode n)
+        public virtual void Add(BaseNode n)
         {
             if (Starts.Count == 0)
             {
@@ -47,7 +47,11 @@ namespace libtysila.timple
                 if (Ends.Count != 1)
                     throw new Exception();
                 else
+                {
                     Append(n, Ends[0]);
+                    Ends.Clear();
+                    Ends.Add(n);
+                }
             }
         }
 
