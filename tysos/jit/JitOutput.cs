@@ -41,7 +41,7 @@ namespace tysos.jit
         {
             public string Name;
             public uint RelType;
-            public int Value;
+            public long Value;
 
             static Dictionary<uint, string> reloc_types;
 
@@ -112,17 +112,17 @@ namespace tysos.jit
             rodata_sym.Add(name, offset);
         }
 
-        public void AddTextRelocation(int offset, string name, uint rel_type, int value)
+        public void AddTextRelocation(int offset, string name, uint rel_type, long value)
         {
             text_rel.Add(offset, new Relocation { Name = name, RelType = rel_type, Value = value });
         }
 
-        public void AddDataRelocation(int offset, string name, uint rel_type, int value)
+        public void AddDataRelocation(int offset, string name, uint rel_type, long value)
         {
             data_rel.Add(offset, new Relocation { Name = name, RelType = rel_type, Value = value });
         }
 
-        public void AddRodataRelocation(int offset, string name, uint rel_type, int value)
+        public void AddRodataRelocation(int offset, string name, uint rel_type, long value)
         {
             rodata_rel.Add(offset, new Relocation { Name = name, RelType = rel_type, Value = value });
         }

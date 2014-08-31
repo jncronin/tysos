@@ -132,27 +132,33 @@ namespace libtysila
 
                     case ThreeAddressCode.OpName.add:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVLx, x86_64.x86_64_asm.opcode.MOVQx), ret, inst, ref next_var, ref success, tn.R, tn.O1);
                         ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.ADDL, x86_64.x86_64_asm.opcode.ADDQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
+                        if (success) return new List<tybel.Node> { new tybel.MultipleNode(ret, new vara[] { tn.O1, tn.O2 }, new vara[] { tn.R }) }; break;
+
+                    case ThreeAddressCode.OpName.alloca:
+                        ret = new List<tybel.Node>();
+                        ChooseInstruction(x86_64.x86_64_asm.GetBitnessOpcode(GetBitness(), x86_64.x86_64_asm.opcode.SUBL, x86_64.x86_64_asm.opcode.SUBQ), ret, inst, ref next_var, ref success, vara.MachineReg(Rsp), vara.Const(util.align((int)tn.O1.ConstVal, GetSizeOfPointer()), CliType.native_int));
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(Rsp));
                         if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.and:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVLx, x86_64.x86_64_asm.opcode.MOVQx), ret, inst, ref next_var, ref success, tn.R, tn.O1);
                         ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.ANDL, x86_64.x86_64_asm.opcode.ANDQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
-                        if (success) return ret; break;
+                        if (success) return new List<tybel.Node> { new tybel.MultipleNode(ret, new vara[] { tn.O1, tn.O2 }, new vara[] { tn.R }) }; break;
 
                     case ThreeAddressCode.OpName.or:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVLx, x86_64.x86_64_asm.opcode.MOVQx), ret, inst, ref next_var, ref success, tn.R, tn.O1);
                         ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.ORL, x86_64.x86_64_asm.opcode.ORQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
-                        if (success) return ret; break;
+                        if (success) return new List<tybel.Node> { new tybel.MultipleNode(ret, new vara[] { tn.O1, tn.O2 }, new vara[] { tn.R }) }; break;
 
                     case ThreeAddressCode.OpName.xor:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                        ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVLx, x86_64.x86_64_asm.opcode.MOVQx), ret, inst, ref next_var, ref success, tn.R, tn.O1);
                         ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.XORL, x86_64.x86_64_asm.opcode.XORQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
-                        if (success) return ret; break;
+                        if (success) return new List<tybel.Node> { new tybel.MultipleNode(ret, new vara[] { tn.O1, tn.O2 }, new vara[] { tn.R }) }; break;
 
                     case ThreeAddressCode.OpName.ret:
                         switch (op.Type)
@@ -231,13 +237,13 @@ namespace libtysila
                         switch (tn.R.DataType)
                         {
                             case CliType.int32:
-                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(las[(int)tn.O1.ConstVal]));
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVLx, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(las[(int)tn.O1.ConstVal]));
                                 break;
                             case CliType.int64:
                             case CliType.native_int:
                             case CliType.O:
                             case CliType.reference:
-                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(las[(int)tn.O1.ConstVal]));
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQx, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(las[(int)tn.O1.ConstVal]));
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -249,13 +255,13 @@ namespace libtysila
                         switch (tn.O2.DataType)
                         {
                             case CliType.int32:
-                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, vara.MachineReg(las[(int)tn.O1.ConstVal]), tn.O2);
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVLx, ret, inst, ref next_var, ref success, vara.MachineReg(las[(int)tn.O1.ConstVal]), tn.O2);
                                 break;
                             case CliType.int64:
                             case CliType.native_int:
                             case CliType.O:
                             case CliType.reference:
-                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, vara.MachineReg(las[(int)tn.O1.ConstVal]), tn.O2);
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQx, ret, inst, ref next_var, ref success, vara.MachineReg(las[(int)tn.O1.ConstVal]), tn.O2);
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -267,13 +273,13 @@ namespace libtysila
                         switch (tn.R.DataType)
                         {
                             case CliType.int32:
-                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(lvs[(int)tn.O1.ConstVal]));
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVLx, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(lvs[(int)tn.O1.ConstVal]));
                                 break;
                             case CliType.int64:
                             case CliType.native_int:
                             case CliType.O:
                             case CliType.reference:
-                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(lvs[(int)tn.O1.ConstVal]));
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQx, ret, inst, ref next_var, ref success, tn.R, vara.MachineReg(lvs[(int)tn.O1.ConstVal]));
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -285,13 +291,13 @@ namespace libtysila
                         switch (tn.O2.DataType)
                         {
                             case CliType.int32:
-                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, vara.MachineReg(lvs[(int)tn.O1.ConstVal]), tn.O2);
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVLx, ret, inst, ref next_var, ref success, vara.MachineReg(lvs[(int)tn.O1.ConstVal]), tn.O2);
                                 break;
                             case CliType.int64:
                             case CliType.native_int:
                             case CliType.O:
                             case CliType.reference:
-                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, vara.MachineReg(lvs[(int)tn.O1.ConstVal]), tn.O2);
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQx, ret, inst, ref next_var, ref success, vara.MachineReg(lvs[(int)tn.O1.ConstVal]), tn.O2);
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -320,32 +326,32 @@ namespace libtysila
 
                     case ThreeAddressCode.OpName.peek_u4:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVLx, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
                         if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.peek_u8:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQx, ret, inst, ref next_var, ref success, tn.R, vara.ContentsOf(tn.O1, CliType.int32));
                         if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.poke_u1:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int32), tn.O2);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVBx, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int32), tn.O2);
                         if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.poke_u2:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int32), tn.O2);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVWx, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int32), tn.O2);
                         if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.poke_u4:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int32), tn.O2);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVLx, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int32), tn.O2);
                         if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.poke_u8:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int64), tn.O2);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQx, ret, inst, ref next_var, ref success, vara.ContentsOf(tn.O1, CliType.int64), tn.O2);
                         if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.conv_i4_i8sx:
@@ -389,7 +395,7 @@ namespace libtysila
                             ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.IMULL, x86_64.x86_64_asm.opcode.IMULQ), ret, inst, ref next_var, ref success, tn.R, tn.O1, tn.O2);
                         else
                         {
-                            ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVL, x86_64.x86_64_asm.opcode.MOVQ), ret, inst, ref next_var, ref success, tn.R, tn.O1);
+                            ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.MOVLx, x86_64.x86_64_asm.opcode.MOVQx), ret, inst, ref next_var, ref success, tn.R, tn.O1);
                             ChooseInstruction(x86_64.x86_64_asm.GetCTOpcode(op.Type, GetBitness(), x86_64.x86_64_asm.opcode.IMULL, x86_64.x86_64_asm.opcode.IMULQ), ret, inst, ref next_var, ref success, tn.R, tn.O2);
                         }
                         if (success) return ret; break;
@@ -497,7 +503,8 @@ namespace libtysila
                             if (vara.needs_memloc)
                             {
                                 if ((optype == x86_64.x86_64_asm.optype.RM32) ||
-                                    (optype == x86_64.x86_64_asm.optype.RM8163264))
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264) ||
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264as8))
                                     return true;
                                 else
                                     return false;
@@ -507,7 +514,8 @@ namespace libtysila
                                 if ((optype == x86_64.x86_64_asm.optype.R32) ||
                                     (optype == x86_64.x86_64_asm.optype.RM32) ||
                                     (optype == x86_64.x86_64_asm.optype.R8163264) ||
-                                    (optype == x86_64.x86_64_asm.optype.RM8163264))
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264) ||
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264as8))
                                     return true;
                                 else
                                     return false;
@@ -517,7 +525,8 @@ namespace libtysila
                             if (vara.needs_memloc)
                             {
                                 if ((optype == x86_64.x86_64_asm.optype.RM64) ||
-                                    (optype == x86_64.x86_64_asm.optype.RM8163264))
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264) ||
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264as8))
                                     return true;
                                 else
                                     return false;
@@ -527,7 +536,8 @@ namespace libtysila
                                 if ((optype == x86_64.x86_64_asm.optype.R64) ||
                                     (optype == x86_64.x86_64_asm.optype.RM64) ||
                                     (optype == x86_64.x86_64_asm.optype.R8163264) ||
-                                    (optype == x86_64.x86_64_asm.optype.RM8163264))
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264) ||
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264as8))
                                     return true;
                                 else
                                     return false;
@@ -538,7 +548,8 @@ namespace libtysila
                 case libtysila.vara.vara_type.ContentsOf:
                     if ((optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM64)
                         || (optype == x86_64.x86_64_asm.optype.RM8) || (optype == x86_64.x86_64_asm.optype.RM16) ||
-                                (optype == x86_64.x86_64_asm.optype.RM8163264))
+                                (optype == x86_64.x86_64_asm.optype.RM8163264) ||
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264as8))
                         return true;
                     return false;
 
@@ -565,7 +576,8 @@ namespace libtysila
                         if (Options.PIC)
                         {
                             if (optype == x86_64.x86_64_asm.optype.RM32 ||
-                                optype == x86_64.x86_64_asm.optype.RM8163264)
+                                optype == x86_64.x86_64_asm.optype.RM8163264 ||
+                                    (optype == x86_64.x86_64_asm.optype.RM8163264as8))
                                 return true;
                         }
                         else
@@ -601,40 +613,40 @@ namespace libtysila
                     return false;
 
                 case libtysila.vara.vara_type.MachineReg:
-                    if((vara.MachineRegVal.Equals(Rax)) && ((optype == x86_64.x86_64_asm.optype.rax) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if((vara.MachineRegVal.Equals(Rax)) && ((optype == x86_64.x86_64_asm.optype.rax) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(Rbx)) && ((optype == x86_64.x86_64_asm.optype.rbx) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(Rbx)) && ((optype == x86_64.x86_64_asm.optype.rbx) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(Rcx)) && ((optype == x86_64.x86_64_asm.optype.rcx) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(Rcx)) && ((optype == x86_64.x86_64_asm.optype.rcx) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(Rdx)) && ((optype == x86_64.x86_64_asm.optype.rdx) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(Rdx)) && ((optype == x86_64.x86_64_asm.optype.rdx) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(Rsi)) && ((optype == x86_64.x86_64_asm.optype.rsi) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(Rsi)) && ((optype == x86_64.x86_64_asm.optype.rsi) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(Rdi)) && ((optype == x86_64.x86_64_asm.optype.rdi) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(Rdi)) && ((optype == x86_64.x86_64_asm.optype.rdi) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(Rbp)) && ((optype == x86_64.x86_64_asm.optype.rbp) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(Rbp)) && ((optype == x86_64.x86_64_asm.optype.rbp) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(Rsp)) && ((optype == x86_64.x86_64_asm.optype.rsp) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(Rsp)) && ((optype == x86_64.x86_64_asm.optype.rsp) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(R8)) && ((optype == x86_64.x86_64_asm.optype.r8) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(R8)) && ((optype == x86_64.x86_64_asm.optype.r8) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(R9)) && ((optype == x86_64.x86_64_asm.optype.r9) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(R9)) && ((optype == x86_64.x86_64_asm.optype.r9) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(R10)) && ((optype == x86_64.x86_64_asm.optype.r10) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(R10)) && ((optype == x86_64.x86_64_asm.optype.r10) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(R11)) && ((optype == x86_64.x86_64_asm.optype.r11) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(R11)) && ((optype == x86_64.x86_64_asm.optype.r11) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(R12)) && ((optype == x86_64.x86_64_asm.optype.r12) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(R12)) && ((optype == x86_64.x86_64_asm.optype.r12) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(R13)) && ((optype == x86_64.x86_64_asm.optype.r13) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(R13)) && ((optype == x86_64.x86_64_asm.optype.r13) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(R14)) && ((optype == x86_64.x86_64_asm.optype.r14) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(R14)) && ((optype == x86_64.x86_64_asm.optype.r14) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
-                    if ((vara.MachineRegVal.Equals(R15)) && ((optype == x86_64.x86_64_asm.optype.r15) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal.Equals(R15)) && ((optype == x86_64.x86_64_asm.optype.r15) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
 
-                    if ((vara.MachineRegVal is libasm.hardware_contentsof) && (((libasm.hardware_contentsof)vara.MachineRegVal).base_loc is libasm.x86_64_gpr) && ((optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264)))
+                    if ((vara.MachineRegVal is libasm.hardware_contentsof) && (((libasm.hardware_contentsof)vara.MachineRegVal).base_loc is libasm.x86_64_gpr) && ((optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
                                        
                     return false;

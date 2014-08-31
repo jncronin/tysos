@@ -202,6 +202,7 @@ namespace libtysila
                 int rel_val = 0;
                 libasm.RelocationBlock.RelocationType rel_type = null;
                 libasm.RelocationBlock disp_reloc = null;
+                bool need_rex_40 = false;
                 for (int i = 0; i < inst.ops.Length; i++)
                 {
                     x86_64.x86_64_asm.optype opt = inst.ops[i];
@@ -221,6 +222,10 @@ namespace libtysila
                         case x86_64.x86_64_asm.optype.RM32:
                         case x86_64.x86_64_asm.optype.RM64:
                         case x86_64.x86_64_asm.optype.RM8163264:
+                        case x86_64.x86_64_asm.optype.RM8163264as8:
+                            if (opt == x86_64.x86_64_asm.optype.RM8163264as8)
+                                need_rex_40 = true;
+
                             switch (ops[i].VarType)
                             {
                                 case vara.vara_type.MachineReg:
@@ -326,6 +331,9 @@ namespace libtysila
                 if (inst.rex_w)
                     rex |= 0x48;
 
+                if (need_rex_40 && rm != null && (rm is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)rm).base_val >= 4)
+                    rex |= 0x40;
+
                 if (!inst.opcode_adds && r != null && (r is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)r).is_extended)
                     rex |= 0x44;        // rex.r if modr/m r field is extended
                 if (inst.opcode_adds && r != null && (r is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)r).is_extended)
@@ -334,6 +342,7 @@ namespace libtysila
                     rex |= 0x41;        // rex.b if modr/m r/m field is extended (with mod == 3)
                 if (!inst.opcode_adds && rm != null && (rm is libasm.hardware_contentsof) && (((libasm.hardware_contentsof)rm).base_loc is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)(((libasm.hardware_contentsof)rm).base_loc)).is_extended)
                     rex |= 0x41;        // rex.b if modr/m r/m field is extended (with mod != 3)
+                
                 if (rex != 0)
                     a.Add(rex);
 

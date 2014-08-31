@@ -48,6 +48,87 @@ namespace libtysila.tybel
         }
     }
 
+    public class MultipleNode : Node
+    {
+        public List<Node> Nodes;
+        internal ICollection<vara> _uses, _defs;
+        bool _ismove;
+
+        public MultipleNode(List<Node> nodes, ICollection<vara> Uses, ICollection<vara> Defs)
+        {
+            Nodes = nodes;
+            _uses = Uses;
+            _defs = Defs;
+            validate(ref _uses);
+            validate(ref _defs);
+            _ismove = false;
+            UsesLiveAfter = true;
+        }
+
+        private void validate(ref ICollection<vara> a)
+        {
+            List<vara> new_a = new List<vara>(a);
+            int i = 0;
+            while (i < new_a.Count)
+            {
+                if (new_a[i].VarType == vara.vara_type.Logical ||
+                    new_a[i].VarType == vara.vara_type.MachineReg)
+                {
+                    i++;
+                    continue;
+                }
+                new_a.RemoveAt(i);
+            }
+            a = new_a;
+        }
+
+        public MultipleNode(List<Node> nodes, ICollection<vara> Uses, ICollection<vara> Defs, bool ismove)
+        {
+            Nodes = nodes;
+            _uses = Uses;
+            _defs = Defs;
+            validate(ref _uses);
+            validate(ref _defs);
+            _ismove = ismove;
+            UsesLiveAfter = true;
+        }
+
+        public override ICollection<vara> uses
+        {
+            get { return _uses; }
+        }
+
+        public override ICollection<vara> defs
+        {
+            get { return _defs; }
+        }
+
+        public override bool IsMove
+        {
+            get { return _ismove; }
+        }
+
+        public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
+        {
+            List<libasm.OutputBlock> ret = new List<libasm.OutputBlock>();
+            foreach (Node n in Nodes)
+                ret.AddRange(n.Assemble(ass, attrs));
+            return ret;
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < Nodes.Count; i++)
+            {
+                if (i > 0)
+                    sb.Append("\n  ");
+                sb.Append(Nodes[i].ToString());
+            }
+            return sb.ToString();
+        }
+    }
+
     public class SpecialNode : Node
     {
         public enum SpecialNodeType { SaveLive, Restore, SaveLiveExcept, SaveLiveIntersect, };

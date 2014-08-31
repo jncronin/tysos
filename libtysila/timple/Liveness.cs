@@ -78,6 +78,8 @@ namespace libtysila.timple
                     }
 
                     /* Generate in and out sets */
+                    if (n.UsesLiveAfter)
+                        l.live_out[n].AddRange(n.uses);
                     util.Set<vara> inp = new util.Set<vara>(l.live_in[n]);
                     util.Set<vara> outp = new util.Set<vara>(l.live_out[n]);
                     l.live_in[n] = l.live_out[n].Except(n.defs).Union(n.uses);
@@ -85,6 +87,8 @@ namespace libtysila.timple
                     l.live_out[n].Clear();
                     foreach (BaseNode s in n.Next)
                         l.live_out[n].AddRange(l.live_in[s]);
+                    if (n.UsesLiveAfter)
+                        l.live_out[n].AddRange(n.uses);
 
                     if (!inp.Equals(l.live_in[n]) || !outp.Equals(l.live_out[n]))
                         changes = true;

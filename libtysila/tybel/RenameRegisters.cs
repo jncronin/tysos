@@ -53,10 +53,45 @@ namespace libtysila.tybel
             outer_node.next = new List<timple.BaseNode>();
             outer_node.prev = new List<timple.BaseNode>();
 
-            for (int i = 0; i < outer_node.VarList.Count; i++)
+            if (outer_node is tybel.MultipleNode)
             {
-                if (outer_node.VarList[i].HasLogicalVar)
-                    outer_node.VarList[i] = RenameRegister(outer_node.VarList[i], regs);
+                tybel.MultipleNode mn = outer_node as tybel.MultipleNode;
+                List<Node> outer_nodes = new List<Node>();
+                foreach (tybel.Node n2 in mn.Nodes)
+                {
+                    tybel.Node outer_mnode = (tybel.Node)n2.MemberwiseClone();
+                    for (int i = 0; i < n2.VarList.Count; i++)
+                    {
+                        if (outer_mnode.VarList[i].HasLogicalVar)
+                            outer_mnode.VarList[i] = RenameRegister(outer_mnode.VarList[i], regs);
+                    }
+                    outer_nodes.Add(outer_mnode);
+                }
+                mn.Nodes = outer_nodes;
+
+                List<vara> mn_defs = new List<vara>(mn.defs);
+                for (int j = 0; j < mn_defs.Count; j++)
+                {
+                    if (mn_defs[j].HasLogicalVar)
+                        mn_defs[j] = RenameRegister(mn_defs[j], regs);
+                }
+                mn._defs = mn_defs;
+
+                List<vara> mn_uses = new List<vara>(mn.uses);
+                for (int j = 0; j < mn_uses.Count; j++)
+                {
+                    if (mn_uses[j].HasLogicalVar)
+                        mn_uses[j] = RenameRegister(mn_uses[j], regs);
+                }
+                mn._uses = mn_uses;
+            }
+            else
+            {
+                for (int i = 0; i < outer_node.VarList.Count; i++)
+                {
+                        if (outer_node.VarList[i].HasLogicalVar)
+                            outer_node.VarList[i] = RenameRegister(outer_node.VarList[i], regs);
+                }
             }
 
             bool add = true;

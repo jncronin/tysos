@@ -157,7 +157,7 @@ namespace JitTestHost
             switch (relocation.RelType)
             {
                 case libtysila.x86_64.x86_64_elf64.R_X86_64_64:
-                    int target_addr = symbols[relocation.Name] + relocation.Value;
+                    long target_addr = symbols[relocation.Name] + relocation.Value;
                     reloc = BitConverter.GetBytes((ulong)target_addr);
                     break;
                 default:

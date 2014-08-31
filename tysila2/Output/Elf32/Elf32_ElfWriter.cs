@@ -316,19 +316,19 @@ namespace Elf32
             ehdr.e_syms.name_to_sym.Add(name, ehdr.e_syms.defined_syms.Count - 1);
         }
 
-        public void AddTextRelocation(int offset, string name, uint rel_type, int value)
+        public void AddTextRelocation(int offset, string name, uint rel_type, long value)
         {
-            ehdr.relatext.relocs.Add(new Elf32_Rela_Shdr.Elf32_Rela((uint)offset, rel_type, value, name));
+            ehdr.relatext.relocs.Add(new Elf32_Rela_Shdr.Elf32_Rela((uint)offset, rel_type, (int)value, name));
         }
 
-        public void AddDataRelocation(int offset, string name, uint rel_type, int value)
+        public void AddDataRelocation(int offset, string name, uint rel_type, long value)
         {
-            ehdr.reladata.relocs.Add(new Elf32_Rela_Shdr.Elf32_Rela((uint)offset, rel_type, value, name));
+            ehdr.reladata.relocs.Add(new Elf32_Rela_Shdr.Elf32_Rela((uint)offset, rel_type, (int)value, name));
         }
 
-        public void AddRodataRelocation(int offset, string name, uint rel_type, int value)
+        public void AddRodataRelocation(int offset, string name, uint rel_type, long value)
         {
-            ehdr.relarodata.relocs.Add(new Elf32_Rela_Shdr.Elf32_Rela((uint)offset, rel_type, value, name));
+            ehdr.relarodata.relocs.Add(new Elf32_Rela_Shdr.Elf32_Rela((uint)offset, rel_type, (int)value, name));
         }
 
         public void Write(Stream output)

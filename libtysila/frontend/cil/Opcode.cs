@@ -315,6 +315,11 @@ namespace libtysila.frontend.cil
             ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
             Assembler.MethodAttributes attrs);
 
+        public static int OpcodeVal(int op)
+        {
+            return op;
+        }
+
         public static int OpcodeVal(SingleOpcodes op)
         {
             return (int)op;

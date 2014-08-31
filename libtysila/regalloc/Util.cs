@@ -53,7 +53,7 @@ namespace libtysila.regalloc
 
         bool MoveRelated(vara n)
         {
-            return NodeMoves(n).Count == 0;
+            return NodeMoves(n).Count != 0;
         }
 
         ICollection<timple.BaseNode> NodeMoves(vara n)
@@ -136,8 +136,14 @@ namespace libtysila.regalloc
 
         vara GetAlias(vara n)
         {
+            vara alias = GetAlias2(n);
+            return alias;
+        }
+
+        vara GetAlias2(vara n)
+        {
             if (coalescedNodes.Contains(n))
-                return GetAlias(alias[n]);
+                return GetAlias2(alias[n]);
             else
                 return n;
         }

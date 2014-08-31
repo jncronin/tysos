@@ -35,6 +35,8 @@ namespace libtysila.frontend.cil
         {
             DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.newobj)] = DecomposeOpcodes.newobj.Decompose_newobj;
             DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.isinst)] = DecomposeOpcodes.isinst.Decompose_isinst;
+            DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.box)] = DecomposeOpcodes.box.Decompose_box;
+            DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.unbox)] = DecomposeOpcodes.box.Decompose_unbox;
         }
 
         internal static CilNode DecomposeComplexOpts(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable, ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs, Assembler.MethodAttributes attrs)

@@ -69,13 +69,13 @@ namespace tysila
         public void AddRodataSymbol(int offset, string name)
         { }
 
-        public void AddTextRelocation(int offset, string name, uint rel_type, int value)
+        public void AddTextRelocation(int offset, string name, uint rel_type, long value)
         { }
 
-        public void AddDataRelocation(int offset, string name, uint rel_type, int value)
+        public void AddDataRelocation(int offset, string name, uint rel_type, long value)
         { }
 
-        public void AddRodataRelocation(int offset, string name, uint rel_type, int value)
+        public void AddRodataRelocation(int offset, string name, uint rel_type, long value)
         { }
 
         public void SetEntryPoint(string name)

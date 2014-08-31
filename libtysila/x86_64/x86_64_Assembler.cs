@@ -942,11 +942,15 @@ namespace libtysila
             {
                 util.Set<hardware_location> ret = new util.Set<hardware_location>();
                 ret.Add(Rax); ret.Add(Rcx); ret.Add(Rdx); ret.Add(Rbx); ret.Add(Rdi); ret.Add(Rsi);
-                if(GetBitness() == Bitness.Bits64)
+                if (GetBitness() == Bitness.Bits64)
+                {
                     ret.Add(R8); ret.Add(R9); ret.Add(R10); ret.Add(R11); ret.Add(R12); ret.Add(R13); ret.Add(R14); ret.Add(R15);
+                }
                 ret.Add(Xmm0); ret.Add(Xmm1); ret.Add(Xmm2); ret.Add(Xmm3); ret.Add(Xmm4); ret.Add(Xmm5); ret.Add(Xmm6); ret.Add(Xmm7);
                 if (GetBitness() == Bitness.Bits64)
+                {
                     ret.Add(Xmm8); ret.Add(Xmm9); ret.Add(Xmm10); ret.Add(Xmm11); ret.Add(Xmm12); ret.Add(Xmm13); ret.Add(Xmm14); ret.Add(Xmm15);
+                }
 
                 return ret;
             }

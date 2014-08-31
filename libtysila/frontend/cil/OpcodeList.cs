@@ -336,7 +336,8 @@ namespace libtysila.frontend.cil
                 push = (int)Opcode.PushBehaviour.Push0,
                 ctrl = Opcode.ControlFlow.NEXT,
                 name = "flip",
-                directly_modifies_stack = true
+                directly_modifies_stack = true,
+                Encoder = OpcodeEncodings.flip.enc_flip
             });
             Opcodes.Add(0xFD21, new Opcode
             {
@@ -346,7 +347,8 @@ namespace libtysila.frontend.cil
                 push = (int)Opcode.PushBehaviour.Push0,
                 ctrl = Opcode.ControlFlow.NEXT,
                 name = "flip3",
-                directly_modifies_stack = true
+                directly_modifies_stack = true,
+                Encoder = OpcodeEncodings.flip.enc_flip
             });
             Opcodes.Add(0xfd22, new Opcode
             {

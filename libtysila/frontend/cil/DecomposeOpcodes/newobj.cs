@@ -96,17 +96,17 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
                          * call .ctor                       -> string, ...
                          */
 
-                        timple.BaseNode first = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        timple.BaseNode next = first;
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd2f), inline_int = 3 } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd2f), inline_int = 3 } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = n.il.inline_tok } });
+                        timple.BaseNode i_1 = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_2 = i_1.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
+                        timple.BaseNode i_3 = i_2.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_4 = i_3.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2f], inline_int = 3 } });
+                        timple.BaseNode i_5 = i_4.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2f], inline_int = 3 } });
+                        timple.BaseNode i_6 = i_5.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = n.il.inline_tok } });
 
                         n.Remove();
+                        n.replaced_by = new List<CilNode> { (CilNode)i_1, (CilNode)i_2, (CilNode)i_3, (CilNode)i_4, (CilNode)i_5, (CilNode)i_6 };
 
-                        return (CilNode)first;
+                        return (CilNode)i_1;
                     }
                     else if (Signature.BaseMethodSigCompare(ctor_mtc.msig, c_2, ass))
                     {
@@ -124,18 +124,18 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
                          * call .ctor
                          */
 
-                        timple.BaseNode first = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        timple.BaseNode next = first;
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.ldlen) } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd2f), inline_int = 2 } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd2f), inline_int = 2 } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = n.il.inline_tok } });
+                        timple.BaseNode i_1 = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_2 = i_1.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldlen)] } });
+                        timple.BaseNode i_3 = i_2.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
+                        timple.BaseNode i_4 = i_3.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_5 = i_4.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2f], inline_int = 2 } });
+                        timple.BaseNode i_6 = i_5.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2f], inline_int = 2 } });
+                        timple.BaseNode i_7 = i_6.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = n.il.inline_tok } });
 
                         n.Remove();
+                        n.replaced_by = new List<CilNode> { (CilNode)i_1, (CilNode)i_2, (CilNode)i_3, (CilNode)i_4, (CilNode)i_5, (CilNode)i_6, (CilNode)i_7 };
 
-                        return (CilNode)first;
+                        return (CilNode)i_1;
                     }
                     else if (Signature.BaseMethodSigCompare(ctor_mtc.msig, c_3, ass))
                     {
@@ -153,17 +153,17 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
                          * call .ctor                       -> string, ...
                          */
 
-                        timple.BaseNode first = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        timple.BaseNode next = first;
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd2f), inline_int = 4 } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd2f), inline_int = 4 } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = n.il.inline_tok } });
+                        timple.BaseNode i_1 = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_2 = i_1.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
+                        timple.BaseNode i_3 = i_2.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_4 = i_3.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(0xfd2f)], inline_int = 4 } });
+                        timple.BaseNode i_5 = i_4.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(0xfd2f)], inline_int = 4 } });
+                        timple.BaseNode i_6 = i_5.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = n.il.inline_tok } });
 
                         n.Remove();
+                        n.replaced_by = new List<CilNode> { (CilNode)i_1, (CilNode)i_2, (CilNode)i_3, (CilNode)i_4, (CilNode)i_5, (CilNode)i_6 };
 
-                        return (CilNode)first;
+                        return (CilNode)i_1;
                     }
                     else if (Signature.BaseMethodSigCompare(ctor_mtc.msig, c_4, ass))
                     {
@@ -180,17 +180,17 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
                          * call .ctor                       -> string, ...
                          */
 
-                        timple.BaseNode first = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        timple.BaseNode next = first;
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd2c) } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd21) } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = n.il.inline_tok } });
+                        timple.BaseNode i_1 = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_2 = i_1.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(0xfd2c)] } });
+                        timple.BaseNode i_3 = i_2.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
+                        timple.BaseNode i_4 = i_3.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_5 = i_4.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(0xfd21)] } });
+                        timple.BaseNode i_6 = i_5.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = n.il.inline_tok } });
 
                         n.Remove();
+                        n.replaced_by = new List<CilNode> { (CilNode)i_1, (CilNode)i_2, (CilNode)i_3, (CilNode)i_4, (CilNode)i_5, (CilNode)i_6 };
 
-                        return (CilNode)first;
+                        return (CilNode)i_1;
                     }
                     else if (Signature.BaseMethodSigCompare(ctor_mtc.msig, c_5, ass))
                     {
@@ -207,17 +207,17 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
                          * call .ctor                       -> string, ...
                          */
 
-                        timple.BaseNode first = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        timple.BaseNode next = first;
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.dup) } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd2f), inline_int = 4 } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(0xfd2f), inline_int = 4 } });
-                        next = next.InsertAfter(new CilNode { il = new InstructionLine { opcode = new Opcode(Opcode.SingleOpcodes.call), inline_tok = n.il.inline_tok } });
+                        timple.BaseNode i_1 = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_2 = i_1.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = new MTCToken { mtc = intallocstr_mtc } } });
+                        timple.BaseNode i_3 = i_2.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+                        timple.BaseNode i_4 = i_3.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(0xfd2f)], inline_int = 4 } });
+                        timple.BaseNode i_5 = i_4.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(0xfd2f)], inline_int = 4 } });
+                        timple.BaseNode i_6 = i_5.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = n.il.inline_tok } });
 
                         n.Remove();
+                        n.replaced_by = new List<CilNode> { (CilNode)i_1, (CilNode)i_2, (CilNode)i_3, (CilNode)i_4, (CilNode)i_5, (CilNode)i_6 };
 
-                        return (CilNode)first;
+                        return (CilNode)i_1;
                     }
                     else if (Signature.BaseMethodSigCompare(ctor_mtc.msig, c_6, ass))
                     {

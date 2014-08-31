@@ -42,7 +42,9 @@ namespace libtysila.timple
         }
 
         public abstract BaseNode InsertAfter(BaseNode new_node);
-        public abstract void Remove(); 
+        public abstract void Remove();
+
+        public bool UsesLiveAfter = false;
     }
 
     public class TreeNode : BaseNode

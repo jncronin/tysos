@@ -112,7 +112,7 @@ namespace libtysila
             {
                 internal string name;
                 internal uint rel_type;
-                internal int value;
+                internal long value;
             }
 
             internal RelocationType Relocation;
@@ -450,14 +450,12 @@ namespace libtysila
                 }
 
                 // string TypeName
-                throw new NotImplementedException();
-                //var v_n = ttc.type.m.StringTable.GetStringAddress(ttc.type.TypeName, ass);
-                //ti_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = ti_l.InstanceFieldOffsets["String TypeName"], Relocation = new LayoutEntry.RelocationType { name = v_n.base_var.v.label, rel_type = ass.DataToDataRelocType(), value = v_n.constant_offset } });
+                vara v_n = ttc.type.m.StringTable.GetStringAddress(ttc.type.TypeName, ass);
+                ti_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = ti_l.InstanceFieldOffsets["String TypeName"], Relocation = new LayoutEntry.RelocationType { name = v_n.LabelVal, rel_type = ass.DataToDataRelocType(), value = v_n.Offset } });
 
                 // string TypeNamespace
-                throw new NotImplementedException();
-                //var v_ns = ttc.type.m.StringTable.GetStringAddress(ttc.type.TypeNamespace, ass);
-                //ti_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = ti_l.InstanceFieldOffsets["String TypeNamespace"], Relocation = new LayoutEntry.RelocationType { name = v_ns.base_var.v.label, rel_type = ass.DataToDataRelocType(), value = v_ns.constant_offset } });
+                vara v_ns = ttc.type.m.StringTable.GetStringAddress(ttc.type.TypeNamespace, ass);
+                ti_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = ti_l.InstanceFieldOffsets["String TypeNamespace"], Relocation = new LayoutEntry.RelocationType { name = v_ns.LabelVal, rel_type = ass.DataToDataRelocType(), value = v_ns.Offset } });
 
                 // System.Reflection.Assembly _Assembly
                 if (ttc.type.m != null)
@@ -629,9 +627,8 @@ namespace libtysila
                             ass.Requestor.RequestTypeInfo(field_type);
 
                             // String _Name
-                            throw new NotImplementedException();
-                            //var v_nf = f.field.DefinedIn.type.m.StringTable.GetStringAddress(f.field.field.Name, ass);
-                            //fi_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = fi_offset + fi_l.InstanceFieldOffsets["String _Name"], Relocation = new LayoutEntry.RelocationType { name = v_nf.base_var.v.label, rel_type = ass.DataToDataRelocType(), value = v_nf.constant_offset } });
+                            vara v_nf = f.field.DefinedIn.type.m.StringTable.GetStringAddress(f.field.field.Name, ass);
+                            fi_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = fi_offset + fi_l.InstanceFieldOffsets["String _Name"], Relocation = new LayoutEntry.RelocationType { name = v_nf.LabelVal, rel_type = ass.DataToDataRelocType(), value = v_nf.Offset } });
 
                             // UInt32 Flags
                             uint flags = f.field.field.Flags;
@@ -917,14 +914,12 @@ namespace libtysila
             eh_list_offset += ass.GetSizeOfPointer();
 
             // String _Name
-            throw new NotImplementedException();
-            //var v_nm = mtc.type.m.StringTable.GetStringAddress(mtc.meth.Name, ass);
-            //mi_layout.Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = mi_offset + mi_l.InstanceFieldOffsets["String _Name"], Relocation = new LayoutEntry.RelocationType { name = v_nm.base_var.v.label, rel_type = ass.DataToDataRelocType(), value = v_nm.constant_offset } });
+            vara v_nm = mtc.type.m.StringTable.GetStringAddress(mtc.meth.Name, ass);
+            mi_layout.Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = mi_offset + mi_l.InstanceFieldOffsets["String _Name"], Relocation = new LayoutEntry.RelocationType { name = v_nm.LabelVal, rel_type = ass.DataToDataRelocType(), value = v_nm.Offset } });
 
             // String _MangledName
-            throw new NotImplementedException();
-            //var v_nmn = mtc.type.m.StringTable.GetStringAddress(Mangler2.MangleMethod(mtc, ass), ass);
-            //mi_layout.Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = mi_offset + mi_l.InstanceFieldOffsets["String _MangledName"], Relocation = new LayoutEntry.RelocationType { name = v_nmn.base_var.v.label, rel_type = ass.DataToDataRelocType(), value = v_nmn.constant_offset } });
+            vara v_nmn = mtc.type.m.StringTable.GetStringAddress(Mangler2.MangleMethod(mtc, ass), ass);
+            mi_layout.Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = mi_offset + mi_l.InstanceFieldOffsets["String _MangledName"], Relocation = new LayoutEntry.RelocationType { name = v_nmn.LabelVal, rel_type = ass.DataToDataRelocType(), value = v_nmn.Offset } });
 
             // Int32 Flags
             mi_layout.Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Const, OffsetWithinStructure = mi_offset + mi_l.InstanceFieldOffsets["Int32 Flags"], Const = ass.ToByteArrayZeroExtend(mtc.meth.Flags, 4) });

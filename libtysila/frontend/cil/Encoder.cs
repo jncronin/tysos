@@ -165,9 +165,14 @@ namespace libtysila.frontend.cil
                 return;
             visited.Add(n);
 
-            n = DecomposeComplexOpcodes.DecomposeComplexOpts(n, ass, mtc, ref next_variable, ref next_block,
-                la_vars, lv_vars, las, lvs, attrs);
-            visited.Add(n);
+            CilNode new_n = DecomposeComplexOpcodes.DecomposeComplexOpts(n, ass, mtc, ref next_variable, ref next_block,
+                    la_vars, lv_vars, las, lvs, attrs);
+
+            if (new_n != n)
+            {
+                DFEncode(new_n, mtc, ass, visited, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs);
+                return;
+            }
             
             if (n.il.opcode.Encoder == null)
                 throw new Exception("No encoding available for " + n.il.ToString());

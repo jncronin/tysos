@@ -39,9 +39,9 @@ namespace libtysila
         void AddDataSymbol(int offset, string name);
         void AddRodataSymbol(int offset, string name);
 
-        void AddTextRelocation(int offset, string name, uint rel_type, int value);
-        void AddDataRelocation(int offset, string name, uint rel_type, int value);
-        void AddRodataRelocation(int offset, string name, uint rel_type, int value);
+        void AddTextRelocation(int offset, string name, uint rel_type, long value);
+        void AddDataRelocation(int offset, string name, uint rel_type, long value);
+        void AddRodataRelocation(int offset, string name, uint rel_type, long value);
 
         void AddStaticClassPointer(string static_object_name, string typeinfo_name);
 
