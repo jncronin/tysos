@@ -101,6 +101,11 @@ namespace tybuild
             foreach (string l in ExtraLibDirs)
                 ret.Append("/lib:\"" + l + "\" ");
             ret.Append("/lib:\"" + tybuild.RemoveDirSplit(tybuild.ref_dir(tools_ver)) + "\" ");
+
+            System.Reflection.Assembly a = System.Reflection.Assembly.GetAssembly(typeof(Project));
+            System.IO.FileInfo tybuild_file = new FileInfo(a.Location);
+            ret.Append("/lib:\"" + tybuild.RemoveDirSplit(tybuild_file.DirectoryName) + "\" ");
+
             foreach (ProjectId pr in ProjectReferences)
                 ret.Append("/r:\"" + tybuild.ReplaceDirSplit(pr.OutputFile, unix_splits) +
 					 "\" ");
