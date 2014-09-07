@@ -120,8 +120,20 @@ namespace libtysila.tybel
             }
             else
             {
-                ret.AddEdge((Node)outer_parent, (Node)outer_node);
-                outer_parent = outer_node;
+                bool skip = false;
+                if (outer_node.IsUnconditionalJmp && outer_node.VarList.Count == 1 && outer_node.VarList[0].VarType == vara.vara_type.Label)
+                {
+                    string lab_target = outer_node.VarList[0].LabelVal;
+
+                    if (inner_node.Next.Count == 1 && (inner_node.Next[0] is tybel.LabelNode) && (((LabelNode)inner_node.Next[0]).Label == lab_target))
+                        skip = true;                       
+                }
+
+                if (skip == false)
+                {
+                    ret.AddEdge((Node)outer_parent, (Node)outer_node);
+                    outer_parent = outer_node;
+                }
             }
 
             foreach (timple.BaseNode next in inner_node.Next)

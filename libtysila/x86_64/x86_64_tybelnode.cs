@@ -55,6 +55,11 @@ namespace libtysila
                 }
             }
 
+            public override bool IsUnconditionalJmp
+            {
+                get { return inst.is_uncond_jmp; }
+            }
+
             public override ICollection<vara> defs
             {
                 get {

@@ -1043,8 +1043,8 @@ namespace libtysila
             return false;
         }
         
-        internal enum Bitness { Bits32, Bits64 };
-        internal abstract Bitness GetBitness();
+        public enum Bitness { Bits32, Bits64 };
+        public abstract Bitness GetBitness();
 
         internal abstract IEnumerable<hardware_location> GetAllHardwareLocationsOfType(System.Type type, hardware_location example);
         internal virtual bool IsLocationAllowed(hardware_location hloc) { return true; }

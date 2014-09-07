@@ -346,7 +346,7 @@ namespace libtysila
             };
         }
 
-        internal override Bitness GetBitness()
+        public override Bitness GetBitness()
         {
             switch (ia)
             {

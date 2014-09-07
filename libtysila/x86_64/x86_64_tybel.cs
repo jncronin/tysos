@@ -402,7 +402,7 @@ namespace libtysila
 
                     case ThreeAddressCode.OpName.setl:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.XORLz, ret, inst, ref next_var, ref success, tn.R, tn.R);
+                        //ChooseInstruction(x86_64.x86_64_asm.opcode.XORLz, ret, inst, ref next_var, ref success, tn.R, tn.R);
                         switch (op.Type)
                         {
                             case CliType.int32:
@@ -415,11 +415,12 @@ namespace libtysila
                                 throw new NotImplementedException();
                         }
                         ChooseInstruction(x86_64.x86_64_asm.opcode.SETL, ret, inst, ref next_var, ref success, tn.R);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, inst, ref next_var, ref success, tn.R, tn.R);
                         if (success) return ret; break;
 
                     case ThreeAddressCode.OpName.seteq:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.XORL, ret, inst, ref next_var, ref success, tn.R, tn.R);
+                        //ChooseInstruction(x86_64.x86_64_asm.opcode.XORL, ret, inst, ref next_var, ref success, tn.R, tn.R);
                         switch (op.Type)
                         {
                             case CliType.int32:
@@ -432,6 +433,7 @@ namespace libtysila
                                 throw new NotImplementedException();
                         }
                         ChooseInstruction(x86_64.x86_64_asm.opcode.SETZ, ret, inst, ref next_var, ref success, tn.R);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, inst, ref next_var, ref success, tn.R, tn.R);
                         if (success) return ret; break;
 
                     default:

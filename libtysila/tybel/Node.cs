@@ -37,6 +37,7 @@ namespace libtysila.tybel
         public abstract IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs);
 
         public abstract bool IsMove { get; }
+        public abstract bool IsUnconditionalJmp { get; }
 
         public override timple.BaseNode InsertAfter(timple.BaseNode new_node)
         {
@@ -140,6 +141,11 @@ namespace libtysila.tybel
             get { return _ismove; }
         }
 
+        public override bool IsUnconditionalJmp
+        {
+            get { return false; }
+        }
+
         public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
         {
             List<libasm.OutputBlock> ret = new List<libasm.OutputBlock>();
@@ -212,6 +218,11 @@ namespace libtysila.tybel
             get { return false; }
         }
 
+        public override bool IsUnconditionalJmp
+        {
+            get { return false; }
+        }
+
         public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
         {
             throw new NotImplementedException();
@@ -248,6 +259,11 @@ namespace libtysila.tybel
         }
 
         public override bool IsMove
+        {
+            get { return false; }
+        }
+
+        public override bool IsUnconditionalJmp
         {
             get { return false; }
         }
