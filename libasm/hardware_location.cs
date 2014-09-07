@@ -258,18 +258,22 @@ namespace libasm
 
         public int offset_within_loc;
 
+        public object container;
+
         public override bool Equals(hardware_location other)
         {
             if (!(other is hardware_stackloc))
                 return false;
             if (loc != ((hardware_stackloc)other).loc)
                 return false;
+            if (container != ((hardware_stackloc)other).container)
+                return false;
             return true;
         }
 
         public override int GetHashCode()
         {
-            return loc.GetHashCode() ^ (size.GetHashCode() << 3) ^ (offset_within_loc.GetHashCode() << 6);
+            return loc.GetHashCode() ^ (size.GetHashCode() << 3) ^ (offset_within_loc.GetHashCode() << 6) ^ (((container == null) ? 0 : container.GetHashCode()) << 9);
         }
 
         public override string ToString()

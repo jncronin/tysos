@@ -402,7 +402,7 @@ namespace libtysila
 
                     case ThreeAddressCode.OpName.setl:
                         ret = new List<tybel.Node>();
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.XORL, ret, inst, ref next_var, ref success, tn.R, tn.R);
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.XORLz, ret, inst, ref next_var, ref success, tn.R, tn.R);
                         switch (op.Type)
                         {
                             case CliType.int32:
@@ -646,7 +646,7 @@ namespace libtysila
                     if ((vara.MachineRegVal.Equals(R15)) && ((optype == x86_64.x86_64_asm.optype.r15) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
 
-                    if ((vara.MachineRegVal is libasm.hardware_contentsof) && (((libasm.hardware_contentsof)vara.MachineRegVal).base_loc is libasm.x86_64_gpr) && ((optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
+                    if ((((vara.MachineRegVal is libasm.hardware_contentsof) && (((libasm.hardware_contentsof)vara.MachineRegVal).base_loc is libasm.x86_64_gpr)) || (vara.MachineRegVal is libasm.hardware_stackloc)) && ((optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
                         return true;
                                        
                     return false;

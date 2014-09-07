@@ -27,7 +27,8 @@ namespace libtysila.tybel
 {
     public abstract class Node : timple.BaseNode
     {
-        public IList<timple.BaseNode> next, prev;
+        public IList<timple.BaseNode> next = new List<timple.BaseNode>();
+        public IList<timple.BaseNode> prev = new List<timple.BaseNode>();
         public override IList<timple.BaseNode> Next { get { return next; } }
         public override IList<timple.BaseNode> Prev { get { return prev; } }
         public timple.TreeNode TimpleInst;
@@ -39,7 +40,38 @@ namespace libtysila.tybel
 
         public override timple.BaseNode InsertAfter(timple.BaseNode new_node)
         {
-            throw new NotImplementedException();
+            new_node.Prev.Clear();
+            new_node.Next.Clear();
+            new_node.Prev.Add(this);
+            foreach (timple.BaseNode next in this.Next)
+            {
+                new_node.Next.Add(next);
+                int idx = next.Prev.IndexOf(this);
+                next.Prev[idx] = new_node;
+            }
+
+            this.Next.Clear();
+            this.Next.Add(new_node);
+
+            return new_node;
+        }
+
+        public timple.BaseNode InsertBefore(timple.BaseNode new_node)
+        {
+            new_node.Prev.Clear();
+            new_node.Next.Clear();
+            new_node.Next.Add(this);
+            foreach (timple.BaseNode prev in this.Prev)
+            {
+                new_node.Prev.Add(prev);
+                int idx = prev.Next.IndexOf(this);
+                prev.Next[idx] = new_node;
+            }
+
+            this.Prev.Clear();
+            this.Prev.Add(new_node);
+
+            return new_node;
         }
 
         public override void Remove()

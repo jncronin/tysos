@@ -51,8 +51,11 @@ namespace libtysila.regalloc
                 }
             }
 
-            foreach(vara n in coalescedNodes)
-                color[n] = color[GetAlias(n)];
+            if (spilledNodes.Count == 0)
+            {
+                foreach (vara n in coalescedNodes)
+                    color[n] = color[GetAlias(n)];
+            }
         }
     }
 }

@@ -28,42 +28,71 @@ namespace libtysila.regalloc
 {
     public partial class RegAlloc
     {
-        util.Set<vara> precolored = new util.Set<vara>();
-        util.Set<vara> initial = new util.Set<vara>();
-        util.Set<vara> simplifyWorklist = new util.Set<vara>();
-        util.Set<vara> freezeWorklist = new util.Set<vara>();
-        util.Set<vara> spillWorklist = new util.Set<vara>();
-        util.Set<vara> spilledNodes = new util.Set<vara>();
-        util.Set<vara> coalescedNodes = new util.Set<vara>();
-        util.Set<vara> coloredNodes = new util.Set<vara>();
-        util.Stack<vara> selectStack = new util.Stack<vara>();
+        util.Set<vara> precolored;
+        util.Set<vara> initial;
+        util.Set<vara> simplifyWorklist;
+        util.Set<vara> freezeWorklist;
+        util.Set<vara> spillWorklist;
+        util.Set<vara> spilledNodes;
+        util.Set<vara> coalescedNodes;
+        util.Set<vara> coloredNodes;
+        util.Stack<vara> selectStack;
 
-        util.Set<timple.BaseNode> coalescedMoves = new util.Set<timple.BaseNode>();
-        util.Set<timple.BaseNode> constrainedMoves = new util.Set<timple.BaseNode>();
-        util.Set<timple.BaseNode> frozenMoves = new util.Set<timple.BaseNode>();
-        util.Set<timple.BaseNode> worklistMoves = new util.Set<timple.BaseNode>();
-        util.Set<timple.BaseNode> activeMoves = new util.Set<timple.BaseNode>();
+        util.Set<timple.BaseNode> coalescedMoves;
+        util.Set<timple.BaseNode> constrainedMoves;
+        util.Set<timple.BaseNode> frozenMoves;
+        util.Set<timple.BaseNode> worklistMoves;
+        util.Set<timple.BaseNode> activeMoves;
 
-        util.Set<InterferenceEdge> adjSet = new util.Set<InterferenceEdge>();
-        Dictionary<vara, util.Set<vara>> adjList = new Dictionary<vara, util.Set<vara>>();
-        Dictionary<vara, util.Set<timple.BaseNode>> moveList = new Dictionary<vara, util.Set<timple.BaseNode>>();
-        Dictionary<vara, vara> alias = new Dictionary<vara, vara>();
-        Dictionary<vara, int> color = new Dictionary<vara, int>();
-        Dictionary<vara, int> degree = new Dictionary<vara, int>();
+        util.Set<InterferenceEdge> adjSet;
+        Dictionary<vara, util.Set<vara>> adjList;
+        Dictionary<vara, util.Set<timple.BaseNode>> moveList;
+        Dictionary<vara, vara> alias;
+        Dictionary<vara, int> color;
+        Dictionary<vara, int> degree;
 
         int K;
 
+        public void Init()
+        {
+            precolored = new util.Set<vara>();
+            if(initial == null)
+                initial = new util.Set<vara>();
+            simplifyWorklist = new util.Set<vara>();
+            freezeWorklist = new util.Set<vara>();
+            spillWorklist = new util.Set<vara>();
+            spilledNodes = new util.Set<vara>();
+            coalescedNodes = new util.Set<vara>();
+            coloredNodes = new util.Set<vara>();
+            selectStack = new util.Stack<vara>();
+
+            coalescedMoves = new util.Set<timple.BaseNode>();
+            constrainedMoves = new util.Set<timple.BaseNode>();
+            frozenMoves = new util.Set<timple.BaseNode>();
+            worklistMoves = new util.Set<timple.BaseNode>();
+            activeMoves = new util.Set<timple.BaseNode>();
+
+            adjSet = new util.Set<InterferenceEdge>();
+            adjList = new Dictionary<vara, util.Set<vara>>();
+            moveList = new Dictionary<vara, util.Set<timple.BaseNode>>();
+            alias = new Dictionary<vara, vara>();
+            color = new Dictionary<vara, int>();
+            degree = new Dictionary<vara, int>();
+        }
+
         public Dictionary<vara, vara> Main(tybel.Tybel.TybelCode code, Assembler ass, Assembler.MethodAttributes attrs)
         {
+            Init();
+
             util.Set<libasm.hardware_location> all_regs = ass.MachineRegisters;
-            ass.MachineRegistersResetStack(attrs);
+            ass.MachineRegistersResetStack(attrs.LVStackLocs);
 
             /* Determine maximum number of stack locations needed */
             foreach (vara v in code.Liveness.defs.Keys)
             {
                 if (v.VarType == vara.vara_type.Logical)
                 {
-                    foreach (libasm.hardware_location hloc in ass.MachineRegistersForDataType(v.DataType, v.needs_memloc, attrs))
+                    foreach (libasm.hardware_location hloc in ass.MachineRegistersForDataType(v.DataType, v.needs_memloc, attrs.LVStackLocs))
                     {
                         if (hloc is libasm.hardware_stackloc)
                             all_regs.Add(hloc);
@@ -72,7 +101,7 @@ namespace libtysila.regalloc
             }
 
             K = all_regs.Count;
-            ass.MachineRegistersResetStack(attrs);
+            ass.MachineRegistersResetStack(attrs.LVStackLocs);
 
             /* Precolor machine regs */
             int c = 0;
@@ -101,7 +130,7 @@ namespace libtysila.regalloc
                     /* Depending on type of variable, add interference edges to
                      * the hardware registers it cannot access */
 
-                    foreach (libasm.hardware_location reg in all_regs.Except(ass.MachineRegistersForDataType(v.DataType, v.needs_memloc, attrs)))
+                    foreach (libasm.hardware_location reg in all_regs.Except(ass.MachineRegistersForDataType(v.DataType, v.needs_memloc, attrs.LVStackLocs)))
                         preset_ifedges.Add(new InterferenceEdge(v, vara.MachineReg(reg)));
                 }
             }
@@ -129,7 +158,10 @@ namespace libtysila.regalloc
             AssignColors(code);
 
             if (spilledNodes.Count != 0)
-                throw new NotImplementedException();
+            {
+                RewriteProgram(code, ass, attrs);
+                return Main(code, ass, attrs);
+            }
 
             Dictionary<vara, vara> ret = new Dictionary<vara, vara>();
             foreach (vara v in code.Liveness.defs.Keys)
@@ -175,16 +207,22 @@ namespace libtysila
     partial class Assembler
     {
         public abstract util.Set<libasm.hardware_location> MachineRegisters { get; }
-        public abstract util.Set<libasm.hardware_location> MachineRegistersForDataType(CliType dt, bool needs_memloc, Assembler.MethodAttributes attrs);
+        public abstract util.Set<libasm.hardware_location> MachineRegistersForDataType(CliType dt, bool needs_memloc, Assembler.MachineRegisterList mrl);
 
-        public virtual void MachineRegistersResetStack(Assembler.MethodAttributes attrs)
+        public virtual void MachineRegistersResetStack(Assembler.MachineRegisterList mrl)
         {
-            attrs.MachineRegistersStackLocSizes = new Dictionary<int, int>();
-            attrs.next_stackloc = 0;
+            mrl.StackLocSizes = new Dictionary<int, int>();
+            mrl.next_stackloc = 0;
         }
-        public virtual int MachineRegistersGetStackLocCount(Assembler.MethodAttributes attrs)
+        public virtual int MachineRegistersGetStackLocCount(Assembler.MachineRegisterList mrl)
         {
-            return attrs.next_stackloc;
+            return mrl.next_stackloc;
+        }
+
+        public class MachineRegisterList
+        {
+            public int next_stackloc = 0;
+            public Dictionary<int, int> StackLocSizes = new Dictionary<int, int>();
         }
     }
 }

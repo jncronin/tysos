@@ -269,7 +269,7 @@ namespace libtysila
                                 default:
                                     throw new NotSupportedException();
                             }
-                            rel_type = R_X86_64_32;
+                            rel_type = ass.GetCodeToDataRelocType();
                             break;
 
                         case x86_64.x86_64_asm.optype.Imm64:
@@ -286,7 +286,7 @@ namespace libtysila
                                 default:
                                     throw new NotSupportedException();
                             }
-                            rel_type = R_X86_64_64;
+                            rel_type = ass.GetCodeToDataRelocType();
                             break;
                         case x86_64.x86_64_asm.optype.Rel8:
                             rel = ops[i].LabelVal;

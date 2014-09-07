@@ -70,7 +70,7 @@ namespace libtysila.x86_64
         public enum opcode
         {
             ADDL, ADDQ, PUSH, POP, ORL, ORQ, ADC, SBB, ANDL, ANDQ, ES,
-            DAA, SUBL, SUBQ, CS, NTAKEN, DAS, XORL, XORQ, SS, AAA,
+            DAA, SUBL, SUBQ, CS, NTAKEN, DAS, XORL, XORQ, XORLz, XORQz, SS, AAA,
             CMPL, CMPQ, DS, TAKEN, AAS, INC, REX, REXB, REXX,
             REXXB, REXR, REXRB, REXRX, REXRXB, DEC, REXW, REXWB,
             REXWX, REXWXB, REXWR, REXWRB, REXWRX, REXWRXB, PUSHA, PUSHAD,
@@ -326,6 +326,9 @@ namespace libtysila.x86_64
             Opcodes[opcode.XORL].Add(new x86_64_asm { int_name = "xor_rm32_r32", pri_opcode = 0x31, has_rm = true, ops = new optype[] { optype.RM32, optype.R32 }, inputs = new libasm.hardware_location[] { new op_loc(0), new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
             Opcodes[opcode.XORL].Add(new x86_64_asm { int_name = "xor_r32_rm32", pri_opcode = 0x33, has_rm = true, ops = new optype[] { optype.R32, optype.RM32 }, inputs = new libasm.hardware_location[] { new op_loc(0), new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
 
+            Opcodes[opcode.XORLz].Add(new x86_64_asm { int_name = "xor_rm32_r32", pri_opcode = 0x31, has_rm = true, ops = new optype[] { optype.RM32, optype.R32 }, inputs = new libasm.hardware_location[] { }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
+            Opcodes[opcode.XORLz].Add(new x86_64_asm { int_name = "xor_r32_rm32", pri_opcode = 0x33, has_rm = true, ops = new optype[] { optype.R32, optype.RM32 }, inputs = new libasm.hardware_location[] { }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
+
             Opcodes[opcode.XORQ].Add(new x86_64_asm { int_name = "xor_rm64_imm8", pri_opcode = 0x83, rex_w = true, has_rm = true, opcode_ext =6, ops = new optype[] { optype.RM32, optype.Imm8 }, inputs = new libasm.hardware_location[] { new op_loc(0), new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
             Opcodes[opcode.XORQ].Add(new x86_64_asm { int_name = "xor_rax_imm32", pri_opcode = 0x35, rex_w = true, ops = new optype[] { optype.rax, optype.Imm32 }, inputs = new libasm.hardware_location[] { new op_loc(0), new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
             Opcodes[opcode.XORQ].Add(new x86_64_asm { int_name = "xor_rm64_imm32", pri_opcode = 0x81, rex_w = true, has_rm = true, opcode_ext =6, ops = new optype[] { optype.RM32, optype.Imm32 }, inputs = new libasm.hardware_location[] { new op_loc(0), new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
@@ -379,16 +382,18 @@ namespace libtysila.x86_64
                 {
                     List<byte> ret = new List<byte>();
 
-                    if (attrs.lv_stack_space != 0)
+                    int stack_space = attrs.lv_stack_space + attrs.spill_stack_space;
+
+                    if (stack_space != 0)
                     {
                         x86_64_Assembler.x86_64_TybelNode n = null;
                         switch (attrs.ass.GetBitness())
                         {
                             case Assembler.Bitness.Bits32:
-                                n = new x86_64_Assembler.x86_64_TybelNode(null, FindOpcode(Opcodes[opcode.SUBL], "sub_rm32_imm8"), vara.MachineReg(x86_64_Assembler.Rsp), vara.Const(attrs.lv_stack_space));
+                                n = new x86_64_Assembler.x86_64_TybelNode(null, FindOpcode(Opcodes[opcode.SUBL], "sub_rm32_imm8"), vara.MachineReg(x86_64_Assembler.Rsp), vara.Const(stack_space));
                                 break;
                             case Assembler.Bitness.Bits64:
-                                n = new x86_64_Assembler.x86_64_TybelNode(null, FindOpcode(Opcodes[opcode.SUBQ], "sub_rm64_imm8"), vara.MachineReg(x86_64_Assembler.Rsp), vara.Const(attrs.lv_stack_space));
+                                n = new x86_64_Assembler.x86_64_TybelNode(null, FindOpcode(Opcodes[opcode.SUBQ], "sub_rm64_imm8"), vara.MachineReg(x86_64_Assembler.Rsp), vara.Const(stack_space));
                                 break;
                         }
                         IEnumerable<libasm.OutputBlock> obs = n.Assemble(attrs.ass, attrs);

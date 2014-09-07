@@ -118,6 +118,7 @@
     <Compile Include="regalloc\MachineReg.cs" />
     <Compile Include="regalloc\MakeWorklist.cs" />
     <Compile Include="regalloc\RegAlloc.cs" />
+    <Compile Include="regalloc\RewriteProgram.cs" />
     <Compile Include="regalloc\SelectSpill.cs" />
     <Compile Include="regalloc\Simplify.cs" />
     <Compile Include="regalloc\Util.cs" />

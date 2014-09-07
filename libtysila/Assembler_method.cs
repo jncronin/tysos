@@ -55,8 +55,8 @@ namespace libtysila
             public int lv_stack_space = 0;
             public int spill_stack_space = 0;
 
-            public Dictionary<int, int> MachineRegistersStackLocSizes;
-            public int next_stackloc = 0;
+            public Assembler.MachineRegisterList LVStackLocs = new MachineRegisterList();
+            public Assembler.MachineRegisterList SpillStackLocs = new MachineRegisterList();
 
             public Assembler ass;
 

@@ -28,7 +28,10 @@ namespace libtysila.regalloc
     {
         void MakeWorklist(tybel.Tybel.TybelCode code)
         {
-            foreach (vara n in code.Liveness.defs.Keys)
+            IEnumerable<vara> initial_list = code.Liveness.defs.Keys;
+            //if (initial.Count != 0)
+            //    initial_list = initial;
+            foreach (vara n in initial_list)
             {
                 if (n.VarType == vara.vara_type.Logical)
                 {

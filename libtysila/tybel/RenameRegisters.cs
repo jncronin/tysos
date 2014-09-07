@@ -62,7 +62,7 @@ namespace libtysila.tybel
                     tybel.Node outer_mnode = (tybel.Node)n2.MemberwiseClone();
                     for (int i = 0; i < n2.VarList.Count; i++)
                     {
-                        if (outer_mnode.VarList[i].HasLogicalVar)
+                        if (outer_mnode.VarList[i].HasLogicalVar || outer_mnode.VarList[i].VarType == vara.vara_type.MachineReg)
                             outer_mnode.VarList[i] = RenameRegister(outer_mnode.VarList[i], regs);
                     }
                     outer_nodes.Add(outer_mnode);
@@ -72,7 +72,7 @@ namespace libtysila.tybel
                 List<vara> mn_defs = new List<vara>(mn.defs);
                 for (int j = 0; j < mn_defs.Count; j++)
                 {
-                    if (mn_defs[j].HasLogicalVar)
+                    if (mn_defs[j].HasLogicalVar || mn_defs[j].VarType == vara.vara_type.MachineReg)
                         mn_defs[j] = RenameRegister(mn_defs[j], regs);
                 }
                 mn._defs = mn_defs;
@@ -80,7 +80,7 @@ namespace libtysila.tybel
                 List<vara> mn_uses = new List<vara>(mn.uses);
                 for (int j = 0; j < mn_uses.Count; j++)
                 {
-                    if (mn_uses[j].HasLogicalVar)
+                    if (mn_uses[j].HasLogicalVar || mn_uses[j].VarType == vara.vara_type.MachineReg)
                         mn_uses[j] = RenameRegister(mn_uses[j], regs);
                 }
                 mn._uses = mn_uses;
@@ -89,8 +89,8 @@ namespace libtysila.tybel
             {
                 for (int i = 0; i < outer_node.VarList.Count; i++)
                 {
-                        if (outer_node.VarList[i].HasLogicalVar)
-                            outer_node.VarList[i] = RenameRegister(outer_node.VarList[i], regs);
+                    if (outer_node.VarList[i].HasLogicalVar || outer_node.VarList[i].VarType == vara.vara_type.MachineReg)
+                        outer_node.VarList[i] = RenameRegister(outer_node.VarList[i], regs);
                 }
             }
 
@@ -152,6 +152,11 @@ namespace libtysila.tybel
                     if (vara.Offset != 0)
                         throw new NotSupportedException();
                     return vara.MachineReg(new libasm.hardware_addressof { base_loc = regs[vara.Logical(vara.LogicalVar, vara.SSA, vara.DataType)].MachineRegVal });
+
+                case libtysila.vara.vara_type.MachineReg:
+                    if (vara.MachineRegVal is libasm.hardware_stackloc)
+                        return regs[vara];
+                    return vara;
 
                 default:
                     throw new NotSupportedException();

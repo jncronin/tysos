@@ -1,18 +1,18 @@
 TYBUILD=../../tybuild/bin/Release/tybuild.exe
 TYSILA=../../tysila2/bin/Release/tysila2.exe
 YASM=yasm
-GCC=x86_64-elf-gcc
+GCC=i586-elf-gcc
 
 all: barebones.iso
 
 kernel.exe: kernel.cs Makefile
 	$(TYBUILD) /unsafe /r:libsupcs kernel.cs
 
-kernel.o: kernel.exe
-	$(TYSILA) --arch x86_64s-elf64-tysos --rename-epoint kmain -L../../mono/corlib -fno-rtti -o kernel.o kernel.exe
+kernel.o: kernel.exe $(TYSILA)
+	$(TYSILA) --arch i586-elf-tysos --rename-epoint kmain -L../../mono/corlib -fno-rtti -o kernel.o kernel.exe
 
 loader.o: loader.asm
-	$(YASM) -felf64 -o loader.o loader.asm
+	$(YASM) -felf -o loader.o loader.asm
 
 kernel.bin: kernel.o loader.o linker.ld
 	$(GCC) -fno-use-linker-plugin -nostdlib -Wl,-z,max-page-size=0x1000 -o kernel.bin -Wl,-T,linker.ld loader.o kernel.o

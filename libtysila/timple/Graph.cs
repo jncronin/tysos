@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace libtysila.timple
 {
@@ -115,6 +116,20 @@ namespace libtysila.timple
                 for (int i = Starts.Count - 1; i >= 0; i--)
                     DFS(Starts[i], ret, ref n, visited);
                 return ret;
+            }
+        }
+
+        public virtual string LinearStreamString
+        {
+            get
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (BaseNode n in LinearStream)
+                {
+                    sb.Append(n.ToString());
+                    sb.Append(Environment.NewLine);
+                }
+                return sb.ToString();
             }
         }
 

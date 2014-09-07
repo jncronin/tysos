@@ -39,12 +39,24 @@ namespace libtysila.regalloc
 
                 if (!precolored.Contains(u))
                 {
+                    if (!adjList.ContainsKey(u))
+                    {
+                        adjList[u] = new util.Set<vara>();
+                        degree[u] = 0;
+                        moveList[u] = new util.Set<timple.BaseNode>();
+                    }
                     adjList[u].Add(v);
                     degree[u] = degree[u] + 1;
                 }
 
                 if (!precolored.Contains(v))
                 {
+                    if (!adjList.ContainsKey(v))
+                    {
+                        adjList[v] = new util.Set<vara>();
+                        degree[v] = 0;
+                        moveList[v] = new util.Set<timple.BaseNode>();
+                    }
                     adjList[v].Add(u);
                     degree[v] = degree[v] + 1;
                 }
@@ -136,14 +148,8 @@ namespace libtysila.regalloc
 
         vara GetAlias(vara n)
         {
-            vara alias = GetAlias2(n);
-            return alias;
-        }
-
-        vara GetAlias2(vara n)
-        {
             if (coalescedNodes.Contains(n))
-                return GetAlias2(alias[n]);
+                return GetAlias(alias[n]);
             else
                 return n;
         }

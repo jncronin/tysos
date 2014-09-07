@@ -32,8 +32,10 @@ namespace libtysila
 
         enum OutputType { x86_64_large_elf64, x86_64_small_elf64, x86_64_jit, i586_elf64, i586_elf, i586_jit };
         internal enum IA { x86_64, i586 };
+        internal enum CModel { ia32, small, kernel, large };
         OutputType OType;
         internal IA ia;
+        internal CModel cm;
 
         const int HIGH_REG_START = 8;
 
@@ -150,41 +152,105 @@ namespace libtysila
         internal static x86_64_RelocationType R_X86_64_8 { get { return new x86_64_RelocationType { name = "R_X86_64_8", type = 14 }; } }
         internal static x86_64_RelocationType R_X86_64_PC8 { get { return new x86_64_RelocationType { name = "R_X86_64_PC8", type = 15 }; } }
 
+        internal static x86_64_RelocationType R_386_32 { get { return new x86_64_RelocationType { name = "R_386_32", type = 1 }; } }
+        internal static x86_64_RelocationType R_386_PC32 { get { return new x86_64_RelocationType { name = "R_386_PC32", type = 2 }; } }
+        internal static x86_64_RelocationType R_386_GOT32 { get { return new x86_64_RelocationType { name = "R_386_GOT32", type = 3 }; } }
+        internal static x86_64_RelocationType R_386_PLT32 { get { return new x86_64_RelocationType { name = "R_386_PLT32", type = 4 }; } }
+        internal static x86_64_RelocationType R_386_COPY { get { return new x86_64_RelocationType { name = "R_386_COPY", type = 5 }; } }
+        internal static x86_64_RelocationType R_386_GLOB_DAT { get { return new x86_64_RelocationType { name = "R_386_GLOB_DAT", type = 6 }; } }
+        internal static x86_64_RelocationType R_386_JMP_SLOT { get { return new x86_64_RelocationType { name = "R_386_JMP_SLOT", type = 7 }; } }
+        internal static x86_64_RelocationType R_386_RELATIVE { get { return new x86_64_RelocationType { name = "R_386_RELATIVE", type = 8 }; } }
+        internal static x86_64_RelocationType R_386_GOTOFF { get { return new x86_64_RelocationType { name = "R_386_GOTOFF", type = 9 }; } }
+        internal static x86_64_RelocationType R_386_GOTPC { get { return new x86_64_RelocationType { name = "R_386_GOTPC", type = 10 }; } }
+
+
         public override RelocationBlock.RelocationType GetCodeToCodeRelocType()
         {
-            return R_X86_64_PC32;
+            switch (cm)
+            {
+                case CModel.kernel:
+                case CModel.large:
+                case CModel.small:
+                    return R_X86_64_PC32;
+                case CModel.ia32:
+                    return R_386_PC32;
+            }
+            throw new NotSupportedException();
         }
 
         public override RelocationBlock.RelocationType GetCodeToDataRelocType()
         {
             if (Options.PIC)
-                return R_X86_64_GOTPCREL;
+            {
+                switch (cm)
+                {
+                    case CModel.kernel:
+                    case CModel.large:
+                    case CModel.small:
+                        return R_X86_64_GOTPCREL;
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
             else
             {
-                if (Arch.InstructionSet == "x86_64s")
-                    return R_X86_64_32;
-                else
-                    return R_X86_64_64;
+                switch (cm)
+                {
+                    case CModel.kernel:
+                        return R_X86_64_32S;
+                    case CModel.small:
+                        return R_X86_64_32;
+                    case CModel.large:
+                        return R_X86_64_64;
+                    case CModel.ia32:
+                        return R_386_32;
+                }
             }
+            throw new NotSupportedException();
         }
 
         public override RelocationBlock.RelocationType GetDataToCodeRelocType()
         {
-            return R_X86_64_64;
+            switch (ia)
+            {
+                case IA.x86_64:
+                    return R_X86_64_64;
+                case IA.i586:
+                    return R_386_32;
+                default:
+                    throw new NotSupportedException();
+            }
         }
 
         public override RelocationBlock.RelocationType GetDataToDataRelocType()
         {
-            return R_X86_64_64;
+            switch (ia)
+            {
+                case IA.x86_64:
+                    return R_X86_64_64;
+                case IA.i586:
+                    return R_386_32;
+                default:
+                    throw new NotSupportedException();
+            }
         }
 
         internal override void arch_init_opcodes()
         {
             // ia may not be initialized yet so we have to do it instead
             if (Arch.InstructionSet == "i586")
+            {
                 ia = IA.i586;
+                cm = CModel.ia32;
+            }
             else
+            {
                 ia = IA.x86_64;
+                if (Arch.InstructionSet == "x86_64s")
+                    cm = CModel.kernel;
+                else
+                    cm = CModel.large;
+            }
         }
 
         internal override hloc_constraint GetConstraintFromSemantic(var_semantic vs)
@@ -224,31 +290,37 @@ namespace libtysila
             {
                 OType = OutputType.x86_64_large_elf64;
                 ia = IA.x86_64;
+                cm = CModel.large;
             }
             else if ((arch.InstructionSet == "x86_64s") && (arch.OutputFormat == "elf64"))
             {
                 OType = OutputType.x86_64_small_elf64;
                 ia = IA.x86_64;
+                cm = CModel.kernel;
             }
             else if ((arch.InstructionSet == "x86_64") && (arch.OutputFormat == "jit"))
             {
                 OType = OutputType.x86_64_jit;
                 ia = IA.x86_64;
+                cm = CModel.large;
             }
             else if ((arch.InstructionSet == "i586") && (arch.OutputFormat == "elf64"))
             {
                 OType = OutputType.i586_elf64;
                 ia = IA.i586;
+                cm = CModel.ia32;
             }
             else if ((arch.InstructionSet == "i586") && (arch.OutputFormat == "elf"))
             {
                 OType = OutputType.i586_elf;
                 ia = IA.i586;
+                cm = CModel.ia32;
             }
             else if ((arch.InstructionSet == "i586") && (arch.OutputFormat == "jit"))
             {
                 OType = OutputType.i586_jit;
                 ia = IA.i586;
+                cm = CModel.ia32;
             }
             else
                 throw new Exception("Invalid architecture: " + arch.ToString());
@@ -956,14 +1028,14 @@ namespace libtysila
             }
         }
 
-        public override util.Set<hardware_location> MachineRegistersForDataType(CliType dt, bool needs_memloc, Assembler.MethodAttributes attrs)
+        public override util.Set<hardware_location> MachineRegistersForDataType(CliType dt, bool needs_memloc, Assembler.MachineRegisterList mrl)
         {
             if (needs_memloc)
             {
                 util.Set<hardware_location> memlocs = new util.Set<hardware_location>();
                 int size = GetSizeOf(new Signature.Param(dt));
-                memlocs.Add(new hardware_stackloc { loc = attrs.next_stackloc++, size = size });
-                attrs.MachineRegistersStackLocSizes[attrs.next_stackloc - 1] = size;
+                memlocs.Add(new hardware_stackloc { loc = mrl.next_stackloc++, size = size, container = mrl });
+                mrl.StackLocSizes[mrl.next_stackloc - 1] = size;
                 return memlocs;
             }
 
@@ -1051,16 +1123,27 @@ namespace libtysila
 
             int cur_offset = -attrs.lv_stack_space;
 
-            foreach (int sl in attrs.MachineRegistersStackLocSizes.Keys)
+            foreach (int sl in attrs.LVStackLocs.StackLocSizes.Keys)
             {
-                int size = attrs.MachineRegistersStackLocSizes[sl];
+                int size = attrs.LVStackLocs.StackLocSizes[sl];
                 int memsize = util.align(size, ia == IA.i586 ? 4 : 8);
                 cur_offset -= memsize;
-                hardware_stackloc hsl = new hardware_stackloc { loc = sl, size = size };
+                hardware_stackloc hsl = new hardware_stackloc { loc = sl, size = size, container = attrs.LVStackLocs };
                 ret[hsl] = new hardware_contentsof { base_loc = Rbp, const_offset = cur_offset, size = size };
             }
 
             attrs.lv_stack_space = -cur_offset;
+
+            foreach (int sl in attrs.SpillStackLocs.StackLocSizes.Keys)
+            {
+                int size = attrs.SpillStackLocs.StackLocSizes[sl];
+                int memsize = util.align(size, ia == IA.i586 ? 4 : 8);
+                cur_offset -= memsize;
+                hardware_stackloc hsl = new hardware_stackloc { loc = sl, size = size, container = attrs.SpillStackLocs };
+                ret[hsl] = new hardware_contentsof { base_loc = Rbp, const_offset = cur_offset, size = size };
+            }
+
+            attrs.spill_stack_space = (-cur_offset) - attrs.lv_stack_space;
 
             return ret;
         }

@@ -35,6 +35,30 @@ namespace libtysila.timple
         public abstract IList<BaseNode> Next { get; }
         public abstract ICollection<vara> uses { get; }
         public abstract ICollection<vara> defs { get; }
+        public virtual ICollection<vara> logical_uses
+        {
+            get
+            {
+                List<vara> ret = new List<vara>();
+                foreach (vara v in uses)
+                {
+                    if (v.HasLogicalVar)
+                        ret.Add(v);
+                }
+                return ret;
+            }
+        }
+        public virtual ICollection<vara> logical_defs
+        {
+            get
+            {
+                List<vara> ret = new List<vara>();
+                foreach (vara v in defs)
+                    if (v.HasLogicalVar)
+                        ret.Add(v);
+                return ret;
+            }
+        }
 
         public new BaseNode MemberwiseClone()
         {

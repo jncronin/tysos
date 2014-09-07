@@ -41,7 +41,7 @@ namespace libtysila.tybel
 
             /* Prepare register allocator */
             libtysila.regalloc.RegAlloc r = new libtysila.regalloc.RegAlloc();
-            Dictionary<vara, vara> regs = r.Main(new libtysila.tybel.Tybel.TybelCode(tybel, tybel_l), ass, attrs);
+            Dictionary<vara, vara> regs = r.Main(new libtysila.tybel.Tybel.TybelCode(tybel, tybel_l, next_var, next_block), ass, attrs);
 
             /* Generate stackloc mappings */
             Dictionary<libasm.hardware_location, libasm.hardware_location> stackloc_map = ass.AllocateStackLocations(attrs);
@@ -68,6 +68,8 @@ namespace libtysila.tybel
                     regs[r] = r2;
                 }
             }
+            foreach(KeyValuePair<libasm.hardware_location, libasm.hardware_location> kvp in stackloc_map)
+                regs[vara.MachineReg(kvp.Key)] = vara.MachineReg(kvp.Value);
         }
 
         private static Tybel BuildGraph(timple.Optimizer.OptimizeReturn code, Assembler ass, IList<libasm.hardware_location> las,
@@ -285,7 +287,11 @@ namespace libtysila.tybel
             public IList<timple.BaseNode> Code { get { return CodeGraph.LinearStream; } }
             public timple.Liveness Liveness;
 
-            public TybelCode(timple.BaseGraph code, timple.Liveness l) { CodeGraph = code; Liveness = l; }
+            public TybelCode(timple.BaseGraph code, timple.Liveness l, int next_var, int next_block)
+            { CodeGraph = code; Liveness = l; NextVar = next_var; NextBlock = next_block; }
+
+            public int NextVar;
+            public int NextBlock;
         }
     }
 }
