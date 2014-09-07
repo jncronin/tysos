@@ -38,7 +38,7 @@ namespace tydisasm.arm
             }
         }
 
-        public override string ToString()
+        public override string ToDisassembledString(tydisasm disasm)
         {
             StringBuilder sb = new StringBuilder();
             if(name == null)
@@ -55,7 +55,7 @@ namespace tydisasm.arm
                         sb.Append(" ");
                     else
                         sb.Append(", ");
-                    sb.Append(arguments[i].ToDisassembledString(this));
+                    sb.Append(arguments[i].ToDisassembledString(this, disasm));
                 }
             }
 
@@ -68,6 +68,11 @@ namespace tydisasm.arm
         public arm_disasm()
         {
             init_regs();
+        }
+
+        public override int Bitness
+        {
+            get { return 32; }
         }
 
         public override line GetNextLine(ByteProvider bp)
@@ -124,11 +129,11 @@ namespace tydisasm.arm
         internal arm_type arm_const_index_type;
         internal bool reg_list = false;
 
-        public override string ToDisassembledString(line l)
+        public override string ToDisassembledString(line l, tydisasm disasm)
         {
             StringBuilder sb = new StringBuilder();
             
-            string base_str = base.ToDisassembledString(l);
+            string base_str = base.ToDisassembledString(l, disasm);
 
             switch (type)
             {
@@ -143,7 +148,7 @@ namespace tydisasm.arm
                             {
                                 if (added != 0)
                                     sb.Append(",");
-                                sb.Append(new location { type = location_type.Register, reg_no = (uint)i }.ToDisassembledString(l));
+                                sb.Append(new location { type = location_type.Register, reg_no = (uint)i }.ToDisassembledString(l, disasm));
                                 added++;
                             }
                         }

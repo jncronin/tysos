@@ -29,6 +29,8 @@ namespace tydisasm
     {
         public abstract line GetNextLine(ByteProvider bp);
 
+        public abstract int Bitness { get; }
+
         public static tydisasm GetDisassembler(string arch)
         {
             System.Type[] types = typeof(tydisasm).Assembly.GetTypes();
@@ -61,6 +63,11 @@ namespace tydisasm
 
         public byte[] opcodes;
 
+        public virtual string ToDisassembledString(tydisasm disasm)
+        {
+            return OpcodeString;
+        }
+
         public virtual string OpcodeString
         {
             get
@@ -86,7 +93,7 @@ namespace tydisasm
         public ulong reg_no;
         public ulong immediate;
         public long signed_immediate;
-        public enum scale_func { None, Plus, Multiply };
+        public enum scale_func { None, Plus, Minus, Multiply };
         public scale_func scale;
         public location[] args;
         public location_type type;
@@ -94,14 +101,16 @@ namespace tydisasm
 
         public override string ToString()
         {
-            return ToDisassembledString(null);
+            return ToDisassembledString(null, null);
         }
 
-        public virtual string ToDisassembledString(line l)
+        public virtual string ToDisassembledString(line l, tydisasm disasm)
         {
             StringBuilder sb = new StringBuilder();
             if (scale == scale_func.Plus)
                 sb.Append("+ ");
+            else if (scale == scale_func.Minus)
+                sb.Append("- ");
             else if (scale == scale_func.Multiply)
                 sb.Append("* ");
 
@@ -113,6 +122,10 @@ namespace tydisasm
                     {
                         ulong next_pc = l.bp.GetCurPC() + (ulong)l.opcodes.Length;
                         ulong dest_pc = next_pc + immediate;
+
+                        if (disasm != null && disasm.Bitness == 32)
+                            dest_pc = dest_pc & 0xffffffff;
+
                         sb.Append(" (0x" + dest_pc.ToString("x") + ")");
                     }
                     break;
@@ -136,6 +149,10 @@ namespace tydisasm
                     {
                         ulong next_pc = l.bp.GetCurPC() + (ulong)l.opcodes.Length;
                         ulong dest_pc = next_pc + immediate;
+
+                        if (disasm != null && disasm.Bitness == 32)
+                            dest_pc = dest_pc & 0xffffffff;
+
                         sb.Append(" (0x" + dest_pc.ToString("x") + ")");
                     }
                     break;
@@ -154,6 +171,10 @@ namespace tydisasm
                             ulong dest_pc = next_pc + (ulong)abs_val;
                             if(signed_immediate < 0)
                                 dest_pc = next_pc - (ulong)abs_val;
+
+                            if (disasm != null && disasm.Bitness == 32)
+                                dest_pc = dest_pc & 0xffffffff;
+
                             sb.Append(" (0x" + dest_pc.ToString("x") + ")");
                         }
                         break;

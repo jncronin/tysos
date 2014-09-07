@@ -26,7 +26,13 @@ using System.Text;
 namespace tydisasm.x86_64
 {
     public class x86_64s_disasm : x86_64_disasm { }
-    public class i586_disasm : x86_64_disasm { }
+    public class i586_disasm : x86_64_disasm
+    {
+        public i586_disasm()
+        {
+            bitness = 32;
+        }
+    }
 
     public partial class x86_64_disasm : tydisasm
     {
@@ -34,6 +40,13 @@ namespace tydisasm.x86_64
         const byte rex_x = 0x2;
         const byte rex_r = 0x4;
         const byte rex_w = 0x8;
+
+        protected int bitness = 64;
+
+        public override int Bitness
+        {
+            get { return bitness; }
+        }
 
         public x86_64_disasm()
         {
@@ -136,7 +149,7 @@ namespace tydisasm.x86_64
             {
                 byte modrm;
                 byte sib = 0;
-                ulong disp = 0;
+                long disp = 0;
                 ulong imm = 0;
 
                 if (o.has_rm)
@@ -181,13 +194,23 @@ namespace tydisasm.x86_64
                         byte d4 = bp.GetNextByte();
                         os.Add(d4);
 
-                        disp = (ulong)d1 + (((ulong)d2) << 8) + (((ulong)d3) << 16) + (((ulong)d4) << 24);
+                        byte[] dval = new byte[] { d1, d2, d3, d4 };
+                        disp = BitConverter.ToInt32(dval, 0);
+
+                        //disp = (ulong)d1 + (((ulong)d2) << 8) + (((ulong)d3) << 16) + (((ulong)d4) << 24);
                     }
                     else if (mod == 1)
                     {
                         // 1 byte displacement
-                        disp = (ulong)bp.GetNextByte();
-                        os.Add((byte)disp);
+                        byte d1 = bp.GetNextByte();
+                        os.Add(d1);
+
+                        byte extend = 0;
+                        if ((d1 & 0x80) == 0x80)
+                            extend = 0xff;
+
+                        byte[] dval = new byte[] { d1, extend, extend, extend };
+                        disp = BitConverter.ToInt32(dval, 0);
                     }
 
                     // load a immediate value if necessary
@@ -386,9 +409,9 @@ namespace tydisasm.x86_64
                                                         // add displacement
                                                         location.scale_func scale = location.scale_func.None;
                                                         if (need_plus)
-                                                            scale = location.scale_func.Plus;
+                                                            scale = ((disp >= 0) ? location.scale_func.Plus : location.scale_func.Minus);
 
-                                                        sib_args.Add(new location { type = location.location_type.Immediate, immediate = disp, scale = scale });
+                                                        sib_args.Add(new location { type = location.location_type.Immediate, immediate = ((disp >= 0) ? (ulong)disp : (ulong)(-disp)), scale = scale });
                                                     }
 
                                                     args.Add(new location { type = location.location_type.ContentsOf, args = sib_args.ToArray() });
@@ -398,7 +421,7 @@ namespace tydisasm.x86_64
                                                 {
                                                     if (mod == 0)
                                                     {
-                                                        args.Add(new location { type = location.location_type.ContentsOf, args = new location[] { new location { type = location.location_type.Register, reg_no = reg_nos["rip"] }, new location { type = location.location_type.Immediate, scale = location.scale_func.Plus, immediate = disp } } });
+                                                        args.Add(new location { type = location.location_type.ContentsOf, args = new location[] { new location { type = location.location_type.Register, reg_no = reg_nos["rip"] }, new location { type = location.location_type.Immediate, scale = ((disp >= 0) ? location.scale_func.Plus : location.scale_func.Minus), immediate = ((disp >= 0) ? (ulong)disp : (ulong)(-disp)) } } });
                                                         continue;
                                                     }
                                                     else
@@ -415,7 +438,7 @@ namespace tydisasm.x86_64
 
                                         location loc = new location { type = location.location_type.ContentsOf, args = new location[] { new location { type = location.location_type.Register, reg_no = base_reg } } };
                                         if ((mod == 1) || (mod == 2))
-                                            loc.args = new location[] { loc.args[0], new location { type = location.location_type.Immediate, scale = location.scale_func.Plus, immediate = disp } };
+                                            loc.args = new location[] { loc.args[0], new location { type = location.location_type.Immediate, scale = ((disp >= 0) ? location.scale_func.Plus : location.scale_func.Minus), immediate = ((disp >= 0) ? (ulong)disp : (ulong)(-disp)) } };
                                         args.Add(loc);
                                     }
 
@@ -484,7 +507,7 @@ namespace tydisasm.x86_64
 
         class x86_64_line : line
         {
-            public override string ToString()
+            public override string ToDisassembledString(tydisasm disasm)
             {
                 if (o == null)
                 {
@@ -526,7 +549,7 @@ namespace tydisasm.x86_64
                         sb.Append(" ");
                     else
                         sb.Append(", ");
-                    sb.Append(arguments[i].ToDisassembledString(this));
+                    sb.Append(arguments[i].ToDisassembledString(this, disasm));
                 }
                 return sb.ToString();
             }

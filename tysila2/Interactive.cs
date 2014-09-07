@@ -330,7 +330,10 @@ namespace tysila
                                     Console.WriteLine();
                                 }
 
-                                Console.WriteLine("{0} {1,-30} {2}", offset.ToString("x16"), disasm.OpcodeString, disasm.ToString());
+                                string offset_str = "x16";
+                                if (ass.GetBitness() == Assembler.Bitness.Bits32)
+                                    offset_str = "x8";
+                                Console.WriteLine("{0} {1,-30} {2}", offset.ToString(offset_str), disasm.OpcodeString, disasm.ToDisassembledString(d));
 
                                 /* See if there are any relocations here */
                                 foreach (libasm.RelocationBlock reloc in abo.relocs)
