@@ -340,7 +340,7 @@ namespace tysila
                                 {
                                     if ((ulong)reloc.Offset >= disasm.offset_start && (ulong)reloc.Offset < disasm.offset_end)
                                     {
-                                        Console.WriteLine("        {0} {1} t:{2} s:{3} v:{4}", reloc.Offset.ToString("x16"), reloc.Target.ToString(),
+                                        Console.WriteLine("        {0} {1} t:{2} s:{3} v:{4}", reloc.Offset.ToString(offset_str), reloc.Target.ToString(),
                                             reloc.RelType.ToString(), reloc.Size.ToString(), reloc.Value.ToString());
                                     }
 

@@ -51,7 +51,7 @@ namespace libtysila.tybel
             libtysila.tybel.Tybel tybel_2 = tybel.RenameRegisters(regs);
 
             /* Resolve special instructions */
-            libtysila.timple.Liveness tybel2_l = libtysila.timple.Liveness.LivenessAnalysis(tybel_2);
+            libtysila.timple.Liveness tybel2_l = libtysila.timple.Liveness.LivenessAnalysis(tybel_2, true);
             libtysila.tybel.Tybel tybel_3 = tybel_2.ResolveSpecialNodes(tybel2_l, ass, las, lvs);
 
             return tybel_3;
@@ -178,6 +178,8 @@ namespace libtysila.tybel
                 }
 
                 ret.TimpleMap[n] = tybel;
+                foreach (Node t_n in tybel)
+                    t_n.InnerNode = n;
             }
 
             util.Set<timple.TreeNode> visited = new util.Set<timple.TreeNode>();

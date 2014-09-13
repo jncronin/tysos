@@ -11,6 +11,8 @@ namespace BareBones
 				*(byte *)(0xb8000 + i) = 0;
 
 			Print("Hello World!");
+
+			while(true);
 		}
 
 		static void Print(string s)

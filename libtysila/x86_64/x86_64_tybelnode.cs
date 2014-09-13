@@ -347,9 +347,17 @@ namespace libtysila
                     rex |= 0x41;        // rex.b if modr/m r/m field is extended (with mod == 3)
                 if (!inst.opcode_adds && rm != null && (rm is libasm.hardware_contentsof) && (((libasm.hardware_contentsof)rm).base_loc is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)(((libasm.hardware_contentsof)rm).base_loc)).is_extended)
                     rex |= 0x41;        // rex.b if modr/m r/m field is extended (with mod != 3)
-                
-                if (rex != 0)
-                    a.Add(rex);
+
+                if (ass.GetBitness() == Bitness.Bits32)
+                {
+                    if (!(rex == 0x40 || rex == 0x00))
+                        throw new Exception("Invalid rex prefix in ia32 mode");
+                }
+                else
+                {
+                    if (rex != 0)
+                        a.Add(rex);
+                }
 
                 /* Opcode */
                 if (inst.prefix_0f)

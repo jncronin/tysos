@@ -16,6 +16,7 @@ dd FLAGS
 dd CHECKSUM
 
 sthrow:
+	xchg bx, bx
 	hlt
 	jmp sthrow
 

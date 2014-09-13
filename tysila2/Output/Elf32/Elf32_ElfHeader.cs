@@ -190,15 +190,27 @@ namespace Elf32
                     int byte_offset = (int)rela.r_offset;
                     uint keep_mask = 0xffffffff;
 
-                    switch (rela.reloc_type)
+                    switch (e_machine)
                     {
-                        case Elf32_Rela_Shdr.Elf32_Rela.RelocationType.R_ARM_CALL:
-                        case Elf32_Rela_Shdr.Elf32_Rela.RelocationType.R_ARM_JUMP24:
-                            addend &= 0x00ffffff;
-                            keep_mask = 0xff000000;
+                        case MachineType.EM_ARM:
+                            switch (rela.reloc_type)
+                            {
+                                case Elf32_Rela_Shdr.Elf32_Rela.RelocationType.R_ARM_CALL:
+                                case Elf32_Rela_Shdr.Elf32_Rela.RelocationType.R_ARM_JUMP24:
+                                    addend &= 0x00ffffff;
+                                    keep_mask = 0xff000000;
+                                    break;
+
+                                case Elf32_Rela_Shdr.Elf32_Rela.RelocationType.R_ARM_ABS32:
+                                    keep_mask = 0;
+                                    break;
+
+                                default:
+                                    throw new NotSupportedException();
+                            }
                             break;
 
-                        case Elf32_Rela_Shdr.Elf32_Rela.RelocationType.R_ARM_ABS32:
+                        case MachineType.EM_386:
                             keep_mask = 0;
                             break;
 
@@ -238,7 +250,7 @@ namespace Elf32
             comments.data.AddRange(Encoding.UTF8.GetBytes(comment));
 
             // Decide on the type of relocation to output
-            Elf32_Rela_Shdr.RelSectType rel_sect_type = Elf32_Rela_Shdr.RelSectType.Rela;
+            Elf32_Rela_Shdr.RelSectType rel_sect_type = Elf32_Rela_Shdr.RelSectType.Rel;
             string rel_name = ".rela";
             if (archtype == ElfWriter.ArchType.ARM)
             {

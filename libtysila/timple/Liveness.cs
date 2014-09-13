@@ -34,6 +34,9 @@ namespace libtysila.timple
         public Dictionary<vara, util.Set<BaseNode>> uses = new Dictionary<vara, util.Set<BaseNode>>();
 
         public static Liveness LivenessAnalysis(BaseGraph g)
+        { return LivenessAnalysis(g, false); }
+
+        public static Liveness LivenessAnalysis(BaseGraph g, bool include_non_logical)
         {
             Liveness l = new Liveness();
 
@@ -58,18 +61,24 @@ namespace libtysila.timple
                 {
                     /* Iterate backwards for a more efficient algorithm */
                     BaseNode n = nodes[i];
+                    ICollection<vara> uses = n.logical_uses;
+                    if (include_non_logical)
+                        uses = n.uses;
+                    ICollection<vara> defs = n.logical_defs;
+                    if (include_non_logical)
+                        defs = n.defs;
 
                     /* On the first run through, set the global uses/defs chain too */
                     if (iter == 0)
                     {
-                        foreach (vara use in n.logical_uses)
+                        foreach (vara use in uses)
                         {
                             if (!l.uses.ContainsKey(use))
                                 l.uses[use] = new util.Set<BaseNode>();
                             l.uses[use].Add(n);
                         }
 
-                        foreach (vara def in n.logical_defs)
+                        foreach (vara def in defs)
                         {
                             if (!l.defs.ContainsKey(def))
                                 l.defs[def] = new util.Set<BaseNode>();
@@ -77,35 +86,18 @@ namespace libtysila.timple
                         }
                     }
 
-                    foreach (vara vtest in n.defs)
-                    {
-                        if (vtest.ToString() == "STACK(0)")
-                        {
-                            int shdsfhdg = 0;
-                            break;
-                        }
-                    }
-                    foreach (vara vtest in n.uses)
-                    {
-                        if (vtest.ToString() == "STACK(0)")
-                        {
-                            int sgdfhdgg = 0;
-                            break;
-                        }
-                    }
-
                     /* Generate in and out sets */
                     if (n.UsesLiveAfter)
-                        l.live_out[n].AddRange(n.logical_uses);
+                        l.live_out[n].AddRange(uses);
                     util.Set<vara> inp = new util.Set<vara>(l.live_in[n]);
                     util.Set<vara> outp = new util.Set<vara>(l.live_out[n]);
-                    l.live_in[n] = l.live_out[n].Except(n.logical_defs).Union(n.logical_uses);
+                    l.live_in[n] = l.live_out[n].Except(defs).Union(uses);
 
                     l.live_out[n].Clear();
                     foreach (BaseNode s in n.Next)
                         l.live_out[n].AddRange(l.live_in[s]);
                     if (n.UsesLiveAfter)
-                        l.live_out[n].AddRange(n.logical_uses);
+                        l.live_out[n].AddRange(uses);
 
                     if (!inp.Equals(l.live_in[n]) || !outp.Equals(l.live_out[n]))
                         changes = true;
