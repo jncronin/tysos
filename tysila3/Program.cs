@@ -72,7 +72,7 @@ namespace tysila3
             List<byte> code = new List<byte>();
             List<libasm.ExportedSymbol> syms = new List<libasm.ExportedSymbol>();
             List<libasm.RelocationBlock> relocs = new List<libasm.RelocationBlock>();
-            tybel.Assemble(code, syms, relocs, ass, attrs);
+            tybel.Assemble(code, syms, relocs, ass, attrs, null);
 
             /* Dump dissassembly */
             tydisasm.tydisasm d = tydisasm.tydisasm.GetDisassembler(ass.Arch.InstructionSet);

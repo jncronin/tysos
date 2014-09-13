@@ -233,7 +233,8 @@ namespace libtysila
             List<byte> code = new List<byte>();
             List<libasm.ExportedSymbol> syms = new List<libasm.ExportedSymbol>();
             List<libasm.RelocationBlock> relocs = new List<libasm.RelocationBlock>();
-            tybel.Assemble(code, syms, relocs, this, attrs);
+            List<tybel.Tybel.DebugNode> debug = new List<libtysila.tybel.Tybel.DebugNode>();
+            tybel.Assemble(code, syms, relocs, this, attrs, debug);
 
             // Write code to output stream
             int text_base = output.GetText().Count;
@@ -253,7 +254,7 @@ namespace libtysila
             foreach (libasm.RelocationBlock reloc in relocs)
                 output.AddTextRelocation(text_base + reloc.Offset, reloc.Target, reloc.RelType, reloc.Value);
 
-            return new AssembleBlockOutput { code = code, compiled_code_length = code.Count, relocs = relocs };
+            return new AssembleBlockOutput { code = code, compiled_code_length = code.Count, relocs = relocs, debug = debug };
         }
 
         private frontend.cil.CilGraph RewriteInternalCall(MethodToCompile mtc)

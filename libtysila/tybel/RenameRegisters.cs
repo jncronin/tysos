@@ -39,17 +39,44 @@ namespace libtysila.tybel
             foreach (tybel.SpecialNode missed in missed_special)
                 missed.SaveNode = (Node)ret.InnerToOuter[missed.SaveNode];
 
+            /* Ensure next/prev and end links match up */
+            visited.Clear();
+            foreach (timple.BaseNode start in Starts)
+                DFMatchUpNextPrev(ret, ret.InnerToOuter[start], visited);
+            ret.Ends.Clear();
+            foreach (timple.BaseNode end in Ends)
+                ret.Ends.Add(ret.InnerToOuter[end]);
+
             return ret;
+        }
+
+        private void DFMatchUpNextPrev(Tybel ret, timple.BaseNode node, util.Set<timple.BaseNode> visited)
+        {
+            if (visited.Contains(node))
+                return;
+            visited.Add(node);
+
+            node.Next.Clear();
+            foreach (timple.BaseNode next in node.InnerNode.Next)
+                node.Next.Add(ret.InnerToOuter[next]);
+            node.Prev.Clear();
+            foreach (timple.BaseNode prev in node.InnerNode.Prev)
+                    node.Prev.Add(ret.InnerToOuter[prev]);
+
+            foreach (timple.BaseNode next in node.Next)
+                DFMatchUpNextPrev(ret, next, visited);
         }
 
         void RenameRegisters(Tybel ret, timple.BaseNode inner_node, timple.BaseNode outer_parent, Dictionary<vara, vara> regs,
             util.Set<timple.BaseNode> visited, util.Set<tybel.SpecialNode> missed_special)
         {
-            if(visited.Contains(inner_node))
+            if (visited.Contains(inner_node))
                 return;
+
             visited.Add(inner_node);
 
             tybel.Node outer_node = (tybel.Node)inner_node.MemberwiseClone();
+            outer_node.InnerNode = inner_node;
             outer_node.next = new List<timple.BaseNode>();
             outer_node.prev = new List<timple.BaseNode>();
 
@@ -95,7 +122,7 @@ namespace libtysila.tybel
             }
 
             bool add = true;
-            if (outer_node.IsMove)
+            /*if (outer_node.IsMove)
             {
                 if ((outer_node.defs.Count == 1) && (outer_node.uses.Count == 1))
                 {
@@ -107,7 +134,7 @@ namespace libtysila.tybel
                     if(def_enum.Current.Equals(use_enum.Current))
                         add = false;
                 }
-            }
+            }*/
 
             if (add)
             {

@@ -82,8 +82,16 @@ namespace libtysila.frontend.cil
             /* Finally loop through again and add the tacs to the output stream */
             foreach (CilNode n in instrs.LinearStream)
             {
+                bool is_start = false;
+                if (instrs.Starts.Contains(n))
+                    is_start = true;
                 foreach (timple.TreeNode tac in n.il.tacs)
                 {
+                    if (is_start)
+                    {
+                        tac.IsStart = true;
+                        is_start = false;
+                    }
                     tac.InnerNode = n;
                     ret.Add(tac);
                 }

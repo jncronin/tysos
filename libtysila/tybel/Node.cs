@@ -29,8 +29,8 @@ namespace libtysila.tybel
     {
         public IList<timple.BaseNode> next = new List<timple.BaseNode>();
         public IList<timple.BaseNode> prev = new List<timple.BaseNode>();
-        public override IList<timple.BaseNode> Next { get { return next; } }
-        public override IList<timple.BaseNode> Prev { get { return prev; } }
+        public override IList<timple.BaseNode> Next { get { return next; } set { next = value; } }
+        public override IList<timple.BaseNode> Prev { get { return prev; } set { prev = value; } }
         public timple.TreeNode TimpleInst;
         public virtual IList<vara> VarList { get { return new vara[] { }; } set { throw new NotSupportedException(); } }
 
@@ -77,7 +77,22 @@ namespace libtysila.tybel
 
         public override void Remove()
         {
-            throw new NotImplementedException();
+            if (Next.Count > 1 && Prev.Count > 1)
+                throw new Exception("Cannot remove node with more than one predecessors and successors");
+
+            foreach (timple.BaseNode next in Next)
+            {
+                next.Prev.Remove(this);
+                foreach (timple.BaseNode prev in Prev)
+                    next.Prev.Add(prev);
+            }
+
+            foreach (timple.BaseNode prev in Prev)
+            {
+                prev.Next.Remove(this);
+                foreach (timple.BaseNode next in Next)
+                    prev.Next.Add(next);
+            }
         }
     }
 

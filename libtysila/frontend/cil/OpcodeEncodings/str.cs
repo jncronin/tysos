@@ -33,7 +33,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             vara v_r = vara.Logical(next_variable++, Assembler.CliType.O);
 
             il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, Assembler.CliType.O), v_r,
-                mtc.m.StringTable.GetStringAddress(((Metadata.UserStringHeapItem)il.inline_tok.Value).Value, ass), vara.Void()));
+                mtc.meth.m.StringTable.GetStringAddress(((Metadata.UserStringHeapItem)il.inline_tok.Value).Value, ass), vara.Void()));
 
             il.stack_vars_after.Push(v_r);
             il.stack_after.Push(new Signature.Param(BaseType_Type.String));

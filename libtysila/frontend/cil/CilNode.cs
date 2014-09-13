@@ -27,8 +27,8 @@ namespace libtysila.frontend.cil
 {
     public class CilNode : timple.BaseNode
     {
-        List<timple.BaseNode> prev = new List<timple.BaseNode>();
-        List<timple.BaseNode> next = new List<timple.BaseNode>();
+        IList<timple.BaseNode> prev = new List<timple.BaseNode>();
+        IList<timple.BaseNode> next = new List<timple.BaseNode>();
         public InstructionLine il;
 
         public List<CilNode> replaced_by = null;
@@ -38,11 +38,13 @@ namespace libtysila.frontend.cil
         public override IList<timple.BaseNode> Prev
         {
             get { return prev; }
+            set { prev = value; }
         }
 
         public override IList<timple.BaseNode> Next
         {
             get { return next; }
+            set { next = value; }
         }
 
         public override ICollection<vara> uses

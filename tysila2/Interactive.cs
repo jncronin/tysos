@@ -297,6 +297,17 @@ namespace tysila
                         ass._debug_produces_output = false;
                         Assembler.AssembleBlockOutput abo = ass.AssembleMethod(cur_method.Value, dw, null);
 
+                        Dictionary<int, List<libtysila.tybel.Tybel.DebugNode>> debug = new Dictionary<int, List<libtysila.tybel.Tybel.DebugNode>>();
+                        foreach (libtysila.tybel.Tybel.DebugNode dn in abo.debug)
+                        {
+                            if (!debug.ContainsKey(dn.Offset))
+                                debug[dn.Offset] = new List<libtysila.tybel.Tybel.DebugNode>();
+                            debug[dn.Offset].Add(dn);
+                        }
+
+                        libtysila.timple.TimpleNode old_timple_node = null;
+                        libtysila.frontend.cil.CilNode old_cil_node = null;
+
                         tydisasm.tydisasm d = tydisasm.tydisasm.GetDisassembler(ass.Arch.InstructionSet);
                         if (d != null)
                         {
@@ -330,10 +341,48 @@ namespace tysila
                                     Console.WriteLine();
                                 }
 
+                                /* See if we have a timple node for the code */
+                                if (debug.ContainsKey((int)offset))
+                                {
+                                    foreach (libtysila.tybel.Tybel.DebugNode dn in debug[(int)offset])
+                                    {
+                                        libtysila.timple.TimpleNode timple_node = null;
+                                        libtysila.frontend.cil.CilNode cil_node = null;
+                                        libtysila.timple.BaseNode cur_node = dn.Code;
+
+                                        while ((cur_node != null) && !(cur_node is libtysila.timple.TimpleNode))
+                                            cur_node = cur_node.InnerNode;
+
+                                        if (cur_node != null)
+                                        {
+                                            timple_node = cur_node as libtysila.timple.TimpleNode;
+
+                                            while ((cur_node != null) && !(cur_node is libtysila.frontend.cil.CilNode))
+                                                cur_node = cur_node.InnerNode;
+
+                                            if (cur_node != null)
+                                                cil_node = cur_node as libtysila.frontend.cil.CilNode;
+                                        }
+
+                                        if (cil_node != null && cil_node != old_cil_node)
+                                        {
+                                            Console.Write("IL_" + cil_node.il.il_offset.ToString("X4") + ": ");
+                                            Console.WriteLine(cil_node.ToString());
+                                            old_cil_node = cil_node;
+                                        }
+
+                                        if (timple_node != null && timple_node != old_timple_node)
+                                        {
+                                            Console.WriteLine("  " + timple_node.ToString());
+                                            old_timple_node = timple_node;
+                                        }
+                                    }
+                                }
+
                                 string offset_str = "x16";
                                 if (ass.GetBitness() == Assembler.Bitness.Bits32)
                                     offset_str = "x8";
-                                Console.WriteLine("{0} {1,-30} {2}", offset.ToString(offset_str), disasm.OpcodeString, disasm.ToDisassembledString(d));
+                                Console.WriteLine("    {0} {1,-30} {2}", offset.ToString(offset_str), disasm.OpcodeString, disasm.ToDisassembledString(d));
 
                                 /* See if there are any relocations here */
                                 foreach (libasm.RelocationBlock reloc in abo.relocs)

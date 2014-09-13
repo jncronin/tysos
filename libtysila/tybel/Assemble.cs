@@ -26,13 +26,24 @@ namespace libtysila.tybel
 {
     partial class Tybel
     {
+        public class DebugNode : libasm.OutputBlock
+        {
+            public Node Code;
+            public int Offset;
+        }
+
         public void Assemble(List<byte> code, List<libasm.ExportedSymbol> syms, List<libasm.RelocationBlock> relocs, Assembler ass,
-            Assembler.MethodAttributes attrs)
+            Assembler.MethodAttributes attrs, List<DebugNode> debug)
         {
             List<libasm.OutputBlock> obs = new List<libasm.OutputBlock>();
 
             foreach (Node n in LinearStream)
+            {
+                if (ass.Options.Debug)
+                    obs.Add(new DebugNode { Code = n });
+
                 obs.AddRange(n.Assemble(ass, attrs));
+            }
 
             /* Identify labels and their offsets */
             int cur_offset = code.Count;
@@ -43,6 +54,8 @@ namespace libtysila.tybel
                     cur_offset += ((libasm.CodeBlock)b).Code.Count;
                 else if (b is libasm.PrefixBlock)
                     cur_offset += ((libasm.PrefixBlock)b).Code.Count;
+                else if (b is DebugNode)
+                    ((DebugNode)b).Offset = cur_offset;
                 else if (b is libasm.LocalSymbol)
                 {
                     libasm.LocalSymbol ls = b as libasm.LocalSymbol;
@@ -75,6 +88,11 @@ namespace libtysila.tybel
                     code.AddRange(((libasm.CodeBlock)b).Code);
                 else if (b is libasm.PrefixBlock)
                     code.AddRange(((libasm.PrefixBlock)b).Code);
+                else if (b is DebugNode)
+                {
+                    if (debug != null)
+                        debug.Add(b as DebugNode);
+                }
                 else if (b is libasm.RelativeReference)
                 {
                     libasm.RelativeReference rr = b as libasm.RelativeReference;
@@ -87,8 +105,14 @@ namespace libtysila.tybel
                     }
                     else
                     {
-                        relocs.Add(new libasm.RelocationBlock { Offset = code.Count, Size = rr.Size, Value = rr.Addend, Target = rr.Target,
-                            RelType = rr.RelType });
+                        relocs.Add(new libasm.RelocationBlock
+                        {
+                            Offset = code.Count,
+                            Size = rr.Size,
+                            Value = rr.Addend,
+                            Target = rr.Target,
+                            RelType = rr.RelType
+                        });
 
                         code.AddRange(ass.ToByteArraySignExtend(0, rr.Size));
                     }

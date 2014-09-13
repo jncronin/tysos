@@ -257,7 +257,7 @@ namespace libtysila.timple
                     TimpleLabelNode l = tacs[i] as TimpleLabelNode;
                     if (l.BlockId != -1)
                         block_starts.Add(l.BlockId, i);
-                    if (l.prev.Count == 0)
+                    if (l.IsStart)
                         start_nodes.Add(i);
                 }
                 tacs[i].visited = false;

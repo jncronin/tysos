@@ -31,11 +31,12 @@ namespace libtysila.timple
 {
     public abstract class BaseNode
     {
-        public abstract IList<BaseNode> Prev { get; }
-        public abstract IList<BaseNode> Next { get; }
+        public abstract IList<BaseNode> Prev { get; set; }
+        public abstract IList<BaseNode> Next { get; set; }
         public abstract ICollection<vara> uses { get; }
         public abstract ICollection<vara> defs { get; }
         public BaseNode InnerNode;
+        public bool IsStart = false;
 
         public virtual ICollection<vara> logical_uses
         {
@@ -81,8 +82,8 @@ namespace libtysila.timple
         public override ICollection<vara> uses { get { return new vara[] { }; } }
         public override ICollection<vara> defs { get { return new vara[] { }; } }
         public ThreeAddressCode.Op Op;
-        public override IList<BaseNode> Prev { get { return prev; } }
-        public override IList<BaseNode> Next { get { return next; } }
+        public override IList<BaseNode> Prev { get { return prev; } set { prev = value; } }
+        public override IList<BaseNode> Next { get { return next; } set { prev = value; } }
 
         public override void Remove()
         {

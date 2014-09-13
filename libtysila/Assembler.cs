@@ -186,6 +186,7 @@ namespace libtysila
             public bool IncludeLibsupcs = false;
             public bool IncludeLibstdcs = false;
             public bool PIC = false;
+            public bool Debug = true;
             public bool MiniAssembler = false;
             public bool InExtraAdd = false;
             public enum RegisterAllocatorType { graphcolour, fastreg };
@@ -920,6 +921,7 @@ namespace libtysila
             public IList<OutputBlock> symbols;
             public IDictionary<int, InstructionHeader> instrs;
             public IList<OutputBlock> prolog;
+            public IList<tybel.Tybel.DebugNode> debug;
 
             public int compiled_code_length;
         }
