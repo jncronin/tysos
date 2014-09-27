@@ -115,6 +115,32 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.xor) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.xor) };
         }
 
+        public static void tybel_binnumop(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location b_loc = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location a_loc = il.stack_vars_after.Pop(ass);
+            Signature.Param b_p = il.stack_after.Pop();
+            Signature.Param a_p = il.stack_after.Pop();
+
+            Assembler.CliType a_ct = a_p.CliType(ass);
+            Assembler.CliType b_ct = b_p.CliType(ass);
+
+            binnumop_key k = new binnumop_key { a_type = a_ct, b_type = b_ct, opcode = il.il.opcode.opcode };
+            numop_val v;
+            if(!binnumops.TryGetValue(k, out v))
+                throw new Exception("Invalid binary num op combination: " + k.ToString());
+
+            Signature.Param d_p = new Signature.Param(v.dt);
+            libasm.hardware_location d_loc = il.stack_vars_after.GetAddressFor(d_p, ass);
+            il.stack_after.Push(d_p);
+
+            ass.BinNumOp(state, il.stack_vars_before, d_loc, a_loc, b_loc, v.op, il.il.tybel);
+
+            if(v.throw_op.Operator != ThreeAddressCode.OpName.invalid)
+                throw new NotImplementedException();
+        }
+
         public static void binnumop(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
             ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
             Assembler.MethodAttributes attrs)

@@ -30,6 +30,10 @@ namespace libtysila.frontend.cil
         IList<timple.BaseNode> prev = new List<timple.BaseNode>();
         IList<timple.BaseNode> next = new List<timple.BaseNode>();
         public InstructionLine il;
+        public int il_label;
+
+        internal Stack stack_vars_before, stack_vars_after;
+        internal util.Stack<Signature.Param> stack_before, stack_after;
 
         public List<CilNode> replaced_by = null;
 

@@ -174,5 +174,87 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after.Pop();
             il.stack_after.Pop();
         }
+
+        public static void tybel_stind(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            ThreeAddressCode.OpName op = ThreeAddressCode.OpName.invalid;
+            Assembler.CliType dt = Assembler.CliType.void_;
+            int len = 0;
+
+            switch (il.il.opcode.opcode1)
+            {
+                case Opcode.SingleOpcodes.stind_i:
+                    dt = Assembler.CliType.native_int;
+                    op = ThreeAddressCode.OpName.poke_u;
+                    len = ass.GetSizeOfIntPtr();
+                    break;
+
+                case Opcode.SingleOpcodes.stind_i1:
+                    dt = Assembler.CliType.int32;
+                    op = ThreeAddressCode.OpName.poke_u1;
+                    len = 1;
+                    break;
+
+                case Opcode.SingleOpcodes.stind_i2:
+                    dt = Assembler.CliType.int32;
+                    op = ThreeAddressCode.OpName.poke_u2;
+                    len = 2;
+                    break;
+
+                case Opcode.SingleOpcodes.stind_i4:
+                    dt = Assembler.CliType.int32;
+                    op = ThreeAddressCode.OpName.poke_u4;
+                    len = 4;
+                    break;
+
+                case Opcode.SingleOpcodes.stind_i8:
+                    dt = Assembler.CliType.int64;
+                    op = ThreeAddressCode.OpName.poke_u8;
+                    len = 8;
+                    break;
+
+                case Opcode.SingleOpcodes.stind_r4:
+                    dt = Assembler.CliType.F32;
+                    op = ThreeAddressCode.OpName.poke_r4;
+                    len = 4;
+                    break;
+
+                case Opcode.SingleOpcodes.stind_r8:
+                    dt = Assembler.CliType.F64;
+                    op = ThreeAddressCode.OpName.poke_r8;
+                    len = 8;
+                    break;
+
+                case Opcode.SingleOpcodes.stind_ref:
+                    dt = Assembler.CliType.O;
+                    op = ThreeAddressCode.OpName.poke_u;
+                    len = ass.GetSizeOfPointer();
+                    break;
+
+                default:
+                    throw new Exception("Unsupported ldind opcode");
+            }
+
+            libasm.hardware_location loc_val = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_val = il.stack_after.Pop();
+            Signature.Param p_addr = il.stack_after.Pop();
+
+            if (!((p_addr.Type is Signature.ManagedPointer) || ((p_addr.Type is Signature.BaseType) && (((Signature.BaseType)p_addr.Type).Type == BaseType_Type.I)) || (p_addr.Type is Signature.UnmanagedPointer)))
+                throw new Exception("stind without valid addr type: " + p_addr.Type.ToString());
+
+            if (ass.Options.VerifiableCIL)
+            {
+                if (!(p_addr.Type is Signature.ManagedPointer))
+                    throw new Exception("stind without addr being managed pointer");
+                Signature.BaseOrComplexType t_addr = ((Signature.ManagedPointer)p_addr.Type).ElemType;
+                if (!Signature.ParamCompare(p_val, new Signature.Param(t_addr, ass), ass))
+                    throw new Exception("stind - mismatch between val type: " + p_val.ToString() + " and addr type: " + p_addr.ToString());
+            }
+
+            ass.Poke(state, il.stack_vars_before, loc_addr, loc_val, len, il.il.tybel);
+        }
     }
 }

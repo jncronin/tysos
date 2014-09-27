@@ -21,20 +21,24 @@
 
 using System;
 using System.Collections.Generic;
+using libtysila.frontend.cil;
 
-namespace libtysila.frontend.cil.OpcodeEncodings
+namespace libtysila.x86_64.cil
 {
-    partial class nop
+    class ret
     {
-        public static void enc_nop(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
-        {
-        }
-
-        public static void tybel_nop(CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, 
+        public static void tybel_ret(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
+            if (state.cc.ReturnValue != null)
+            {
+                libasm.hardware_location retval = il.stack_vars_after.Pop(ass);
+                il.stack_after.Pop();
+                x86_64_Assembler.EncMov(ass as x86_64_Assembler, state, state.cc.ReturnValue, retval, il.il.tybel);
+            }
+
+            ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.LEAVE, il.il.tybel);
+            ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.RETN, il.il.tybel);
         }
     }
 }

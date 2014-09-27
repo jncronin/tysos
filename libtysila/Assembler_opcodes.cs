@@ -271,7 +271,7 @@ namespace libtysila
             bringforward = 0x31
         }
 
-        public class Opcode
+        /*public class Opcode
         {
             public SingleOpcodes opcode1;
             public DoubleOpcodes opcode2;
@@ -291,7 +291,7 @@ namespace libtysila
             public int push;
             public InlineVar inline;
             public ControlFlow ctrl;
-        }
+        } */
 
         public enum PopBehaviour { Pop0 = 1, Pop1 = 2, PopI = 8, PopI8 = 32, PopR4 = 64, PopR8 = 128, PopRef = 256, VarPop = 512 };
         public enum PushBehaviour { Push0 = 1, Push1 = 2, PushI = 8, PushI8 = 16, PushR4 = 32, PushR8 = 64, PushRef = 128, VarPush = 256 };
@@ -303,9 +303,9 @@ namespace libtysila
         };
         public enum ControlFlow { BRANCH, CALL, COND_BRANCH, META, NEXT, RETURN, THROW, BREAK };
 
-        protected Dictionary<int, Opcode> Opcodes = new Dictionary<int,Opcode>(new libtysila.GenericEqualityComparer<int>());
+        //protected Dictionary<int, Opcode> Opcodes = new Dictionary<int,Opcode>(new libtysila.GenericEqualityComparer<int>());
 
-        void InitOpcodes()
+        /*void InitOpcodes()
         {
             Opcodes.Add(0x00, new Assembler.Opcode { opcode1 = (Assembler.SingleOpcodes)0x00, opcode2 = (Assembler.DoubleOpcodes)0x00, name = "nop", pop = (int)Assembler.PopBehaviour.Pop0, push = (int)Assembler.PushBehaviour.Push0, inline = Assembler.InlineVar.InlineNone, ctrl = Assembler.ControlFlow.NEXT });
             Opcodes.Add(0x01, new Assembler.Opcode { opcode1 = (Assembler.SingleOpcodes)0x01, opcode2 = (Assembler.DoubleOpcodes)0x00, name = "break", pop = (int)Assembler.PopBehaviour.Pop0, push = (int)Assembler.PushBehaviour.Push0, inline = Assembler.InlineVar.InlineNone, ctrl = Assembler.ControlFlow.BREAK });
@@ -766,7 +766,7 @@ namespace libtysila
                 directly_modifies_stack = true,
                 ctrl = ControlFlow.NEXT,
                 name = "bringforward"
-            });
-        }
+            }); 
+        } */
     }
 }

@@ -28,16 +28,16 @@ namespace libtysila.tybel
     {
         public class DebugNode : libasm.OutputBlock
         {
-            public Node Code;
+            public libtysila.timple.BaseNode Code;
             public int Offset;
         }
 
-        public void Assemble(List<byte> code, List<libasm.ExportedSymbol> syms, List<libasm.RelocationBlock> relocs, Assembler ass,
-            Assembler.MethodAttributes attrs, List<DebugNode> debug)
+        public static void Assemble(List<Node> instrs, List<byte> code, List<libasm.ExportedSymbol> syms, List<libasm.RelocationBlock> relocs,
+            Assembler ass, Assembler.MethodAttributes attrs, List<DebugNode> debug)
         {
             List<libasm.OutputBlock> obs = new List<libasm.OutputBlock>();
 
-            foreach (Node n in LinearStream)
+            foreach (Node n in instrs)
             {
                 if (ass.Options.Debug)
                     obs.Add(new DebugNode { Code = n });

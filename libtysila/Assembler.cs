@@ -68,6 +68,25 @@ namespace libtysila
         public abstract RelocationBlock.RelocationType GetCodeToDataRelocType();
         public abstract RelocationBlock.RelocationType GetCodeToCodeRelocType();
 
+        internal abstract void Assign(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location src, CliType dt, List<tybel.Node> ret);
+        internal abstract void LoadAddress(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location obj, List<tybel.Node> ret);
+        internal abstract void Add(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, CliType dt, List<tybel.Node> ret);
+        internal abstract void Mul(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, CliType dt, List<tybel.Node> ret);
+        internal abstract void MemSet(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location c, libasm.hardware_location n, List<tybel.Node> ret);
+        internal abstract void MemCpy(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location src, libasm.hardware_location n, List<tybel.Node> ret);
+        internal abstract void Call(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location retval, libasm.hardware_location[] p, CallConv cc, List<tybel.Node> ret);
+        internal abstract void Poke(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest_addr, libasm.hardware_location src, int size, List<tybel.Node> ret);
+        internal abstract void Peek(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location src_addr, int size, List<tybel.Node> ret);
+        internal abstract void Enter(libtysila.frontend.cil.Encoder.EncoderState state, MethodAttributes attrs, List<tybel.Node> ret);
+        internal abstract void BinNumOp(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, ThreeAddressCode.Op op, List<tybel.Node> ret);
+        internal abstract void Conv(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location src, Signature.BaseType dest_type, Signature.BaseType src_type, bool signed, List<tybel.Node> ret);
+        internal abstract void ThrowIf(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location a, libasm.hardware_location b, libasm.hardware_location throw_dest, libasm.hardware_location throw_obj, CliType dt, ThreeAddressCode.OpName op, List<tybel.Node> ret);
+
+        public abstract libasm.hardware_location GetTemporary(Assembler.CliType ct);
+        public virtual libasm.hardware_location GetTemporary() { return GetTemporary(CliType.native_int); }
+        public abstract libasm.hardware_location GetTemporary2(Assembler.CliType ct);
+        public virtual libasm.hardware_location GetTemporary2() { return GetTemporary(CliType.native_int); }
+
         internal abstract Dictionary<libasm.hardware_location, libasm.hardware_location> AllocateStackLocations(Assembler.MethodAttributes attrs);
 
         public class AssemblerException : Exception
@@ -193,6 +212,7 @@ namespace libtysila
             public RegisterAllocatorType RegAlloc = RegisterAllocatorType.graphcolour;
             public string CallingConvention = "default";
             public bool AllowTysilaOpcodes = false;
+            public bool VerifiableCIL = false;
         }
 
         public class AssemblerState
@@ -627,7 +647,6 @@ namespace libtysila
                 _requestor.Assembler = this;
             }
 
-            InitOpcodes();
             arch_init_callconvs();
         }
 
@@ -1086,6 +1105,10 @@ namespace libtysila
         public virtual int GetSizeOfPointer()
         {
             return GetSizeOf(new Signature.Param(BaseType_Type.I));
+        }
+        public virtual int GetStackAlign()
+        {
+            return GetSizeOfPointer();
         }
         internal virtual int GetSizeOfType(Signature.Param p)
         {

@@ -260,6 +260,9 @@ namespace libasm
 
         public object container;
 
+        public enum StackType { Var, Arg, LocalVar };
+        public StackType stack_type;
+
         public override bool Equals(hardware_location other)
         {
             if (!(other is hardware_stackloc))
@@ -273,12 +276,12 @@ namespace libasm
 
         public override int GetHashCode()
         {
-            return loc.GetHashCode() ^ (size.GetHashCode() << 3) ^ (offset_within_loc.GetHashCode() << 6) ^ (((container == null) ? 0 : container.GetHashCode()) << 9);
+            return loc.GetHashCode() ^ (size.GetHashCode() << 3) ^ (offset_within_loc.GetHashCode() << 6) ^ (((container == null) ? 0 : container.GetHashCode()) << 9) ^ (stack_type.GetHashCode() << 12);
         }
 
         public override string ToString()
         {
-            return "stack(" + loc.ToString() + ")" + ((offset_within_loc == 0) ? "" : (" + " + offset_within_loc.ToString()));
+            return "stack_" + stack_type.ToString() + "(" + loc.ToString() + ")" + ((offset_within_loc == 0) ? "" : (" + " + offset_within_loc.ToString()));
         }
 
         public override bool CanTakeAddressOf
@@ -311,6 +314,11 @@ namespace libasm
         {
             return "[" + base_loc.ToString() + ((const_offset != 0) ? (" + $" + const_offset.ToString()) : "") + "]";
         }
+
+        public override int GetHashCode()
+        {
+            return 0x08080808 ^ base_loc.GetHashCode() ^ const_offset.GetHashCode();
+        }
     }
 
     public class hardware_addressof : hardware_location
@@ -330,12 +338,22 @@ namespace libasm
         {
             return "&" + base_loc.ToString();
         }
+
+        public override int GetHashCode()
+        {
+            return 0x0f0f0f0f ^ base_loc.GetHashCode();
+        }
     }
 
     public class hardware_addressoflabel : hardware_location
     {
         public string label;
-        public int const_offset;
+        public long const_offset;
+        public bool is_object;
+
+        public hardware_addressoflabel(string Label, bool IsObject) { label = Label; const_offset = 0; is_object = IsObject; }
+        public hardware_addressoflabel(string Label, int Offset, bool IsObject) { label = Label; const_offset = Offset; is_object = IsObject; }
+        public hardware_addressoflabel(string Label, long Offset, bool IsObject) { label = Label; const_offset = Offset; is_object = IsObject; }
 
         public override bool Equals(hardware_location other)
         {
@@ -349,6 +367,11 @@ namespace libasm
                 return false;
 
             return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return label.GetHashCode() ^ const_offset.GetHashCode();
         }
 
         public override string ToString()

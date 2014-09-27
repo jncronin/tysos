@@ -110,7 +110,7 @@ namespace libtysila.timple
                 if(!has_const)
                     has_const = EvalConst(S, ref cval);
 
-                if (has_const)
+                if (has_const && ((TimpleNode)S).R.VarType == vara.vara_type.Logical)
                 {
                     //ssa.RemoveNode(S, l);
 

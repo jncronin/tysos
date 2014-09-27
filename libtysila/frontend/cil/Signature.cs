@@ -111,6 +111,11 @@ namespace libtysila
             void from_tok(Token t, Assembler ass)
             {
                 Type = null;
+                if (t is TTCToken)
+                {
+                    Type = ((TTCToken)t).ttc.tsig.Type;
+                    return;
+                }
                 if (t.Value is Metadata.TypeRefRow)
                 {
                     Metadata.TypeRefRow trr = t.Value as Metadata.TypeRefRow;
@@ -285,6 +290,11 @@ namespace libtysila
                     return Assembler.CliType.native_int;
 
                 return Assembler.CliType.O;
+            }
+
+            public override string ToString()
+            {
+                return Type.ToString();
             }
         }
 
@@ -520,6 +530,11 @@ namespace libtysila
             public override int GetHashCode()
             {
                 return (int)Type ^ 0x1a2b3c4d;
+            }
+
+            public override string ToString()
+            {
+                return GetTypeName();
             }
         }
 

@@ -26,6 +26,17 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 {
     class str
     {
+        public static void tybel_ldstr(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location ret_loc = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.String), ass);
+
+            vara v_str = mtc.meth.m.StringTable.GetStringAddress(((Metadata.UserStringHeapItem)il.il.inline_tok.Value).Value, ass);
+            ass.Assign(state, il.stack_vars_before, ret_loc, new libasm.hardware_addressoflabel(v_str.LabelVal, v_str.Offset, true), Assembler.CliType.native_int, il.il.tybel);
+
+            il.stack_after.Push(new Signature.Param(BaseType_Type.String));
+        }
+
         public static void ldstr(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
             ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
             Assembler.MethodAttributes attrs)

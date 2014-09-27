@@ -21,18 +21,18 @@
 
 using System;
 using System.Collections.Generic;
+using libtysila.frontend.cil;
 
-namespace libtysila.frontend.cil.OpcodeEncodings
+namespace libtysila.x86_64.cil
 {
     class loc
     {
-        public static void ldloc(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        public static void tybel_ldloc(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
             int p = 0;
 
-            switch (il.opcode.opcode1)
+            switch (il.il.opcode.opcode1)
             {
                 case Opcode.SingleOpcodes.ldloc_0:
                     p = 0;
@@ -47,39 +47,39 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     p = 3;
                     break;
                 case Opcode.SingleOpcodes.ldloc_s:
-                    p = il.inline_int;
+                    p = il.il.inline_int;
                     break;
                 default:
                     throw new Exception("Unimplemented ldloc opcode: " + il.ToString());
             }
 
-            il.stack_after.Push(lvs[p]);
+            libasm.hardware_location src = state.lv_locs[p];
+            libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(state.lvs[p], ass);
 
-            vara v = vara.Logical(next_variable++, lv_vars[p].DataType);
-            il.tacs.Add(new timple.TimpleNode(Assembler.GetAssignTac(lv_vars[p].DataType), v, lv_vars[p], vara.Void()));
-            il.stack_vars_after.Push(v);
+            ass.Assign(state, il.stack_vars_before, dest, src, state.lvs[p].CliType(ass), il.il.tybel);
+
+            il.stack_after.Push(state.lvs[p]);
         }
 
-        public static void ldloca(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        public static void tybel_ldloca(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            int p = il.inline_int;
+            int p = il.il.inline_int;
 
-            il.stack_after.Push(new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = lvs[p].Type }, ass));
+            libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(Assembler.CliType.native_int), ass);
+            libasm.hardware_location src = state.lv_locs[p];
 
-            vara v = vara.Logical(next_variable++, Assembler.CliType.native_int);
-            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v, vara.AddrOf(lv_vars[p]), vara.Void()));
-            il.stack_vars_after.Push(v);
+            x86_64_Assembler.EncLea(ass as x86_64_Assembler, state, dest, src, il.il.tybel);
+
+            il.stack_after.Push(new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = state.lvs[p].Type }, ass));
         }
 
-        public static void stloc(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        public static void tybel_stloc(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
             int p = 0;
 
-            switch (il.opcode.opcode1)
+            switch (il.il.opcode.opcode1)
             {
                 case Opcode.SingleOpcodes.stloc_0:
                     p = 0;
@@ -94,16 +94,17 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     p = 3;
                     break;
                 case Opcode.SingleOpcodes.stloc_s:
-                    p = il.inline_int;
+                    p = il.il.inline_int;
                     break;
                 default:
                     throw new Exception("Unimplemented stloc opcode: " + il.ToString());
             }
 
             il.stack_after.Pop();
+            libasm.hardware_location src = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location dest = state.lv_locs[p];
 
-            vara v = il.stack_vars_after.Pop();
-            il.tacs.Add(new timple.TimpleNode(Assembler.GetAssignTac(lv_vars[p].DataType), lv_vars[p], v, vara.Void()));
+            ass.Assign(state, il.stack_vars_before, dest, src, state.lvs[p].CliType(ass), il.il.tybel);
         }
     }
 }

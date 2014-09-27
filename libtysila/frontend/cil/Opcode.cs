@@ -315,6 +315,9 @@ namespace libtysila.frontend.cil
             ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
             Assembler.MethodAttributes attrs);
 
+        public delegate void TybelEncodeFunc(CilNode il, Assembler ass, Assembler.MethodToCompile mtc,
+            ref int next_block, Encoder.EncoderState state, Assembler.MethodAttributes attrs);
+
         public static int OpcodeVal(int op)
         {
             return op;
@@ -352,5 +355,6 @@ namespace libtysila.frontend.cil
         }
 
         public EncodeFunc Encoder;
+        public TybelEncodeFunc TybelEncoder;
     }
 }

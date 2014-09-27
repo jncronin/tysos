@@ -26,7 +26,190 @@ namespace libtysila.frontend.cil
 {
     public class Encoder
     {
-        public static List<timple.TreeNode> Encode(CilGraph instrs, Assembler.MethodToCompile mtc, Assembler ass,
+        public class EncoderState
+        {
+            public List<Signature.Param> las, lvs;
+            public List<libasm.hardware_location> la_locs, lv_locs;
+            internal Stack lv_stack, la_stack;
+            public int next_blk = 0;
+            public CallConv cc;
+            public Dictionary<int, CilNode> offset_map = new Dictionary<int, CilNode>();
+            public int largest_var_stack = 0;
+            public Assembler.MethodToCompile mtc;
+        }
+
+        public static List<tybel.Node> Encode(CilGraph instrs, Assembler.MethodToCompile mtc, Assembler ass,
+            Assembler.MethodAttributes attrs)
+        {
+            List<tybel.Node> ret = new List<tybel.Node>();
+            EncoderState state = new EncoderState();
+            state.las = GetLocalArgs(mtc, ass);
+            state.lvs = GetLocalVars(mtc, ass);
+            int next_block = 0;
+
+            state.cc = ass.call_convs[attrs.call_conv](mtc, CallConv.StackPOV.Callee, ass, new libtysila.ThreeAddressCode(Assembler.GetCallTac(mtc.msig.Method.RetType.CliType(ass))));
+            state.mtc = mtc;
+
+            /* For now, have all local args and vars be on the stack */
+            DefaultStack arg_stack = new DefaultStack(libasm.hardware_stackloc.StackType.Arg);
+            state.la_locs = new List<libasm.hardware_location>();
+            state.la_stack = arg_stack;
+            foreach (Signature.Param la in state.las)
+                state.la_locs.Add(arg_stack.GetAddressFor(la, ass));
+
+            DefaultStack var_stack = new DefaultStack(libasm.hardware_stackloc.StackType.LocalVar);
+            state.lv_locs = new List<libasm.hardware_location>();
+            state.lv_stack = var_stack;
+            foreach (Signature.Param lv in state.lvs)
+                state.lv_locs.Add(var_stack.GetAddressFor(lv, ass));
+
+            /* Assign a label to each cil instruction */
+            state.next_blk = 1;
+            foreach (CilNode n in instrs.LinearStream)
+            {
+                n.il_label = state.next_blk++;
+                state.offset_map[n.il.il_offset] = n;
+            }
+
+            /* Encode the instructions */
+            util.Set<CilNode> visited = new util.Set<CilNode>();
+            foreach (CilNode start in instrs.Starts)
+            {
+                start.stack_vars_before = new DefaultStack();
+                start.stack_before = new util.Stack<Signature.Param>();
+                DFEncode(start, mtc, ass, visited, ref next_block, state, attrs);
+            }
+
+            /* Reorder the linear stream for rewritten nodes */
+            for (int i = 0; i < instrs.linear_stream.Count; i++)
+            {
+                if (((CilNode)instrs.linear_stream[i]).replaced_by != null)
+                {
+                    CilNode old = instrs.linear_stream[i] as CilNode;
+
+                    instrs.linear_stream.RemoveAt(i);
+                    foreach (CilNode repl in old.replaced_by)
+                    {
+                        repl.il_label = state.next_blk++;
+                        instrs.linear_stream.Insert(i++, repl);
+                    }
+
+                    state.offset_map[old.il.il_offset] = old.replaced_by[0];
+                }
+            }
+
+            /* Add the method prefix */
+            ass.Enter(state, attrs, ret);
+
+            /* Add to code to initialize local vars */
+            if (mtc.meth.Body.InitLocals)
+            {
+                for (int i = 0; i < state.lv_locs.Count; i++)
+                {
+                    DefaultStack vs = new DefaultStack();
+                    util.Stack<Signature.Param> ps = new util.Stack<Signature.Param>();
+                    CilNode c1 = new CilNode { stack_vars_before = vs, stack_before = ps, il_label = -1, il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloca_s)], inline_int = i } };
+                    DFEncode(c1, mtc, ass, visited, ref next_block, state, attrs);
+                    CilNode c2 = new CilNode { stack_vars_before = c1.stack_vars_after, stack_before = c1.stack_after, il_label = -1, il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.initobj)], inline_tok = new TTCToken { ttc = Metadata.GetTTC(state.lvs[i], mtc.GetTTC(ass), mtc.msig, ass) } } };
+                    DFEncode(c2, mtc, ass, visited, ref next_block, state, attrs);
+
+                    ret.AddRange(c1.il.tybel);
+                    ret.AddRange(c2.il.tybel);
+                }
+            }
+
+            /* Finally loop through again and add the tacs to the output stream */
+            foreach (CilNode n in instrs.LinearStream)
+            {
+                bool is_start = false;
+                if (instrs.Starts.Contains(n))
+                    is_start = true;
+                foreach (tybel.Node tac in n.il.tybel)
+                {
+                    if (is_start)
+                    {
+                        tac.IsStart = true;
+                        is_start = false;
+                    }
+                    tac.InnerNode = n;
+                    ret.Add(tac);
+                }
+            }
+
+            return ret;
+        }
+
+        private static void DFEncode(CilNode n, Assembler.MethodToCompile mtc, Assembler ass, util.Set<CilNode> visited, ref int next_block,
+            EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            if (visited.Contains(n))
+                return;
+            visited.Add(n);
+
+
+            // TODO
+            //CilNode new_n = DecomposeComplexOpcodes.DecomposeComplexOpts(n, ass, mtc, ref next_variable, ref next_block,
+                    //la_vars, lv_vars, las, lvs, attrs);
+            CilNode new_n = n;
+
+            if (new_n != n)
+            {
+                new_n.il_label = n.il_label;
+                DFEncode(new_n, mtc, ass, visited, ref next_block, state, attrs);
+                return;
+            }
+
+            if (n.il.opcode.TybelEncoder == null)
+                throw new Exception("No encoding available for " + n.il.ToString());
+            n.stack_vars_after = n.stack_vars_before.Clone();
+            n.stack_after = new util.Stack<Signature.Param>(n.stack_before);
+            n.il.tybel = new List<tybel.Node>();
+
+            if(n.il_label >= 0)
+                n.il.tybel.Add(new tybel.LabelNode("L" + n.il_label.ToString(), true));
+            n.il.tybel.Add(new tybel.CilNode { Node = n });
+
+            if (n.stack_vars_before.ByteSize > state.largest_var_stack)
+                state.largest_var_stack = n.stack_vars_before.ByteSize;
+            n.il.opcode.TybelEncoder(n, ass, mtc, ref next_block, state, attrs);
+            if (n.stack_vars_after.ByteSize > state.largest_var_stack)
+                state.largest_var_stack = n.stack_vars_after.ByteSize;
+
+            util.Set<timple.BaseNode> next_visited = new util.Set<timple.BaseNode>();
+
+            while (true)
+            {
+                CilNode next = null;
+                for (int i = 0; i < n.Next.Count; i++)
+                {
+                    if (!next_visited.Contains(n.Next[i]))
+                    {
+                        next = n.Next[i] as CilNode;
+                        next_visited.Add(next);
+                        break;
+                    }
+                }
+                if (next == null)
+                    break;
+
+                if (next.stack_vars_before == null)
+                {
+                    next.stack_before = new util.Stack<Signature.Param>(n.stack_after);
+                    next.stack_vars_before = n.stack_vars_after.Clone();
+                }
+                else
+                {
+                    // TODO: merge stacks
+                    next.stack_before = new util.Stack<Signature.Param>(n.stack_after);
+                    next.stack_vars_before = n.stack_vars_after.Clone();
+                }
+
+                DFEncode(next, mtc, ass, visited, ref next_block, state, attrs);
+            }
+        }
+
+
+        public static List<timple.TreeNode> Encode2(CilGraph instrs, Assembler.MethodToCompile mtc, Assembler ass,
             Assembler.MethodAttributes attrs, out int next_var, out int next_blk)
         {
             List<timple.TreeNode> ret = new List<timple.TreeNode>();
@@ -39,11 +222,11 @@ namespace libtysila.frontend.cil
 
             List<vara> la_vars = new List<vara>();
             foreach (Signature.Param la in las)
-                la_vars.Add(vara.Logical(next_variable++, la.CliType(ass)));
+                la_vars.Add(vara.Logical(next_variable++, la.CliType(ass), la));
 
             List<vara> lv_vars = new List<vara>();
             foreach (Signature.Param lv in lvs)
-                lv_vars.Add(vara.Logical(next_variable++, lv.CliType(ass)));
+                lv_vars.Add(vara.Logical(next_variable++, lv.CliType(ass), lv));
 
             /* First encode each instruction */
             util.Set<CilNode> visited = new util.Set<CilNode>();
@@ -209,14 +392,67 @@ namespace libtysila.frontend.cil
                     n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.enter), vara.Void(), vara.Label(Mangler2.MangleMethod(mtc, ass), false), vara.Void()));
 
                 for (int i = 0; i < la_vars.Count; i++)
-                    n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.la_load), la_vars[i], vara.Const(i, Assembler.CliType.int32), vara.Void()));
+                {
+                    if (la_vars[i].DataType == Assembler.CliType.vt)
+                    {
+                        vara v_addr = vara.Logical(next_variable++, Assembler.CliType.native_int);
+                        n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.touch), la_vars[i], vara.Void(), vara.Void()));
+                        n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_addr, vara.AddrOf(la_vars[i]), vara.Void()));
+
+                        Layout l = Layout.GetLayout(Metadata.GetTTC(la_vars[i].vt_type, mtc.GetTTC(ass), mtc.msig, ass), ass);
+                        List<Layout.Field> flat_fields = l.GetFlattenedInstanceFieldLayout(mtc.GetTTC(ass), mtc.msig, ass);
+
+                        for (int j = 0; j < flat_fields.Count; j++)
+                        {
+                            Assembler.CliType ct = flat_fields[j].field.fsig.CliType(ass);
+                            n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.la_load), vara.ContentsOf(v_addr, flat_fields[j].offset, ct), vara.Const(i, Assembler.CliType.int32), vara.Const(j, Assembler.CliType.int32)));
+                        }
+                    }
+                        else n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.la_load), la_vars[i], vara.Const(i, Assembler.CliType.int32), vara.Void()));
+                }
                 for (int i = 0; i < lv_vars.Count; i++)
-                    n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.lv_load), lv_vars[i], vara.Const(i, Assembler.CliType.int32), vara.Void()));
+                {
+                    if (lv_vars[i].DataType == Assembler.CliType.vt)
+                    {
+                        vara v_addr = vara.Logical(next_variable++, Assembler.CliType.native_int);
+                        n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.touch), lv_vars[i], vara.Void(), vara.Void()));
+                        n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_addr, vara.AddrOf(lv_vars[i]), vara.Void()));
+
+                        Layout l = Layout.GetLayout(Metadata.GetTTC(lv_vars[i].vt_type, mtc.GetTTC(ass), mtc.msig, ass), ass);
+                        List<Layout.Field> flat_fields = l.GetFlattenedInstanceFieldLayout(mtc.GetTTC(ass), mtc.msig, ass);
+
+                        for (int j = 0; j < flat_fields.Count; j++)
+                        {
+                            Assembler.CliType ct = flat_fields[j].field.fsig.CliType(ass);
+                            n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.lv_load), vara.ContentsOf(v_addr, flat_fields[j].offset, ct), vara.Const(i, Assembler.CliType.int32), vara.Const(j, Assembler.CliType.int32)));
+                        }
+                    }
+                    else
+                        n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.lv_load), lv_vars[i], vara.Const(i, Assembler.CliType.int32), vara.Void()));
+                }
 
                 if (block_id == 0 && mtc.meth.Body.InitLocals)
                 {
                     foreach (vara lv_var in lv_vars)
-                        n.il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, lv_var.DataType), lv_var, vara.Const(0, lv_var.DataType), vara.Void()));
+                    {
+                        if (lv_var.DataType == Assembler.CliType.vt)
+                        {
+                            /* Initialise each member to 0 */
+                            Layout l = Layout.GetLayout(Metadata.GetTTC(lv_var.vt_type, mtc.GetTTC(ass), mtc.msig, ass), ass);
+                            List<Layout.Field> flat_fields = l.GetFlattenedInstanceFieldLayout(mtc.GetTTC(ass), mtc.msig, ass);
+
+                            vara v_addr = vara.Logical(next_variable++, Assembler.CliType.native_int);
+                            n.il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_addr, vara.AddrOf(lv_var), vara.Void()));
+
+                            for (int i = 0; i < flat_fields.Count; i++)
+                            {
+                                Assembler.CliType ct = flat_fields[i].field.fsig.CliType(ass);
+                                n.il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, ct), vara.ContentsOf(v_addr, flat_fields[i].offset, ct), vara.Const(0, ct), vara.Void()));
+                            }
+                        }
+                        else
+                            n.il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, lv_var.DataType), lv_var, vara.Const(0, lv_var.DataType), vara.Void()));
+                    }
                 }
             }
 

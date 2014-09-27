@@ -573,6 +573,7 @@ namespace libtysila
             ldobj_virtftnptr,
             label, loc_label, instruction_label, enter, nop,
             phi,
+            touch,
 
             peek_u1, peek_u2, peek_u4, peek_u8, peek_u, peek_i1, peek_i2, peek_r4, peek_r8, peek_vt,
             poke_u1, poke_u2, poke_u4, poke_u8, poke_u, poke_r4, poke_r8, poke_vt,

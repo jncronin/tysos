@@ -346,22 +346,15 @@ namespace tysila
                                 {
                                     foreach (libtysila.tybel.Tybel.DebugNode dn in debug[(int)offset])
                                     {
-                                        libtysila.timple.TimpleNode timple_node = null;
                                         libtysila.frontend.cil.CilNode cil_node = null;
                                         libtysila.timple.BaseNode cur_node = dn.Code;
 
-                                        while ((cur_node != null) && !(cur_node is libtysila.timple.TimpleNode))
+                                        while ((cur_node != null) && !(cur_node is libtysila.frontend.cil.CilNode))
                                             cur_node = cur_node.InnerNode;
 
                                         if (cur_node != null)
                                         {
-                                            timple_node = cur_node as libtysila.timple.TimpleNode;
-
-                                            while ((cur_node != null) && !(cur_node is libtysila.frontend.cil.CilNode))
-                                                cur_node = cur_node.InnerNode;
-
-                                            if (cur_node != null)
-                                                cil_node = cur_node as libtysila.frontend.cil.CilNode;
+                                            cil_node = cur_node as libtysila.frontend.cil.CilNode;
                                         }
 
                                         if (cil_node != null && cil_node != old_cil_node)
@@ -369,12 +362,6 @@ namespace tysila
                                             Console.Write("IL_" + cil_node.il.il_offset.ToString("X4") + ": ");
                                             Console.WriteLine(cil_node.ToString());
                                             old_cil_node = cil_node;
-                                        }
-
-                                        if (timple_node != null && timple_node != old_timple_node)
-                                        {
-                                            Console.WriteLine("  " + timple_node.ToString());
-                                            old_timple_node = timple_node;
                                         }
                                     }
                                 }

@@ -21,319 +21,115 @@
 
 using System;
 using System.Collections.Generic;
+using libtysila.frontend.cil;
+using libasm;
 
-namespace libtysila.frontend.cil.OpcodeEncodings
+namespace libtysila
 {
-    class conv
+    partial class x86_64_Assembler
     {
-        public static void tybel_conv(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
-            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        internal override void Conv(Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, Signature.BaseType dest_type, Signature.BaseType src_type, bool signed, List<tybel.Node> ret)
         {
-            Signature.Param srcp = il.stack_after.Pop();
-            libasm.hardware_location src_loc = il.stack_vars_after.Pop(ass);
+            dest = ResolveStackLoc(this, state, dest);
+            src = ResolveStackLoc(this, state, src);
 
-            Assembler.CliType src_ct = srcp.CliType(ass);
-            BaseType_Type dest_bt;
-            bool ovf = false;
-            bool un = false;
+            libasm.hardware_location act_dest_loc = dest;
 
-            switch (il.il.opcode.opcode1)
-            {
-                case Opcode.SingleOpcodes.conv_i:
-                case Opcode.SingleOpcodes.conv_ovf_i:
-                case Opcode.SingleOpcodes.conv_ovf_i_un:
-                    dest_bt = BaseType_Type.I;
-                    break;
+            if (!(dest is x86_64_gpr))
+                act_dest_loc = Rax;
+        
+            BaseType_Type act_src = src_type.Type;
+            BaseType_Type act_dest = dest_type.Type;
 
-                case Opcode.SingleOpcodes.conv_i1:
-                case Opcode.SingleOpcodes.conv_ovf_i1:
-                case Opcode.SingleOpcodes.conv_ovf_i1_un:
-                    dest_bt = BaseType_Type.I1;
-                    break;
+            if (src_type.Type == BaseType_Type.I)
+                act_src = ia == IA.i586 ? BaseType_Type.I4 : BaseType_Type.I8;
+            if (src_type.Type == BaseType_Type.U)
+                act_src = ia == IA.i586 ? BaseType_Type.U4 : BaseType_Type.U8;
+            if (src_type.Type == BaseType_Type.Char)
+                act_src = BaseType_Type.U2;
+            if (dest_type.Type == BaseType_Type.I)
+                act_dest = ia == IA.i586 ? BaseType_Type.I4 : BaseType_Type.I8;
+            if (dest_type.Type == BaseType_Type.U)
+                act_dest = ia == IA.i586 ? BaseType_Type.U4 : BaseType_Type.U8;
+            if (dest_type.Type == BaseType_Type.Char)
+                act_dest = BaseType_Type.U2;
 
-                case Opcode.SingleOpcodes.conv_i2:
-                case Opcode.SingleOpcodes.conv_ovf_i2:
-                case Opcode.SingleOpcodes.conv_ovf_i2_un:
-                    dest_bt = BaseType_Type.I2;
-                    break;
+            if (act_dest == act_src)
+                return;
 
-                case Opcode.SingleOpcodes.conv_i4:
-                case Opcode.SingleOpcodes.conv_ovf_i4:
-                case Opcode.SingleOpcodes.conv_ovf_i4_un:
-                    dest_bt = BaseType_Type.I4;
-                    break;
+            CliType dt = new Signature.BaseType(act_dest).CliType(this);
 
-                case Opcode.SingleOpcodes.conv_i8:
-                case Opcode.SingleOpcodes.conv_ovf_i8:
-                case Opcode.SingleOpcodes.conv_ovf_i8_un:
-                    dest_bt = BaseType_Type.I8;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u:
-                case Opcode.SingleOpcodes.conv_ovf_u:
-                case Opcode.SingleOpcodes.conv_ovf_u_un:
-                    dest_bt = BaseType_Type.U;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u1:
-                case Opcode.SingleOpcodes.conv_ovf_u1:
-                case Opcode.SingleOpcodes.conv_ovf_u1_un:
-                    dest_bt = BaseType_Type.U1;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u2:
-                case Opcode.SingleOpcodes.conv_ovf_u2:
-                case Opcode.SingleOpcodes.conv_ovf_u2_un:
-                    dest_bt = BaseType_Type.U2;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u4:
-                case Opcode.SingleOpcodes.conv_ovf_u4:
-                case Opcode.SingleOpcodes.conv_ovf_u4_un:
-                    dest_bt = BaseType_Type.U4;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u8:
-                case Opcode.SingleOpcodes.conv_ovf_u8:
-                case Opcode.SingleOpcodes.conv_ovf_u8_un:
-                    dest_bt = BaseType_Type.U8;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_r_un:
-                    dest_bt = BaseType_Type.R8;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_r4:
-                    dest_bt = BaseType_Type.R4;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_r8:
-                    dest_bt = BaseType_Type.R8;
-                    break;
-
-                default:
-                    throw new NotSupportedException("Unsupported conv opcode: " + il.il.opcode.ToString());
-            }
-
-            switch (il.il.opcode.opcode1)
-            {
-                case Opcode.SingleOpcodes.conv_ovf_i:
-                case Opcode.SingleOpcodes.conv_ovf_i1:
-                case Opcode.SingleOpcodes.conv_ovf_i2:
-                case Opcode.SingleOpcodes.conv_ovf_i4:
-                case Opcode.SingleOpcodes.conv_ovf_i8:
-                case Opcode.SingleOpcodes.conv_ovf_u:
-                case Opcode.SingleOpcodes.conv_ovf_u1:
-                case Opcode.SingleOpcodes.conv_ovf_u2:
-                case Opcode.SingleOpcodes.conv_ovf_u4:
-                case Opcode.SingleOpcodes.conv_ovf_u8:
-                    ovf = true;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_ovf_i_un:
-                case Opcode.SingleOpcodes.conv_ovf_i1_un:
-                case Opcode.SingleOpcodes.conv_ovf_i2_un:
-                case Opcode.SingleOpcodes.conv_ovf_i4_un:
-                case Opcode.SingleOpcodes.conv_ovf_i8_un:
-                case Opcode.SingleOpcodes.conv_ovf_u_un:
-                case Opcode.SingleOpcodes.conv_ovf_u1_un:
-                case Opcode.SingleOpcodes.conv_ovf_u2_un:
-                case Opcode.SingleOpcodes.conv_ovf_u4_un:
-                case Opcode.SingleOpcodes.conv_ovf_u8_un:
-                    ovf = true;
-                    un = true;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_r_un:
-                    un = true;
-                    break;
-            }
-
-            Signature.Param dest_p = new Signature.Param(dest_bt);
-            libasm.hardware_location dest_loc = il.stack_vars_after.GetAddressFor(dest_p, ass);
-            il.stack_after.Push(dest_p);
-
-            ass.Conv(state, il.stack_vars_before, dest_loc, src_loc, dest_p.Type as Signature.BaseType, srcp.Type as Signature.BaseType, un == false, il.il.tybel);
-
-            // Perform overflow testing if requested
-            if (ovf)
-            {
+            if (ia == IA.i586 && dt == CliType.int64)
                 throw new NotImplementedException();
-            }
-        }
 
-        public static void Conv(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
-        {
-            Signature.Param srcp = il.stack_after.Pop();
-            vara srcv = il.stack_vars_after.Pop();
-
-            Assembler.CliType src_ct = srcp.CliType(ass);
-            BaseType_Type dest_bt;
-            bool ovf = false;
-            bool un = false;
-
-            switch (il.opcode.opcode1)
+            switch (dt)
             {
-                case Opcode.SingleOpcodes.conv_i:
-                case Opcode.SingleOpcodes.conv_ovf_i:
-                case Opcode.SingleOpcodes.conv_ovf_i_un:
-                    dest_bt = BaseType_Type.I;
+                case CliType.int32:
+                    switch (act_src)
+                    {
+                        case BaseType_Type.I1:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXB, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.I2:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXW, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.I4:
+                        case BaseType_Type.I8:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.U1:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.U2:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXW, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.U4:
+                        case BaseType_Type.U8:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
                     break;
 
-                case Opcode.SingleOpcodes.conv_i1:
-                case Opcode.SingleOpcodes.conv_ovf_i1:
-                case Opcode.SingleOpcodes.conv_ovf_i1_un:
-                    dest_bt = BaseType_Type.I1;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_i2:
-                case Opcode.SingleOpcodes.conv_ovf_i2:
-                case Opcode.SingleOpcodes.conv_ovf_i2_un:
-                    dest_bt = BaseType_Type.I2;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_i4:
-                case Opcode.SingleOpcodes.conv_ovf_i4:
-                case Opcode.SingleOpcodes.conv_ovf_i4_un:
-                    dest_bt = BaseType_Type.I4;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_i8:
-                case Opcode.SingleOpcodes.conv_ovf_i8:
-                case Opcode.SingleOpcodes.conv_ovf_i8_un:
-                    dest_bt = BaseType_Type.I8;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u:
-                case Opcode.SingleOpcodes.conv_ovf_u:
-                case Opcode.SingleOpcodes.conv_ovf_u_un:
-                    dest_bt = BaseType_Type.U;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u1:
-                case Opcode.SingleOpcodes.conv_ovf_u1:
-                case Opcode.SingleOpcodes.conv_ovf_u1_un:
-                    dest_bt = BaseType_Type.U1;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u2:
-                case Opcode.SingleOpcodes.conv_ovf_u2:
-                case Opcode.SingleOpcodes.conv_ovf_u2_un:
-                    dest_bt = BaseType_Type.U2;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u4:
-                case Opcode.SingleOpcodes.conv_ovf_u4:
-                case Opcode.SingleOpcodes.conv_ovf_u4_un:
-                    dest_bt = BaseType_Type.U4;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_u8:
-                case Opcode.SingleOpcodes.conv_ovf_u8:
-                case Opcode.SingleOpcodes.conv_ovf_u8_un:
-                    dest_bt = BaseType_Type.U8;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_r_un:
-                    dest_bt = BaseType_Type.R8;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_r4:
-                    dest_bt = BaseType_Type.R4;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_r8:
-                    dest_bt = BaseType_Type.R8;
+                case CliType.int64:
+                    switch (act_src)
+                    {
+                        case BaseType_Type.I1:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXB, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.I2:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXW, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.I4:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXD, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.I8:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.U1:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.U2:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXW, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.U4:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.U8:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
                     break;
 
                 default:
-                    throw new NotSupportedException("Unsupported conv opcode: " + il.opcode.ToString());
+                    throw new NotImplementedException();
             }
 
-            switch (il.opcode.opcode1)
-            {
-                case Opcode.SingleOpcodes.conv_ovf_i:
-                case Opcode.SingleOpcodes.conv_ovf_i1:
-                case Opcode.SingleOpcodes.conv_ovf_i2:
-                case Opcode.SingleOpcodes.conv_ovf_i4:
-                case Opcode.SingleOpcodes.conv_ovf_i8:
-                case Opcode.SingleOpcodes.conv_ovf_u:
-                case Opcode.SingleOpcodes.conv_ovf_u1:
-                case Opcode.SingleOpcodes.conv_ovf_u2:
-                case Opcode.SingleOpcodes.conv_ovf_u4:
-                case Opcode.SingleOpcodes.conv_ovf_u8:
-                    ovf = true;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_ovf_i_un:
-                case Opcode.SingleOpcodes.conv_ovf_i1_un:
-                case Opcode.SingleOpcodes.conv_ovf_i2_un:
-                case Opcode.SingleOpcodes.conv_ovf_i4_un:
-                case Opcode.SingleOpcodes.conv_ovf_i8_un:
-                case Opcode.SingleOpcodes.conv_ovf_u_un:
-                case Opcode.SingleOpcodes.conv_ovf_u1_un:
-                case Opcode.SingleOpcodes.conv_ovf_u2_un:
-                case Opcode.SingleOpcodes.conv_ovf_u4_un:
-                case Opcode.SingleOpcodes.conv_ovf_u8_un:
-                    ovf = true;
-                    un = true;
-                    break;
-
-                case Opcode.SingleOpcodes.conv_r_un:
-                    un = true;
-                    break;
-            }
-
-            vara dest_v = enc_conv(il, dest_bt, srcp, srcv, false, ref next_variable, ass, attrs);
-
-            if (dest_v.VarType != vara.vara_type.Void)
-            {
-                // Perform overflow testing if requested
-                if (ovf)
-                {
-                    // convert back to original type and then compare with src
-                    Signature.Param dest_p = new Signature.Param(dest_bt);
-                    vara second_dest_v;
-
-                    switch (srcp.CliType(ass))
-                    {
-                        case Assembler.CliType.int32:
-                            if (un)
-                                second_dest_v = enc_conv(il, BaseType_Type.U4, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            else
-                                second_dest_v = enc_conv(il, BaseType_Type.I4, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
-                            break;
-                        case Assembler.CliType.int64:
-                            if (un)
-                                second_dest_v = enc_conv(il, BaseType_Type.U8, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            else
-                                second_dest_v = enc_conv(il, BaseType_Type.I8, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
-                            break;
-                        case Assembler.CliType.native_int:
-                            if (un)
-                                second_dest_v = enc_conv(il, BaseType_Type.U, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            else
-                                second_dest_v = enc_conv(il, BaseType_Type.I, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
-                            break;
-                        case Assembler.CliType.F64:
-                            second_dest_v = enc_conv(il, BaseType_Type.R8, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
-                            break;
-                        case Assembler.CliType.F32:
-                            second_dest_v = enc_conv(il, BaseType_Type.R4, dest_p, dest_v, true, ref next_variable, ass, attrs);
-                            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpR4(ThreeAddressCode.OpName.throwne), srcv, second_dest_v, vara.Label("sthrow", false), vara.Const(Assembler.throw_OverflowException)));
-                            break;
-                    }
-                }
-            }
-
-            il.stack_after.Push(new Signature.Param(dest_bt));
-            il.stack_vars_after.Push(dest_v);
+            if (!dest.Equals(act_dest_loc))
+                EncMov(this, state, dest, act_dest_loc, ret);
         }
 
         private static vara enc_conv(InstructionLine i, BaseType_Type dest_bt, Signature.Param srcp, vara srcv, bool force_conversion, ref int next_variable, Assembler ass,

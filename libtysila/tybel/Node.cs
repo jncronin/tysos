@@ -96,6 +96,34 @@ namespace libtysila.tybel
         }
     }
 
+    public class EmptyNode : Node
+    {
+        public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
+        {
+            return new List<libasm.OutputBlock>();
+        }
+
+        public override bool IsMove
+        {
+            get { return false; }
+        }
+
+        public override bool IsUnconditionalJmp
+        {
+            get { return false; }
+        }
+
+        public override ICollection<vara> uses
+        {
+            get { return new List<vara>(); }
+        }
+
+        public override ICollection<vara> defs
+        {
+            get { return new List<vara>(); }
+        }
+    }
+
     public class MultipleNode : Node
     {
         public List<Node> Nodes;
@@ -241,6 +269,41 @@ namespace libtysila.tybel
         public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
         {
             throw new NotImplementedException();
+        }
+    }
+
+    public class CilNode : Node
+    {
+        public frontend.cil.CilNode Node;
+
+        public override ICollection<vara> defs
+        {
+            get { return new vara[] { }; }
+        }
+
+        public override ICollection<vara> uses
+        {
+            get { return new vara[] { }; }
+        }
+
+        public override bool IsMove
+        {
+            get { return false; }
+        }
+
+        public override bool IsUnconditionalJmp
+        {
+            get { return false; }
+        }
+
+        public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
+        {
+            return new libasm.OutputBlock[] { new tybel.Tybel.DebugNode { Code = Node } };
+        }
+
+        public override string ToString()
+        {
+            return Node.ToString();
         }
     }
 

@@ -26,6 +26,19 @@ namespace libtysila
 {
     partial class Assembler
     {
+        protected virtual CliType ResolveNativeInt(CliType dt)
+        {
+            if ((dt == CliType.native_int) || (dt == CliType.O))
+            {
+                if (GetBitness() == Bitness.Bits32)
+                    return CliType.int32;
+                else
+                    return CliType.int64;
+            }
+            else
+                return dt;
+        }
+
         protected virtual ThreeAddressCode.Op ResolveNativeIntOp(ThreeAddressCode.Op op)
         {
             Bitness bt = GetBitness();

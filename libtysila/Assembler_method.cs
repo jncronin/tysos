@@ -38,15 +38,13 @@ namespace libtysila
 
             public bool profile = false;
 
-            public Signature.BaseMethod orig_sig;
-
             public List<string> method_aliases = new List<string>();
+            public Dictionary<string, Dictionary<string, object>> attrs = new Dictionary<string, Dictionary<string, object>>();
 
             public bool uninterruptible_method = false;
 
             public bool cls_compliant = true;
             public bool uses_vararg = false;
-            public bool syscall = false;
 
             public string call_conv;
 
@@ -215,26 +213,15 @@ namespace libtysila
                 }
             }
 
-            int next_var, next_block;
-            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(instrs, mtc, this, attrs, out next_var, out next_block);
-
             // Compile to tybel
-            libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(tacs);
-            CallConv cc = call_convs[attrs.call_conv](mtc, CallConv.StackPOV.Callee, this, new ThreeAddressCode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.call, mtc.msig.Method.RetType.CliType(this))));
-            List<libasm.hardware_location> las = new List<libasm.hardware_location>();
-            foreach (CallConv.ArgumentLocation arg in cc.Arguments)
-                las.Add(arg.ValueLocation);
-
-            List<libasm.hardware_location> lvs = GetLocalVarsLocations(frontend.cil.Encoder.GetLocalVars(mtc, this), attrs);
-
-            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, this, las, lvs, attrs, ref next_var, ref next_block);
+            List<tybel.Node> tybel_instrs = libtysila.frontend.cil.Encoder.Encode(instrs, mtc, this, attrs);
 
             // Generate machine code
             List<byte> code = new List<byte>();
             List<libasm.ExportedSymbol> syms = new List<libasm.ExportedSymbol>();
             List<libasm.RelocationBlock> relocs = new List<libasm.RelocationBlock>();
             List<tybel.Tybel.DebugNode> debug = new List<libtysila.tybel.Tybel.DebugNode>();
-            tybel.Assemble(code, syms, relocs, this, attrs, debug);
+            tybel.Tybel.Assemble(tybel_instrs, code, syms, relocs, this, attrs, debug);
 
             // Write code to output stream
             int text_base = output.GetText().Count;
@@ -310,9 +297,6 @@ namespace libtysila
         {
             throw new NotImplementedException();
         }
-
-        internal virtual void ParseArchAttibutes(Assembler.MethodToCompile mtc, Metadata.CustomAttributeRow car, MethodAttributes attrs)
-        { }
 
         public void ParseAttributes(Metadata m, Assembler.MethodToCompile mtc, MethodAttributes attrs)
         {
@@ -402,12 +386,52 @@ namespace libtysila
                         else
                             attrs.profile = true;
                     }
-                    else if (caname == "_ZX16SyscallAttributeM_0_7#2Ector_Rv_P1u1t")
+
                     {
-                        attrs.syscall = true;
+                        string name = camtc.type.TypeFullName;
+                        if (name.EndsWith("Attribute"))
+                            name = name.Substring(0, name.Length - "Attribute".Length);
+
+                        int offset = 0;
+                        if (car.Value[offset++] != 0x01)
+                            throw new NotSupportedException();
+                        if (car.Value[offset++] != 0x00)
+                            throw new NotSupportedException();
+
+                        attrs.attrs[name] = new Dictionary<string, object>();
+
+                        List<Metadata.ParamRow> ps = camtc.meth.GetParamNames();
+                        int unnamed_idx = 0;
+                        for (int i = 0; i < camtc.msig.Method.Params.Count; i++)
+                        {
+                            string pname;
+                            if (i < ps.Count)
+                                pname = ps[i].Name;
+                            else
+                                pname = "unnamed_" + (unnamed_idx++).ToString();
+
+                            Signature.Param p = camtc.msig.Method.Params[i];
+                            object o = null;
+                            if (p.Type is Signature.BaseType)
+                            {
+                                Signature.BaseType bt = p.Type as Signature.BaseType;
+                                switch (bt.Type)
+                                {
+                                    case BaseType_Type.String:
+                                        int len = Metadata.ReadCompressedInteger(car.Value, ref offset);
+                                        string s = new UTF8Encoding().GetString(car.Value, offset, len);
+                                        offset += len;
+                                        o = s;
+                                        break;
+                                    default:
+                                        throw new NotImplementedException();
+                                }
+
+                            }
+
+                            attrs.attrs[name][pname] = o;
+                        }
                     }
-                    else
-                        ParseArchAttibutes(mtc, car, attrs);
                 }
             }
         }

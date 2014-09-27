@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 /* A new implementation of the var class, which encapsulates the type of the
  * arguments too.
@@ -68,7 +69,7 @@ namespace libtysila
         {
             if (!HasLogicalVar)
                 throw new Exception("Cannot get logical var of var type " + VarType.ToString());
-            return vara.Logical(LogicalVar, SSA, DataType);
+            return vara.Logical(LogicalVar, SSA, DataType, VT_Type);
         }
 
         public bool IsObject { get { return is_object; } }
@@ -86,6 +87,16 @@ namespace libtysila
         public static vara Logical(int Logical, int Ssa, Assembler.CliType DataType)
         {
             return new vara { log = Logical, ssa = Ssa, ct = DataType, type = vara_type.Logical };
+        }
+
+        public static vara Logical(int Logical, Assembler.CliType DataType, Signature.Param VT_Type)
+        {
+            return new vara { log = Logical, ct = DataType, type = vara_type.Logical, vt_type = VT_Type };
+        }
+
+        public static vara Logical(int Logical, int Ssa, Assembler.CliType DataType, Signature.Param VT_Type)
+        {
+            return new vara { log = Logical, ssa = Ssa, ct = DataType, type = vara_type.Logical, vt_type = VT_Type };
         }
 
         public static vara AddrOf(int Logical, long Offset)
@@ -178,10 +189,11 @@ namespace libtysila
         public libasm.hardware_location MachineRegVal { get { return mreg; } }
         public long Offset { get { return offset; } }
         public object ConstVal { get { return c; } }
-        public vara_type VarType { get { return type; } }
+        public vara_type VarType { get { return type; } set { type = value; } }
         public Assembler.CliType DataType { get { return ct; } set { ct = value; } }
         public string LabelVal { get { return label; } }
         public int SSA { get { return ssa; } set { ssa = value; } }
+        public Signature.Param VT_Type { get { return vt_type; } }
 
         public override string ToString()
         {

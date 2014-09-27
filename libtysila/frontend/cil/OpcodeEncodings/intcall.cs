@@ -26,36 +26,35 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 {
     partial class call
     {
-        static Dictionary<string, Opcode.EncodeFunc> int_calls = null;
+        static Dictionary<string, Opcode.TybelEncodeFunc> int_calls = null;
 
         static void init_int_calls(Assembler ass)
         {
-            int_calls = new Dictionary<string, Opcode.EncodeFunc>();
+            int_calls = new Dictionary<string, Opcode.TybelEncodeFunc>();
 
             int_calls["_Zu1SM_0_9get_Chars_Rc_P2u1ti"] = string_getChars;
             int_calls["_Zu1SM_0_10get_Length_Ri_P1u1t"] = null;
         }
 
-        private static bool enc_intcall(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        private static bool enc_intcall(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
             if (int_calls == null)
                 init_int_calls(ass);
 
             Assembler.MethodToCompile call_mtc;
-            if(il.inline_tok is MTCToken)
-                call_mtc = ((MTCToken)il.inline_tok).mtc;
+            if(il.il.inline_tok is MTCToken)
+                call_mtc = ((MTCToken)il.il.inline_tok).mtc;
             else
-                call_mtc = Metadata.GetMTC(il.inline_tok, mtc.GetTTC(ass), mtc.msig, ass);
+                call_mtc = Metadata.GetMTC(il.il.inline_tok, mtc.GetTTC(ass), mtc.msig, ass);
 
             string mangled_name = Mangler2.MangleMethod(call_mtc, ass);
 
-            Opcode.EncodeFunc enc_func;
+            Opcode.TybelEncodeFunc enc_func;
 
             if (int_calls.TryGetValue(mangled_name, out enc_func))
             {
-                enc_func(il, ass, mtc, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs);
+                enc_func(il, ass, mtc, ref next_block, state, attrs);
                 return true;
             }
             return false;
@@ -66,7 +65,34 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             if (int_calls == null)
                 init_int_calls(ass);
 
-            return int_calls.ContainsKey(Mangler2.MangleMethod(mtc, ass));
+            Opcode.TybelEncodeFunc intcall;
+            if (int_calls.TryGetValue(Mangler2.MangleMethod(mtc, ass), out intcall) == false)
+                return false;
+            return intcall != null;
+        }
+
+        static void string_getChars(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location loc_idx = il.stack_vars_before.Pop(ass);
+            libasm.hardware_location loc_str = il.stack_vars_before.Pop(ass);
+
+            Signature.Param p_idx = il.stack_before.Pop();
+            Signature.Param p_str = il.stack_before.Pop();
+
+            libasm.hardware_location t1 = ass.GetTemporary();
+            libasm.hardware_location t2 = ass.GetTemporary();
+            libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.Char), ass);
+
+            ass.Add(state, il.stack_vars_before, t1, loc_str, new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.length) }, Assembler.CliType.native_int, il.il.tybel);
+            ass.Assign(state, il.stack_vars_before, t1, new libasm.hardware_contentsof { base_loc = t1 }, Assembler.CliType.native_int, il.il.tybel);
+            ass.ThrowIf(state, il.stack_vars_before, loc_idx, t1, new libasm.hardware_addressoflabel("sthrow", false), new libasm.const_location { c = Assembler.throw_IndexOutOfRangeException }, Assembler.CliType.int32, ThreeAddressCode.OpName.throwge_un, il.il.tybel);
+            ass.Mul(state, il.stack_vars_before, t1, loc_idx, new libasm.const_location { c = 2 }, Assembler.CliType.native_int, il.il.tybel);
+            ass.Add(state, il.stack_vars_before, t1, t1, new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.data_offset) }, Assembler.CliType.native_int, il.il.tybel);
+            ass.Add(state, il.stack_vars_before, t1, t1, loc_str, Assembler.CliType.native_int, il.il.tybel);
+            ass.Peek(state, il.stack_vars_before, dest, t1, 2, il.il.tybel);
+
+            il.stack_after.Push(new Signature.Param(BaseType_Type.Char));
         }
 
         static void string_getChars(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,

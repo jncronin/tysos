@@ -53,11 +53,11 @@ namespace tysila3
             Assembler.MethodToCompile equals_mtc = new Assembler.MethodToCompile(ass, equals_mdr, equals_sig, object_ttc.type, object_ttc.tsig);
 
             // Compile to timple
-            libtysila.frontend.cil.CilGraph g = libtysila.frontend.cil.CilGraph.BuildGraph(equals_mdr.Body, m, new Assembler.AssemblerOptions());
+            /*libtysila.frontend.cil.CilGraph g = libtysila.frontend.cil.CilGraph.BuildGraph(equals_mdr.Body, m, new Assembler.AssemblerOptions());
             ass.Options.CallingConvention = "gnu";
             Assembler.MethodAttributes attrs = new Assembler.MethodAttributes(ass);
             int next_var, next_block;
-            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(g, equals_mtc, ass, attrs, out next_var, out next_block);
+            List<libtysila.timple.TreeNode> tacs = libtysila.frontend.cil.Encoder.Encode(g, equals_mtc, ass, attrs);
             
             // Compile to tybel
             libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(tacs);
@@ -72,10 +72,10 @@ namespace tysila3
             List<byte> code = new List<byte>();
             List<libasm.ExportedSymbol> syms = new List<libasm.ExportedSymbol>();
             List<libasm.RelocationBlock> relocs = new List<libasm.RelocationBlock>();
-            tybel.Assemble(code, syms, relocs, ass, attrs, null);
+            tybel.Assemble(code, syms, relocs, ass, attrs, null); */
 
             /* Dump dissassembly */
-            tydisasm.tydisasm d = tydisasm.tydisasm.GetDisassembler(ass.Arch.InstructionSet);
+            /*tydisasm.tydisasm d = tydisasm.tydisasm.GetDisassembler(ass.Arch.InstructionSet);
             CodeStream cs = new CodeStream { code = code };
             if (d != null)
             {
@@ -91,7 +91,7 @@ namespace tysila3
                 }
             }
 
-            Console.ReadKey();
+            Console.ReadKey(); */
         }
     }
 

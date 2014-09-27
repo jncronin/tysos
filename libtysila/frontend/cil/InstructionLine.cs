@@ -79,6 +79,7 @@ namespace libtysila.frontend.cil
 
         //public List<PseudoStack> stack_before, stack_after, lv_before, lv_after, la_before, la_after;
         public List<timple.TreeNode> tacs;
+        public List<tybel.Node> tybel;
         public util.Stack<Signature.Param> stack_before, stack_after;
         public util.Stack<vara> stack_vars_before, stack_vars_after;
 

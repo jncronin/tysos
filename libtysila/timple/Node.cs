@@ -175,7 +175,7 @@ namespace libtysila.timple
             {
                 List<vara> ret = new List<vara>();
                 if (R.VarType == vara.vara_type.ContentsOf)
-                    ret.Add(R);
+                    ret.Add(vara.Logical(R.LogicalVar, R.SSA, R.DataType));
                 if((O1.VarType == vara.vara_type.Logical) || (O1.VarType == vara.vara_type.ContentsOf) || (O1.VarType == vara.vara_type.AddrOf))
                     ret.Add(vara.Logical(O1.LogicalVar, O1.SSA, O1.DataType));
                 if((O2.VarType == vara.vara_type.Logical) || (O2.VarType == vara.vara_type.ContentsOf) || (O2.VarType == vara.vara_type.AddrOf))

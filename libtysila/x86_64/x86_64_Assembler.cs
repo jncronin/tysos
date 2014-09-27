@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using libasm;
+using libtysila.frontend.cil;
 
 namespace libtysila
 {
@@ -113,7 +114,7 @@ namespace libtysila
         hloc_constraint CStackPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_addressof { base_loc = new hardware_stackloc() } }; } }
         hloc_constraint CAddrOfGprPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_addressof { base_loc = new hardware_contentsof { base_loc = new x86_64_gpr() } } }; } }
         hloc_constraint CAnyPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CStackPtr, CAddrOfGprPtr } }; } }
-        hloc_constraint CLabel { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_addressoflabel() }; } }
+        hloc_constraint CLabel { get { return new hloc_constraint { constraint = hloc_constraint.c_.AnyOfType, specific = new hardware_addressoflabel("", false) }; } }
         hloc_constraint CGprMemPtr { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CGpr, CMem, CGprPtr } }; } }
         hloc_constraint CGprMemConst { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CGpr, CMem, CConst } }; } }
         hloc_constraint CXmmMem { get { return new hloc_constraint { constraint = hloc_constraint.c_.List, specific_list = new List<hloc_constraint> { CXmm, CMem64 } }; } }
@@ -332,6 +333,79 @@ namespace libtysila
                 throw new Exception("Invalid operating system: " + arch.OperatingSystem);
 
             options.RegAlloc = AssemblerOptions.RegisterAllocatorType.graphcolour;
+
+            InitTybelOpcodes();
+        }
+
+        private void InitTybelOpcodes()
+        {
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloca_s)].TybelEncoder = x86_64.cil.loc.tybel_ldloca;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ldloca)].TybelEncoder = x86_64.cil.loc.tybel_ldloca;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_0)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_1)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_2)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_3)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_4)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_5)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_6)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_7)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_m1)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_s)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)].TybelEncoder = x86_64.cil.ret.tybel_ret;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ceq)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.cgt)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.cgt_un)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.clt)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.clt_un)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stloc_0)].TybelEncoder = x86_64.cil.loc.tybel_stloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stloc_1)].TybelEncoder = x86_64.cil.loc.tybel_stloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stloc_2)].TybelEncoder = x86_64.cil.loc.tybel_stloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stloc_3)].TybelEncoder = x86_64.cil.loc.tybel_stloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stloc_s)].TybelEncoder = x86_64.cil.loc.tybel_stloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.stloc)].TybelEncoder = x86_64.cil.loc.tybel_stloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloc_0)].TybelEncoder = x86_64.cil.loc.tybel_ldloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloc_1)].TybelEncoder = x86_64.cil.loc.tybel_ldloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloc_2)].TybelEncoder = x86_64.cil.loc.tybel_ldloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloc_3)].TybelEncoder = x86_64.cil.loc.tybel_ldloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloc_s)].TybelEncoder = x86_64.cil.loc.tybel_ldloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ldloc)].TybelEncoder = x86_64.cil.loc.tybel_ldloc;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.brfalse)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.brfalse_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.brtrue)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.brtrue_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.beq)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.beq_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bge)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bge_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bge_un)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bge_un_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bgt)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bgt_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bgt_un)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bgt_un_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ble)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ble_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ble_un)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ble_un_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.blt)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.blt_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.blt_un)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.blt_un_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bne_un)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.bne_un_s)].TybelEncoder = x86_64.cil.brset.tybel_brset;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.br)].TybelEncoder = x86_64.cil.brset.tybel_br;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.br_s)].TybelEncoder = x86_64.cil.brset.tybel_br;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.starg_s)].TybelEncoder = x86_64.cil.arg.tybel_starg;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.starg)].TybelEncoder = x86_64.cil.arg.tybel_starg;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)].TybelEncoder = x86_64.cil.arg.tybel_ldarg;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_1)].TybelEncoder = x86_64.cil.arg.tybel_ldarg;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_2)].TybelEncoder = x86_64.cil.arg.tybel_ldarg;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_3)].TybelEncoder = x86_64.cil.arg.tybel_ldarg;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)].TybelEncoder = x86_64.cil.arg.tybel_ldarg;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ldarg)].TybelEncoder = x86_64.cil.arg.tybel_ldarg;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarga_s)].TybelEncoder = x86_64.cil.arg.tybel_ldarga;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ldarga)].TybelEncoder = x86_64.cil.arg.tybel_ldarga;
         }
 
         public static Assembler.Architecture[] ListAssemblerArchitectures()
@@ -1146,6 +1220,548 @@ namespace libtysila
             attrs.spill_stack_space = (-cur_offset) - attrs.lv_stack_space;
 
             return ret;
+        }
+
+        internal void ChooseInstruction(x86_64.x86_64_asm.opcode op, List<tybel.Node> ret, params vara[] vars)
+        {
+            int nv = 0;
+            bool s = true;
+
+            for (int i = 0; i < vars.Length; i++)
+            {
+                if (vars[i].MachineRegVal is libasm.const_location)
+                    vars[i] = vara.Const(((libasm.const_location)vars[i].MachineRegVal).c);
+                if (vars[i].MachineRegVal is libasm.hardware_addressoflabel)
+                {
+                    libasm.hardware_addressoflabel aol = vars[i].MachineRegVal as libasm.hardware_addressoflabel;
+                    vars[i] = vara.Label(aol.label, aol.const_offset, aol.is_object);
+                }
+            }
+
+            ChooseInstruction(op, ret, null, ref nv, ref s, vars);
+            if (s == false)
+            {
+                StringBuilder sb = new StringBuilder("Unable to encode ");
+                sb.Append(op.ToString());
+                for (int i = 0; i < vars.Length; i++)
+                {
+                    if (i == 0)
+                        sb.Append(" ");
+                    else
+                        sb.Append(", ");
+                    sb.Append(vars[i].ToString());
+                }
+                throw new Exception(sb.ToString());
+            }
+        }
+
+        internal static void EncLea(x86_64_Assembler ass, libtysila.frontend.cil.Encoder.EncoderState state, libasm.hardware_location dest, libasm.hardware_location src, List<tybel.Node> ret)
+        {
+            libasm.hardware_location act_dest = dest;
+            if (!(dest is x86_64_gpr))
+                dest = Rax;
+
+            src = ResolveStackLoc(ass, state, src);
+
+            switch (ass.ia)
+            {
+                case IA.i586:
+                    ass.ChooseInstruction(x86_64.x86_64_asm.opcode.LEAL, ret, vara.MachineReg(dest), vara.MachineReg(src));
+                    break;
+                case IA.x86_64:
+                    ass.ChooseInstruction(x86_64.x86_64_asm.opcode.LEAQ, ret, vara.MachineReg(dest), vara.MachineReg(src));
+                    break;
+            }
+
+            if (!act_dest.Equals(dest))
+                EncMov(ass, state, act_dest, dest, ret);
+        }
+
+        internal static hardware_location ResolveStackLoc(x86_64_Assembler ass, frontend.cil.Encoder.EncoderState state, hardware_location loc)
+        {
+            if (!(loc is hardware_stackloc))
+                return loc;
+            hardware_stackloc sl = loc as hardware_stackloc;
+
+            /* local args are relative to rbp - offset - len
+             * local vars are relative to rbp - la_size - offset - len
+             * vars are relative to rbp - la_size - lv_size - offset - len
+             */
+
+            switch (sl.stack_type)
+            {
+                case hardware_stackloc.StackType.Arg:
+                    return new hardware_contentsof { base_loc = Rbp, const_offset = -(sl.loc + sl.size), size = sl.size };
+                case hardware_stackloc.StackType.LocalVar:
+                    return new hardware_contentsof { base_loc = Rbp, const_offset = -(state.la_stack.ByteSize + sl.loc + sl.size), size = sl.size };
+                case hardware_stackloc.StackType.Var:
+                    return new hardware_contentsof { base_loc = Rbp, const_offset = -(state.la_stack.ByteSize + state.lv_stack.ByteSize + sl.loc + sl.size), size = sl.size };
+            }
+            throw new NotImplementedException();
+        }
+
+        internal static void EncMov(x86_64_Assembler ass, libtysila.frontend.cil.Encoder.EncoderState state, libasm.hardware_location dest, libasm.hardware_location src, List<tybel.Node> ret)
+        { EncMov(ass, state, dest, src, CliType.native_int, ret); }
+
+        internal static void EncMov(x86_64_Assembler ass, libtysila.frontend.cil.Encoder.EncoderState state, libasm.hardware_location dest, libasm.hardware_location src, CliType dt, List<tybel.Node> ret)
+        {
+            libasm.hardware_location act_dest = dest;
+            if (!(dest is x86_64_gpr) && !(src is x86_64_gpr))
+                dest = Rax;
+
+            src = ResolveStackLoc(ass, state, src);
+            dest = ResolveStackLoc(ass, state, dest);
+            act_dest = ResolveStackLoc(ass, state, act_dest);
+
+            dt = ass.ResolveNativeInt(dt);
+            x86_64.x86_64_asm.opcode op = x86_64.x86_64_asm.opcode.MOVL;
+            switch (dt)
+            {
+                case CliType.int32:
+                    break;
+                case CliType.int64:
+                    if (ass.ia == IA.x86_64)
+                        op = x86_64.x86_64_asm.opcode.MOVQ;
+                    else
+                        throw new NotImplementedException();
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            ass.ChooseInstruction(op, ret, vara.MachineReg(dest), vara.MachineReg(src));
+
+            if (!act_dest.Equals(dest))
+                EncMov(ass, state, act_dest, dest, dt, ret);
+        }
+
+        internal override void MemSet(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location c, hardware_location n, List<tybel.Node> ret)
+        {
+            int max_move = ia == IA.i586 ? 4 : 8;
+            int max_inline = max_move * 4;
+
+            if (n is const_location && (int)((const_location)n).c <= max_inline)
+            {
+                /* We can inline this as a series of moves */
+                c = ResolveStackLoc(this, state, c);
+                if(!(c is x86_64_gpr))
+                {
+                    EncMov(this, state, Rdx, c, ret);
+                    c = Rdx;
+                }
+                dest = ResolveStackLoc(this, state, dest);
+                if (!(dest is x86_64_gpr))
+                {
+                    EncMov(this, state, Rax, dest, ret);
+                    dest = Rax;
+                }
+
+                int to_move = (int)((const_location)n).c;
+                int cur_offset = 0;
+                if (ia == IA.x86_64)
+                {
+                    while (to_move >= 8)
+                    {
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 8, const_offset = cur_offset }), vara.MachineReg(c));
+                        to_move -= 8;
+                        cur_offset += 8;
+                    }
+                }
+                while (to_move >= 4)
+                {
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 8, const_offset = cur_offset }), vara.MachineReg(c));
+                    to_move -= 4;
+                    cur_offset += 4;
+                }
+                while (to_move >= 2)
+                {
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 8, const_offset = cur_offset }), vara.MachineReg(c));
+                    to_move -= 2;
+                    cur_offset += 2;
+                }
+                while (to_move >= 1)
+                {
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 8, const_offset = cur_offset }), vara.MachineReg(c));
+                    to_move -= 1;
+                    cur_offset += 1;
+                }
+            }
+            else
+                Call(state, regs_in_use, new hardware_addressoflabel("memset", false), null, new hardware_location[] { dest, c, n }, callconv_memset, ret);
+        }
+
+        internal override void MemCpy(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, hardware_location n, List<tybel.Node> ret)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal override void Call(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location retval, hardware_location[] p, CallConv cc, List<tybel.Node> ret)
+        {
+            // Save used locations
+            List<libasm.hardware_location> save_regs = new List<hardware_location>(util.Intersect<libasm.hardware_location>(regs_in_use.UsedLocations, cc.CallerPreservesLocations));
+            for (int i = 0; i < save_regs.Count; i++)
+                ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(save_regs[i]));
+
+            // Push arguments
+            if (cc.StackSpaceUsed != 0)
+                ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.SUBL : x86_64.x86_64_asm.opcode.SUBQ, ret, vara.MachineReg(Rsp), vara.Const(cc.StackSpaceUsed));
+            if (p.Length != cc.Arguments.Count)
+                throw new Exception("Supplied arguments do not match those in the calling convention");
+
+            for (int i = 0; i < p.Length; i++)
+                EncMov(this, state, cc.Arguments[i].ValueLocation, p[i], ret);
+
+            // Execute call
+            ChooseInstruction(x86_64.x86_64_asm.opcode.CALL, ret, vara.MachineReg(dest));
+
+            // Store return value
+            if (retval != null)
+                EncMov(this, state, retval, cc.ReturnValue, ret);
+
+            // Restore stack
+            if (cc.StackSpaceUsed != 0)
+                ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.ADDL : x86_64.x86_64_asm.opcode.ADDQ, ret, vara.MachineReg(Rsp), vara.Const(cc.StackSpaceUsed));
+
+            // Restore saved args
+            for (int i = save_regs.Count - 1; i >= 0; i--)
+                ChooseInstruction(x86_64.x86_64_asm.opcode.POP, ret, vara.MachineReg(save_regs[i]));
+        }
+
+        internal override void Assign(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, CliType dt, List<tybel.Node> ret)
+        {
+            EncMov(this, state, dest, src, dt, ret);
+        }
+
+        internal override void Add(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location a, hardware_location b, CliType dt, List<tybel.Node> ret)
+        {
+            libasm.hardware_location act_dest = dest;
+            if (!(dest is x86_64_gpr))
+                act_dest = Rax;
+
+            dest = ResolveStackLoc(this, state, dest);
+            a = ResolveStackLoc(this, state, a);
+            b = ResolveStackLoc(this, state, b);
+            act_dest = ResolveStackLoc(this, state, act_dest);
+
+            if (!act_dest.Equals(a))
+            {
+                EncMov(this, state, act_dest, a, ret);
+                a = act_dest;
+            }
+
+            if (!(b is x86_64_gpr))
+            {
+                EncMov(this, state, Rdx, b, ret);
+                b = Rdx;
+            }
+
+            x86_64.x86_64_asm.opcode op = x86_64.x86_64_asm.opcode.ADDL;
+            dt = ResolveNativeInt(dt);
+            switch (dt)
+            {
+                case CliType.int32:
+                    break;
+                case CliType.int64:
+                    if (ia == IA.x86_64)
+                        op = x86_64.x86_64_asm.opcode.ADDQ;
+                    else
+                        throw new NotImplementedException();
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+            ChooseInstruction(op, ret, vara.MachineReg(act_dest), vara.MachineReg(b));
+
+            if (!act_dest.Equals(dest))
+                EncMov(this, state, dest, act_dest, ret);
+        }
+
+        public override hardware_location GetTemporary(CliType ct)
+        {
+            switch (ct)
+            {
+                case CliType.int32:
+                case CliType.int64:
+                case CliType.native_int:
+                    return Rcx;
+
+                case CliType.F32:
+                case CliType.F64:
+                    return Xmm2;
+
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        public override hardware_location GetTemporary2(CliType ct)
+        {
+            switch (ct)
+            {
+                case CliType.int32:
+                case CliType.int64:
+                case CliType.native_int:
+                    return Rbx;
+
+                case CliType.F32:
+                case CliType.F64:
+                    return Xmm3;
+
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        internal override void Peek(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src_addr, int size, List<tybel.Node> ret)
+        {
+            src_addr = ResolveStackLoc(this, state, src_addr);
+            if (!(src_addr is x86_64_gpr))
+            {
+                EncMov(this, state, Rax, src_addr, ret);
+                src_addr = Rax;
+            }
+
+            dest = ResolveStackLoc(this, state, dest);
+            libasm.hardware_location act_dest = dest;
+            if (!(dest is x86_64_gpr))
+                act_dest = Rdx;
+
+            switch (size)
+            {
+                case 1:
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                    break;
+
+                case 2:
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                    break;
+
+                case 4:
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                    break;
+
+                case 8:
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+
+            if (!dest.Equals(act_dest))
+                EncMov(this, state, dest, act_dest, ret);
+        }
+
+        internal override void Poke(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest_addr, hardware_location src, int size, List<tybel.Node> ret)
+        {
+            src = ResolveStackLoc(this, state, src);
+            if (!(src is x86_64_gpr))
+            {
+                EncMov(this, state, Rax, src, ret);
+                src = Rax;
+            }
+
+            dest_addr = ResolveStackLoc(this, state, dest_addr);
+            if(!(dest_addr is x86_64_gpr))
+            {
+                EncMov(this, state, Rdx, dest_addr, ret);
+                dest_addr = Rdx;
+            }
+
+            switch (size)
+            {
+                case 1:
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(src));
+                    break;
+
+                case 2:
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(src));
+                    break;
+
+                case 4:
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(src));
+                    break;
+
+                case 8:
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(src));
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        internal override void LoadAddress(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location obj, List<tybel.Node> ret)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal override void Enter(frontend.cil.Encoder.EncoderState state, MethodAttributes attrs, List<tybel.Node> ret)
+        {
+            bool is_isr = false;
+            if (attrs.attrs.ContainsKey("libsupcs.ISR"))
+                is_isr = true;
+
+            if (is_isr)
+                throw new NotImplementedException();
+            else
+            {
+                /* Set up frame pointer */
+                ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(Rbp));
+                ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.MOVL : x86_64.x86_64_asm.opcode.MOVQ, ret,
+                    vara.MachineReg(Rbp), vara.MachineReg(Rsp));
+
+                /* Reserve stack space for args, vars and temporaries */
+                int stack_reserve = state.la_stack.ByteSize + state.lv_stack.ByteSize + state.largest_var_stack;
+                if (stack_reserve > 0)
+                {
+                    ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.SUBL : x86_64.x86_64_asm.opcode.SUBQ,
+                        ret, vara.MachineReg(Rsp), vara.Const(stack_reserve));
+                }
+
+                /* Copy arguments to stack arg space */
+                for (int i = 0; i < state.cc.Arguments.Count; i++)
+                {
+                    EncMov(this, state, state.la_stack.GetAddressOf(i, this), state.cc.Arguments[i].ValueLocation, ret);
+                }
+            }
+        }
+
+        internal override void BinNumOp(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location a, hardware_location b, ThreeAddressCode.Op op, List<tybel.Node> ret)
+        {
+            dest = ResolveStackLoc(this, state, dest);
+            a = ResolveStackLoc(this, state, a);
+            b = ResolveStackLoc(this, state, b);
+
+            op = ResolveNativeIntOp(op);
+
+            x86_64.x86_64_asm.opcode opc = x86_64.x86_64_asm.opcode.NOP;
+            x86_64.x86_64_asm.opcode mov = x86_64.x86_64_asm.opcode.MOVL;
+            if(op.Type == CliType.int64)
+                mov = x86_64.x86_64_asm.opcode.MOVQ;
+
+            switch (op.Operator)
+            {
+                case ThreeAddressCode.OpName.add:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc = x86_64.x86_64_asm.opcode.ADDL;
+                            break;
+                        case CliType.int64:
+                            opc = x86_64.x86_64_asm.opcode.ADDQ;
+                            break;
+                    }
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+
+            if (opc == x86_64.x86_64_asm.opcode.NOP)
+                throw new NotImplementedException();
+
+            ChooseInstruction(mov, ret, vara.MachineReg(Rax), vara.MachineReg(a));
+            ChooseInstruction(opc, ret, vara.MachineReg(Rax), vara.MachineReg(b));
+            ChooseInstruction(mov, ret, vara.MachineReg(dest), vara.MachineReg(Rax));
+        }
+
+        internal override void Mul(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location a, hardware_location b, CliType dt, List<tybel.Node> ret)
+        {
+            dest = ResolveStackLoc(this, state, dest);
+            a = ResolveStackLoc(this, state, a);
+            b = ResolveStackLoc(this, state, b);
+
+            libasm.hardware_location act_dest = dest;
+            if (!(dest is x86_64_gpr))
+                act_dest = Rax;
+
+            if (!a.Equals(act_dest))
+                Assign(state, regs_in_use, act_dest, a, dt, ret);
+
+            if (!(b is x86_64_gpr) && !(b is hardware_contentsof))
+            {
+                Assign(state, regs_in_use, Rdx, b, dt, ret);
+                b = Rdx;
+            }
+
+            x86_64.x86_64_asm.opcode op = x86_64.x86_64_asm.opcode.IMULL;
+            dt = ResolveNativeInt(dt);
+            switch (dt)
+            {
+                case CliType.int32:
+                    break;
+                case CliType.int64:
+                    if (ia == IA.x86_64)
+                        op = x86_64.x86_64_asm.opcode.IMULQ;
+                    else
+                        throw new NotImplementedException();
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            ChooseInstruction(op, ret, vara.MachineReg(act_dest), vara.MachineReg(b));
+
+            if (!dest.Equals(act_dest))
+                Assign(state, regs_in_use, dest, act_dest, dt, ret);
+        }
+
+        internal override void ThrowIf(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location a, hardware_location b, hardware_location throw_dest, hardware_location throw_obj, CliType dt, ThreeAddressCode.OpName op, List<tybel.Node> ret)
+        {
+            a = ResolveStackLoc(this, state, a);
+            b = ResolveStackLoc(this, state, b);
+            throw_dest = ResolveStackLoc(this, state, throw_dest);
+            throw_obj = ResolveStackLoc(this, state, throw_obj);
+
+            libasm.hardware_location act_b = b;
+            if (!(a is x86_64_gpr) && !(b is x86_64_gpr))
+            {
+                act_b = Rax;
+                EncMov(this, state, Rax, b, ret);
+            }
+
+            if (dt == CliType.native_int)
+            {
+                if (ia == IA.i586)
+                    dt = CliType.int32;
+                else
+                    dt = CliType.int64;
+            }
+
+            x86_64.x86_64_asm.opcode cmp_op = x86_64.x86_64_asm.opcode.CMPL;
+            switch (dt)
+            {
+                case CliType.int32:
+                    break;
+                case CliType.int64:
+                    if (ia == IA.x86_64)
+                        cmp_op = x86_64.x86_64_asm.opcode.CMPQ;
+                    else
+                        throw new NotImplementedException();
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            ChooseInstruction(cmp_op, ret, vara.MachineReg(a), vara.MachineReg(act_b));
+
+            x86_64.x86_64_asm.opcode jmp_op = x86_64.x86_64_asm.opcode.NOP;
+            switch (op)
+            {
+                case ThreeAddressCode.OpName.throwge_un:
+                    jmp_op = x86_64.x86_64_asm.opcode.JB;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            int success_block = state.next_blk++;
+            ChooseInstruction(jmp_op, ret, vara.Label("L" + success_block.ToString(), false));
+
+            Call(state, regs_in_use, throw_dest, null, new hardware_location[] { throw_obj }, callconv_throw, ret);
+
+            ret.Add(new tybel.LabelNode("L" + success_block.ToString(), true));
         }
     }
 }

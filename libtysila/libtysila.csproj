@@ -122,6 +122,7 @@
     <Compile Include="regalloc\SelectSpill.cs" />
     <Compile Include="regalloc\Simplify.cs" />
     <Compile Include="regalloc\Util.cs" />
+    <Compile Include="Stack.cs" />
     <Compile Include="timple\ConstantPropagation.cs" />
     <Compile Include="timple\DeadCodeElimination.cs" />
     <Compile Include="timple\Dominator.cs" />
@@ -152,6 +153,12 @@
     <Compile Include="TysilaIntermediateRepresentation.cs" />
     <Compile Include="util.cs" />
     <Compile Include="Version.cs" />
+    <Compile Include="x86_64\cil\conv.cs" />
+    <Compile Include="x86_64\cil\arg.cs" />
+    <Compile Include="x86_64\cil\ldc.cs" />
+    <Compile Include="x86_64\cil\loc.cs" />
+    <Compile Include="x86_64\cil\ret.cs" />
+    <Compile Include="x86_64\cil\brset.cs" />
     <Compile Include="x86_64\x86_64-elf64.cs" />
     <Compile Include="x86_64\x86_64_asm.cs" />
     <Compile Include="x86_64\x86_64_Assembler.cs" />

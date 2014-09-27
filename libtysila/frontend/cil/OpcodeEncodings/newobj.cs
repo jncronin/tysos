@@ -182,5 +182,64 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after.Push(type_pushes);
             il.stack_vars_after.Push(var_obj);
         }
+
+        public static void tybel_initobj(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location obj_addr = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_vt = il.stack_after.Pop();
+            Signature.BaseOrComplexType bt = null;
+            if (p_vt.Type is Signature.ManagedPointer)
+                bt = ((Signature.ManagedPointer)p_vt.Type).ElemType;
+            else if (p_vt.Type is Signature.UnmanagedPointer)
+                bt = ((Signature.UnmanagedPointer)p_vt.Type).BaseType;
+            else
+                throw new Exception("stack type is not a managed or unmanaged pointer");
+
+            Signature.Param et = new Signature.Param(bt, ass);
+            if (Signature.ParamCompare(et, new Signature.Param(il.il.inline_tok, ass), ass) == false)
+                throw new Exception("initobj: token does not match stack type");
+
+            int len = ass.GetSizeOf(et);
+            if(!et.Type.IsValueType(ass))
+                len = ass.GetSizeOfPointer();
+            ass.MemSet(state, il.stack_vars_before, obj_addr, new libasm.const_location { c = 0 }, new libasm.const_location { c = len }, il.il.tybel);
+        }
+
+        public static void initobj(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
+            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs)
+        {
+            vara v_addr = il.stack_vars_after.Pop();
+
+            Signature.Param p_vt = il.stack_after.Pop();
+            Signature.BaseOrComplexType bt = null;
+            if (p_vt.Type is Signature.ManagedPointer)
+                bt = ((Signature.ManagedPointer)p_vt.Type).ElemType;
+            else if (p_vt.Type is Signature.UnmanagedPointer)
+                bt = ((Signature.UnmanagedPointer)p_vt.Type).BaseType;
+            else
+                throw new Exception("stack type is not a managed or unmanaged pointer");
+
+            if (Signature.ParamCompare(new Signature.Param(bt, ass), new Signature.Param(il.inline_tok, ass), ass) == false)
+                throw new Exception("initobj: token does not match stack type");
+
+            if (bt.CliType(ass) == Assembler.CliType.vt)
+            {
+                Layout l = Layout.GetLayout(Metadata.GetTTC(new Signature.Param(bt, ass), mtc.GetTTC(ass), mtc.msig, ass), ass);
+                List<Layout.Field> flat_fields = l.GetFlattenedInstanceFieldLayout(mtc.GetTTC(ass), mtc.msig, ass);
+
+                for (int i = 0; i < flat_fields.Count; i++)
+                {
+                    Assembler.CliType ct = flat_fields[i].field.fsig.CliType(ass);
+                    il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, ct), vara.ContentsOf(v_addr, flat_fields[i].offset, ct), vara.Const(0, ct), vara.Void()));
+                }
+            }
+            else
+                il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, bt.CliType(ass)), vara.ContentsOf(v_addr, bt.CliType(ass)), vara.Const(0, bt.CliType(ass)), vara.Void()));
+            //foreach(vara v in v_vt.vara_list)
+            //    il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, v.DataType), v, vara.Const(0, v.DataType), vara.Void()));
+        }
     }
 }

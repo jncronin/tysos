@@ -233,6 +233,40 @@ namespace libtysila
             LayoutInterfaces(ttc, ass);
         }
 
+        internal List<Field> GetFlattenedInstanceFieldLayout(Assembler.TypeToCompile parent, Signature.BaseMethod containing_meth, Assembler ass)
+        {
+            List<Field> ret = new List<Field>();
+
+            foreach (Field f in InstanceFields)
+            {
+                if (f.field.fsig.CliType(ass) == Assembler.CliType.vt)
+                {
+                    Signature.Param vt_fsig = Signature.ResolveGenericParam(f.field.fsig, parent.tsig.Type, containing_meth, ass);
+                    Layout vt_l = Layout.GetLayout(Metadata.GetTTC(vt_fsig, parent, containing_meth, ass), ass, false);
+                    List<Field> vt_fields = vt_l.GetFlattenedInstanceFieldLayout(parent, containing_meth, ass);
+
+                    foreach (Field vt_f in vt_fields)
+                    {
+                        Field new_vt_f = new Field
+                        {
+                            field = vt_f.field,
+                            is_static = vt_f.is_static,
+                            mangled_name = vt_f.mangled_name,
+                            name = vt_f.name,
+                            offset = f.offset + vt_f.offset,
+                            size = vt_f.size
+                        };
+
+                        ret.Add(new_vt_f);
+                    }
+                }
+                else
+                    ret.Add(f);
+            }
+
+            return ret;
+        }
+
         internal static bool IsInstantiable(Token t, Assembler.TypeToCompile parent, Signature.BaseMethod containing_meth, Assembler ass, bool allow_void)
         {
             if (t is FTCToken)
