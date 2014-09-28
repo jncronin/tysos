@@ -104,15 +104,16 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 if (call_mtc_ttc.type.IsInterface)
                 {
                     // Perform an interface call
-                    throw new NotImplementedException();
-                    /* Find the interface typeinfo */
-                    //vara iface_ti_obj = vara.Logical(next_variable++, Assembler.CliType.native_int);
-                    //il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), iface_ti_obj, vara.Label(call_mtc_ttc_l.typeinfo_object_name, true), vara.Void()));
-                    //ass.Requestor.RequestTypeInfo(call_mtc_ttc);
+                    fptr = null;
 
-                    /* Find the itablepointer (2nd entry in vtable) */
-                    //vara itableptr_obj = vara.Logical(next_variable++, Assembler.CliType.native_int);
-                    //il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), itableptr_obj, vara.ContentsOf(v_vtable.LogicalVar, ass.GetSizeOfIntPtr(), Assembler.CliType.native_int), vara.Void()));
+                    /* At this point, temporary1 is being used as the this pointer, and t2 is the vtbl pointer */
+                    /* First, make t2 be the itable pointer */
+                    libasm.hardware_location t1 = ass.GetTemporary();
+                    libasm.hardware_location t2 = ass.GetTemporary2();
+                    ass.Assign(state, il.stack_vars_before, t2, new libasm.hardware_contentsof { base_loc = vtbl, const_offset = ass.GetSizeOfPointer(), size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+
+                    /* Now load the target interface typeinfo to t1 */
+                    ass.Assign(state, il.stack_vars_before, t1, new libasm.hardware_addressoflabel(call_mtc_ttc_l.typeinfo_object_name, true), Assembler.CliType.native_int, il.il.tybel);
 
                     /* The procedure from here is:
                      * 
@@ -129,24 +130,36 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                      *     vfptr = [ifacemembers + offset_within_interface]
                      */
 
-                    /*timple.TimpleLabelNode start_search = new timple.TimpleLabelNode(next_block++);
-                    timple.TimpleLabelNode do_loop = new timple.TimpleLabelNode(next_block++);
-                    timple.TimpleLabelNode iface_found = new timple.TimpleLabelNode(next_block++);
-
-                    vara ifacemembers = vara.Logical(next_variable++, Assembler.CliType.native_int);
                     Layout.Interface iface = Layout.GetInterfaceLayout(call_mtc_ttc, ass);
                     int offset_within_interface = iface.GetVirtualMethod(call_mtc, ass).offset;
 
-                    il.tacs.Add(start_search);
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.cmp), vara.Void(), vara.ContentsOf(itableptr_obj, Assembler.CliType.native_int), vara.Const(0, Assembler.CliType.native_int)));
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.throweq), vara.Void(), vara.Const(Assembler.throw_MissingMethodException, Assembler.CliType.int32), vara.Void()));
-                    il.tacs.Add(new timple.TimpleBrNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.beq), iface_found, do_loop, vara.ContentsOf(itableptr_obj, Assembler.CliType.native_int), iface_ti_obj));
-                    il.tacs.Add(do_loop);
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), itableptr_obj, itableptr_obj, vara.Const(ass.GetSizeOfIntPtr() * 2, Assembler.CliType.native_int)));
-                    il.tacs.Add(new timple.TimpleBrNode(start_search));
-                    il.tacs.Add(iface_found);
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), ifacemembers, vara.ContentsOf(itableptr_obj, ass.GetSizeOfIntPtr(), Assembler.CliType.native_int), vara.Void()));
-                    il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v_fptr, vara.ContentsOf(ifacemembers, offset_within_interface, Assembler.CliType.native_int), vara.Void()));*/
+                    int start_search = state.next_blk++;
+                    int do_loop = state.next_blk++;
+                    int iface_found = state.next_blk++;
+                    string l_start_search = "L" + start_search.ToString();
+                    string l_do_loop = "L" + do_loop.ToString();
+                    string l_iface_found = "L" + iface_found.ToString();
+
+                    il.il.tybel.Add(new tybel.LabelNode(l_start_search, true));
+                    ass.ThrowIf(state, il.stack_vars_before, new libasm.hardware_contentsof { base_loc = t2, size = ass.GetSizeOfPointer() },
+                        new libasm.const_location { c = 0 },
+                        new libasm.hardware_addressoflabel("sthrow", false),
+                        new libasm.const_location { c = Assembler.throw_MissingMethodException },
+                        Assembler.CliType.native_int, ThreeAddressCode.OpName.throweq, il.il.tybel);
+                    ass.BrIf(state, il.stack_vars_before, new libasm.hardware_addressoflabel(l_iface_found, false),
+                        new libasm.hardware_contentsof { base_loc = t2, size = ass.GetSizeOfPointer() },
+                        t1, ThreeAddressCode.OpName.beq, Assembler.CliType.native_int, il.il.tybel);
+                    il.il.tybel.Add(new tybel.LabelNode(l_do_loop, true));
+                    ass.Add(state, il.stack_vars_before, t2, t2, new libasm.const_location { c = ass.GetSizeOfPointer() * 2 }, Assembler.CliType.native_int, il.il.tybel);
+                    ass.Br(state, il.stack_vars_before, new libasm.hardware_addressoflabel(l_start_search, false), il.il.tybel);
+                    il.il.tybel.Add(new tybel.LabelNode(l_iface_found, true));
+                    ass.Assign(state, il.stack_vars_before, t2, 
+                        new libasm.hardware_contentsof { base_loc = t2, const_offset = ass.GetSizeOfPointer(), size = ass.GetSizeOfPointer() },
+                        Assembler.CliType.native_int, il.il.tybel);
+                    fptr = t1;
+                    ass.Assign(state, il.stack_vars_before, fptr, 
+                        new libasm.hardware_contentsof { base_loc = t2, const_offset = offset_within_interface, size = ass.GetSizeOfPointer() }, 
+                        Assembler.CliType.native_int, il.il.tybel);
                 }
                 else
                 {

@@ -86,21 +86,20 @@ namespace libtysila.x86_64.cil
             libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(Assembler.CliType.int32), ass);
             libasm.hardware_location src = new libasm.const_location { c = p };
 
-            x86_64_Assembler.EncMov(ass as x86_64_Assembler, state, dest, src, il.il.tybel);
+            x86_64_Assembler.EncMov(ass as x86_64_Assembler, state, dest, src, Assembler.CliType.int32, il.il.tybel);
 
             il.stack_after.Push(new Signature.Param(BaseType_Type.I4));
         }
 
-        public static void ldnull(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        public static void tybel_ldnull(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            vara v_c = vara.Const((IntPtr)0, Assembler.CliType.O);
-            vara v = vara.Logical(next_variable++, Assembler.CliType.O);
-            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.assign), v, v_c, vara.Void()));
+            libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(Assembler.CliType.O), ass);
+            libasm.hardware_location src = new libasm.const_location { c = 0 };
+
+            x86_64_Assembler.EncMov(ass as x86_64_Assembler, state, dest, src, Assembler.CliType.O, il.il.tybel);
 
             il.stack_after.Push(new Signature.Param(BaseType_Type.Object));
-            il.stack_vars_after.Push(v);
         }
     }
 }

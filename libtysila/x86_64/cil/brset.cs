@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using libtysila.frontend.cil;
 using libasm;
+using libtysila.x86_64;
 
 namespace libtysila.x86_64.cil
 {
@@ -66,87 +67,45 @@ namespace libtysila.x86_64.cil
                     break;
             }
 
-            Assembler.CliType a_ct = a_p.CliType(ass);
-            Assembler.CliType b_ct = b_p.CliType(ass);
+            Assembler.CliType a_ct = ass.ResolveNativeInt(a_p.CliType(ass));
+            Assembler.CliType b_ct = ass.ResolveNativeInt(b_p.CliType(ass));
 
             x86_64_Assembler a = ass as x86_64_Assembler;
 
             a_loc = x86_64_Assembler.ResolveStackLoc(a, state, a_loc);
             b_loc = x86_64_Assembler.ResolveStackLoc(a, state, b_loc);
 
-            if(a_p.CliType(ass) != b_p.CliType(ass))
+            if(a_ct != b_ct)
                 throw new Exception("Mimatched datatypes on " + il.ToString() + ": " + a_p.ToString() + " and " + b_p.ToString());
 
-            switch(a_p.CliType(ass))
-            {
-                case Assembler.CliType.int32:
-                case Assembler.CliType.int64:
-                case Assembler.CliType.native_int:
-                    if (!(a_loc is x86_64_gpr) && !(b_loc is x86_64_gpr))
-                    {
-                        if (!(((a_loc is hardware_contentsof) || (a_loc is hardware_stackloc)) && (b_loc is const_location)))
-                        {
-                            x86_64_Assembler.EncMov(ass as x86_64_Assembler, state, x86_64_Assembler.Rax, a_loc, il.il.tybel);
-                            a_loc = x86_64_Assembler.Rax;
-                        }
-                    }
-                    break;
-
-                default:
-                    throw new NotImplementedException();
-            }
-
-            x86_64_asm.opcode cmp_op;
-            switch(a_p.CliType(ass))
-            {
-                case Assembler.CliType.int32:
-                    cmp_op = x86_64_asm.opcode.CMPL;
-                    break;
-                case Assembler.CliType.int64:
-                    if(a.ia == x86_64_Assembler.IA.i586)
-                        throw new NotImplementedException();
-                    else
-                        cmp_op = x86_64_asm.opcode.CMPQ;
-                    break;
-                case Assembler.CliType.native_int:
-                    if(a.ia == x86_64_Assembler.IA.i586)
-                        cmp_op = x86_64_asm.opcode.CMPL;
-                    else
-                        cmp_op = x86_64_asm.opcode.CMPQ;
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
-
-            a.ChooseInstruction(cmp_op, il.il.tybel, vara.MachineReg(a_loc), vara.MachineReg(b_loc));
-
-            x86_64_asm.opcode setbr_op;
+            /* decide on the br/set opcode */
+            ThreeAddressCode.OpName op = ThreeAddressCode.OpName.invalid;
             bool is_set = false;
             switch (il.il.opcode)
             {
                 case 0xfe01:
                     // ceq
-                    setbr_op = x86_64_asm.opcode.SETZ;
+                    op = ThreeAddressCode.OpName.seteq;
                     is_set = true;
                     break;
                 case 0xfe02:
                     // cgt
-                    setbr_op = x86_64_asm.opcode.SETNLE;
+                    op = ThreeAddressCode.OpName.setg;
                     is_set = true;
                     break;
                 case 0xfe03:
                     // cgt.un
-                    setbr_op = x86_64_asm.opcode.SETNBE;
+                    op = ThreeAddressCode.OpName.seta;
                     is_set = true;
                     break;
                 case 0xfe04:
                     // clt
-                    setbr_op = x86_64_asm.opcode.SETL;
+                    op = ThreeAddressCode.OpName.setl;
                     is_set = true;
                     break;
                 case 0xfe05:
                     // clt.un
-                    setbr_op = x86_64_asm.opcode.SETB;
+                    op = ThreeAddressCode.OpName.setb;
                     is_set = true;
                     break;
                 default:
@@ -158,43 +117,43 @@ namespace libtysila.x86_64.cil
                         case Opcode.SingleOpcodes.brfalse_s:
                         case Opcode.SingleOpcodes.beq:
                         case Opcode.SingleOpcodes.beq_s:
-                            setbr_op = x86_64_asm.opcode.JZ;
+                            op = ThreeAddressCode.OpName.beq;
                             break;
                         case Opcode.SingleOpcodes.bge:
                         case Opcode.SingleOpcodes.bge_s:
-                            setbr_op = x86_64_asm.opcode.JNL;
+                            op = ThreeAddressCode.OpName.bge;
                             break;
                         case Opcode.SingleOpcodes.bge_un:
                         case Opcode.SingleOpcodes.bge_un_s:
-                            setbr_op = x86_64_asm.opcode.JNB;
+                            op = ThreeAddressCode.OpName.bge_un;
                             break;
                         case Opcode.SingleOpcodes.bgt:
                         case Opcode.SingleOpcodes.bgt_s:
-                            setbr_op = x86_64_asm.opcode.JNLE;
+                            op = ThreeAddressCode.OpName.bg;
                             break;
                         case Opcode.SingleOpcodes.bgt_un:
                         case Opcode.SingleOpcodes.bgt_un_s:
-                            setbr_op = x86_64_asm.opcode.JNBE;
+                            op = ThreeAddressCode.OpName.bg_un;
                             break;
                         case Opcode.SingleOpcodes.ble:
                         case Opcode.SingleOpcodes.ble_s:
-                            setbr_op = x86_64_asm.opcode.JLE;
+                            op = ThreeAddressCode.OpName.ble;
                             break;
                         case Opcode.SingleOpcodes.ble_un:
                         case Opcode.SingleOpcodes.ble_un_s:
-                            setbr_op = x86_64_asm.opcode.JBE;
+                            op = ThreeAddressCode.OpName.ble_un;
                             break;
                         case Opcode.SingleOpcodes.blt:
                         case Opcode.SingleOpcodes.blt_s:
-                            setbr_op = x86_64_asm.opcode.JL;
+                            op = ThreeAddressCode.OpName.bl;
                             break;
                         case Opcode.SingleOpcodes.blt_un:
                         case Opcode.SingleOpcodes.blt_un_s:
-                            setbr_op = x86_64_asm.opcode.JB;
+                            op = ThreeAddressCode.OpName.bl_un;
                             break;
                         case Opcode.SingleOpcodes.bne_un:
                         case Opcode.SingleOpcodes.bne_un_s:
-                            setbr_op = x86_64_asm.opcode.JNZ;
+                            op = ThreeAddressCode.OpName.bne;
                             break;
                         default:
                             throw new NotSupportedException();
@@ -202,22 +161,145 @@ namespace libtysila.x86_64.cil
                     break;
             }
 
+            /* determine the target */
+            libasm.hardware_location loc_target;
             if (is_set)
             {
-                a.ChooseInstruction(setbr_op, il.il.tybel, vara.MachineReg(x86_64_Assembler.Rax));
-                a.ChooseInstruction(x86_64_asm.opcode.MOVZXB, il.il.tybel, vara.MachineReg(x86_64_Assembler.Rax), vara.MachineReg(x86_64_Assembler.Rax));
-
-                libasm.hardware_location ret_loc = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.I4), ass);
-                a.Assign(state, il.stack_vars_before, ret_loc, x86_64_Assembler.Rax, Assembler.CliType.int32, il.il.tybel);
-
+                loc_target = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.I4), ass);
                 il.stack_after.Push(new Signature.Param(BaseType_Type.I4));
             }
             else
             {
                 int il_target = il.il.il_offset_after + il.il.inline_int;
                 CilNode target = state.offset_map[il_target];
-                a.ChooseInstruction(setbr_op, il.il.tybel, vara.Label("L" + target.il_label.ToString(), false));
+                loc_target = new hardware_addressoflabel("L" + target.il_label.ToString(), false);
+            }
+
+            ass.BrIf(state, il.stack_vars_before, loc_target, a_loc, b_loc, op, a_ct, il.il.tybel);
+        }
+    }
+}
+
+namespace libtysila
+{
+    partial class x86_64_Assembler
+    {
+        internal override void BrIf(Encoder.EncoderState state, Stack regs_in_use, hardware_location br_target, hardware_location a_loc, hardware_location b_loc, ThreeAddressCode.OpName op, CliType dt, List<tybel.Node> ret)
+        {
+            a_loc = ResolveStackLoc(this, state, a_loc);
+            b_loc = ResolveStackLoc(this, state, b_loc);
+            br_target = ResolveStackLoc(this, state, br_target);
+            switch (dt)
+            {
+                case Assembler.CliType.int32:
+                case Assembler.CliType.int64:
+                case Assembler.CliType.native_int:
+                    if (!(a_loc is x86_64_gpr) && !(b_loc is x86_64_gpr))
+                    {
+                        if (!(((a_loc is hardware_contentsof) || (a_loc is hardware_stackloc)) && (b_loc is const_location)))
+                        {
+                            x86_64_Assembler.EncMov(this, state, x86_64_Assembler.Rax, a_loc, dt, ret);
+                            a_loc = x86_64_Assembler.Rax;
+                        }
+                    }
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+
+            x86_64_asm.opcode cmp_op;
+            dt = ResolveNativeInt(dt);
+            switch (dt)
+            {
+                case Assembler.CliType.int32:
+                    cmp_op = x86_64_asm.opcode.CMPL;
+                    break;
+                case Assembler.CliType.int64:
+                    if (ia == x86_64_Assembler.IA.i586)
+                        throw new NotImplementedException();
+                    else
+                        cmp_op = x86_64_asm.opcode.CMPQ;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            ChooseInstruction(cmp_op, ret, vara.MachineReg(a_loc), vara.MachineReg(b_loc));
+
+            x86_64_asm.opcode setbr_op;
+            bool is_set = false;
+            switch (op)
+            {
+                case ThreeAddressCode.OpName.seteq:
+                    setbr_op = x86_64_asm.opcode.SETZ;
+                    is_set = true;
+                    break;
+                case ThreeAddressCode.OpName.setg:
+                    setbr_op = x86_64_asm.opcode.SETNLE;
+                    is_set = true;
+                    break;
+                case ThreeAddressCode.OpName.seta:
+                    setbr_op = x86_64_asm.opcode.SETNBE;
+                    is_set = true;
+                    break;
+                case ThreeAddressCode.OpName.setl:
+                    setbr_op = x86_64_asm.opcode.SETL;
+                    is_set = true;
+                    break;
+                case ThreeAddressCode.OpName.setb:
+                    setbr_op = x86_64_asm.opcode.SETB;
+                    is_set = true;
+                    break;
+                case ThreeAddressCode.OpName.beq:
+                    setbr_op = x86_64_asm.opcode.JZ;
+                    break;
+                case ThreeAddressCode.OpName.bge:
+                    setbr_op = x86_64_asm.opcode.JNL;
+                    break;
+                case ThreeAddressCode.OpName.bge_un:
+                    setbr_op = x86_64_asm.opcode.JNB;
+                    break;
+                case ThreeAddressCode.OpName.bg:
+                    setbr_op = x86_64_asm.opcode.JNLE;
+                    break;
+                case ThreeAddressCode.OpName.bg_un:
+                    setbr_op = x86_64_asm.opcode.JNBE;
+                    break;
+                case ThreeAddressCode.OpName.ble:
+                    setbr_op = x86_64_asm.opcode.JLE;
+                    break;
+                case ThreeAddressCode.OpName.ble_un:
+                    setbr_op = x86_64_asm.opcode.JBE;
+                    break;
+                case ThreeAddressCode.OpName.bl:
+                    setbr_op = x86_64_asm.opcode.JL;
+                    break;
+                case ThreeAddressCode.OpName.bl_un:
+                    setbr_op = x86_64_asm.opcode.JB;
+                    break;
+                case ThreeAddressCode.OpName.bne:
+                    setbr_op = x86_64_asm.opcode.JNZ;
+                    break;
+                default:
+                    throw new NotSupportedException();
+            }
+
+            if (is_set)
+            {
+                ChooseInstruction(setbr_op, ret, vara.MachineReg(x86_64_Assembler.Rax));
+                ChooseInstruction(x86_64_asm.opcode.MOVZXB, ret, vara.MachineReg(x86_64_Assembler.Rax), vara.MachineReg(x86_64_Assembler.Rax));
+
+                Assign(state, regs_in_use, br_target, x86_64_Assembler.Rax, Assembler.CliType.int32, ret);
+            }
+            else
+            {
+                if(!(br_target is libasm.hardware_addressoflabel))
+                    throw new Exception("BrIf without addressoflabel as target");
+                libasm.hardware_addressoflabel aol = br_target as libasm.hardware_addressoflabel;
+                ChooseInstruction(setbr_op, ret, vara.Label(aol.label, aol.const_offset, aol.is_object));
             }
         }
     }
 }
+

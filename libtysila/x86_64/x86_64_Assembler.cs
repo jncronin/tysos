@@ -352,6 +352,7 @@ namespace libtysila
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_7)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_m1)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_s)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldnull)].TybelEncoder = x86_64.cil.ldc.tybel_ldnull;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)].TybelEncoder = x86_64.cil.ret.tybel_ret;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ceq)].TybelEncoder = x86_64.cil.brset.tybel_brset;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.cgt)].TybelEncoder = x86_64.cil.brset.tybel_brset;
@@ -406,6 +407,7 @@ namespace libtysila
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ldarg)].TybelEncoder = x86_64.cil.arg.tybel_ldarg;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarga_s)].TybelEncoder = x86_64.cil.arg.tybel_ldarga;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ldarga)].TybelEncoder = x86_64.cil.arg.tybel_ldarga;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.endfinally)].TybelEncoder = x86_64.cil.exceptions.tybel_endfinally;
         }
 
         public static Assembler.Architecture[] ListAssemblerArchitectures()
@@ -1397,10 +1399,18 @@ namespace libtysila
 
         internal override void Call(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location retval, hardware_location[] p, CallConv cc, List<tybel.Node> ret)
         {
+            bool returns = true;
+            if (cc.MethodSig != null)
+                returns = cc.MethodSig.Method.Returns;
+
             // Save used locations
-            List<libasm.hardware_location> save_regs = new List<hardware_location>(util.Intersect<libasm.hardware_location>(regs_in_use.UsedLocations, cc.CallerPreservesLocations));
-            for (int i = 0; i < save_regs.Count; i++)
-                ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(save_regs[i]));
+            List<libasm.hardware_location> save_regs = null;
+            if (returns)
+            {
+                save_regs = new List<hardware_location>(util.Intersect<libasm.hardware_location>(regs_in_use.UsedLocations, cc.CallerPreservesLocations));
+                for (int i = 0; i < save_regs.Count; i++)
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(save_regs[i]));
+            }
 
             // Push arguments
             if (cc.StackSpaceUsed != 0)
@@ -1414,21 +1424,79 @@ namespace libtysila
             // Execute call
             ChooseInstruction(x86_64.x86_64_asm.opcode.CALL, ret, vara.MachineReg(dest));
 
-            // Store return value
-            if (retval != null)
-                EncMov(this, state, retval, cc.ReturnValue, ret);
+            if (returns)
+            {
+                // Store return value
+                if (retval != null)
+                    EncMov(this, state, retval, cc.ReturnValue, ret);
 
-            // Restore stack
-            if (cc.StackSpaceUsed != 0)
-                ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.ADDL : x86_64.x86_64_asm.opcode.ADDQ, ret, vara.MachineReg(Rsp), vara.Const(cc.StackSpaceUsed));
+                // Restore stack
+                if (cc.StackSpaceUsed != 0)
+                    ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.ADDL : x86_64.x86_64_asm.opcode.ADDQ, ret, vara.MachineReg(Rsp), vara.Const(cc.StackSpaceUsed));
 
-            // Restore saved args
-            for (int i = save_regs.Count - 1; i >= 0; i--)
-                ChooseInstruction(x86_64.x86_64_asm.opcode.POP, ret, vara.MachineReg(save_regs[i]));
+                // Restore saved args
+                for (int i = save_regs.Count - 1; i >= 0; i--)
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.POP, ret, vara.MachineReg(save_regs[i]));
+            }
         }
 
         internal override void Assign(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, CliType dt, List<tybel.Node> ret)
         {
+            /* Get the size of a value-type argument */
+            if (dt == CliType.vt)
+            {
+                dest = ResolveStackLoc(this, state, dest);
+                src = ResolveStackLoc(this, state, src);
+                int d_size = 0, s_size = 0;
+                if (dest is hardware_contentsof)
+                    d_size = ((hardware_contentsof)dest).size;
+                if (src is hardware_contentsof)
+                    s_size = ((hardware_contentsof)src).size;
+
+                int size = d_size;
+                if (s_size > d_size)
+                    size = s_size;
+
+                if (size > GetSizeOfPointer())
+                {
+                    int mov_size;
+                    CliType mov_dt;
+                    if (ia == IA.x86_64 && size % 8 == 0)
+                    {
+                        mov_size = 8;
+                        mov_dt = CliType.int64;
+                    }
+                    else
+                    {
+                        mov_size = 4;
+                        mov_dt = CliType.int32;
+                    }
+
+                    if ((dest is hardware_contentsof) && (src is hardware_contentsof))
+                    {
+                        hardware_contentsof d_hco = dest as hardware_contentsof;
+                        hardware_contentsof s_hco = src as hardware_contentsof;
+
+                        for (int i = 0; i < size; i += mov_size)
+                        {
+                            hardware_contentsof d_hco2 = new hardware_contentsof { base_loc = d_hco.base_loc, const_offset = d_hco.const_offset + i, size = mov_size };
+                            hardware_contentsof s_hco2 = new hardware_contentsof { base_loc = s_hco.base_loc, const_offset = s_hco.const_offset + i, size = mov_size };
+                            EncMov(this, state, d_hco2, s_hco2, mov_dt, ret);
+                        }
+                        return;
+                    }
+                    else
+                        throw new NotSupportedException();
+                }
+                else
+                {
+                    if (size > 4)
+                        dt = CliType.int64;
+                    else
+                        dt = CliType.int32;
+                }
+            }
+
             EncMov(this, state, dest, src, dt, ret);
         }
 
@@ -1593,7 +1661,7 @@ namespace libtysila
 
         internal override void LoadAddress(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location obj, List<tybel.Node> ret)
         {
-            throw new NotImplementedException();
+            EncLea(this, state, dest, obj, ret);
         }
 
         internal override void Enter(frontend.cil.Encoder.EncoderState state, MethodAttributes attrs, List<tybel.Node> ret)
@@ -1752,6 +1820,9 @@ namespace libtysila
                 case ThreeAddressCode.OpName.throwge_un:
                     jmp_op = x86_64.x86_64_asm.opcode.JB;
                     break;
+                case ThreeAddressCode.OpName.throweq:
+                    jmp_op = x86_64.x86_64_asm.opcode.JNZ;
+                    break;
                 default:
                     throw new NotImplementedException();
             }
@@ -1762,6 +1833,22 @@ namespace libtysila
             Call(state, regs_in_use, throw_dest, null, new hardware_location[] { throw_obj }, callconv_throw, ret);
 
             ret.Add(new tybel.LabelNode("L" + success_block.ToString(), true));
+        }
+
+        internal override void Br(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, List<tybel.Node> ret)
+        {
+            if (!(dest is hardware_addressoflabel))
+                throw new Exception("dest is not hardware_addressoflabel");
+            hardware_addressoflabel aol = dest as hardware_addressoflabel;
+            ChooseInstruction(x86_64.x86_64_asm.opcode.JMP, ret, vara.Label(aol.label, aol.is_object));
+        }
+
+        internal override void BrEhclause(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, List<tybel.Node> ret)
+        {
+            if (!(dest is hardware_addressoflabel))
+                throw new Exception("dest is not hardware_addressoflabel");
+            hardware_addressoflabel aol = dest as hardware_addressoflabel;
+            ChooseInstruction(x86_64.x86_64_asm.opcode.CALL, ret, vara.Label(aol.label, aol.is_object));
         }
     }
 }

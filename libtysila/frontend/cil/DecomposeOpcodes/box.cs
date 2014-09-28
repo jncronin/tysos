@@ -26,12 +26,14 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
 {
     internal class box
     {
-        internal static CilNode Decompose_box(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        internal static CilNode Decompose_box(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Assembler.MethodAttributes attrs)
         {
             // Don't box reference types
-            Signature.Param unbox_type = n.il.stack_before.Peek();
+            Signature.Param unbox_type;
+            if (n.il.stack_before != null)
+                unbox_type = n.il.stack_before.Peek();
+            else
+                unbox_type = n.stack_before.Peek();
             Metadata.TypeDefRow tdr = Metadata.GetTypeDef(unbox_type.Type, ass);
             if ((tdr != null) && tdr.IsValueType(ass))
             {
@@ -74,17 +76,98 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
             }
         }
 
-        internal static CilNode Decompose_unbox(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        internal static CilNode Decompose_unboxany(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Assembler.MethodAttributes attrs)
         {
-            throw new NotImplementedException();
-            timple.BaseNode first = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[0xfd23], inline_tok = n.il.inline_tok } });
-            n.Remove();
+            Signature.Param boxed_type = null;
+            if (n.il.stack_before != null)
+                boxed_type = n.il.stack_before.Peek();
+            else
+                boxed_type = n.stack_before.Peek();
 
-            n.replaced_by = new List<CilNode> { (CilNode)first };
-            return (CilNode)first;
+            Assembler.TypeToCompile T;
+            if (n.il.inline_tok is TTCToken)
+                T = ((TTCToken)n.il.inline_tok).ttc;
+            else
+                T = Metadata.GetTTC(n.il.inline_tok, mtc.GetTTC(ass), mtc.msig, ass);
+
+            /* If it is not a value type then just do castclass */
+            if (T.type.IsValueType(ass) == false)
+                return isinst.Decompose_castclass(n, ass, mtc, ref next_block, attrs);
+
+            /* Build the field object */
+            Signature.Param boxed_tsig = new Signature.Param(new Signature.BoxedType(T.tsig.Type), ass);
+            Assembler.TypeToCompile boxed_ttc = new Assembler.TypeToCompile { _ass = ass, tsig = boxed_type, type = T.type };
+            Assembler.FieldToCompile value_ftc = new Assembler.FieldToCompile
+            {
+                _ass = ass,
+                definedin_tsig = boxed_ttc.tsig,
+                definedin_type = boxed_ttc.type,
+                field = new Metadata.FieldRow { Name = "m_value" },
+                fsig = T.tsig
+            };
+
+            /* First, check the item on the stack is of the appropriate type, then
+             * load the field value
+             * 
+             *                                          ..., obj
+             * dup                                      ..., obj, obj
+             * castclassex                              ..., obj, result
+             * throwfalse                               ..., obj
+             * ldfld                                    ..., value
+             */
+            timple.BaseNode i_1 = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+            timple.BaseNode i_2 = i_1.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.castclassex)], inline_tok = n.il.inline_tok } });
+            timple.BaseNode i_3 = i_2.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.throwfalse)], inline_int = Assembler.throw_InvalidCastException } });
+            timple.BaseNode i_4 = i_3.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)], inline_tok = new FTCToken { ftc = value_ftc } } });
+
+            n.Remove();
+            n.replaced_by = new List<CilNode> { (CilNode)i_1, (CilNode)i_2, (CilNode)i_3, (CilNode)i_4 };
+
+            return (CilNode)i_1;
         }
 
+        internal static CilNode Decompose_unbox(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param boxed_type = null;
+            if (n.il.stack_before != null)
+                boxed_type = n.il.stack_before.Peek();
+            else
+                boxed_type = n.stack_before.Peek();
+
+            if (!(boxed_type.Type is Signature.BoxedType))
+                throw new InvalidCastException("unbox specified without boxed value type on the stack");
+            Signature.BoxedType bt = boxed_type.Type as Signature.BoxedType;
+
+            Assembler.TypeToCompile T;
+            if (n.il.inline_tok is TTCToken)
+                T = ((TTCToken)n.il.inline_tok).ttc;
+            else
+                T = Metadata.GetTTC(n.il.inline_tok, mtc.GetTTC(ass), mtc.msig, ass);
+
+            if (T.type.IsValueType(ass) == false)
+                throw new InvalidCastException("unbox specified with T being non-value type");
+
+            if (ass.Options.VerifiableCIL)
+            {
+                if (!Signature.ParamCompare(boxed_type, T.tsig, ass))
+                    throw new InvalidCastException("unbox: incompatible types between stack type and inline token: " +
+                        boxed_type.ToString() + " and " + T.tsig.ToString());
+            }
+
+            Assembler.TypeToCompile boxed_ttc = new Assembler.TypeToCompile { _ass = ass, tsig = boxed_type, type = T.type };
+            Assembler.FieldToCompile value_ftc = new Assembler.FieldToCompile
+            {
+                _ass = ass,
+                definedin_tsig = boxed_ttc.tsig,
+                definedin_type = boxed_ttc.type,
+                field = new Metadata.FieldRow { Name = "m_value" },
+                fsig = T.tsig
+            };
+
+            timple.BaseNode t_1 = new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldflda)], inline_tok = new FTCToken { ftc = value_ftc } } };
+            n.Remove();
+            n.replaced_by = new List<CilNode> { (CilNode)t_1 };
+            return (CilNode)t_1;
+        }
     }
 }

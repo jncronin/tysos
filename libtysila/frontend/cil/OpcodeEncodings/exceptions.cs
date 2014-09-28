@@ -64,6 +64,36 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.tacs.Add(new timple.TimpleBrNode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.br), -1, -1, vara.Void(), vara.Void()));                               
         }
 
+        public static void tybel_leave(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* Empty the evalation stack */
+            il.stack_after.Clear();
+            il.stack_vars_after.Clear();
+
+            /* Call any finally blocks */
+            if (mtc.meth.Body.exceptions != null)
+            {
+                foreach (Metadata.MethodBody.EHClause ehclause in mtc.meth.Body.exceptions)
+                {
+                    if (ehclause.IsFinally && (il.il.il_offset >= (int)ehclause.TryOffset) && (il.il.il_offset < (int)(ehclause.TryOffset + ehclause.TryLength)))
+                    {
+                        // we have found a handling finally block
+                        // we should only call the handler if the target is outside of the try block
+                        if (((il.il.il_offset_after + il.il.inline_int) < (int)ehclause.TryOffset) || ((il.il.il_offset_after + il.il.inline_int) >= (int)(ehclause.TryOffset + ehclause.TryLength)))
+                        {
+                            CilNode eh_target = state.offset_map[(int)ehclause.HandlerOffset];
+                            ass.BrEhclause(state, il.stack_vars_before, new libasm.hardware_addressoflabel("L" + eh_target.il_label.ToString(), false), il.il.tybel);
+                        }
+                    }
+                }
+            }
+
+            /* Branch to the target */
+            CilNode target = state.offset_map[il.il.il_offset_after + il.il.inline_int];
+            ass.Br(state, il.stack_vars_before, new libasm.hardware_addressoflabel("L" + target.il_label.ToString(), false), il.il.tybel);
+        }
+
         internal static void eh_store_lvs_las(Assembler.MethodToCompile mtc, InstructionLine il, List<vara> lv_vars, List<vara> la_vars)
         {
             if (mtc.meth.Body.exceptions == null || mtc.meth.Body.exceptions.Count == 0)
@@ -100,6 +130,16 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.ldmethinfo), v_methinfo, vara.Void(), vara.Void()));
             il.tacs.Add(new timple.TimpleCallNode(ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call), vara.Void(), vara.Label("throw", false),
                 new vara[] { v_exception_obj }, ass.msig_throw));
+        }
+
+        public static void tybel_throw(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location loc_except_obj = il.stack_vars_after.Pop(ass);
+            il.stack_after.Pop();
+
+            ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("throw", false), null,
+                new libasm.hardware_location[] { loc_except_obj }, ass.callconv_throw, il.il.tybel);
         }
     }
 }

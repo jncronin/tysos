@@ -27,9 +27,7 @@ namespace libtysila.frontend.cil
     class DecomposeComplexOpcodes
     {
         internal static Dictionary<int, DecomposeFunc> DecomposeOpcodeList = new Dictionary<int, DecomposeFunc>(new libtysila.GenericEqualityComparer<int>());
-        internal delegate CilNode DecomposeFunc(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs);
+        internal delegate CilNode DecomposeFunc(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Assembler.MethodAttributes attrs);
 
         static DecomposeComplexOpcodes()
         {
@@ -37,18 +35,22 @@ namespace libtysila.frontend.cil
             DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.isinst)] = DecomposeOpcodes.isinst.Decompose_isinst;
             DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.box)] = DecomposeOpcodes.box.Decompose_box;
             DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.unbox)] = DecomposeOpcodes.box.Decompose_unbox;
+            DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.unbox_any)] = DecomposeOpcodes.box.Decompose_unboxany;
+            DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.castclass)] = DecomposeOpcodes.isinst.Decompose_castclass;
         }
 
-        internal static CilNode DecomposeComplexOpts(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable, ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs, Assembler.MethodAttributes attrs)
+        internal static CilNode DecomposeComplexOpts(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Assembler.MethodAttributes attrs)
         {
             // Split complex operations into simpler ones
             DecomposeFunc df;
             if (DecomposeOpcodeList.TryGetValue(n.il.opcode, out df))
             {
-                CilNode ret = df(n, ass, mtc, ref next_variable, ref next_block, la_vars, lv_vars, las, lvs, attrs);
+                CilNode ret = df(n, ass, mtc, ref next_block, attrs);
 
                 if (ret != n)
                 {
+                    ret.stack_before = n.stack_before;
+                    ret.stack_vars_before = n.stack_vars_before;
                     ret.il.stack_before = n.il.stack_before;
                     ret.il.stack_vars_before = n.il.stack_vars_before;
                 }

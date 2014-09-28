@@ -27,9 +27,7 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
 {
     internal class newobj
     {
-        internal static CilNode Decompose_newobj(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        internal static CilNode Decompose_newobj(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Assembler.MethodAttributes attrs)
         {
             /* The normal operation of newobj (for reference types) is to determine the size of the type
              * by the Layout mechanism, then call gcmalloc to get some memory for it and finally call

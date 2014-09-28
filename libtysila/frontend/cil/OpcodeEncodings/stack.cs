@@ -33,5 +33,47 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after.Push(il.stack_after.Peek());
             il.stack_vars_after.Push(il.stack_vars_after.Peek());
         }
+
+        public static void tybel_dup(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_type = il.stack_after.Peek();
+            il.stack_after.Push(p_type);
+            libasm.hardware_location loc_src = il.stack_vars_after.GetAddressOf(il.stack_before.Count - 1, ass);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_type, ass);
+            ass.Assign(state, il.stack_vars_before, loc_dest, loc_src, p_type.CliType(ass), il.il.tybel);
+        }
+
+        public static void tybel_flip(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            int opcode = il.il.opcode.opcode;
+            int a = 0, b = 0;
+            if (opcode == Opcode.OpcodeVal(Opcode.DoubleOpcodes.flip))
+            {
+                a = 1;
+                b = 2;
+            }
+            else if (opcode == Opcode.OpcodeVal(Opcode.DoubleOpcodes.flip3))
+            {
+                a = 1;
+                b = 3;
+            }
+            else throw new Exception("Invalid flip opcode: " + il.il.opcode.ToString());
+
+            /* Flip the param stack */
+            Signature.Param old = il.stack_after[il.stack_after.Count - a];
+            il.stack_after[il.stack_after.Count - a] = il.stack_after[il.stack_after.Count - b];
+            il.stack_after[il.stack_after.Count - b] = old;
+
+            /* Flip the hardware stack */
+            libasm.hardware_location t1 = ass.GetTemporary();
+            Assembler.CliType ct = old.CliType(ass);
+            libasm.hardware_location loc_a = il.stack_vars_after.GetAddressOf(il.stack_after.Count - a, ass);
+            libasm.hardware_location loc_b = il.stack_vars_after.GetAddressOf(il.stack_after.Count - b, ass);
+            ass.Assign(state, il.stack_vars_before, t1, loc_a, ct, il.il.tybel);
+            ass.Assign(state, il.stack_vars_before, loc_a, loc_b, ct, il.il.tybel);
+            ass.Assign(state, il.stack_vars_before, loc_b, t1, ct, il.il.tybel);
+        }
     }
 }

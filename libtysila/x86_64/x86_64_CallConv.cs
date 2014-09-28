@@ -92,6 +92,7 @@ namespace libtysila
 
             ret.StackSpaceUsed = 0;
             ret.ReturnValue = null;
+            ret.MethodSig = mtc.msig;
 
             return ret;
         }
@@ -238,6 +239,7 @@ namespace libtysila
             }
 
             ret.StackSpaceUsed = stack_pos;
+            ret.MethodSig = mtc.msig;
 
             return ret;
         }
@@ -394,6 +396,8 @@ namespace libtysila
                 else
                     ret.CallerPreservesLocations = cdecl_x86_64_preserves_with_rax;
             }
+
+            ret.MethodSig = mtc.msig;
 
             return ret;
         }

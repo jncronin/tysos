@@ -33,7 +33,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             int_calls = new Dictionary<string, Opcode.TybelEncodeFunc>();
 
             int_calls["_Zu1SM_0_9get_Chars_Rc_P2u1ti"] = string_getChars;
-            int_calls["_Zu1SM_0_10get_Length_Ri_P1u1t"] = null;
+            int_calls["_Zu1SM_0_10get_Length_Ri_P1u1t"] = string_getLength;
         }
 
         private static bool enc_intcall(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
@@ -71,6 +71,23 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             return intcall != null;
         }
 
+        static void string_getLength(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location loc_str = il.stack_vars_before.Pop(ass);
+            Signature.Param p_str = il.stack_before.Pop();
+
+            libasm.hardware_location t1 = ass.GetTemporary();
+
+            libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.I4), ass);
+
+            ass.Assign(state, il.stack_vars_before, t1, loc_str, Assembler.CliType.native_int, il.il.tybel);
+            ass.Assign(state, il.stack_vars_before, t1, new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetStringFieldOffset(Assembler.StringFields.length), size = 4 }, Assembler.CliType.int32, il.il.tybel);
+            ass.Assign(state, il.stack_vars_before, dest, t1, Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(new Signature.Param(BaseType_Type.I4));
+        }
+
         static void string_getChars(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
@@ -81,7 +98,6 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             Signature.Param p_str = il.stack_before.Pop();
 
             libasm.hardware_location t1 = ass.GetTemporary();
-            libasm.hardware_location t2 = ass.GetTemporary();
             libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.Char), ass);
 
             ass.Add(state, il.stack_vars_before, t1, loc_str, new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.length) }, Assembler.CliType.native_int, il.il.tybel);

@@ -155,6 +155,7 @@
     <Compile Include="Version.cs" />
     <Compile Include="x86_64\cil\conv.cs" />
     <Compile Include="x86_64\cil\arg.cs" />
+    <Compile Include="x86_64\cil\exceptions.cs" />
     <Compile Include="x86_64\cil\ldc.cs" />
     <Compile Include="x86_64\cil\loc.cs" />
     <Compile Include="x86_64\cil\ret.cs" />

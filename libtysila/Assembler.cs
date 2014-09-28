@@ -81,11 +81,14 @@ namespace libtysila
         internal abstract void BinNumOp(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, ThreeAddressCode.Op op, List<tybel.Node> ret);
         internal abstract void Conv(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location src, Signature.BaseType dest_type, Signature.BaseType src_type, bool signed, List<tybel.Node> ret);
         internal abstract void ThrowIf(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location a, libasm.hardware_location b, libasm.hardware_location throw_dest, libasm.hardware_location throw_obj, CliType dt, ThreeAddressCode.OpName op, List<tybel.Node> ret);
+        internal abstract void BrEhclause(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, List<tybel.Node> ret);
+        internal abstract void Br(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, List<tybel.Node> ret);
+        internal abstract void BrIf(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location br_target, libasm.hardware_location a, libasm.hardware_location b, ThreeAddressCode.OpName op, CliType dt, List<tybel.Node> ret);
 
         public abstract libasm.hardware_location GetTemporary(Assembler.CliType ct);
         public virtual libasm.hardware_location GetTemporary() { return GetTemporary(CliType.native_int); }
         public abstract libasm.hardware_location GetTemporary2(Assembler.CliType ct);
-        public virtual libasm.hardware_location GetTemporary2() { return GetTemporary(CliType.native_int); }
+        public virtual libasm.hardware_location GetTemporary2() { return GetTemporary2(CliType.native_int); }
 
         internal abstract Dictionary<libasm.hardware_location, libasm.hardware_location> AllocateStackLocations(Assembler.MethodAttributes attrs);
 

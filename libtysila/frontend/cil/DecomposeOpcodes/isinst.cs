@@ -27,15 +27,18 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
 {
     internal class isinst
     {
-        internal static CilNode Decompose_isinst(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        internal static CilNode Decompose_isinst(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Assembler.MethodAttributes attrs)
         {
             timple.BaseNode first = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[0xfd23], inline_tok = n.il.inline_tok } });
             n.Remove();
 
             n.replaced_by = new List<CilNode> { (CilNode)first };
             return (CilNode)first;
+        }
+
+        internal static CilNode Decompose_castclass(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Assembler.MethodAttributes attrs)
+        {
+            throw new NotImplementedException();
         }
     }
 }

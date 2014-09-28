@@ -55,6 +55,8 @@ namespace libtysila
 
         public ThreeAddressCode.Op CallTac;
 
+        public Signature.BaseMethod MethodSig;
+
         public delegate CallConv GetCallConv(Assembler.MethodToCompile meth, StackPOV pov, Assembler ass, ThreeAddressCode call_tac);
     }
 
@@ -66,6 +68,12 @@ namespace libtysila
 
         internal CallConv MakeStaticCall(string call_conv, Signature.Param rettype, List<Signature.Param> paramlist, ThreeAddressCode.Op call_tac)
         {
+            bool returns = true;
+            if (rettype == null)
+            {
+                returns = false;
+                rettype = new Signature.Param(BaseType_Type.Void);
+            }
             return call_convs[call_conv](new MethodToCompile
             {
                 _ass = this,
@@ -80,7 +88,8 @@ namespace libtysila
                     GenParamCount = 0,
                     Params = paramlist,
                     ParamCount = paramlist.Count,
-                    RetType = rettype
+                    RetType = rettype,
+                    Returns = returns
                 }
             }, CallConv.StackPOV.Caller, this, new ThreeAddressCode(call_tac));
         }
@@ -105,7 +114,7 @@ namespace libtysila
         {
             get
             {
-                return MakeStaticCall("default", new Signature.Param(BaseType_Type.Void), new List<Signature.Param> { new Signature.Param(BaseType_Type.Object) }, ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call));
+                return MakeStaticCall("default", null, new List<Signature.Param> { new Signature.Param(BaseType_Type.Object) }, ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call));
             }
         }
 
@@ -121,7 +130,7 @@ namespace libtysila
         {
             get
             {
-                return MakeStaticCall("default", new Signature.Param(BaseType_Type.Void), new List<Signature.Param> { new Signature.Param(BaseType_Type.I4) }, ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call));
+                return MakeStaticCall("default", null, new List<Signature.Param> { new Signature.Param(BaseType_Type.I4) }, ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call));
             }
         }
 

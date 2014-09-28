@@ -30,7 +30,7 @@ namespace libtysila.x86_64.cil
         public static void tybel_ldarg(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            int p = 0;
+            int p = -1;
 
             switch (il.il.opcode.opcode1)
             {
@@ -49,9 +49,17 @@ namespace libtysila.x86_64.cil
                 case Opcode.SingleOpcodes.ldarg_s:
                     p = il.il.inline_int;
                     break;
-                default:
-                    throw new Exception("Unimplemented ldarg opcode: " + il.ToString());
+                case Opcode.SingleOpcodes.double_:
+                    switch(il.il.opcode.opcode2)
+                    {
+                        case Opcode.DoubleOpcodes.ldarg:
+                            p = il.il.inline_int;
+                            break;
+                    }
+                    break;
             }
+            if(p == -1)
+                throw new Exception("Unimplemented ldarg opcode: " + il.ToString());
 
             libasm.hardware_location src = state.la_locs[p];
             libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(state.las[p], ass);

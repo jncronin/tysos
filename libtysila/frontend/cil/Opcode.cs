@@ -329,7 +329,10 @@ namespace libtysila.frontend.cil
         }
         public static int OpcodeVal(DoubleOpcodes op)
         {
-            return (int)op + (((int)SingleOpcodes.double_) << 8);
+            if ((int)op >= 0x20)
+                return (int)op + (((int)SingleOpcodes.tysila) << 8);
+            else
+                return (int)op + (((int)SingleOpcodes.double_) << 8);
         }
 
         public static implicit operator int(Opcode op)

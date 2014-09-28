@@ -148,9 +148,7 @@ namespace libtysila.frontend.cil
 
 
             // TODO
-            //CilNode new_n = DecomposeComplexOpcodes.DecomposeComplexOpts(n, ass, mtc, ref next_variable, ref next_block,
-                    //la_vars, lv_vars, las, lvs, attrs);
-            CilNode new_n = n;
+            CilNode new_n = DecomposeComplexOpcodes.DecomposeComplexOpts(n, ass, mtc, ref state.next_blk, attrs);
 
             if (new_n != n)
             {
@@ -171,7 +169,7 @@ namespace libtysila.frontend.cil
 
             if (n.stack_vars_before.ByteSize > state.largest_var_stack)
                 state.largest_var_stack = n.stack_vars_before.ByteSize;
-            n.il.opcode.TybelEncoder(n, ass, mtc, ref next_block, state, attrs);
+            n.il.opcode.TybelEncoder(n, ass, mtc, ref state.next_blk, state, attrs);
             if (n.stack_vars_after.ByteSize > state.largest_var_stack)
                 state.largest_var_stack = n.stack_vars_after.ByteSize;
 
@@ -356,8 +354,7 @@ namespace libtysila.frontend.cil
                 return;
             visited.Add(n);
 
-            CilNode new_n = DecomposeComplexOpcodes.DecomposeComplexOpts(n, ass, mtc, ref next_variable, ref next_block,
-                    la_vars, lv_vars, las, lvs, attrs);
+            CilNode new_n = DecomposeComplexOpcodes.DecomposeComplexOpts(n, ass, mtc, ref next_block, attrs);
 
             if (new_n != n)
             {
@@ -513,14 +510,27 @@ namespace libtysila.frontend.cil
 
                 if (this_ttc.type.IsValueType(ass))
                 {
-                    /* Value types expect the this pointer to be a managed reference to an instance of the value type (CIL I:13.3) */
+                    /* Value types expect the this pointer to be a managed reference to an instance of the value type (CIL I:13.3).
+                     * 
+                     * However, we (in Assembler.AssembleMethod) rewrite instance methods on boxed virtual types to unbox the
+                     * first argument, then call the method on the managed pointer version.
+                     */
+
+
                     Signature.BaseOrComplexType this_bct = this_ttc.tsig.Type;
                     if (this_bct is Signature.BoxedType)
-                        this_bct = ((Signature.BoxedType)this_bct).Type;
-                    if (this_bct is Signature.ManagedPointer)
+                    {
+                        Signature.Param p_bt = new Signature.Param(this_bct, ass);
+                        las.Add(p_bt);
+                    }
+                    else if (this_bct is Signature.ManagedPointer)
+                    {
                         this_bct = ((Signature.ManagedPointer)this_bct).ElemType;
-                    Signature.Param mptr_type = new Signature.Param(new Signature.ManagedPointer { ElemType = this_bct }, ass);
-                    las.Add(mptr_type);
+                        Signature.Param mptr_type = new Signature.Param(new Signature.ManagedPointer { ElemType = this_bct }, ass);
+                        las.Add(mptr_type);
+                    }
+                    else
+                        throw new Exception("Function on value type with neither managed pointer or boxed type specified");
                 }
                 else
                 {

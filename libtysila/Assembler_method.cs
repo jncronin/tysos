@@ -423,6 +423,15 @@ namespace libtysila
                                         offset += len;
                                         o = s;
                                         break;
+                                    case BaseType_Type.Boolean:
+                                        byte b = car.Value[offset++];
+                                        if (b == 0)
+                                            o = false;
+                                        else if (b == 1)
+                                            o = true;
+                                        else
+                                            throw new Exception("Invalid boolean value in custom attribute: " + b.ToString());
+                                        break;
                                     default:
                                         throw new NotImplementedException();
                                 }
