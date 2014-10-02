@@ -72,5 +72,44 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             ass.Requestor.RequestTypeInfo(dest_ttc);
         }
+
+        public static void tybel_castclassex(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Assembler.TypeToCompile dest_ttc;
+            Signature.Param dest;
+
+            libasm.hardware_location loc_obj = il.stack_vars_after.Pop(ass);
+
+            dest_ttc = Metadata.GetTTC(il.il.inline_tok, mtc.GetTTC(ass), mtc.msig, ass);
+
+            dest = dest_ttc.tsig;
+            if ((dest_ttc.type != null) && (dest_ttc.type.IsValueType(ass)) && (!(dest.Type is Signature.BoxedType)))
+                dest = new Signature.Param(new Signature.BoxedType(dest.Type), ass);
+
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(dest, ass);
+
+            /* See if we can do a compile-time cast */
+            if (ass.can_cast(dest.Type, il.stack_before[il.stack_before.Count - 1].Type))
+            {
+                il.stack_after.Pop();
+                il.stack_after.Push(dest);
+
+                ass.Assign(state, il.stack_vars_before, loc_dest, loc_obj, dest.CliType(ass), il.il.tybel);
+
+                return;
+            }
+
+            /* Else do a runtime dynamic cast */
+            Layout dest_l = Layout.GetTypeInfoLayout(dest_ttc, ass, false);
+            ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("castclassex", false), loc_dest,
+                new libasm.hardware_location[] { loc_obj, new libasm.hardware_addressoflabel(Mangler2.MangleTypeInfo(dest_ttc, ass), true) },
+                ass.callconv_castclassex, il.il.tybel);
+
+            il.stack_after.Pop();
+            il.stack_after.Push(dest);
+
+            ass.Requestor.RequestTypeInfo(dest_ttc);
+        }
     }
 }

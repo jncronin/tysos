@@ -96,7 +96,7 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
 
             /* Build the field object */
             Signature.Param boxed_tsig = new Signature.Param(new Signature.BoxedType(T.tsig.Type), ass);
-            Assembler.TypeToCompile boxed_ttc = new Assembler.TypeToCompile { _ass = ass, tsig = boxed_type, type = T.type };
+            Assembler.TypeToCompile boxed_ttc = new Assembler.TypeToCompile { _ass = ass, tsig = new Signature.Param(new Signature.BoxedType(T.tsig.Type), ass), type = T.type };
             Assembler.FieldToCompile value_ftc = new Assembler.FieldToCompile
             {
                 _ass = ass,

@@ -19,6 +19,7 @@
  * THE SOFTWARE.
  */
 
+using libtysila.x86_64;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -178,6 +179,9 @@ namespace libtysila
                 List<libasm.OutputBlock> ret = new List<libasm.OutputBlock>();
                 List<byte> a = new List<byte>();
 
+                List<libasm.OutputBlock> prefix_instr = null;
+                List<libasm.OutputBlock> suffix_instr = null;
+
                 /* opcode encoding is:
                  * 
                  * 1a)      Lock/Rep prefix
@@ -208,6 +212,10 @@ namespace libtysila
                 libasm.RelocationBlock.RelocationType rel_type = null;
                 libasm.RelocationBlock disp_reloc = null;
                 bool need_rex_40 = false;
+                libasm.hardware_location new_r = null;
+                libasm.hardware_location new_rm = null;
+                int rm_op_id = -1;
+                int r_op_id = -1;
                 for (int i = 0; i < inst.ops.Length; i++)
                 {
                     x86_64.x86_64_asm.optype opt = inst.ops[i];
@@ -220,6 +228,7 @@ namespace libtysila
                         case x86_64.x86_64_asm.optype.R64:
                         case x86_64.x86_64_asm.optype.R8163264:
                             r = ops[i].MachineRegVal;
+                            r_op_id = i;
                             break;
 
                         case x86_64.x86_64_asm.optype.RM8:
@@ -228,6 +237,7 @@ namespace libtysila
                         case x86_64.x86_64_asm.optype.RM64:
                         case x86_64.x86_64_asm.optype.RM8163264:
                         case x86_64.x86_64_asm.optype.RM8163264as8:
+                            rm_op_id = i;
                             if (opt == x86_64.x86_64_asm.optype.RM8163264as8)
                                 need_rex_40 = true;
 
@@ -319,6 +329,96 @@ namespace libtysila
                 }
                 if (inst.has_rm && (r == null))
                     r = new libasm.x86_64_gpr { reg = (libasm.x86_64_gpr.RegId)inst.opcode_ext };
+                if (r != null)
+                    new_r = r;
+                if (rm != null)
+                    new_rm = rm;
+
+                if (ass.GetBitness() == Bitness.Bits32 && inst.is_r8 && r != null && (r is libasm.x86_64_gpr) &&
+                    (((libasm.x86_64_gpr)r).reg == libasm.x86_64_gpr.RegId.rdi ||
+                    ((libasm.x86_64_gpr)r).reg == libasm.x86_64_gpr.RegId.rsi))
+                {
+                    bool is_input = false;
+                    bool is_output = false;
+
+                    foreach (libasm.hardware_location l in inst.inputs)
+                    {
+                        if ((l is x86_64_asm.op_loc) && (((x86_64_asm.op_loc)l).op_idx == r_op_id))
+                            is_input = true;
+                    }
+                    foreach (libasm.hardware_location l in inst.outputs)
+                    {
+                        if ((l is x86_64_asm.op_loc) && (((x86_64_asm.op_loc)l).op_idx == r_op_id))
+                            is_output = true;
+                    }
+
+                    if (is_input)
+                    {
+                        if (prefix_instr == null)
+                            prefix_instr = new List<libasm.OutputBlock>();
+
+                        List<tybel.Node> p_tybel = new List<tybel.Node>();
+                        EncMov(ass as x86_64_Assembler, null, Rax, r, p_tybel);
+                        foreach (tybel.Node p_tn in p_tybel)
+                            prefix_instr.AddRange(p_tn.Assemble(ass, attrs));
+                    }
+
+                    if(is_output)
+                    {
+                        if(suffix_instr == null)
+                            suffix_instr = new List<libasm.OutputBlock>();
+
+                        List<tybel.Node> p_tybel = new List<tybel.Node>();
+                        EncMov(ass as x86_64_Assembler, null, r, Rax, p_tybel);
+                        foreach (tybel.Node p_tn in p_tybel)
+                            suffix_instr.AddRange(p_tn.Assemble(ass, attrs));
+                    }
+
+                    r = Rax;
+                }
+
+                if (ass.GetBitness() == Bitness.Bits32 && inst.is_rm8 && rm != null && (rm is libasm.x86_64_gpr) &&
+                    (((libasm.x86_64_gpr)rm).reg == libasm.x86_64_gpr.RegId.rdi ||
+                    ((libasm.x86_64_gpr)rm).reg == libasm.x86_64_gpr.RegId.rsi))
+                {
+                    bool is_input = false;
+                    bool is_output = false;
+
+                    foreach (libasm.hardware_location l in inst.inputs)
+                    {
+                        if ((l is x86_64_asm.op_loc) && (((x86_64_asm.op_loc)l).op_idx == rm_op_id))
+                            is_input = true;
+                    }
+                    foreach (libasm.hardware_location l in inst.outputs)
+                    {
+                        if ((l is x86_64_asm.op_loc) && (((x86_64_asm.op_loc)l).op_idx == rm_op_id))
+                            is_output = true;
+                    }
+
+                    if (is_input)
+                    {
+                        if (prefix_instr == null)
+                            prefix_instr = new List<libasm.OutputBlock>();
+
+                        List<tybel.Node> p_tybel = new List<tybel.Node>();
+                        EncMov(ass as x86_64_Assembler, null, Rdx, rm, p_tybel);
+                        foreach (tybel.Node p_tn in p_tybel)
+                            prefix_instr.AddRange(p_tn.Assemble(ass, attrs));
+                    }
+
+                    if (is_output)
+                    {
+                        if (suffix_instr == null)
+                            suffix_instr = new List<libasm.OutputBlock>();
+
+                        List<tybel.Node> p_tybel = new List<tybel.Node>();
+                        EncMov(ass as x86_64_Assembler, null, rm, Rdx, p_tybel);
+                        foreach (tybel.Node p_tn in p_tybel)
+                            suffix_instr.AddRange(p_tn.Assemble(ass, attrs));
+                    }
+
+                    rm = Rdx;
+                }
 
                 /* Add the prefixes */
                 if (inst.grp1_prefix)
@@ -426,10 +526,17 @@ namespace libtysila
                 if (imm != null)
                     a.AddRange(ass.ToByteArraySignExtend(imm, imm_len));
 
+                /* Add prefix instruction (to coerce thore instructions which reference sil/dil) */
+                if (prefix_instr != null)
+                    ret.AddRange(prefix_instr);
+
                 ret.Add(new libasm.CodeBlock(a));
 
                 if (rel != null)
                     ret.Add(new libasm.RelativeReference { Target = rel, Size = rel_len, Addend = rel_val, RelType = rel_type });
+
+                if (suffix_instr != null)
+                    ret.AddRange(suffix_instr);
 
                 return ret;
             }

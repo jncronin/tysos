@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2008 - 2012 by John Cronin
+﻿/* Copyright (C) 2008 - 2014 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -1337,6 +1337,20 @@ namespace libtysila
                 EncMov(ass, state, act_dest, dest, dt, ret);
         }
 
+        bool is_unencodable_r8_rm8(libasm.hardware_location l)
+        {
+            /* Return true if the argument cannot be encoded as an 8 bit register in ia32 mode
+             * In partucular, SIL and DIL are unencodable here */
+            if (!(l is x86_64_gpr))
+                return false;
+            if (ia == IA.x86_64)
+                return false;
+            x86_64_gpr gpr = l as x86_64_gpr;
+            if (gpr.reg == x86_64_gpr.RegId.rsi || gpr.reg == x86_64_gpr.RegId.rdi)
+                return true;
+            return false;
+        }
+
         internal override void MemSet(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location c, hardware_location n, List<tybel.Node> ret)
         {
             int max_move = ia == IA.i586 ? 4 : 8;
@@ -1344,21 +1358,22 @@ namespace libtysila
 
             if (n is const_location && (int)((const_location)n).c <= max_inline)
             {
+                int to_move = (int)((const_location)n).c;
+
                 /* We can inline this as a series of moves */
                 c = ResolveStackLoc(this, state, c);
-                if(!(c is x86_64_gpr))
+                if(!(c is x86_64_gpr) || is_unencodable_r8_rm8(c))
                 {
                     EncMov(this, state, Rdx, c, ret);
                     c = Rdx;
                 }
                 dest = ResolveStackLoc(this, state, dest);
-                if (!(dest is x86_64_gpr))
+                if (!(dest is x86_64_gpr) || is_unencodable_r8_rm8(dest))
                 {
                     EncMov(this, state, Rax, dest, ret);
                     dest = Rax;
                 }
 
-                int to_move = (int)((const_location)n).c;
                 int cur_offset = 0;
                 if (ia == IA.x86_64)
                 {
@@ -1544,17 +1559,19 @@ namespace libtysila
                 EncMov(this, state, dest, act_dest, ret);
         }
 
-        public override hardware_location GetTemporary(CliType ct)
+        public override hardware_location GetTemporary(libtysila.frontend.cil.Encoder.EncoderState state, CliType ct)
         {
             switch (ct)
             {
                 case CliType.int32:
                 case CliType.int64:
                 case CliType.native_int:
+                    state.used_locs.Add(Rcx);
                     return Rcx;
 
                 case CliType.F32:
                 case CliType.F64:
+                    state.used_locs.Add(Xmm2);
                     return Xmm2;
 
                 default:
@@ -1562,17 +1579,19 @@ namespace libtysila
             }
         }
 
-        public override hardware_location GetTemporary2(CliType ct)
+        public override hardware_location GetTemporary2(libtysila.frontend.cil.Encoder.EncoderState state, CliType ct)
         {
             switch (ct)
             {
                 case CliType.int32:
                 case CliType.int64:
                 case CliType.native_int:
+                    state.used_locs.Add(Rbx);
                     return Rbx;
 
                 case CliType.F32:
                 case CliType.F64:
+                    state.used_locs.Add(Xmm3);
                     return Xmm3;
 
                 default:
@@ -1789,13 +1808,7 @@ namespace libtysila
                 EncMov(this, state, Rax, b, ret);
             }
 
-            if (dt == CliType.native_int)
-            {
-                if (ia == IA.i586)
-                    dt = CliType.int32;
-                else
-                    dt = CliType.int64;
-            }
+            dt = ResolveNativeInt(dt);
 
             x86_64.x86_64_asm.opcode cmp_op = x86_64.x86_64_asm.opcode.CMPL;
             switch (dt)
@@ -1823,6 +1836,9 @@ namespace libtysila
                 case ThreeAddressCode.OpName.throweq:
                     jmp_op = x86_64.x86_64_asm.opcode.JNZ;
                     break;
+                case ThreeAddressCode.OpName.throwne:
+                    jmp_op = x86_64.x86_64_asm.opcode.JZ;
+                    break;
                 default:
                     throw new NotImplementedException();
             }
@@ -1849,6 +1865,20 @@ namespace libtysila
                 throw new Exception("dest is not hardware_addressoflabel");
             hardware_addressoflabel aol = dest as hardware_addressoflabel;
             ChooseInstruction(x86_64.x86_64_asm.opcode.CALL, ret, vara.Label(aol.label, aol.is_object));
+        }
+
+        internal override void Save(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location loc, List<tybel.Node> ret)
+        {
+            if (!(loc is x86_64_gpr))
+                throw new NotImplementedException();
+            ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(loc));
+        }
+
+        internal override void Restore(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location loc, List<tybel.Node> ret)
+        {
+            if (!(loc is x86_64_gpr))
+                throw new NotImplementedException();
+            ChooseInstruction(x86_64.x86_64_asm.opcode.POP, ret, vara.MachineReg(loc));
         }
     }
 }

@@ -141,5 +141,20 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("throw", false), null,
                 new libasm.hardware_location[] { loc_except_obj }, ass.callconv_throw, il.il.tybel);
         }
+
+        public static void tybel_throwfalse(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location loc_bool = il.stack_vars_after.Pop(ass);
+            Signature.Param p_bool = il.stack_after.Pop();
+
+            if (p_bool.CliType(ass) != Assembler.CliType.int32 && p_bool.CliType(ass) != Assembler.CliType.native_int &&
+                p_bool.CliType(ass) != Assembler.CliType.O)
+                throw new Exception("invalid throwfalse argument: " + p_bool.ToString());
+
+            ass.ThrowIf(state, il.stack_vars_before, loc_bool, new libasm.const_location { c = 0 },
+                new libasm.hardware_addressoflabel("sthrow", false), new libasm.const_location { c = il.il.inline_int },
+                p_bool.CliType(ass), ThreeAddressCode.OpName.throweq, il.il.tybel);
+        }
     }
 }

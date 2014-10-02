@@ -68,7 +68,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     arg_count++;
             }
 
-            libasm.hardware_location t1 = ass.GetTemporary();
+            libasm.hardware_location t1 = ass.GetTemporary(state);
             libasm.hardware_location[] loc_params = new libasm.hardware_location[arg_count];
             Signature.Param[] p_params = new Signature.Param[arg_count];
 
@@ -85,7 +85,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             // Allocate space for the new object
             libasm.hardware_location loc_obj = il.stack_vars_after.GetAddressFor(type_pushes, ass);
-            libasm.hardware_location t2 = ass.GetTemporary2();
+            libasm.hardware_location t2 = ass.GetTemporary2(state);
 
             if (type.type.IsValueType(ass) && !(type.tsig.Type is Signature.BoxedType))
             {

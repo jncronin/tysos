@@ -67,7 +67,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after[il.stack_after.Count - b] = old;
 
             /* Flip the hardware stack */
-            libasm.hardware_location t1 = ass.GetTemporary();
+            libasm.hardware_location t1 = ass.GetTemporary(state);
             Assembler.CliType ct = old.CliType(ass);
             libasm.hardware_location loc_a = il.stack_vars_after.GetAddressOf(il.stack_after.Count - a, ass);
             libasm.hardware_location loc_b = il.stack_vars_after.GetAddressOf(il.stack_after.Count - b, ass);

@@ -94,11 +94,11 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
                 // make the this pointer be a simple logical var
                 this_pointer = il.stack_vars_before.GetAddressOf(il.stack_before.Count - arg_count, ass);
-                ass.Assign(state, il.stack_vars_before, ass.GetTemporary(), this_pointer, Assembler.CliType.native_int, il.il.tybel);
-                this_pointer = ass.GetTemporary();
+                ass.Assign(state, il.stack_vars_before, ass.GetTemporary(state), this_pointer, Assembler.CliType.native_int, il.il.tybel);
+                this_pointer = ass.GetTemporary(state);
 
                 // get the vtable for the this_pointer object - v_vtable = [v_this_pointer]
-                libasm.hardware_location vtbl = ass.GetTemporary2();
+                libasm.hardware_location vtbl = ass.GetTemporary2(state);
                 ass.Assign(state, il.stack_vars_before, vtbl, new libasm.hardware_contentsof { base_loc = this_pointer, size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
 
                 if (call_mtc_ttc.type.IsInterface)
@@ -108,8 +108,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
                     /* At this point, temporary1 is being used as the this pointer, and t2 is the vtbl pointer */
                     /* First, make t2 be the itable pointer */
-                    libasm.hardware_location t1 = ass.GetTemporary();
-                    libasm.hardware_location t2 = ass.GetTemporary2();
+                    libasm.hardware_location t1 = ass.GetTemporary(state);
+                    libasm.hardware_location t2 = ass.GetTemporary2(state);
                     ass.Assign(state, il.stack_vars_before, t2, new libasm.hardware_contentsof { base_loc = vtbl, const_offset = ass.GetSizeOfPointer(), size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
 
                     /* Now load the target interface typeinfo to t1 */
@@ -170,7 +170,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     int vmeth_offset = m.offset;
 
                     // At this point, fptr = [v_vtable + vmeth_offset]
-                    fptr = ass.GetTemporary();
+                    fptr = ass.GetTemporary(state);
                     ass.Assign(state, il.stack_vars_before, fptr, new libasm.hardware_contentsof { base_loc = vtbl, size = ass.GetSizeOfPointer(), const_offset = vmeth_offset }, Assembler.CliType.native_int, il.il.tybel);
                 }
             }
@@ -182,7 +182,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     throw new Exception("calli used without valid virtftnptr on stack");
 
                 libasm.hardware_location virtftnptr = il.stack_vars_before.GetAddressOf(il.stack_before.Count - 1, ass);
-                fptr = ass.GetTemporary();
+                fptr = ass.GetTemporary(state);
                 ass.Assign(state, il.stack_vars_before, fptr, virtftnptr, Assembler.CliType.native_int, il.il.tybel);
 
                 // The arguments are one place further back for a calli instruction
@@ -199,7 +199,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 else
                     func_name = Mangler2.MangleMethod(call_mtc, ass);
 
-                fptr = ass.GetTemporary();
+                fptr = ass.GetTemporary(state);
                 ass.Assign(state, il.stack_vars_before, fptr, new libasm.hardware_addressoflabel(func_name, false), Assembler.CliType.native_int, il.il.tybel); 
 
                 // Request the method to be compiled

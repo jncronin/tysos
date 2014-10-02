@@ -177,7 +177,7 @@ namespace libtysila.frontend.cil
             Opcodes.Add(0x8B, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x8B, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "conv.ovf.u.un", TybelEncoder = OpcodeEncodings.conv.tybel_conv, Encoder = OpcodeEncodings.conv.Conv, pop = (int)Opcode.PopBehaviour.Pop1, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
             Opcodes.Add(0x8C, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x8C, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "box", pop = (int)Opcode.PopBehaviour.Pop1, push = (int)Opcode.PushBehaviour.PushRef, inline = Opcode.InlineVar.InlineType, ctrl = Opcode.ControlFlow.NEXT });
             Opcodes.Add(0x8D, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x8D, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "newarr", pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushRef, inline = Opcode.InlineVar.InlineType, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x8E, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x8E, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldlen", pop = (int)Opcode.PopBehaviour.PopRef, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x8E, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x8E, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldlen", TybelEncoder = OpcodeEncodings.arr.tybel_ldlen, pop = (int)Opcode.PopBehaviour.PopRef, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
             Opcodes.Add(0x8F, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x8F, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldelema", pop = (int)Opcode.PopBehaviour.PopRef + (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineType, ctrl = Opcode.ControlFlow.NEXT });
             Opcodes.Add(0x90, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x90, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldelem.i1", pop = (int)Opcode.PopBehaviour.PopRef + (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
             Opcodes.Add(0x91, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x91, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldelem.u1", pop = (int)Opcode.PopBehaviour.PopRef + (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
@@ -370,7 +370,8 @@ namespace libtysila.frontend.cil
                 ctrl = Opcode.ControlFlow.NEXT,
                 name = "castclassex",
                 directly_modifies_stack = true,
-                Encoder = OpcodeEncodings.castclass.castclassex
+                Encoder = OpcodeEncodings.castclass.castclassex,
+                TybelEncoder = OpcodeEncodings.castclass.tybel_castclassex
             });
             Opcodes.Add(0xfd24, new Opcode
             {
@@ -379,7 +380,8 @@ namespace libtysila.frontend.cil
                 pop = (int)Opcode.PopBehaviour.PopI,
                 push = (int)Opcode.PushBehaviour.Push0,
                 ctrl = Opcode.ControlFlow.NEXT,
-                name = "throwfalse"
+                name = "throwfalse",
+                TybelEncoder = OpcodeEncodings.exceptions.tybel_throwfalse
             });
             Opcodes.Add(0xfd25, new Opcode
             {

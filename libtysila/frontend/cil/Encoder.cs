@@ -36,6 +36,7 @@ namespace libtysila.frontend.cil
             public Dictionary<int, CilNode> offset_map = new Dictionary<int, CilNode>();
             public int largest_var_stack = 0;
             public Assembler.MethodToCompile mtc;
+            public util.Set<libasm.hardware_location> used_locs = new util.Set<libasm.hardware_location>();
         }
 
         public static List<tybel.Node> Encode(CilGraph instrs, Assembler.MethodToCompile mtc, Assembler ass,
@@ -48,20 +49,24 @@ namespace libtysila.frontend.cil
             int next_block = 0;
 
             state.cc = ass.call_convs[attrs.call_conv](mtc, CallConv.StackPOV.Callee, ass, new libtysila.ThreeAddressCode(Assembler.GetCallTac(mtc.msig.Method.RetType.CliType(ass))));
+            attrs.cc = state.cc;
             state.mtc = mtc;
 
             /* For now, have all local args and vars be on the stack */
-            DefaultStack arg_stack = new DefaultStack(libasm.hardware_stackloc.StackType.Arg);
+            Stack arg_stack = ass.GetStack(libasm.hardware_stackloc.StackType.Arg);
             state.la_locs = new List<libasm.hardware_location>();
             state.la_stack = arg_stack;
             foreach (Signature.Param la in state.las)
                 state.la_locs.Add(arg_stack.GetAddressFor(la, ass));
 
-            DefaultStack var_stack = new DefaultStack(libasm.hardware_stackloc.StackType.LocalVar);
+            Stack var_stack = ass.GetStack(libasm.hardware_stackloc.StackType.LocalVar);
             state.lv_locs = new List<libasm.hardware_location>();
             state.lv_stack = var_stack;
             foreach (Signature.Param lv in state.lvs)
                 state.lv_locs.Add(var_stack.GetAddressFor(lv, ass));
+
+            state.used_locs.AddRange(state.la_locs);
+            state.used_locs.AddRange(state.lv_locs);
 
             /* Assign a label to each cil instruction */
             state.next_blk = 1;
@@ -75,7 +80,7 @@ namespace libtysila.frontend.cil
             util.Set<CilNode> visited = new util.Set<CilNode>();
             foreach (CilNode start in instrs.Starts)
             {
-                start.stack_vars_before = new DefaultStack();
+                start.stack_vars_before = ass.GetStack();
                 start.stack_before = new util.Stack<Signature.Param>();
                 DFEncode(start, mtc, ass, visited, ref next_block, state, attrs);
             }
@@ -101,12 +106,15 @@ namespace libtysila.frontend.cil
             /* Add the method prefix */
             ass.Enter(state, attrs, ret);
 
+            /* Store callee-saved registers */
+            ret.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.SaveCalleeSaved, Val = state.used_locs });
+
             /* Add to code to initialize local vars */
             if (mtc.meth.Body.InitLocals)
             {
                 for (int i = 0; i < state.lv_locs.Count; i++)
                 {
-                    DefaultStack vs = new DefaultStack();
+                    Stack vs = ass.GetStack();
                     util.Stack<Signature.Param> ps = new util.Stack<Signature.Param>();
                     CilNode c1 = new CilNode { stack_vars_before = vs, stack_before = ps, il_label = -1, il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloca_s)], inline_int = i } };
                     DFEncode(c1, mtc, ass, visited, ref next_block, state, attrs);
@@ -172,6 +180,11 @@ namespace libtysila.frontend.cil
             n.il.opcode.TybelEncoder(n, ass, mtc, ref state.next_blk, state, attrs);
             if (n.stack_vars_after.ByteSize > state.largest_var_stack)
                 state.largest_var_stack = n.stack_vars_after.ByteSize;
+
+            if(n.stack_vars_before.UsedLocations != null)
+                state.used_locs.AddRange(n.stack_vars_before.UsedLocations);
+            if(n.stack_vars_after.UsedLocations != null)
+                state.used_locs.AddRange(n.stack_vars_after.UsedLocations);
 
             util.Set<timple.BaseNode> next_visited = new util.Set<timple.BaseNode>();
 

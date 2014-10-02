@@ -77,7 +77,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location loc_str = il.stack_vars_before.Pop(ass);
             Signature.Param p_str = il.stack_before.Pop();
 
-            libasm.hardware_location t1 = ass.GetTemporary();
+            libasm.hardware_location t1 = ass.GetTemporary(state);
 
             libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.I4), ass);
 
@@ -97,7 +97,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             Signature.Param p_idx = il.stack_before.Pop();
             Signature.Param p_str = il.stack_before.Pop();
 
-            libasm.hardware_location t1 = ass.GetTemporary();
+            libasm.hardware_location t1 = ass.GetTemporary(state);
             libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.Char), ass);
 
             ass.Add(state, il.stack_vars_before, t1, loc_str, new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.length) }, Assembler.CliType.native_int, il.il.tybel);

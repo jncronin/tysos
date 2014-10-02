@@ -21,25 +21,39 @@
 
 using System;
 using System.Collections.Generic;
-using libtysila.frontend.cil;
 
-namespace libtysila.x86_64.cil
+namespace libtysila.frontend.cil.OpcodeEncodings
 {
-    class ret
+    partial class flip
     {
-        public static void tybel_ret(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
-            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        public static void enc_flip(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
+            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
+            Assembler.MethodAttributes attrs)
         {
-            if (state.cc.ReturnValue != null)
+            int a_idx, b_idx;
+
+            switch (il.opcode.opcode2)
             {
-                libasm.hardware_location retval = il.stack_vars_after.Pop(ass);
-                il.stack_after.Pop();
-                x86_64_Assembler.EncMov(ass as x86_64_Assembler, state, state.cc.ReturnValue, retval, il.il.tybel);
+                case Opcode.DoubleOpcodes.flip:
+                    a_idx = 1;
+                    b_idx = 2;
+                    break;
+                case Opcode.DoubleOpcodes.flip3:
+                    a_idx = 1;
+                    b_idx = 3;
+                    break;
+                default:
+                    throw new NotSupportedException();
             }
 
-            il.il.tybel.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.RestoreCalleeSaved, Val = state.used_locs });
-            ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.LEAVE, il.il.tybel);
-            ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.RETN, il.il.tybel);
+            vara v_c = il.stack_vars_before.Peek(a_idx);
+            Signature.Param p_c = il.stack_before.Peek(a_idx);
+
+            il.stack_vars_after[a_idx] = il.stack_vars_before[b_idx];
+            il.stack_after[a_idx] = il.stack_before[b_idx];
+
+            il.stack_vars_after[b_idx] = v_c;
+            il.stack_after[b_idx] = p_c;
         }
     }
 }

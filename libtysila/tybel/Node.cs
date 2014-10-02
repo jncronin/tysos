@@ -212,7 +212,7 @@ namespace libtysila.tybel
 
     public class SpecialNode : Node
     {
-        public enum SpecialNodeType { SaveLive, Restore, SaveLiveExcept, SaveLiveIntersect, };
+        public enum SpecialNodeType { SaveLive, Restore, SaveLiveExcept, SaveLiveIntersect, SaveCalleeSaved, RestoreCalleeSaved };
         public SpecialNodeType Type;
         IList<vara> varList;
         public Node SaveNode;
@@ -223,6 +223,8 @@ namespace libtysila.tybel
         }
 
         public int IntVal;
+
+        public object Val;
 
         public override string ToString()
         {
@@ -268,6 +270,35 @@ namespace libtysila.tybel
 
         public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
         {
+            switch (Type)
+            {
+                case SpecialNodeType.SaveCalleeSaved:
+                    {
+                        util.Set<libasm.hardware_location> used_locs = Val as util.Set<libasm.hardware_location>;
+                        List<libasm.hardware_location> save_order = new List<libasm.hardware_location>(util.Intersect<libasm.hardware_location>(used_locs, attrs.cc.CalleePreservesLocations));
+                        List<tybel.Node> save_instrs = new List<Node>();
+                        foreach(libasm.hardware_location save_loc in save_order)
+                            ass.Save(null, null, save_loc, save_instrs);
+                        List<libasm.OutputBlock> ret = new List<libasm.OutputBlock>();
+                        foreach (tybel.Node save_node in save_instrs)
+                            ret.AddRange(save_node.Assemble(ass, attrs));
+                        return ret;
+                    }
+
+                case SpecialNodeType.RestoreCalleeSaved:
+                    {
+                        util.Set<libasm.hardware_location> used_locs = Val as util.Set<libasm.hardware_location>;
+                        List<libasm.hardware_location> restore_order = new List<libasm.hardware_location>(util.Intersect<libasm.hardware_location>(used_locs, attrs.cc.CalleePreservesLocations));
+                        restore_order.Reverse();
+                        List<tybel.Node> restore_instrs = new List<Node>();
+                        foreach (libasm.hardware_location restore_loc in restore_order)
+                            ass.Restore(null, null, restore_loc, restore_instrs);
+                        List<libasm.OutputBlock> ret = new List<libasm.OutputBlock>();
+                        foreach (tybel.Node restore_node in restore_instrs)
+                            ret.AddRange(restore_node.Assemble(ass, attrs));
+                        return ret;
+                    }
+            }
             throw new NotImplementedException();
         }
     }

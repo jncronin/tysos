@@ -1,5 +1,8 @@
-﻿namespace test_005
+﻿using libsupcs;
+
+namespace test_005
 {
+	[NoBaseClass]
     class Program
     {
         static void Main(string[] args)
@@ -8,6 +11,7 @@
             int x = oc.DoStuff(3);
         }
 
+		[NoBaseClass]
         class OtherClass<T>
         {
             public T DoStuff(T val)

@@ -1,5 +1,8 @@
-﻿namespace test_003
+﻿using libsupcs;
+
+namespace test_003
 {
+	[NoBaseClass]
     class Program
     {
         static void Main(string[] args)
@@ -10,11 +13,12 @@
         }
     }
 
+	[NoBaseClass]
     class OtherClass
     {
         public int do_sum(int a)
         {
-            return a * a;
+            return a + a;
         }
     }
 }

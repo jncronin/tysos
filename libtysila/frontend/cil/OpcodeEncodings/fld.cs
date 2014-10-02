@@ -110,12 +110,12 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 obj_type = ftc.definedin_tsig;
             }
 
-            Assembler.TypeToCompile obj_ttc = new Assembler.TypeToCompile(obj_type, ass);
+            Assembler.TypeToCompile obj_ttc = ftc.DefinedIn;
             Layout obj_l = Layout.GetLayout(obj_ttc, ass);
             int fld_offset = obj_l.GetField(ftc.field.Name, do_static).offset;
 
             /* Load field address */
-            libasm.hardware_location fld_address = ass.GetTemporary();
+            libasm.hardware_location fld_address = ass.GetTemporary(state);
             if (do_static)
                 ass.Assign(state, il.stack_vars_before, fld_address, new libasm.hardware_addressoflabel(obj_l.static_object_name, fld_offset, true), Assembler.CliType.native_int, il.il.tybel);
             else
@@ -145,7 +145,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     ass.Peek(state, il.stack_vars_before, dest, fld_address, size, il.il.tybel);
                 else
                 {
-                    libasm.hardware_location dest_addr = ass.GetTemporary2();
+                    libasm.hardware_location dest_addr = ass.GetTemporary2(state);
                     ass.LoadAddress(state, il.stack_vars_before, dest_addr, dest, il.il.tybel);
                     ass.MemCpy(state, il.stack_vars_before, dest_addr, fld_address, new libasm.const_location { c = ass.GetSizeOf(ftc.fsig) }, il.il.tybel);
                 }
@@ -157,7 +157,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     ass.Poke(state, il.stack_vars_before, fld_address, val, size, il.il.tybel);
                 else
                 {
-                    libasm.hardware_location val_addr = ass.GetTemporary2();
+                    libasm.hardware_location val_addr = ass.GetTemporary2(state);
                     ass.LoadAddress(state, il.stack_vars_before, val_addr, val, il.il.tybel);
                     ass.MemCpy(state, il.stack_vars_before, fld_address, val_addr, new libasm.const_location { c = size }, il.il.tybel);
                 }

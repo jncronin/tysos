@@ -56,6 +56,8 @@ namespace libtysila
             x86_64_Assembler.R8, x86_64_Assembler.R9, x86_64_Assembler.R10, x86_64_Assembler.R11,
             x86_64_Assembler.R12, x86_64_Assembler.R13, x86_64_Assembler.R14, x86_64_Assembler.R15
         };
+        static List<hardware_location> cdecl_callee_preserves = new List<hardware_location> {
+            x86_64_Assembler.Rbx, x86_64_Assembler.Rdi, x86_64_Assembler.Rsi };
 
     
         public static CallConv isr(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass, ThreeAddressCode call_tac)
@@ -396,6 +398,7 @@ namespace libtysila
                 else
                     ret.CallerPreservesLocations = cdecl_x86_64_preserves_with_rax;
             }
+            ret.CalleePreservesLocations = cdecl_callee_preserves;
 
             ret.MethodSig = mtc.msig;
 

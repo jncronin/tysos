@@ -47,6 +47,7 @@ namespace libtysila
             public bool uses_vararg = false;
 
             public string call_conv;
+            public CallConv cc;
 
             public string mangled_name;
 
