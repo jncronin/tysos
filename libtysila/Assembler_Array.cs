@@ -251,6 +251,7 @@ namespace libtysila
             // Create its methods
 
             // static int vector_index(int[] lobounds, int[] sizes, int idx1, int idx2, int idx3, ...)
+#if false
             Metadata.MethodDefRow vector_index_mdr = new Metadata.MethodDefRow();
             vector_index_mdr.Body = new Metadata.MethodBody();
 
@@ -645,11 +646,12 @@ namespace libtysila
             ctor_2_mdr.msig = ctor_2_sig;
 
             array_type.Methods.Add(ctor_2_mdr);
-
+#endif
 
             return ret;
         }
 
+#if false
         void _get_array_index_stack(Assembler.cfg_node ret, int rank, Assembler.TypeToCompile elem_type, Metadata.FieldRow inner_array_fr,
             Metadata.FieldRow lobounds_fr, Metadata.FieldRow sizes_fr, Metadata.MethodDefRow vector_index_mdr, Assembler.TypeToCompile array_type)
         {
@@ -741,6 +743,7 @@ namespace libtysila
                 }
             });
         }
+#endif
 
         internal enum ArrayFields { rank, lobounds, sizes, elem_size, inner_array, elemtype, inner_array_length, array_type_size, getvalueimpl_vtbl_offset };
         bool array_fields_calculated = false;
@@ -766,7 +769,7 @@ namespace libtysila
                 array_inner_array_length_offset = l.GetFirstInstanceField("__inner_array_length").offset;
                 array_type_size = l.ClassSize;
 
-                array_getvalueimpl_vtbl_offset = l.GetVirtualMethod("GetValueImpl").offset;
+                //array_getvalueimpl_vtbl_offset = l.GetVirtualMethod("GetValueImpl").offset;
 
                 array_fields_calculated = true;
             }
@@ -791,49 +794,6 @@ namespace libtysila
                     return array_type_size;
                 case ArrayFields.getvalueimpl_vtbl_offset:
                     return array_getvalueimpl_vtbl_offset;
-            }
-
-            throw new NotSupportedException();
-        }
-
-        public enum StringFields { length, data_offset, vtbl, objid, mutex_lock };
-        bool string_fields_calculated = false;
-        int string_length_offset, string_data_offset, string_vtbl_offset, string_objid_offset, string_mutexlock_offset;
-        Layout string_layout;
-
-        internal string GetStringTypeInfoObjectName()
-        {
-            GetStringFieldOffset(StringFields.vtbl);
-            return string_layout.typeinfo_object_name;
-        }
-
-        public int GetStringFieldOffset(StringFields field)
-        {
-            if (!string_fields_calculated)
-            {
-                TypeToCompile str_ttc = new TypeToCompile { _ass = this, tsig = new Signature.Param(BaseType_Type.String), type = Metadata.GetTypeDef(new Signature.BaseType(BaseType_Type.String), this) };
-                Layout l = Layout.GetLayout(str_ttc, this, false);
-                string_layout = l;
-
-                string_length_offset = l.GetFirstInstanceField("length").offset;
-                string_data_offset = l.GetFirstInstanceField("start_char").offset;
-                string_vtbl_offset = l.GetFirstInstanceField("__vtbl").offset;
-                string_objid_offset = l.GetFirstInstanceField("__object_id").offset;
-                string_mutexlock_offset = l.GetFirstInstanceField("__mutex_lock").offset;
-            }
-
-            switch (field)
-            {
-                case StringFields.data_offset:
-                    return string_data_offset;
-                case StringFields.length:
-                    return string_length_offset;
-                case StringFields.objid:
-                    return string_objid_offset;
-                case StringFields.vtbl:
-                    return string_vtbl_offset;
-                case StringFields.mutex_lock:
-                    return string_mutexlock_offset;
             }
 
             throw new NotSupportedException();

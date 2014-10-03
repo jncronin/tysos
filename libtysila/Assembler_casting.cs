@@ -27,6 +27,39 @@ namespace libtysila
 {
     partial class Assembler
     {
+        internal bool IsArrayElementCompatibleWith(Signature.Param dest, Signature.Param src)
+        {
+            if (Signature.ParamCompare(GetReducedType(dest), GetReducedType(src), this))
+                return true;
+            return is_assignment_compatible(dest, src);
+        }
+        internal bool IsCompatibleWith(Signature.Param dest, Signature.Param src)
+        { return is_assignment_compatible(dest, src); }
+        internal Signature.Param GetReducedType(Signature.Param p)
+        { return new Signature.Param(GetReducedType(p.Type), this); }
+        internal Signature.BaseOrComplexType GetReducedType(Signature.BaseOrComplexType t)
+        {
+            if (t is Signature.BaseType)
+            {
+                Signature.BaseType bt = t as Signature.BaseType;
+                switch (bt.Type)
+                {
+                    case BaseType_Type.I1:
+                    case BaseType_Type.U1:
+                        return new Signature.BaseType(BaseType_Type.I1);
+                    case BaseType_Type.I2:
+                    case BaseType_Type.U2:
+                        return new Signature.BaseType(BaseType_Type.I2);
+                    case BaseType_Type.I4:
+                    case BaseType_Type.U4:
+                        return new Signature.BaseType(BaseType_Type.I4);
+                    case BaseType_Type.I8:
+                    case BaseType_Type.U8:
+                        return new Signature.BaseType(BaseType_Type.I8);
+                }
+            }
+            return t;
+        }
         bool is_assignment_compatible(Signature.Param dest, Signature.Param src)
         { return is_assignment_compatible(dest.Type, src.Type); }
         bool is_assignment_compatible(Signature.BaseOrComplexType dest, Signature.BaseOrComplexType src)

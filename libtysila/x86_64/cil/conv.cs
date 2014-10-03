@@ -55,7 +55,15 @@ namespace libtysila
                 act_dest = BaseType_Type.U2;
 
             if (act_dest == act_src)
-                return;
+            {
+                if (dest.Equals(src))
+                    return;
+                else
+                {
+                    Assign(state, regs_in_use, dest, src, new Signature.Param(act_dest).CliType(this), ret);
+                    return;
+                }
+            }
 
             CliType dt = new Signature.BaseType(act_dest).CliType(this);
 

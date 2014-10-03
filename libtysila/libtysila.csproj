@@ -62,6 +62,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Assembler.cs" />
+    <Compile Include="Assembler_Array.cs" />
     <Compile Include="Assembler_AssembleTIR.cs" />
     <Compile Include="Assembler_casting.cs" />
     <Compile Include="Assembler_Delegate.cs" />

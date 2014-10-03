@@ -26,6 +26,7 @@ namespace libtysila
 {
     partial class Assembler
     {
+#if false
         internal enum ArrayFields { rank, lobounds, sizes, elem_size, inner_array, elemtype, inner_array_length, array_type_size, getvalueimpl_vtbl_offset };
         bool array_fields_calculated = false;
         int array_rank_offset, array_lobounds_offset, array_sizes_offset, array_elem_size_offset, array_inner_array_offset, array_type_size, array_getvalueimpl_vtbl_offset;
@@ -81,6 +82,7 @@ namespace libtysila
 
             throw new NotSupportedException();
         }
+#endif
 
         public enum StringFields { length, data_offset, vtbl, objid, mutex_lock };
         bool string_fields_calculated = false;
