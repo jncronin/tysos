@@ -655,8 +655,6 @@ namespace libtysila
                 _requestor = memberRequestor;
                 _requestor.Assembler = this;
             }
-
-            arch_init_callconvs();
         }
 
         public class AssemblyInformation

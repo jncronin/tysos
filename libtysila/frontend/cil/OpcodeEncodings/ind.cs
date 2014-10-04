@@ -256,5 +256,86 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             ass.Poke(state, il.stack_vars_before, loc_addr, loc_val, len, il.il.tybel);
         }
+
+        public static void tybel_ldind(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            ThreeAddressCode.OpName op = ThreeAddressCode.OpName.invalid;
+            Assembler.CliType dt = Assembler.CliType.void_;
+            int len = 0;
+            Signature.Param T = null;
+            bool signed = false;
+
+            switch (il.il.opcode.opcode1)
+            {
+                case Opcode.SingleOpcodes.ldind_i:
+                    T = new Signature.Param(BaseType_Type.I);
+                    signed = true;
+                    break;
+                case Opcode.SingleOpcodes.ldind_i1:
+                    T = new Signature.Param(BaseType_Type.I1);
+                    signed = true;
+                    break;
+                case Opcode.SingleOpcodes.ldind_i2:
+                    T = new Signature.Param(BaseType_Type.I2);
+                    signed = true;
+                    break;
+                case Opcode.SingleOpcodes.ldind_i4:
+                    T = new Signature.Param(BaseType_Type.I4);
+                    signed = true;
+                    break;
+                case Opcode.SingleOpcodes.ldind_i8:
+                    T = new Signature.Param(BaseType_Type.I8);
+                    signed = true;
+                    break;
+                case Opcode.SingleOpcodes.ldind_u1:
+                    T = new Signature.Param(BaseType_Type.U1);
+                    break;
+                case Opcode.SingleOpcodes.ldind_u2:
+                    T = new Signature.Param(BaseType_Type.U2);
+                    break;
+                case Opcode.SingleOpcodes.ldind_u4:
+                    T = new Signature.Param(BaseType_Type.U4);
+                    break;
+                case Opcode.SingleOpcodes.ldind_r4:
+                    T = new Signature.Param(BaseType_Type.R4);
+                    break;
+                case Opcode.SingleOpcodes.ldind_r8:
+                    T = new Signature.Param(BaseType_Type.R8);
+                    break;
+                case Opcode.SingleOpcodes.ldind_ref:
+                    T = new Signature.Param(BaseType_Type.I);
+                    signed = true;
+                    break;
+                default:
+                    throw new Exception("Unsupported ldind opcode");
+            }
+
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_addr = il.stack_after.Pop();
+
+            if (!((p_addr.Type is Signature.ManagedPointer) || ((p_addr.Type is Signature.BaseType) && (((Signature.BaseType)p_addr.Type).Type == BaseType_Type.I)) || (p_addr.Type is Signature.UnmanagedPointer)))
+                throw new Exception("stind without valid addr type: " + p_addr.Type.ToString());
+
+            if ((p_addr.Type is Signature.ManagedPointer) && il.il.opcode.opcode1 == Opcode.SingleOpcodes.ldind_ref)
+                T = new Signature.Param(((Signature.ManagedPointer)p_addr.Type).ElemType, ass);
+
+            if (ass.Options.VerifiableCIL)
+            {
+                if (!(p_addr.Type is Signature.ManagedPointer))
+                    throw new Exception("stind without addr being managed pointer");
+                Signature.BaseOrComplexType t_addr = ((Signature.ManagedPointer)p_addr.Type).ElemType;
+                if (!ass.IsAssignableTo(T, new Signature.Param(t_addr, ass)))
+                    throw new Assembler.AssemblerException("ldind: stack type '" + t_addr.ToString() + "' is not " +
+                        "assignable to T '" + T.ToString() + "'", il.il, mtc);
+            }
+
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(T, ass);
+            ass.Peek(state, il.stack_vars_before, loc_dest, loc_addr, ass.GetPackedSizeOf(T), il.il.tybel);
+            ass.Conv(state, il.stack_vars_before, loc_dest, loc_dest, new Signature.BaseType(T.CliType(ass)), new Signature.BaseType(T), signed, il.il.tybel);
+
+            il.stack_after.Push(T);
+        }
     }
 }

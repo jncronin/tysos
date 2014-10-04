@@ -231,6 +231,16 @@ namespace libtysila
                             r_op_id = i;
                             break;
 
+                        case x86_64_asm.optype.Xmm:
+                            r = ops[i].MachineRegVal;
+                            r_op_id = i;
+                            break;
+
+                        case x86_64_asm.optype.XmmM8163264:
+                            rm = ops[i].MachineRegVal;
+                            rm_op_id = i;
+                            break;
+
                         case x86_64.x86_64_asm.optype.RM8:
                         case x86_64.x86_64_asm.optype.RM16:
                         case x86_64.x86_64_asm.optype.RM32:
@@ -439,11 +449,11 @@ namespace libtysila
                 if (need_rex_40 && rm != null && (rm is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)rm).base_val >= 4)
                     rex |= 0x40;
 
-                if (!inst.opcode_adds && r != null && (r is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)r).is_extended)
+                if (!inst.opcode_adds && r != null && (r is libasm.x86_64_reg) && ((libasm.x86_64_reg)r).is_extended)
                     rex |= 0x44;        // rex.r if modr/m r field is extended
-                if (inst.opcode_adds && r != null && (r is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)r).is_extended)
+                if (inst.opcode_adds && r != null && (r is libasm.x86_64_reg) && ((libasm.x86_64_reg)r).is_extended)
                     rex |= 0x41;        // rex.b if opcode reg field is extended
-                if (!inst.opcode_adds && rm != null && (rm is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)rm).is_extended)
+                if (!inst.opcode_adds && rm != null && (rm is libasm.x86_64_reg) && ((libasm.x86_64_reg)rm).is_extended)
                     rex |= 0x41;        // rex.b if modr/m r/m field is extended (with mod == 3)
                 if (!inst.opcode_adds && rm != null && (rm is libasm.hardware_contentsof) && (((libasm.hardware_contentsof)rm).base_loc is libasm.x86_64_gpr) && ((libasm.x86_64_gpr)(((libasm.hardware_contentsof)rm).base_loc)).is_extended)
                     rex |= 0x41;        // rex.b if modr/m r/m field is extended (with mod != 3)
@@ -463,7 +473,7 @@ namespace libtysila
                 if (inst.prefix_0f)
                     a.Add(0x0f);
                 if (inst.opcode_adds)
-                    a.Add((byte)(inst.pri_opcode + ((libasm.x86_64_gpr)r).base_val));
+                    a.Add((byte)(inst.pri_opcode + ((libasm.x86_64_reg)r).base_val));
                 else
                     a.Add(inst.pri_opcode);
 
@@ -471,14 +481,14 @@ namespace libtysila
                 if (inst.has_rm)
                 {
                     byte modrm = 0;
-                    byte modrm_r = ((libasm.x86_64_gpr)r).base_val;
+                    byte modrm_r = ((libasm.x86_64_reg)r).base_val;
                     byte modrm_mod;
                     byte modrm_rm;
                     byte[] disp = null;
-                    if (rm is libasm.x86_64_gpr)
+                    if (rm is libasm.x86_64_reg)
                     {
                         modrm_mod = 3;
-                        modrm_rm = ((libasm.x86_64_gpr)rm).base_val;
+                        modrm_rm = ((libasm.x86_64_reg)rm).base_val;
                     }
                     else if (rm is libasm.hardware_contentsof)
                     {

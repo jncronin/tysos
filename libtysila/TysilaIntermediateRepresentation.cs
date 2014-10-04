@@ -1046,9 +1046,9 @@ namespace libtysila
 
         public CallConv call_conv = null;
 
-        public CallEx(var var_result, var[] var_args, string target, CallConv callconv, int vt_size) : this(var_result, var_args, target, callconv) { VTSize = vt_size; var_result.v_size = vt_size; }
-        public CallEx(var var_result, var[] var_args, string target, CallConv callconv) : this(var_result, var_args, callconv.CallTac, target, callconv) { }
-        public CallEx(var var_result, var[] var_args, var target, CallConv callconv) : this(var_result, var_args, callconv.CallTac, target, callconv) { }
+        //public CallEx(var var_result, var[] var_args, string target, CallConv callconv, int vt_size) : this(var_result, var_args, target, callconv) { VTSize = vt_size; var_result.v_size = vt_size; }
+        //public CallEx(var var_result, var[] var_args, string target, CallConv callconv) : this(var_result, var_args, callconv.CallTac, target, callconv) { }
+        //public CallEx(var var_result, var[] var_args, var target, CallConv callconv) : this(var_result, var_args, callconv.CallTac, target, callconv) { }
 
         public CallEx(var var_result, var[] var_args, Op call_op, string target, CallConv callconv, int vt_size) : this(var_result, var_args, call_op, target, callconv) { VTSize = vt_size; var_result.v_size = vt_size; }
         public CallEx(var var_result, var[] var_args, Op call_op, string target, CallConv callconv)

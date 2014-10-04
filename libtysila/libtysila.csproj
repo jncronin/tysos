@@ -75,11 +75,11 @@
     <Compile Include="Assembler_Requestor.cs" />
     <Compile Include="Assembler_type.cs" />
     <Compile Include="Assembler_var.cs" />
-    <Compile Include="frontend\cil\Array.cs" />
     <Compile Include="frontend\cil\CilGraph.cs" />
     <Compile Include="frontend\cil\CilNode.cs" />
     <Compile Include="frontend\cil\DecomposeOpcodes\box.cs" />
     <Compile Include="frontend\cil\DecomposeOpcodes\isinst.cs" />
+    <Compile Include="frontend\cil\DecomposeOpcodes\ldtoken.cs" />
     <Compile Include="frontend\cil\DecomposeOpcodes\newobj.cs" />
     <Compile Include="frontend\cil\Encoder.cs" />
     <Compile Include="frontend\cil\InstructionLine.cs" />
@@ -95,6 +95,7 @@
     <Compile Include="frontend\cil\OpcodeEncodings\fld.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\flip.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\ind.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\initrth.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\intcall.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\ldc.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\loc.cs" />
@@ -105,6 +106,7 @@
     <Compile Include="frontend\cil\OpcodeEncodings\set.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\stack.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\str.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\switch.cs" />
     <Compile Include="frontend\cil\OpcodeList.cs" />
     <Compile Include="InstructionHeader.cs" />
     <Compile Include="CallConv.cs" />

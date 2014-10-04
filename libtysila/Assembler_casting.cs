@@ -46,6 +46,10 @@ namespace libtysila
                 return true;
             return is_assignment_compatible(dest, src);
         }
+        internal bool IsAssignableTo(Signature.Param dest, Signature.Param src)
+        {
+            throw new NotImplementedException();
+        }
         internal bool IsCompatibleWith(Signature.Param dest, Signature.Param src)
         { return is_assignment_compatible(dest, src); }
         internal Signature.Param GetReducedType(Signature.Param p)

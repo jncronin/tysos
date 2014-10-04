@@ -144,6 +144,14 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     un = true;
                     break;
 
+                case Opcode.SingleOpcodes.conv_u:
+                case Opcode.SingleOpcodes.conv_u1:
+                case Opcode.SingleOpcodes.conv_u2:
+                case Opcode.SingleOpcodes.conv_u4:
+                case Opcode.SingleOpcodes.conv_u8:
+                    un = true;
+                    break;
+
                 case Opcode.SingleOpcodes.conv_r_un:
                     un = true;
                     break;

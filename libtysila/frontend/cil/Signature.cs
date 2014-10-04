@@ -71,6 +71,8 @@ namespace libtysila
 
             Assembler _ass;
 
+            public Assembler Assembler { get { return _ass; } }
+
             public override bool Equals(object obj)
             {
                 throw new NotSupportedException("Use Signature.ParamCompare");
@@ -413,6 +415,23 @@ namespace libtysila
             public BaseType() { }
             public BaseType(BaseType_Type type) { Type = type; Signature = make_sig_string(); }
             public BaseType(BaseType_Type type, int ugp_idx) { Type = type; Ugp_idx = ugp_idx; Signature = make_sig_string(); }
+            public BaseType(Param p)
+            {
+                if (p.Type is BaseType)
+                {
+
+                    BaseType bt = p.Type as BaseType;
+                    Type = bt.Type;
+                    Signature = make_sig_string();
+                }
+                else
+                {
+                    if (p.Type.IsValueType(p.Assembler))
+                        Type = BaseType_Type.ValueType;
+                    else
+                        Type = BaseType_Type.Object;
+                }
+            }
 
             public override bool IsConcreteType
             {
@@ -722,6 +741,11 @@ namespace libtysila
             public override IList<BaseOrComplexType> GetBaseTypes()
             {
                 return new BaseOrComplexType[] { ElemType };
+            }
+
+            public override string ToString()
+            {
+                return "&" + ElemType.ToString();
             }
         }
 

@@ -456,9 +456,8 @@ namespace libtysila
             if (success == false)
                 return;
 
-            List<x86_64.x86_64_asm> opcodes = x86_64.x86_64_asm.Opcodes[op];
-
-            if(opcodes.Count == 0)
+            List<x86_64.x86_64_asm> opcodes;
+            if(!x86_64.x86_64_asm.Opcodes.TryGetValue(op, out opcodes))
                 throw new NotImplementedException("No encodings yet defined for " + op.ToString() + " in " + tinst.ToString());
 
             foreach (x86_64.x86_64_asm opcode in opcodes)
@@ -651,7 +650,40 @@ namespace libtysila
                     if ((vara.MachineRegVal.Equals(R15)) && ((optype == x86_64.x86_64_asm.optype.r15) || (optype == x86_64.x86_64_asm.optype.R64) || (optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.R32) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8) || (optype == x86_64.x86_64_asm.optype.R8163264)))
                         return true;
 
-                    if ((((vara.MachineRegVal is libasm.hardware_contentsof) && (((libasm.hardware_contentsof)vara.MachineRegVal).base_loc is libasm.x86_64_gpr)) || (vara.MachineRegVal is libasm.hardware_stackloc)) && ((optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8)))
+                    if((vara.MachineRegVal.Equals(Xmm0)) && ((optype == x86_64.x86_64_asm.optype.xmm0) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm1)) && ((optype == x86_64.x86_64_asm.optype.xmm1) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm2)) && ((optype == x86_64.x86_64_asm.optype.xmm2) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm3)) && ((optype == x86_64.x86_64_asm.optype.xmm3) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm4)) && ((optype == x86_64.x86_64_asm.optype.xmm4) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm5)) && ((optype == x86_64.x86_64_asm.optype.xmm5) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm6)) && ((optype == x86_64.x86_64_asm.optype.xmm6) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm7)) && ((optype == x86_64.x86_64_asm.optype.xmm7) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm8)) && ((optype == x86_64.x86_64_asm.optype.xmm8) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm9)) && ((optype == x86_64.x86_64_asm.optype.xmm9) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm10)) && ((optype == x86_64.x86_64_asm.optype.xmm10) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm11)) && ((optype == x86_64.x86_64_asm.optype.xmm11) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm12)) && ((optype == x86_64.x86_64_asm.optype.xmm12) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm13)) && ((optype == x86_64.x86_64_asm.optype.xmm13) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm14)) && ((optype == x86_64.x86_64_asm.optype.xmm14) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+                    if((vara.MachineRegVal.Equals(Xmm15)) && ((optype == x86_64.x86_64_asm.optype.xmm15) || (optype == x86_64.x86_64_asm.optype.Xmm) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
+                        return true;
+
+                    if ((((vara.MachineRegVal is libasm.hardware_contentsof) && (((libasm.hardware_contentsof)vara.MachineRegVal).base_loc is libasm.x86_64_gpr)) || (vara.MachineRegVal is libasm.hardware_stackloc)) && ((optype == x86_64.x86_64_asm.optype.RM64) || (optype == x86_64.x86_64_asm.optype.RM32) || (optype == x86_64.x86_64_asm.optype.RM8163264) || (optype == x86_64.x86_64_asm.optype.RM8163264as8) || (optype == x86_64.x86_64_asm.optype.XmmM8163264)))
                         return true;
                                        
                     return false;

@@ -104,18 +104,18 @@ namespace libtysila.frontend.cil
             Opcodes.Add(0x42, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x42, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "bgt.un", Encoder = OpcodeEncodings.br.br_two, pop = (int)Opcode.PopBehaviour.Pop1 + (int)Opcode.PopBehaviour.Pop1, push = (int)Opcode.PushBehaviour.Push0, inline = Opcode.InlineVar.InlineBrTarget, ctrl = Opcode.ControlFlow.COND_BRANCH });
             Opcodes.Add(0x43, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x43, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ble.un", Encoder = OpcodeEncodings.br.br_two, pop = (int)Opcode.PopBehaviour.Pop1 + (int)Opcode.PopBehaviour.Pop1, push = (int)Opcode.PushBehaviour.Push0, inline = Opcode.InlineVar.InlineBrTarget, ctrl = Opcode.ControlFlow.COND_BRANCH });
             Opcodes.Add(0x44, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x44, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "blt.un", Encoder = OpcodeEncodings.br.br_two, pop = (int)Opcode.PopBehaviour.Pop1 + (int)Opcode.PopBehaviour.Pop1, push = (int)Opcode.PushBehaviour.Push0, inline = Opcode.InlineVar.InlineBrTarget, ctrl = Opcode.ControlFlow.COND_BRANCH });
-            Opcodes.Add(0x45, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x45, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "switch", pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.Push0, inline = Opcode.InlineVar.InlineSwitch, ctrl = Opcode.ControlFlow.COND_BRANCH });
-            Opcodes.Add(0x46, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x46, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i1", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x47, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x47, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.u1", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x48, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x48, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i2", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x49, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x49, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.u2", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x4A, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4A, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i4", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x4B, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4B, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.u4", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x4C, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4C, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i8", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI8, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x4D, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4D, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x4E, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4E, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.r4", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushR4, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x4F, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4F, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.r8", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushR8, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
-            Opcodes.Add(0x50, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x50, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.ref", Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushRef, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x45, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x45, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "switch", TybelEncoder = OpcodeEncodings.switch_.tybel_switch, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.Push0, inline = Opcode.InlineVar.InlineSwitch, ctrl = Opcode.ControlFlow.COND_BRANCH });
+            Opcodes.Add(0x46, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x46, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i1", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x47, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x47, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.u1", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x48, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x48, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i2", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x49, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x49, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.u2", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x4A, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4A, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i4", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x4B, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4B, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.u4", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x4C, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4C, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i8", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI8, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x4D, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4D, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.i", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushI, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x4E, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4E, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.r4", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushR4, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x4F, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x4F, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.r8", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushR8, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
+            Opcodes.Add(0x50, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x50, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "ldind.ref", TybelEncoder = OpcodeEncodings.ind.tybel_ldind, Encoder = OpcodeEncodings.ind.ldind, pop = (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.PushRef, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
             Opcodes.Add(0x51, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x51, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "stind.ref", TybelEncoder = OpcodeEncodings.ind.tybel_stind, Encoder = OpcodeEncodings.ind.stind, pop = (int)Opcode.PopBehaviour.PopI + (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.Push0, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
             Opcodes.Add(0x52, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x52, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "stind.i1", TybelEncoder = OpcodeEncodings.ind.tybel_stind, Encoder = OpcodeEncodings.ind.stind, pop = (int)Opcode.PopBehaviour.PopI + (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.Push0, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
             Opcodes.Add(0x53, new Opcode { opcode1 = (Opcode.SingleOpcodes)0x53, opcode2 = (Opcode.DoubleOpcodes)0x00, name = "stind.i2", TybelEncoder = OpcodeEncodings.ind.tybel_stind, Encoder = OpcodeEncodings.ind.stind, pop = (int)Opcode.PopBehaviour.PopI + (int)Opcode.PopBehaviour.PopI, push = (int)Opcode.PushBehaviour.Push0, inline = Opcode.InlineVar.InlineNone, ctrl = Opcode.ControlFlow.NEXT });
@@ -359,7 +359,8 @@ namespace libtysila.frontend.cil
                 pop = (int)Opcode.PopBehaviour.Pop0,
                 push = (int)Opcode.PushBehaviour.Push0,
                 ctrl = Opcode.ControlFlow.NEXT,
-                name = "init_rth"
+                name = "init_rth",
+                TybelEncoder = OpcodeEncodings.initrth.tybel_initrth
             });
             Opcodes.Add(0xfd23, new Opcode
             {
@@ -399,7 +400,8 @@ namespace libtysila.frontend.cil
                 pop = (int)Opcode.PopBehaviour.Pop0,
                 push = (int)Opcode.PushBehaviour.Push0,
                 ctrl = Opcode.ControlFlow.NEXT,
-                name = "init_mth"
+                name = "init_mth",
+                TybelEncoder = OpcodeEncodings.initrth.tybel_initrth
             });
             Opcodes.Add(0xfd27, new Opcode
             {
@@ -408,7 +410,8 @@ namespace libtysila.frontend.cil
                 pop = (int)Opcode.PopBehaviour.Pop0,
                 push = (int)Opcode.PushBehaviour.Push0,
                 ctrl = Opcode.ControlFlow.NEXT,
-                name = "init_rfh"
+                name = "init_rfh",
+                TybelEncoder = OpcodeEncodings.initrth.tybel_initrth
             });
             Opcodes.Add(0xfd28, new Opcode
             {

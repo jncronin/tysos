@@ -1457,9 +1457,9 @@ namespace libtysila
                 Signature.ZeroBasedArray zba = bct as Signature.ZeroBasedArray;
                 if (zba.ArrayType == null)
                 {
-                    Assembler.TypeToCompile arr_ttc = frontend.cil.Array.CreateArray(new Signature.Param(zba, ass), 1, 
+                    Assembler.TypeToCompile arr_ttc = ass.CreateArray(new Signature.Param(zba, ass), 1, 
                         new Assembler.TypeToCompile { type = GetTypeDef(zba.ElemType, ass, request_types), 
-                            tsig = new Signature.Param(zba.ElemType, ass), _ass = ass }, false, ass);
+                            tsig = new Signature.Param(zba.ElemType, ass), _ass = ass }, false);
                     zba.ArrayType = arr_ttc.type;
                     if(request_types)
                         ass.Requestor.RequestTypeInfo(arr_ttc);
@@ -1478,9 +1478,9 @@ namespace libtysila
                 if (ca.ArrayType == null)
                 {
                     Assembler.TypeToCompile arr_ttc =
-                        frontend.cil.Array.CreateArray(new Signature.Param(ca, ass), ca.Rank, 
+                        ass.CreateArray(new Signature.Param(ca, ass), ca.Rank, 
                         new Assembler.TypeToCompile { type = GetTypeDef(ca.ElemType, ass, request_types), 
-                            tsig = new Signature.Param(ca.ElemType, ass), _ass = ass }, false, ass);
+                            tsig = new Signature.Param(ca.ElemType, ass), _ass = ass }, false);
                     ca.ArrayType = arr_ttc.type;
                     if(request_types)
                         ass.Requestor.RequestTypeInfo(arr_ttc);

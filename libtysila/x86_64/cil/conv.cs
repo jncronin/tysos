@@ -68,7 +68,10 @@ namespace libtysila
             CliType dt = new Signature.BaseType(act_dest).CliType(this);
 
             if (ia == IA.i586 && dt == CliType.int64)
-                throw new NotImplementedException();
+            {
+                libasm.multiple_hardware_location mhl_dest = mhl_split(this, state, dest, 2, 4);
+                dest = mhl_dest.hlocs[0];
+            }
 
             switch (dt)
             {
@@ -138,6 +141,26 @@ namespace libtysila
 
             if (!dest.Equals(act_dest_loc))
                 EncMov(this, state, dest, act_dest_loc, ret);
+
+            if (ia == IA.i586 && dt == CliType.int64)
+            {
+                libasm.multiple_hardware_location mhl_dest = mhl_split(this, state, dest, 2, 4);
+                
+                /* if this is a signed conversion, we need to extract the top bit of mhl_dest[0] and
+                 * replicate it throughout mhl_dest[1] */
+                if (signed)
+                {
+                    /* we do:
+                     * mov rdx, act_dest_loc
+                     * shr rdx, 31
+                     * mov mhl_dest[1], rdx */
+                    EncMov(this, state, Rdx, act_dest_loc, ret);
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.SARL, ret, vara.MachineReg(Rdx), vara.Const(31));
+                    EncMov(this, state, mhl_dest.hlocs[1], Rdx, ret);
+                }
+                else
+                    Assign(state, regs_in_use, mhl_dest.hlocs[1], new libasm.const_location { c = 0 }, CliType.int32, ret);
+            }
         }
 
         private static vara enc_conv(InstructionLine i, BaseType_Type dest_bt, Signature.Param srcp, vara srcv, bool force_conversion, ref int next_variable, Assembler ass,

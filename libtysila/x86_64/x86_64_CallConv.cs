@@ -60,12 +60,11 @@ namespace libtysila
             x86_64_Assembler.Rbx, x86_64_Assembler.Rdi, x86_64_Assembler.Rsi };
 
     
-        public static CallConv isr(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass, ThreeAddressCode call_tac)
+        public static CallConv isr(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
         {
             CallConv ret = new CallConv();
 
             ret.CallerCleansStack = true;
-            ret.CallTac = ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call);
 
             /* For an isr on the x86_64, the stack is either:
              * 
@@ -154,7 +153,7 @@ namespace libtysila
                 throw new Exception("Argument type " + Signature.GetString(p, ass) + " currently not supported by amd64 calling convention");
         }
 
-        public static CallConv amd64(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass, ThreeAddressCode call_tac)
+        public static CallConv amd64(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
         {
             /* SysV AMD64 ABI (simplified)
              * 
@@ -170,8 +169,6 @@ namespace libtysila
             CallConv ret = new CallConv();
 
             ret.CallerCleansStack = true;
-            if(call_tac != null)
-                ret.CallTac = call_tac.Operator;
 
             ret.Arguments = new List<ArgumentLocation>();
             ret.ArgsInRegisters = true;
@@ -223,21 +220,22 @@ namespace libtysila
                     ret.Arguments.Add(amd64_argloc(vs, v_size, base_reg, ref stack_pos, ref reg_pos, ref xmm_pos, pointer_size, p, ass));
             }
 
-            if (call_tac != null)
+            if (m.RetType == null)
+                ret.ReturnValue = null;
+            else if (m.RetType.CliType(ass) == Assembler.CliType.none)
+                ret.ReturnValue = null;
+            else if (m.RetType.CliType(ass) == Assembler.CliType.void_)
+                ret.ReturnValue = null;
+            else
             {
-                if (call_tac.Operator.Type == Assembler.CliType.void_)
-                    ret.ReturnValue = null;
-                else
-                {
-                    var_semantic ret_vs = call_tac.GetResultSemantic(ass);
+                var_semantic ret_vs = ass.GetSemantic(m.RetType.CliType(ass), ass.GetSizeOf(m.RetType));
 
-                    if (ret_vs.needs_integer)
-                        ret.ReturnValue = x86_64_Assembler.Rax;
-                    else if (ret_vs.needs_float)
-                        ret.ReturnValue = x86_64_Assembler.Xmm0;
-                    else
-                        throw new Exception("Return type " + Signature.GetString(m.RetType, ass) + " currently not supported by amd64 calling convention");
-                }
+                if (ret_vs.needs_integer)
+                    ret.ReturnValue = x86_64_Assembler.Rax;
+                else if (ret_vs.needs_float)
+                    ret.ReturnValue = x86_64_Assembler.Xmm0;
+                else
+                    throw new Exception("Return type " + Signature.GetString(m.RetType, ass) + " currently not supported by amd64 calling convention");
             }
 
             ret.StackSpaceUsed = stack_pos;
@@ -246,14 +244,11 @@ namespace libtysila
             return ret;
         }
 
-        public static CallConv tcdecl(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass, ThreeAddressCode call_tac)
+        public static CallConv sysv_i386(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
         {
             CallConv ret = new CallConv();
 
             ret.CallerCleansStack = true;
-
-            if(call_tac != null)
-                ret.CallTac = call_tac.Operator;
 
             /* On the x86_64 stack, arguments are 8 byte aligned
              * 
@@ -339,47 +334,32 @@ namespace libtysila
                 stack_pos = util.align(stack_pos, pointer_size);
             }*/
 
-            if (call_tac != null)
-            {
-                if (call_tac.Operator.Type == Assembler.CliType.void_)
-                    ret.ReturnValue = null;
-                else
-                {
-                    var_semantic ret_vs = call_tac.GetResultSemantic(ass);
-
-                    if (ret_vs.needs_integer)
-                        ret.ReturnValue = x86_64_Assembler.Rax;
-                    else if (ret_vs.needs_float)
-                        ret.ReturnValue = x86_64_Assembler.Xmm0;
-                    else
-                    {
-                        int r_size = ass.GetSizeOf(m.RetType);
-                        ret.ReturnValue = new hardware_contentsof { base_loc = base_reg, const_offset = stack_pos, size = r_size };
-                        stack_pos += r_size;
-                        stack_pos = util.align(stack_pos, pointer_size);
-                    }
-                }
-            }
+            if (m.RetType == null)
+                ret.ReturnValue = null;
+            else if (m.RetType.CliType(ass) == Assembler.CliType.none)
+                ret.ReturnValue = null;
+            else if (m.RetType.CliType(ass) == Assembler.CliType.void_)
+                ret.ReturnValue = null;
             else
             {
-                if (Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.Void), ass))
-                    ret.ReturnValue = null;
-                else if (Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.I), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.I1), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.I2), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.I4), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.I8), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.U), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.U1), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.U2), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.U4), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.U8), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.Boolean), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.Byte), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.Char), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.Object), ass) ||
-                    Signature.ParamCompare(m.RetType, new Signature.Param(BaseType_Type.String), ass))
-                    ret.ReturnValue = x86_64_Assembler.Rax;
+                var_semantic ret_vs = ass.GetSemantic(m.RetType.CliType(ass), ass.GetSizeOf(m.RetType));
+
+                if (ret_vs.needs_integer)
+                {
+                    if (ret_vs.needs_int64 && ass.GetBitness() == Assembler.Bitness.Bits32)
+                        ret.ReturnValue = new multiple_hardware_location(x86_64_Assembler.Rax, x86_64_Assembler.Rdx);
+                    else
+                        ret.ReturnValue = x86_64_Assembler.Rax;
+                }
+                else if (ret_vs.needs_float)
+                    ret.ReturnValue = x86_64_Assembler.Xmm0;
+                else
+                {
+                    int r_size = ass.GetSizeOf(m.RetType);
+                    ret.ReturnValue = new hardware_contentsof { base_loc = base_reg, const_offset = stack_pos, size = r_size };
+                    stack_pos += r_size;
+                    stack_pos = util.align(stack_pos, pointer_size);
+                }
             }
 
             ret.StackSpaceUsed = stack_pos;
@@ -411,14 +391,17 @@ namespace libtysila
         protected override void arch_init_callconvs()
         {
             call_convs.Clear();
-            call_convs.Add("cdecl", x86_64_CallConv.tcdecl);
-            call_convs.Add("tcdecl", x86_64_CallConv.tcdecl);
-            call_convs.Add("default", x86_64_CallConv.tcdecl);
+            call_convs.Add("cdecl", x86_64_CallConv.sysv_i386);
+            call_convs.Add("tcdecl", x86_64_CallConv.sysv_i386);
             call_convs.Add("isr", x86_64_CallConv.isr);
             call_convs.Add("amd64", x86_64_CallConv.amd64);
+            call_convs.Add("sysv", x86_64_CallConv.sysv_i386);
+            call_convs.Add("default", x86_64_CallConv.sysv_i386);
 
             if (ia == IA.x86_64)
             {
+                call_convs["default"] = x86_64_CallConv.amd64;
+                call_convs["sysv"] = x86_64_CallConv.amd64;
                 call_convs.Add("gnu", x86_64_CallConv.amd64);
                 call_convs.Add("gcc", x86_64_CallConv.amd64);
             }

@@ -25,7 +25,13 @@ using System.Text;
 
 namespace libasm
 {
-    public class x86_64_gpr : register, IEquatable<hardware_location>
+    public abstract class x86_64_reg : register
+    {
+        public abstract bool is_extended { get; }
+        public abstract byte base_val { get; }
+    }
+
+    public class x86_64_gpr : x86_64_reg, IEquatable<hardware_location>
     {
         public enum RegId
         {
@@ -40,8 +46,8 @@ namespace libasm
             return reg.ToString();
         }
 
-        public bool is_extended { get { if (((int)reg) >= 8) return true; return false; } }
-        public byte base_val { get { return (byte)(((int)reg) % 8); } }
+        public override bool is_extended { get { if (((int)reg) >= 8) return true; return false; } }
+        public override byte base_val { get { return (byte)(((int)reg) % 8); } }
 
         public override bool Equals(hardware_location other)
         {
@@ -63,7 +69,7 @@ namespace libasm
         }
     }
 
-    public class x86_64_xmm : register, IEquatable<hardware_location>
+    public class x86_64_xmm : x86_64_reg, IEquatable<hardware_location>
     {
         public enum XmmId
         {
@@ -78,8 +84,8 @@ namespace libasm
             return xmm.ToString();
         }
 
-        public bool is_extended { get { if (((int)xmm) >= 8) return true; return false; } }
-        public int base_val { get { return ((int)xmm) % 8; } }
+        public override bool is_extended { get { if (((int)xmm) >= 8) return true; return false; } }
+        public override byte base_val { get { return (byte)(((int)xmm) % 8); } }
 
         public override bool Equals(hardware_location other)
         {

@@ -75,6 +75,9 @@ namespace libasm
     {
         public hardware_location[] hlocs;
 
+        public multiple_hardware_location() { }
+        public multiple_hardware_location(params hardware_location[] locs) { hlocs = locs; }
+
         public override string ToString()
         {
             if (hlocs == null)

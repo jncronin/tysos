@@ -58,6 +58,8 @@ namespace libtysila.x86_64
             R8163264, RM8163264, RM8163264as8,
             Rel8, Rel16, Rel32, Rel64,
             rax, rbx, rcx, rdx, rdi, rsi, rbp, rsp, r8, r9, r10, r11, r12, r13, r14, r15,
+            xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
+            Xmm, XmmM8163264
         }
 
         public class op_loc : libasm.hardware_location
@@ -86,6 +88,7 @@ namespace libtysila.x86_64
             PUSHFD, POPF, POPFD, SAHF, LAHF, MOVS, CMPS, STOS,
             LODS, SCAS, ROL, ROR, RCL, RCR, SHL, SHR,
             SAL, SAR, RETN, LES, LDS, ENTER, LEAVE, RETF,
+            SARL, SARQ, SHRL, SHRQ, SALL, SALQ,
             INT, INTO, IRET, IRETD, AAM, AMX, AAD, ADX,
             SALC, XLAT, FADD, FMUL, FCOM, FCOMP, FSUB, FSUBR,
             FDIV, FDIVR, FLD, FXCH, FST, FNOP, FSTP, FSTP1,
@@ -217,10 +220,10 @@ namespace libtysila.x86_64
             Opcodes[opcode.MOVZXL].Add(new x86_64_asm { int_name = "movzxl_r64_rm32", pri_opcode = 0x8b, has_rm = true, ops = new optype[] { optype.R64, optype.RM8163264 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
             Opcodes[opcode.MOVZXL].Add(new x86_64_asm { int_name = "movzxl_rm64_r32", pri_opcode = 0x89, has_rm = true, ops = new optype[] { optype.RM64, optype.R8163264 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
 
-            Opcodes[opcode.MOVSXB].Add(new x86_64_asm { int_name = "movsxb_r32_rm8", is_rm8 = true, prefix_0f = true, pri_opcode = 0xbe, has_rm = true, ops = new optype[] { optype.R32, optype.RM8 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
-            Opcodes[opcode.MOVSXB].Add(new x86_64_asm { int_name = "movsxb_r64_rm8", is_rm8 = true, prefix_0f = true, pri_opcode = 0xbe, rex_w = true, has_rm = true, ops = new optype[] { optype.R64, optype.RM8 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
-            Opcodes[opcode.MOVSXW].Add(new x86_64_asm { int_name = "movsxw_r32_rm16", prefix_0f = true, pri_opcode = 0xbf, has_rm = true, ops = new optype[] { optype.R32, optype.RM8 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
-            Opcodes[opcode.MOVSXW].Add(new x86_64_asm { int_name = "movsxw_r64_rm16", prefix_0f = true, pri_opcode = 0xbf, rex_w = true, has_rm = true, ops = new optype[] { optype.R64, optype.RM8 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
+            Opcodes[opcode.MOVSXB].Add(new x86_64_asm { int_name = "movsxb_r32_rm8", is_rm8 = true, prefix_0f = true, pri_opcode = 0xbe, has_rm = true, ops = new optype[] { optype.R32, optype.RM8163264 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
+            Opcodes[opcode.MOVSXB].Add(new x86_64_asm { int_name = "movsxb_r64_rm8", is_rm8 = true, prefix_0f = true, pri_opcode = 0xbe, rex_w = true, has_rm = true, ops = new optype[] { optype.R64, optype.RM8163264 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
+            Opcodes[opcode.MOVSXW].Add(new x86_64_asm { int_name = "movsxw_r32_rm16", prefix_0f = true, pri_opcode = 0xbf, has_rm = true, ops = new optype[] { optype.R32, optype.RM8163264 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
+            Opcodes[opcode.MOVSXW].Add(new x86_64_asm { int_name = "movsxw_r64_rm16", prefix_0f = true, pri_opcode = 0xbf, rex_w = true, has_rm = true, ops = new optype[] { optype.R64, optype.RM8163264 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
 
             Opcodes[opcode.MOVSXD].Add(new x86_64_asm { int_name = "movsxd_r64_rm32", pri_opcode = 0x63, rex_w = true, has_rm = true, ops = new optype[] { optype.R64, optype.RM32 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
             Opcodes[opcode.MOVSXD].Add(new x86_64_asm { int_name = "mov_rm64_imm32", pri_opcode = 0xc7, rex_w = true, ops = new optype[] { optype.RM64, optype.Imm32 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
@@ -293,6 +296,12 @@ namespace libtysila.x86_64
             Opcodes[opcode.LEAQ].Add(new x86_64_asm { int_name = "lea_r64", pri_opcode = 0x8d, rex_w = true, has_rm = true, ops = new optype[] { optype.R64, optype.RM8163264 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
 
             Opcodes[opcode.LEAVE].Add(new x86_64_asm { int_name = "leave", pri_opcode = 0xc9, ops = new optype[] { }, inputs = new libasm.hardware_location[] { }, outputs = new libasm.hardware_location[] { } });
+
+            Opcodes[opcode.MOVSD].Add(new x86_64_asm { int_name = "movsd", pri_opcode = 0x10, prefix_0f = true, grp1 = 0xf2, grp1_prefix = true, has_rm = true, is_move = true, ops = new optype[] { optype.Xmm, optype.XmmM8163264 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(1) } });
+            Opcodes[opcode.MOVSD].Add(new x86_64_asm { int_name = "movsd", pri_opcode = 0x11, prefix_0f = true, grp1 = 0xf2, grp1_prefix = true, has_rm = true, is_move = true, ops = new optype[] { optype.XmmM8163264, optype.Xmm }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(1) } });
+
+            Opcodes[opcode.MOVSS].Add(new x86_64_asm { int_name = "movss", pri_opcode = 0x10, prefix_0f = true, grp1 = 0xf3, grp1_prefix = true, has_rm = true, is_move = true, ops = new optype[] { optype.Xmm, optype.XmmM8163264 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(1) } });
+            Opcodes[opcode.MOVSS].Add(new x86_64_asm { int_name = "movss", pri_opcode = 0x11, prefix_0f = true, grp1 = 0xf3, grp1_prefix = true, has_rm = true, is_move = true, ops = new optype[] { optype.XmmM8163264, optype.Xmm }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(1) } });
 
             Opcodes[opcode.ORL].Add(new x86_64_asm { int_name = "or_rm32_imm8", pri_opcode = 0x83, has_rm = true, opcode_ext = 1, ops = new optype[] { optype.RM32, optype.Imm8 }, inputs = new libasm.hardware_location[] { new op_loc(0), new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
             Opcodes[opcode.ORL].Add(new x86_64_asm { int_name = "or_eax_imm32", pri_opcode = 0x0d, ops = new optype[] { optype.rax, optype.Imm32 }, inputs = new libasm.hardware_location[] { new op_loc(0), new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });

@@ -29,7 +29,7 @@ namespace libtysila
         protected virtual void ChooseCallInstruction(List<tybel.Node> ret, timple.TimpleCallNode inst, ref int next_var, ref int next_block,
             IList<libasm.hardware_location> las, IList<libasm.hardware_location> lvs)
         {
-            CallConv cc = call_convs[inst.CallConv](new Assembler.MethodToCompile { msig = inst.MethSig }, CallConv.StackPOV.Caller, this, new ThreeAddressCode(inst.Op));
+            CallConv cc = call_convs[inst.CallConv](new Assembler.MethodToCompile { msig = inst.MethSig }, CallConv.StackPOV.Caller, this);
 
             List<vara> isect_list = new List<vara>();
             foreach(libasm.hardware_location isect in cc.CallerPreservesLocations)
@@ -78,7 +78,7 @@ namespace libtysila
                 else
                     ret.AddRange(assign_ops);
             }
-            ret.AddRange(SelectInstruction(new timple.TimpleNode(cc.CallTac, inst.R, inst.O1, vara.Void()), ref next_var, ref next_block, las, lvs));
+            //ret.AddRange(SelectInstruction(new timple.TimpleNode(cc.CallTac, inst.R, inst.O1, vara.Void()), ref next_var, ref next_block, las, lvs));
 
             if (inst.MethSig.Returns)
             {

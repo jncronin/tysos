@@ -48,7 +48,7 @@ namespace libtysila.frontend.cil
             state.lvs = GetLocalVars(mtc, ass);
             int next_block = 0;
 
-            state.cc = ass.call_convs[attrs.call_conv](mtc, CallConv.StackPOV.Callee, ass, new libtysila.ThreeAddressCode(Assembler.GetCallTac(mtc.msig.Method.RetType.CliType(ass))));
+            state.cc = ass.call_convs[attrs.call_conv](mtc, CallConv.StackPOV.Callee, ass);
             attrs.cc = state.cc;
             state.mtc = mtc;
 

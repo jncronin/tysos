@@ -295,7 +295,14 @@ namespace tysila
                         bool old_produces_debug = ass._debug_produces_output;
                         ass.debug = new tydbfile.TyDbFile();
                         ass._debug_produces_output = false;
-                        Assembler.AssembleBlockOutput abo = ass.AssembleMethod(cur_method.Value, dw, null);
+
+                        Assembler.MethodToCompile comp_method = cur_method.Value;
+                        if (comp_method.type.IsValueType(ass) && (!(comp_method.tsigp.Type is Signature.BoxedType) &&
+                            !(comp_method.tsigp.Type is Signature.ManagedPointer)))
+                        {
+                            comp_method.tsigp = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = cur_method.Value.tsig }, ass);
+                        }
+                        Assembler.AssembleBlockOutput abo = ass.AssembleMethod(comp_method, dw, null);
 
                         Dictionary<int, List<libtysila.tybel.Tybel.DebugNode>> debug = new Dictionary<int, List<libtysila.tybel.Tybel.DebugNode>>();
                         foreach (libtysila.tybel.Tybel.DebugNode dn in abo.debug)

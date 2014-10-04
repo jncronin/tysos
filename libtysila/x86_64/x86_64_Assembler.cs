@@ -1302,14 +1302,75 @@ namespace libtysila
             throw new NotImplementedException();
         }
 
+        static libasm.multiple_hardware_location mhl_split(x86_64_Assembler ass, libtysila.frontend.cil.Encoder.EncoderState state, 
+            libasm.hardware_location src, int n, int stack_split_size)
+        {
+            if (src is libasm.multiple_hardware_location)
+                return src as libasm.multiple_hardware_location;
+            else if (src is libasm.hardware_contentsof)
+            {
+                libasm.hardware_location[] locs = new hardware_location[n];
+                libasm.hardware_contentsof hco = src as libasm.hardware_contentsof;
+                for (int i = 0; i < n; i++)
+                    locs[i] = new hardware_contentsof { base_loc = hco.base_loc, const_offset = hco.const_offset + i * stack_split_size, size = stack_split_size };
+
+                return new multiple_hardware_location { hlocs = locs };
+            }
+            else if (src is libasm.hardware_stackloc)
+                return mhl_split(ass, state, x86_64_Assembler.ResolveStackLoc(ass, state, src), n, stack_split_size);
+            else
+                throw new Exception("mhl_split with invalid src type: " + src.ToString());
+        }
+
         internal static void EncMov(x86_64_Assembler ass, libtysila.frontend.cil.Encoder.EncoderState state, libasm.hardware_location dest, libasm.hardware_location src, List<tybel.Node> ret)
         { EncMov(ass, state, dest, src, CliType.native_int, ret); }
 
         internal static void EncMov(x86_64_Assembler ass, libtysila.frontend.cil.Encoder.EncoderState state, libasm.hardware_location dest, libasm.hardware_location src, CliType dt, List<tybel.Node> ret)
         {
+            if ((dest is libasm.multiple_hardware_location) || (src is libasm.multiple_hardware_location))
+            {
+                int locs = 0;
+                if (dest is libasm.multiple_hardware_location)
+                    locs = ((libasm.multiple_hardware_location)dest).hlocs.Length;
+                if (src is libasm.multiple_hardware_location)
+                {
+                    int src_locs = ((libasm.multiple_hardware_location)src).hlocs.Length;
+                    if (locs != 0 && src_locs != locs)
+                        throw new Exception("cannot move between " + src.ToString() + " and " + dest.ToString());
+                    locs = src_locs;
+                }
+                libasm.multiple_hardware_location mhl_dest = mhl_split(ass, state, dest, locs, ass.ia == IA.i586 ? 4 : 8);
+                libasm.multiple_hardware_location mhl_src = mhl_split(ass, state, src, locs, ass.ia == IA.i586 ? 4 : 8);
+
+                for (int i = 0; i < locs; i++)
+                {
+                    EncMov(ass, state, mhl_dest.hlocs[i], mhl_src.hlocs[i], ret);
+                }
+                return;
+            }
+
+
             libasm.hardware_location act_dest = dest;
-            if (!(dest is x86_64_gpr) && !(src is x86_64_gpr))
-                dest = Rax;
+            switch (dt)
+            {
+                case CliType.int32:
+                case CliType.int64:
+                case CliType.native_int:
+                case CliType.O:
+                case CliType.reference:
+                case CliType.virtftnptr:
+                    if (!(dest is libasm.multiple_hardware_location) && !(src is libasm.multiple_hardware_location))
+                    {
+                        if (!(dest is x86_64_gpr) && !(src is x86_64_gpr))
+                            dest = Rax;
+                    }
+                    break;
+                case CliType.F32:
+                case CliType.F64:
+                    if (!(dest is x86_64_xmm) && !(src is x86_64_xmm))
+                        dest = Xmm0;
+                    break;
+            }
 
             src = ResolveStackLoc(ass, state, src);
             dest = ResolveStackLoc(ass, state, dest);
@@ -1326,6 +1387,12 @@ namespace libtysila
                         op = x86_64.x86_64_asm.opcode.MOVQ;
                     else
                         throw new NotImplementedException();
+                    break;
+                case CliType.F64:
+                    op = x86_64.x86_64_asm.opcode.MOVSD;
+                    break;
+                case CliType.F32:
+                    op = x86_64.x86_64_asm.opcode.MOVSS;
                     break;
                 default:
                     throw new NotImplementedException();
@@ -1443,7 +1510,7 @@ namespace libtysila
             {
                 // Store return value
                 if (retval != null)
-                    EncMov(this, state, retval, cc.ReturnValue, ret);
+                    Assign(state, regs_in_use, retval, cc.ReturnValue, cc.MethodSig.Method.RetType.CliType(this), ret);
 
                 // Restore stack
                 if (cc.StackSpaceUsed != 0)
@@ -1740,6 +1807,35 @@ namespace libtysila
                             break;
                     }
                     break;
+
+                case ThreeAddressCode.OpName.sub:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc = x86_64.x86_64_asm.opcode.SUBL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                                throw new NotImplementedException();
+                            opc = x86_64.x86_64_asm.opcode.SUBQ;
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.xor:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc = x86_64.x86_64_asm.opcode.XORL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                                throw new NotImplementedException();
+                            opc = x86_64.x86_64_asm.opcode.XORQ;
+                            break;
+                    }
+                    break;
+                    
 
                 default:
                     throw new NotImplementedException("x86 binary number op '" + op.Operator.ToString() + "' not implemented");

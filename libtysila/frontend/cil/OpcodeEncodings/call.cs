@@ -238,24 +238,15 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 var_args[j] = il.stack_vars_before.GetAddressOf(il.stack_before.Count - (arg_count - j) + (is_calli ? -1 : 0), ass);
 
             // Get the calling convention
-            ThreeAddressCode.Op call_tac;
-            if (Assembler.GetLdObjTac(msigm.RetType.CliType(ass)).Type == Assembler.CliType.vt)
-            {
+            if (msigm.RetType != null && msigm.RetType.CliType(ass) == Assembler.CliType.vt)
                 is_vt_call = true;
-                call_tac = ThreeAddressCode.Op.OpVT(ThreeAddressCode.OpName.call);
-            }
-            else
-            {
-                is_vt_call = false;
-                call_tac = Assembler.GetCallTac(msigm.RetType.CliType(ass));
-            }
             int vt_size = 0;
             if (is_vt_call)
                 vt_size = ass.GetSizeOf(msigm.RetType);
             string call_conv = ass.Options.CallingConvention;
             if ((call_mtc.meth != null) && (call_mtc.meth.CallConvOverride != null))
                 call_conv = call_mtc.meth.CallConvOverride;
-            cc = ass.call_convs[call_conv](call_mtc, CallConv.StackPOV.Caller, ass, new ThreeAddressCode(call_tac, vt_size));
+            cc = ass.call_convs[call_conv](call_mtc, CallConv.StackPOV.Caller, ass);
 
             /* Sort out the stack */
             int pop_count = arg_count;
@@ -496,7 +487,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             string call_conv = ass.Options.CallingConvention;
             if ((call_mtc.meth != null) && (call_mtc.meth.CallConvOverride != null))
                 call_conv = call_mtc.meth.CallConvOverride;
-            cc = ass.call_convs[call_conv](call_mtc, CallConv.StackPOV.Caller, ass, new ThreeAddressCode(call_tac, vt_size));
+            cc = ass.call_convs[call_conv](call_mtc, CallConv.StackPOV.Caller, ass);
 
             // Make the actual call
             vara v_ret = (msigm.RetType.CliType(ass) == Assembler.CliType.void_) ? vara.Void() : vara.Logical(next_variable++, msigm.RetType.CliType(ass));

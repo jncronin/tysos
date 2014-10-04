@@ -182,7 +182,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     if ((constructor.Value.meth != null) && (constructor.Value.meth.CallConvOverride != null))
                         callconv = constructor.Value.meth.CallConvOverride;
 
-                    CallConv cc = ass.call_convs[callconv](constructor.Value, CallConv.StackPOV.Caller, ass, null);
+                    CallConv cc = ass.call_convs[callconv](constructor.Value, CallConv.StackPOV.Caller, ass);
                     Stack temp_stack = il.stack_vars_before.Clone();
                     temp_stack.MarkUsed(t1);
                     ass.Call(state, temp_stack, new libasm.hardware_addressoflabel(Mangler2.MangleMethod(constructor.Value, ass), false),

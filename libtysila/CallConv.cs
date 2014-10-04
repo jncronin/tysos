@@ -53,16 +53,26 @@ namespace libtysila
 
         public enum StackPOV { Caller, Callee };
 
-        public ThreeAddressCode.Op CallTac;
-
         public Signature.BaseMethod MethodSig;
 
-        public delegate CallConv GetCallConv(Assembler.MethodToCompile meth, StackPOV pov, Assembler ass, ThreeAddressCode call_tac);
+        public delegate CallConv GetCallConv(Assembler.MethodToCompile meth, StackPOV pov, Assembler ass);
     }
 
     partial class Assembler
     {
-        public Dictionary<string, CallConv.GetCallConv> call_convs = new Dictionary<string, CallConv.GetCallConv>(new GenericEqualityComparer<string>());
+        Dictionary<string, CallConv.GetCallConv> _call_convs = null;
+        public Dictionary<string, CallConv.GetCallConv> call_convs
+        {
+            get
+            {
+                if (_call_convs == null)
+                {
+                    _call_convs = new Dictionary<string, CallConv.GetCallConv>();
+                    arch_init_callconvs();
+                }
+                return _call_convs;
+            }
+        }
 
         protected abstract void arch_init_callconvs();
 
@@ -91,7 +101,7 @@ namespace libtysila
                     RetType = rettype,
                     Returns = returns
                 }
-            }, CallConv.StackPOV.Caller, this, new ThreeAddressCode(call_tac));
+            }, CallConv.StackPOV.Caller, this);
         }
 
         internal CallConv callconv_gcmalloc

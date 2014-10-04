@@ -21,24 +21,30 @@
 
 using System;
 using System.Collections.Generic;
-using libtysila.frontend.cil;
 
-namespace libtysila.x86_64.cil
+namespace libtysila.frontend.cil.OpcodeEncodings
 {
-    class ret
+    partial class switch_
     {
-        public static void tybel_ret(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+        public static void tybel_switch(CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            if (state.cc.ReturnValue != null)
-            {
-                libasm.hardware_location retval = il.stack_vars_after.Pop(ass);
-                ((x86_64_Assembler)ass).Assign(state, il.stack_vars_before, state.cc.ReturnValue, retval, il.stack_after.Pop().CliType(ass), il.il.tybel);
-            }
+            libasm.hardware_location loc_value = il.stack_vars_after.Pop(ass);
+            Signature.Param p_value = il.stack_after.Pop();
 
-            il.il.tybel.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.RestoreCalleeSaved, Val = state.used_locs });
-            ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.LEAVE, il.il.tybel);
-            ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.RETN, il.il.tybel);
+            if (!Signature.ParamCompare(p_value, new Signature.Param(BaseType_Type.I4), ass))
+                throw new Assembler.AssemblerException("switch: value is not of type Int32 (" + p_value.ToString() + ")",
+                    il.il, mtc);
+
+            for (int i = 0; i < il.il.inline_array.Count; i++)
+            {
+                int target = il.il.il_offset_after + il.il.inline_array[i];
+                CilNode target_cil = state.offset_map[target];
+                string l_target = "L" + target_cil.il_label.ToString();
+
+                ass.BrIf(state, il.stack_vars_before, new libasm.hardware_addressoflabel(l_target, false), loc_value,
+                    new libasm.const_location { c = i }, ThreeAddressCode.OpName.beq, Assembler.CliType.int32, il.il.tybel);
+            }
         }
     }
 }

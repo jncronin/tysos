@@ -38,7 +38,13 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
 
         internal static CilNode Decompose_castclass(CilNode n, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Assembler.MethodAttributes attrs)
         {
-            throw new NotImplementedException();
+            timple.BaseNode i_1 = n.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.castclassex)], inline_tok = n.il.inline_tok } });
+            timple.BaseNode i_2 = i_1.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] } });
+            timple.BaseNode i_3 = i_2.InsertAfter(new CilNode { il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.throwfalse)], inline_int = Assembler.throw_InvalidCastException } });
+
+            n.Remove();
+            n.replaced_by = new List<CilNode> { (CilNode)i_1, (CilNode)i_2, (CilNode)i_3 };
+            return (CilNode)i_1;
         }
     }
 }
