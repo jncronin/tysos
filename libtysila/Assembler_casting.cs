@@ -27,6 +27,19 @@ namespace libtysila
 {
     partial class Assembler
     {
+        internal Signature.BaseOrComplexType GetUnderlyingType(Signature.BaseOrComplexType p)
+        {
+            if (p is Signature.ComplexType)
+            {
+                Metadata.TypeDefRow tdr = Metadata.GetTypeDef(p, this);
+                if (tdr.IsEnum(this))
+                {
+                    Layout l = Layout.GetLayout(new TypeToCompile { _ass = this, tsig = new Signature.Param(p, this), type = tdr }, this);
+                    return l.GetFirstInstanceField("value__").field.fsig.Type;
+                }
+            }
+            return p;
+        }
         internal bool IsArrayElementCompatibleWith(Signature.Param dest, Signature.Param src)
         {
             if (Signature.ParamCompare(GetReducedType(dest), GetReducedType(src), this))
@@ -39,9 +52,10 @@ namespace libtysila
         { return new Signature.Param(GetReducedType(p.Type), this); }
         internal Signature.BaseOrComplexType GetReducedType(Signature.BaseOrComplexType t)
         {
-            if (t is Signature.BaseType)
+            Signature.BaseOrComplexType u_t = GetUnderlyingType(t);
+            if (u_t is Signature.BaseType)
             {
-                Signature.BaseType bt = t as Signature.BaseType;
+                Signature.BaseType bt = u_t as Signature.BaseType;
                 switch (bt.Type)
                 {
                     case BaseType_Type.I1:
@@ -60,6 +74,54 @@ namespace libtysila
             }
             return t;
         }
+        internal Signature.BaseOrComplexType GetVerificationType(Signature.BaseOrComplexType t)
+        {
+            Signature.BaseOrComplexType r_t = GetReducedType(t);
+            if(r_t is Signature.BaseType)
+            {
+                Signature.BaseType b_t = r_t as Signature.BaseType;
+                switch(b_t.Type)
+                {
+                    case BaseType_Type.I1:
+                    case BaseType_Type.Boolean:
+                        return new Signature.BaseType(BaseType_Type.I1);
+                    case BaseType_Type.I2:
+                    case BaseType_Type.Char:
+                        return new Signature.BaseType(BaseType_Type.I2);
+                    case BaseType_Type.I4:
+                        return new Signature.BaseType(BaseType_Type.I4);
+                    case BaseType_Type.I8:
+                        return new Signature.BaseType(BaseType_Type.I8);
+                    case BaseType_Type.I:
+                        return new Signature.BaseType(BaseType_Type.I);
+                }
+            }
+            if (t is Signature.ManagedPointer)
+            {
+                Signature.ManagedPointer m_ptr = t as Signature.ManagedPointer;
+                Signature.BaseOrComplexType r_ts = GetReducedType(m_ptr.ElemType);
+                if (r_ts is Signature.BaseType)
+                {
+                    switch (((Signature.BaseType)r_ts).Type)
+                    {
+                        case BaseType_Type.I1:
+                        case BaseType_Type.Boolean:
+                            return new Signature.ManagedPointer { _ass = this, ElemType = new Signature.BaseType(BaseType_Type.I1) };
+                        case BaseType_Type.I2:
+                        case BaseType_Type.Char:
+                            return new Signature.ManagedPointer { _ass = this, ElemType = new Signature.BaseType(BaseType_Type.I2) };
+                        case BaseType_Type.I4:
+                            return new Signature.ManagedPointer { _ass = this, ElemType = new Signature.BaseType(BaseType_Type.I4) };
+                        case BaseType_Type.I8:
+                            return new Signature.ManagedPointer { _ass = this, ElemType = new Signature.BaseType(BaseType_Type.I8) };
+                        case BaseType_Type.I:
+                            return new Signature.ManagedPointer { _ass = this, ElemType = new Signature.BaseType(BaseType_Type.I) };
+                    }
+                }
+            }
+            return t;
+        }
+
         bool is_assignment_compatible(Signature.Param dest, Signature.Param src)
         { return is_assignment_compatible(dest.Type, src.Type); }
         bool is_assignment_compatible(Signature.BaseOrComplexType dest, Signature.BaseOrComplexType src)

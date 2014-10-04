@@ -1129,8 +1129,7 @@ namespace libtysila
 
         public virtual int GetArrayStart()
         {
-            //return GetArrayFieldOffset(ArrayFields.inner_array);
-            throw new NotImplementedException();
+            return GetArrayFieldOffset(ArrayFields.inner_array);
         }
 
         public string GetName()

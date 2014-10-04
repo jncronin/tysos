@@ -1742,11 +1742,11 @@ namespace libtysila
                     break;
 
                 default:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("x86 binary number op '" + op.Operator.ToString() + "' not implemented");
             }
 
             if (opc == x86_64.x86_64_asm.opcode.NOP)
-                throw new NotImplementedException();
+                throw new NotImplementedException("x86 binary number op '" + op.Operator.ToString() + "' not implemented");
 
             ChooseInstruction(mov, ret, vara.MachineReg(Rax), vara.MachineReg(a));
             ChooseInstruction(opc, ret, vara.MachineReg(Rax), vara.MachineReg(b));

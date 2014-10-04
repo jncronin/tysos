@@ -661,6 +661,11 @@ namespace libtysila
                 else
                     return false;
             }
+
+            public override string ToString()
+            {
+                return ElemType.ToString() + "[]";
+            }
         }
 
         public class ComplexArray : BaseArray

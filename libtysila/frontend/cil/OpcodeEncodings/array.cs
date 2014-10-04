@@ -153,5 +153,125 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             il.stack_after.Push(type);
         }
+
+        public static void tybel_newarr(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Assembler.TypeToCompile elem_type = Metadata.GetTTC(il.il.inline_tok, mtc.GetTTC(ass), mtc.msig, ass);
+            Signature.ZeroBasedArray zba = new Signature.ZeroBasedArray { _ass = ass, ElemType = elem_type.tsig.Type };
+            Signature.Param p_zba = new Signature.Param(zba, ass);
+            Assembler.TypeToCompile arr_type = ass.CreateArray(p_zba, 1, elem_type, true);
+            zba.ArrayType = arr_type.type;
+
+            libasm.hardware_location loc_numelems = il.stack_vars_after.Pop(ass);
+            Signature.Param p_numelems = il.stack_after.Pop();
+
+            libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_zba, ass);
+
+            libasm.hardware_location t1 = ass.GetTemporary(state, Assembler.CliType.native_int);
+            libasm.hardware_location t2 = ass.GetTemporary2(state, Assembler.CliType.native_int);
+
+            /* Convert numElems to native int */
+            if (!Signature.ParamCompare(p_numelems, new Signature.Param(BaseType_Type.I), ass))
+            {
+                if (!Signature.ParamCompare(p_numelems, new Signature.Param(BaseType_Type.I4), ass))
+                    throw new Assembler.AssemblerException("newarr: numElems is not of type int32 or native int " +
+                        "(is of type " + p_numelems.ToString() + ")", il.il, mtc);
+
+                ass.Conv(state, il.stack_vars_before, t2, loc_numelems, new Signature.BaseType(BaseType_Type.I),
+                    new Signature.BaseType(BaseType_Type.I4), false, il.il.tybel);
+                loc_numelems = t2;
+                p_numelems = new Signature.Param(BaseType_Type.I4);
+            }
+
+            /* Allocate memory for the array.  Array size =
+             *     (numElems * elemSize) + sizes_array_size + lobounds_array_size + array_type_size
+             *     
+             * Where sizes_array_size and lobounds_array_size are SizeOf(Int32)
+             * Let static_size = array_type_size + 2 * 4
+             */
+            Layout l_arr_type = Layout.GetTypeInfoLayout(arr_type, ass, true);
+            int static_size = l_arr_type.ClassSize + 8;
+
+            // t1 = numElems * elemSize
+            int elem_size = ass.GetPackedSizeOf(elem_type.tsig);
+            ass.Mul(state, il.stack_vars_before, t1, t2, new libasm.const_location { c = elem_size }, Assembler.CliType.native_int, il.il.tybel);
+            // t1 = t1 + static_size
+            ass.Add(state, il.stack_vars_before, t1, t1, new libasm.const_location { c = static_size }, Assembler.CliType.native_int, il.il.tybel);
+            // t1 = gcmalloc(t1)
+            Stack temp_stack = il.stack_vars_before.Clone();
+            temp_stack.MarkUsed(t1); temp_stack.MarkUsed(t2);
+            ass.Call(state, temp_stack, new libasm.hardware_addressoflabel("gcmalloc", false), t1, new libasm.hardware_location[] { t1 },
+                ass.callconv_gcmalloc, il.il.tybel);
+
+            /* Fill in the array fields */
+            int lobounds_offset = l_arr_type.ClassSize;
+            int sizes_offset = lobounds_offset + 4;
+            int data_offset = sizes_offset + 4;
+
+            // __vtbl
+            ass.Assign(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = l_arr_type.vtbl_offset, size = ass.GetSizeOfPointer() },
+                new libasm.hardware_addressoflabel(l_arr_type.typeinfo_object_name, l_arr_type.FixedLayout[Layout.ID_VTableStructure].Offset, true),
+                Assembler.CliType.native_int, il.il.tybel);
+
+            // __rank
+            ass.Assign(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.rank), size = 4 },
+                new libasm.const_location { c = 1 }, Assembler.CliType.int32, il.il.tybel);
+
+            // __elemsize
+            ass.Assign(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.elem_size), size = 4 },
+                new libasm.const_location { c = elem_size }, Assembler.CliType.int32, il.il.tybel);
+
+            // __inner_array_length
+            ass.Assign(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length), size = 4 },
+                t2, Assembler.CliType.int32, il.il.tybel);
+
+            // __elemtype
+            ass.Assign(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.elemtype), size = ass.GetSizeOfIntPtr() },
+                new libasm.hardware_addressoflabel(Mangler2.MangleTypeInfo(elem_type, ass), true), Assembler.CliType.native_int, il.il.tybel);
+
+            // __lobounds
+            ass.LoadAddress(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.lobounds), size = ass.GetSizeOfIntPtr() },
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = lobounds_offset }, il.il.tybel);
+
+            // __sizes
+            ass.LoadAddress(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.sizes), size = ass.GetSizeOfIntPtr() },
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = sizes_offset }, il.il.tybel);
+
+            // __inner_array
+            ass.LoadAddress(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfIntPtr() },
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = data_offset }, il.il.tybel);
+
+            // __lobounds[0]
+            ass.Assign(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = lobounds_offset, size = 4 },
+                new libasm.const_location { c = 0 }, Assembler.CliType.int32, il.il.tybel);
+            
+            // __sizes[0]
+            ass.Assign(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = sizes_offset, size = 4 },
+                t2, Assembler.CliType.int32, il.il.tybel);
+
+            // TODO: ?zero memory if not done by gcmalloc
+
+            // __objid
+            ass.Call(state, temp_stack, new libasm.hardware_addressoflabel("getobjid", false), t2, new libasm.hardware_location[] { },
+                ass.callconv_getobjid, il.il.tybel);
+            ass.Assign(state, temp_stack,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = l_arr_type.obj_id_offset, size = 4 },
+                t2, Assembler.CliType.int32, il.il.tybel);
+
+            // return
+            ass.Assign(state, temp_stack, loc_ret, t1, Assembler.CliType.native_int, il.il.tybel);
+            il.stack_after.Push(p_zba);
+        }
     }
 }
