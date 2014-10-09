@@ -161,7 +161,16 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location dest_loc = il.stack_vars_after.GetAddressFor(dest_p, ass);
             il.stack_after.Push(dest_p);
 
-            ass.Conv(state, il.stack_vars_before, dest_loc, src_loc, dest_p.Type as Signature.BaseType, srcp.Type as Signature.BaseType, un == false, il.il.tybel);
+            Signature.BaseType src_type = null;
+            if (srcp.Type is Signature.ManagedPointer)
+                src_type = new Signature.BaseType(BaseType_Type.I);
+            else if (srcp.Type is Signature.BaseType)
+                src_type = srcp.Type as Signature.BaseType;
+            else
+                throw new Assembler.AssemblerException(il.il.opcode.ToString() + ": invalid source type: " + srcp.ToString(),
+                    il.il, mtc);
+
+            ass.Conv(state, il.stack_vars_before, dest_loc, src_loc, dest_p.Type as Signature.BaseType, src_type, un == false, il.il.tybel);
 
             // Perform overflow testing if requested
             if (ovf)

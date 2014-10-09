@@ -40,15 +40,34 @@ namespace libtysila
             }
             return p;
         }
+        internal Signature.Param GetUnderlyingType(Signature.Param p)
+        { return new Signature.Param(GetUnderlyingType(p.Type), this); }
         internal bool IsArrayElementCompatibleWith(Signature.Param dest, Signature.Param src)
         {
-            if (Signature.ParamCompare(GetReducedType(dest), GetReducedType(src), this))
+            /* CIL I:8.7.1 states array-element-compatible to be:
+             * W = underlying_type(dest)
+             * V = underlying_type(src)
+             * true if V is compatible-with W
+             * true if V and W have the same reduced-type
+             * 
+             * Unfortunately this fails when checking array-element-compatible-with(I2, Char), which
+             * is a common code sequence, e.g. in assigning to Char[] arrays with stelem.i2, code which
+             * is produced by mono (and presumably .NET as there appears to be no other way to encode
+             * this without using the accessor methods on the Array object).
+             * 
+             * We fix it to change the reduced-type test to succeed if they have the same verification-type
+             */
+
+            dest = GetUnderlyingType(dest);
+            src = GetUnderlyingType(src);
+
+            if (Signature.ParamCompare(GetVerificationType(dest), GetVerificationType(src), this))
                 return true;
             return is_assignment_compatible(dest, src);
         }
         internal bool IsAssignableTo(Signature.Param dest, Signature.Param src)
         {
-            throw new NotImplementedException();
+            return is_assignment_compatible(dest, src);
         }
         internal bool IsCompatibleWith(Signature.Param dest, Signature.Param src)
         { return is_assignment_compatible(dest, src); }
@@ -78,6 +97,8 @@ namespace libtysila
             }
             return t;
         }
+        internal Signature.Param GetVerificationType(Signature.Param p)
+        { return new Signature.Param(GetVerificationType(p.Type), this); }
         internal Signature.BaseOrComplexType GetVerificationType(Signature.BaseOrComplexType t)
         {
             Signature.BaseOrComplexType r_t = GetReducedType(t);

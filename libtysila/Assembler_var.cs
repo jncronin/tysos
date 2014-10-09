@@ -195,6 +195,9 @@ namespace libtysila
         public int SSA { get { return ssa; } set { ssa = value; } }
         public Signature.Param VT_Type { get { return vt_type; } }
 
+        public static implicit operator vara(libasm.hardware_location loc)
+        { return vara.MachineReg(loc); }
+
         public override string ToString()
         {
             switch (type)

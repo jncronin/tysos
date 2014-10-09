@@ -138,6 +138,12 @@ namespace libasm
                 return true;
             }
         }
+
+        public libasm.hardware_location this[int i]
+        {
+            get { return hlocs[i]; }
+            set { hlocs[i] = value; }
+        }
     }
 
     public class const_location : hardware_location

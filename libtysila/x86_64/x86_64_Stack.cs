@@ -51,6 +51,8 @@ namespace libtysila
 
             static libasm.hardware_location[] usuable_64_int_locs = new libasm.hardware_location[] { Rdi, Rsi, R8, R9, R10, R11, R12, R13, R14, R15 };
             static libasm.hardware_location[] usuable_32_int_locs = new libasm.hardware_location[] { Rdi, Rsi };
+            static libasm.hardware_location[] usuable_64_float_locs = new libasm.hardware_location[] { Xmm4, Xmm5, Xmm6, Xmm7, Xmm8, Xmm9, Xmm10, Xmm11, Xmm12, Xmm13, Xmm14, Xmm15 };
+            static libasm.hardware_location[] usuable_32_float_locs = new libasm.hardware_location[] { Xmm4, Xmm5, Xmm6, Xmm7 };
 
             ICollection<libasm.hardware_location> usuable_int_locs
             {
@@ -63,7 +65,19 @@ namespace libtysila
                 }
             }
 
+            ICollection<libasm.hardware_location> usuable_float_locs
+            {
+                get
+                {
+                    if (a.GetBitness() == Bitness.Bits32)
+                        return usuable_32_float_locs;
+                    else
+                        return usuable_64_float_locs;
+                }
+            }
+
             util.Stack<libasm.hardware_location> free_int_locs;
+            util.Stack<libasm.hardware_location> free_float_locs;
 
             public x86_64_Stack(Assembler ass) { a = ass; }
 
@@ -73,6 +87,8 @@ namespace libtysila
                     cur_locs = new util.Stack<libasm.hardware_location>();
                 if (free_int_locs == null)
                     free_int_locs = new util.Stack<libasm.hardware_location>(usuable_int_locs);
+                if (free_float_locs == null)
+                    free_float_locs = new util.Stack<libasm.hardware_location>(usuable_float_locs);
 
                 int obj_size = ass.GetSizeOf(p);
 
@@ -98,11 +114,16 @@ namespace libtysila
                 int max_reg_size = 4;
                 if (a.GetBitness() == Bitness.Bits64)
                     max_reg_size = 8;
+                int max_float_reg_size = 8;
 
                 libasm.hardware_location l;
                 if (is_int && obj_size <= max_reg_size && free_int_locs.Count > 0)
                 {
                     l = free_int_locs.Pop();
+                }
+                else if (is_float && obj_size <= max_float_reg_size && free_float_locs.Count > 0)
+                {
+                    l = free_float_locs.Pop();
                 }
                 else
                 {
@@ -129,6 +150,8 @@ namespace libtysila
                 libasm.hardware_location l = cur_locs.Pop();
                 if (usuable_int_locs.Contains(l))
                     free_int_locs.Add(l);
+                else if (usuable_float_locs.Contains(l))
+                    free_float_locs.Add(l);
                 else
                     next_loc = ((libasm.hardware_stackloc)l).loc;
                 
@@ -143,6 +166,7 @@ namespace libtysila
                     next_loc = next_loc,
                     stype = stype,
                     free_int_locs = free_int_locs == null ? null : new util.Stack<libasm.hardware_location>(free_int_locs),
+                    free_float_locs = free_float_locs == null ? null : new util.Stack<libasm.hardware_location>(free_float_locs)
                 };
             }
 

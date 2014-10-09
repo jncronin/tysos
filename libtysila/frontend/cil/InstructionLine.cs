@@ -52,6 +52,7 @@ namespace libtysila.frontend.cil
         public float inline_sgl;
         public Token inline_tok;
         public List<int> inline_array = new List<int>();
+        public byte[] inline_val;
 
         public bool from_cil = false;
 

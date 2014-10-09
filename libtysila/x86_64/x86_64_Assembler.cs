@@ -49,6 +49,8 @@ namespace libtysila
         public static x86_64_gpr Rsp { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rsp }; } }
         public static x86_64_gpr Rbp { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rbp }; } }
 
+        public static libasm.multiple_hardware_location RaxRdx { get { return new multiple_hardware_location(Rax, Rdx); } }
+
         public static x86_64_gpr R8 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r8 }; } }
         public static x86_64_gpr R9 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r9 }; } }
         public static x86_64_gpr R10 { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.r10 }; } }
@@ -350,8 +352,10 @@ namespace libtysila
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_5)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_6)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_7)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_8)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_m1)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_s)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_r4)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_r4;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldnull)].TybelEncoder = x86_64.cil.ldc.tybel_ldnull;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)].TybelEncoder = x86_64.cil.ret.tybel_ret;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ceq)].TybelEncoder = x86_64.cil.brset.tybel_brset;
@@ -1224,6 +1228,19 @@ namespace libtysila
             return ret;
         }
 
+        internal CliType GetCliType(System.Type t)
+        {
+            if (t == typeof(int))
+                return CliType.int32;
+            if (t == typeof(uint))
+                return CliType.int32;
+            if (t == typeof(long))
+                return CliType.int64;
+            if (t == typeof(ulong))
+                return CliType.int64;
+            throw new NotImplementedException();
+        }
+
         internal void ChooseInstruction(x86_64.x86_64_asm.opcode op, List<tybel.Node> ret, params vara[] vars)
         {
             int nv = 0;
@@ -1232,7 +1249,7 @@ namespace libtysila
             for (int i = 0; i < vars.Length; i++)
             {
                 if (vars[i].MachineRegVal is libasm.const_location)
-                    vars[i] = vara.Const(((libasm.const_location)vars[i].MachineRegVal).c);
+                    vars[i] = vara.Const(((libasm.const_location)vars[i].MachineRegVal).c, GetCliType(((libasm.const_location)vars[i].MachineRegVal).c.GetType()));
                 if (vars[i].MachineRegVal is libasm.hardware_addressoflabel)
                 {
                     libasm.hardware_addressoflabel aol = vars[i].MachineRegVal as libasm.hardware_addressoflabel;
@@ -1327,7 +1344,7 @@ namespace libtysila
 
         internal static void EncMov(x86_64_Assembler ass, libtysila.frontend.cil.Encoder.EncoderState state, libasm.hardware_location dest, libasm.hardware_location src, CliType dt, List<tybel.Node> ret)
         {
-            if ((dest is libasm.multiple_hardware_location) || (src is libasm.multiple_hardware_location))
+            if ((dest is libasm.multiple_hardware_location) || (src is libasm.multiple_hardware_location) || (dt == CliType.int64 && ass.ia == IA.i586))
             {
                 int locs = 0;
                 if (dest is libasm.multiple_hardware_location)
@@ -1339,6 +1356,8 @@ namespace libtysila
                         throw new Exception("cannot move between " + src.ToString() + " and " + dest.ToString());
                     locs = src_locs;
                 }
+                if (locs == 0)
+                    locs = 2;
                 libasm.multiple_hardware_location mhl_dest = mhl_split(ass, state, dest, locs, ass.ia == IA.i586 ? 4 : 8);
                 libasm.multiple_hardware_location mhl_src = mhl_split(ass, state, src, locs, ass.ia == IA.i586 ? 4 : 8);
 
@@ -1476,7 +1495,39 @@ namespace libtysila
 
         internal override void MemCpy(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, hardware_location n, List<tybel.Node> ret)
         {
-            throw new NotImplementedException();
+            /* We can inline this if:
+             * n is known at compile time
+             * one of src/dest is a gpr (we need to use one of rax/rdx as an intermediate)
+             * n is sufficiently small (? <= 4x word size)
+             */
+            int ptr_size = ia == IA.i586 ? 4 : 8;
+            if ((n is libasm.const_location) && ((src is x86_64_gpr) || (dest is x86_64_gpr)) &&
+                (int)((libasm.const_location)n).c <= (4 * ptr_size))
+            {
+                int size = (int)((libasm.const_location)n).c;
+                if (!(src is x86_64_gpr))
+                {
+                    Assign(state, regs_in_use, Rax, src, CliType.native_int, ret);
+                    src = Rax;
+                }
+                else if (!(dest is x86_64_gpr))
+                {
+                    Assign(state, regs_in_use, Rax, dest, CliType.native_int, ret);
+                    dest = Rax;
+                }
+                for (int cur_ptr = 0; cur_ptr < size; cur_ptr += ptr_size)
+                {
+                    Assign(state, regs_in_use, Rdx, new libasm.hardware_contentsof { base_loc = src, const_offset = cur_ptr, size = ptr_size },
+                        CliType.native_int, ret);
+                    Assign(state, regs_in_use, new libasm.hardware_contentsof { base_loc = dest, const_offset = cur_ptr, size = ptr_size }, Rdx,
+                        CliType.native_int, ret);
+                }
+            }
+            else
+            {
+                Call(state, regs_in_use, new libasm.hardware_addressoflabel("memcpy", false), null,
+                    new hardware_location[] { dest, src, n }, callconv_memcpy, ret);
+            }
         }
 
         internal override void Call(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location retval, hardware_location[] p, CallConv cc, List<tybel.Node> ret)
@@ -1789,10 +1840,27 @@ namespace libtysila
 
             op = ResolveNativeIntOp(op);
 
-            x86_64.x86_64_asm.opcode opc = x86_64.x86_64_asm.opcode.NOP;
+            x86_64.x86_64_asm.opcode opc1 = x86_64.x86_64_asm.opcode.NOP;
+            x86_64.x86_64_asm.opcode opc2 = x86_64.x86_64_asm.opcode.NOP;
             x86_64.x86_64_asm.opcode mov = x86_64.x86_64_asm.opcode.MOVL;
-            if(op.Type == CliType.int64)
+            libasm.hardware_location idiv_ret = null;
+            libasm.hardware_location temp = Rax;
+            bool int64_backwards = false;
+            bool b_in_cl_if_not_const = false;
+            bool b_is_int32 = false;
+
+            if (op.Type == CliType.int64 && ia == IA.x86_64)
                 mov = x86_64.x86_64_asm.opcode.MOVQ;
+            else if (op.Type == CliType.F32)
+            {
+                mov = x86_64.x86_64_asm.opcode.MOVSS;
+                temp = Xmm0;
+            }
+            else if (op.Type == CliType.F64)
+            {
+                mov = x86_64.x86_64_asm.opcode.MOVSD;
+                temp = Xmm0;
+            }
 
             switch (op.Operator)
             {
@@ -1800,10 +1868,197 @@ namespace libtysila
                     switch (op.Type)
                     {
                         case CliType.int32:
-                            opc = x86_64.x86_64_asm.opcode.ADDL;
+                            opc1 = x86_64.x86_64_asm.opcode.ADDL;
                             break;
                         case CliType.int64:
-                            opc = x86_64.x86_64_asm.opcode.ADDQ;
+                            if (ia == IA.i586)
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.ADDL;
+                                opc2 = x86_64.x86_64_asm.opcode.ADCL;
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.ADDQ;
+                            break;
+                        case CliType.F32:
+                            opc1 = x86_64.x86_64_asm.opcode.ADDSS;
+                            break;
+                        case CliType.F64:
+                            opc1 = x86_64.x86_64_asm.opcode.ADDSD;
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.and:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.ANDL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.ANDL;
+                                opc2 = x86_64.x86_64_asm.opcode.ANDL;
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.ANDQ;
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.div:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.IDIVL;
+                            idiv_ret = Rax;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                throw new NotImplementedException();
+                            }
+                            else
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.IDIVQ;
+                                idiv_ret = Rax;
+                            }                                
+                            break;
+                        case CliType.F32:
+                            opc1 = x86_64.x86_64_asm.opcode.DIVSS;
+                            break;
+                        case CliType.F64:
+                            opc1 = x86_64.x86_64_asm.opcode.DIVSD;
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.rem:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.IDIVL;
+                            idiv_ret = Rdx;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                throw new NotImplementedException();
+                            }
+                            else
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.IDIVQ;
+                                idiv_ret = Rdx;
+                            }
+                            break;
+                        case CliType.F32:
+                            opc1 = x86_64.x86_64_asm.opcode.DIVSS;
+                            break;
+                        case CliType.F64:
+                            opc1 = x86_64.x86_64_asm.opcode.DIVSD;
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.mul:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.IMULL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                throw new NotImplementedException();
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.IMULQ;
+                            break;
+                        case CliType.F32:
+                            opc1 = x86_64.x86_64_asm.opcode.MULSS;
+                            break;
+                        case CliType.F64:
+                            opc1 = x86_64.x86_64_asm.opcode.MULSD;
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.or:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.ORL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.ORL;
+                                opc2 = x86_64.x86_64_asm.opcode.ORL;
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.ORQ;
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.shl:
+                    b_in_cl_if_not_const = true;
+                    b_is_int32 = true;
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.SALL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.SALL;
+                                opc2 = x86_64.x86_64_asm.opcode.RCLL;
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.SALQ;
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.shr:
+                    b_in_cl_if_not_const = true;
+                    b_is_int32 = true;
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.SARL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.RCRL;
+                                opc2 = x86_64.x86_64_asm.opcode.SARL;
+                                int64_backwards = true;
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.SARQ;
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.shr_un:
+                    b_in_cl_if_not_const = true;
+                    b_is_int32 = true;
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.SHRL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.RCRL;
+                                opc2 = x86_64.x86_64_asm.opcode.SHRL;
+                                int64_backwards = true;
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.SHRQ;
                             break;
                     }
                     break;
@@ -1812,12 +2067,22 @@ namespace libtysila
                     switch (op.Type)
                     {
                         case CliType.int32:
-                            opc = x86_64.x86_64_asm.opcode.SUBL;
+                            opc1 = x86_64.x86_64_asm.opcode.SUBL;
                             break;
                         case CliType.int64:
                             if (ia == IA.i586)
-                                throw new NotImplementedException();
-                            opc = x86_64.x86_64_asm.opcode.SUBQ;
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.SUBL;
+                                opc2 = x86_64.x86_64_asm.opcode.SBBL;
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.SUBQ;
+                            break;
+                        case CliType.F32:
+                            opc1 = x86_64.x86_64_asm.opcode.SUBSS;
+                            break;
+                        case CliType.F64:
+                            opc1 = x86_64.x86_64_asm.opcode.SUBSD;
                             break;
                     }
                     break;
@@ -1826,12 +2091,16 @@ namespace libtysila
                     switch (op.Type)
                     {
                         case CliType.int32:
-                            opc = x86_64.x86_64_asm.opcode.XORL;
+                            opc1 = x86_64.x86_64_asm.opcode.XORL;
                             break;
                         case CliType.int64:
                             if (ia == IA.i586)
-                                throw new NotImplementedException();
-                            opc = x86_64.x86_64_asm.opcode.XORQ;
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.XORL;
+                                opc2 = x86_64.x86_64_asm.opcode.XORL;
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.XORQ;
                             break;
                     }
                     break;
@@ -1841,12 +2110,70 @@ namespace libtysila
                     throw new NotImplementedException("x86 binary number op '" + op.Operator.ToString() + "' not implemented");
             }
 
-            if (opc == x86_64.x86_64_asm.opcode.NOP)
+            if (opc1 == x86_64.x86_64_asm.opcode.NOP)
                 throw new NotImplementedException("x86 binary number op '" + op.Operator.ToString() + "' not implemented");
 
-            ChooseInstruction(mov, ret, vara.MachineReg(Rax), vara.MachineReg(a));
-            ChooseInstruction(opc, ret, vara.MachineReg(Rax), vara.MachineReg(b));
-            ChooseInstruction(mov, ret, vara.MachineReg(dest), vara.MachineReg(Rax));
+            if (b_in_cl_if_not_const)
+            {
+                if (!(b is libasm.const_location))
+                {
+                    Assign(state, regs_in_use, Rcx, b, CliType.int32, ret);
+                    b = Rcx;
+                }
+            }
+
+            if (opc2 != x86_64.x86_64_asm.opcode.NOP)
+            {
+                libasm.multiple_hardware_location mhl_a = mhl_split(this, state, a, 2, 4);
+                libasm.multiple_hardware_location mhl_b = mhl_split(this, state, b, 2, 4);
+                libasm.multiple_hardware_location mhl_dest = mhl_split(this, state, dest, 2, 4);
+                libasm.hardware_location b_0, b_1;
+                if (b_is_int32)
+                {
+                    b_0 = b;
+                    b_1 = b;
+                }
+                else
+                {
+                    b_0 = mhl_b[0];
+                    b_1 = mhl_b[1];
+                }
+
+                ChooseInstruction(mov, ret, vara.MachineReg(Rax), vara.MachineReg(mhl_a.hlocs[0]));
+                ChooseInstruction(mov, ret, vara.MachineReg(Rdx), vara.MachineReg(mhl_a.hlocs[1]));
+
+                if (int64_backwards == false)
+                {
+                    ChooseInstruction(opc1, ret, vara.MachineReg(Rax), vara.MachineReg(b_0));
+                    ChooseInstruction(opc2, ret, vara.MachineReg(Rdx), vara.MachineReg(b_1));
+                }
+                else
+                {
+                    ChooseInstruction(opc2, ret, vara.MachineReg(Rdx), vara.MachineReg(b_1));
+                    ChooseInstruction(opc1, ret, vara.MachineReg(Rax), vara.MachineReg(b_0));
+                }
+                ChooseInstruction(mov, ret, vara.MachineReg(mhl_dest.hlocs[0]), vara.MachineReg(Rax));
+                ChooseInstruction(mov, ret, vara.MachineReg(mhl_dest.hlocs[1]), vara.MachineReg(Rdx));
+            }
+            else
+            {
+                if (opc1 == x86_64.x86_64_asm.opcode.IDIVL || opc1 == x86_64.x86_64_asm.opcode.IDIVQ)
+                {
+                    ChooseInstruction(mov, ret, Rax, a);
+                    ChooseInstruction(opc1, ret, b);
+                    ChooseInstruction(mov, ret, dest, idiv_ret);
+                }
+                else if ((dest is x86_64_reg) && dest.Equals(a))
+                {
+                    ChooseInstruction(opc1, ret, vara.MachineReg(a), vara.MachineReg(b));
+                }
+                else
+                {
+                    ChooseInstruction(mov, ret, vara.MachineReg(temp), vara.MachineReg(a));
+                    ChooseInstruction(opc1, ret, vara.MachineReg(temp), vara.MachineReg(b));
+                    ChooseInstruction(mov, ret, vara.MachineReg(dest), vara.MachineReg(temp));
+                }
+            }
         }
 
         internal override void Mul(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location a, hardware_location b, CliType dt, List<tybel.Node> ret)

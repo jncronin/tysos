@@ -184,8 +184,188 @@ namespace libtysila
 {
     partial class x86_64_Assembler
     {
+        void BrIf64on32(Encoder.EncoderState state, Stack regs_in_use, hardware_location br_target, hardware_location a_loc, hardware_location b_loc, ThreeAddressCode.OpName op, CliType dt, List<tybel.Node> ret)
+        {
+            libasm.multiple_hardware_location mhl_a = mhl_split(this, state, a_loc, 2, 4);
+            libasm.multiple_hardware_location mhl_b = mhl_split(this, state, b_loc, 2, 4);
+
+            if (!((mhl_a.hlocs[0] is x86_64_gpr) && (mhl_a.hlocs[1] is x86_64_gpr)) &&
+                !((mhl_b.hlocs[0] is x86_64_gpr) && (mhl_b.hlocs[1] is x86_64_gpr)))
+            {
+                Assign(state, regs_in_use, RaxRdx, mhl_a, dt, ret);
+                mhl_a = RaxRdx;
+            }
+
+            /* First we compare the high order dword with the appropriate signedness.
+             * If less/below, do the appropriate less/below option
+             * If greater/above, do the appropriate greater/above option
+             * If equal:
+             *  Compare low order dword unsigned
+             *  If below do the appropriate less/below option
+             *  If above do the appropriate greater/above option
+             *  If equal do the equal option
+             */
+
+            // use bool to define the various options: true = success (follow jmp path/set), false = fail (fall through/don't set)
+            bool lb_option = false, ga_option = false, eq_option = false;
+            bool signed = false;
+            switch (op)
+            {
+                case ThreeAddressCode.OpName.ba:
+                case ThreeAddressCode.OpName.seta:
+                    lb_option = false;
+                    eq_option = false;
+                    ga_option = true;
+                    signed = false;
+                    break;
+                case ThreeAddressCode.OpName.bae:
+                case ThreeAddressCode.OpName.setae:
+                    lb_option = false;
+                    eq_option = true;
+                    ga_option = true;
+                    signed = false;
+                    break;
+                case ThreeAddressCode.OpName.bb:
+                case ThreeAddressCode.OpName.setb:
+                    lb_option = true;
+                    eq_option = false;
+                    ga_option = false;
+                    signed = false;
+                    break;
+                case ThreeAddressCode.OpName.bbe:
+                case ThreeAddressCode.OpName.setbe:
+                    lb_option = true;
+                    eq_option = true;
+                    ga_option = false;
+                    signed = false;
+                    break;
+                case ThreeAddressCode.OpName.bg:
+                case ThreeAddressCode.OpName.setg:
+                    lb_option = false;
+                    eq_option = false;
+                    ga_option = true;
+                    signed = true;
+                    break;
+                case ThreeAddressCode.OpName.bge:
+                case ThreeAddressCode.OpName.setge:
+                    lb_option = false;
+                    eq_option = true;
+                    ga_option = true;
+                    signed = true;
+                    break;
+                case ThreeAddressCode.OpName.bl:
+                case ThreeAddressCode.OpName.setl:
+                    lb_option = true;
+                    eq_option = false;
+                    ga_option = false;
+                    signed = true;
+                    break;
+                case ThreeAddressCode.OpName.ble:
+                case ThreeAddressCode.OpName.setle:
+                    lb_option = true;
+                    eq_option = true;
+                    ga_option = false;
+                    signed = true;
+                    break;
+                case ThreeAddressCode.OpName.beq:
+                case ThreeAddressCode.OpName.seteq:
+                    lb_option = false;
+                    eq_option = true;
+                    ga_option = false;
+                    signed = true;
+                    break;
+                case ThreeAddressCode.OpName.bne:
+                case ThreeAddressCode.OpName.setne:
+                    lb_option = true;
+                    eq_option = false;
+                    ga_option = true;
+                    signed = true;
+                    break;
+            }
+
+            /* Get the targets */
+            string success_label = null, fail_label = null;
+
+            bool is_set = false;
+            switch (op)
+            {
+                case ThreeAddressCode.OpName.seta:
+                case ThreeAddressCode.OpName.setae:
+                case ThreeAddressCode.OpName.setb:
+                case ThreeAddressCode.OpName.setbe:
+                case ThreeAddressCode.OpName.seteq:
+                case ThreeAddressCode.OpName.setg:
+                case ThreeAddressCode.OpName.setge:
+                case ThreeAddressCode.OpName.setl:
+                case ThreeAddressCode.OpName.setle:
+                case ThreeAddressCode.OpName.setne:
+                    success_label = "L" + (state.next_blk++).ToString();
+                    fail_label = "L" + (state.next_blk++).ToString();
+                    is_set = true;
+                    break;
+                default:
+                    success_label = ((libasm.hardware_addressoflabel)br_target).label;
+                    fail_label = "L" + (state.next_blk++).ToString();
+                    break;
+            }
+
+            /* Now the mechanism is:
+             * 
+             * cmp high dword
+             * jg/ja ga_option->success_label/fail_label
+             * jl/jb lb_option->success_label/fail_label
+             * cmp low dword
+             * ja ga_option->success_label/fail_label
+             * jb lb_option->success_label/fail_label
+             * jmp eq_option->success_label/fail_label
+             */
+
+            string ga_label, lb_label, eq_label;
+            if (ga_option)
+                ga_label = success_label;
+            else
+                ga_label = fail_label;
+            if (lb_option)
+                lb_label = success_label;
+            else
+                lb_label = fail_label;
+            if (eq_option)
+                eq_label = success_label;
+            else
+                eq_label = fail_label;
+
+            ChooseInstruction(x86_64_asm.opcode.CMPL, ret, mhl_a[1], mhl_b[1]);
+            ChooseInstruction(signed ? x86_64_asm.opcode.JNL : x86_64_asm.opcode.JNB, ret, new libasm.hardware_addressoflabel(ga_label, false));
+            ChooseInstruction(signed ? x86_64_asm.opcode.JL : x86_64_asm.opcode.JB, ret, new libasm.hardware_addressoflabel(lb_label, false));
+            ChooseInstruction(x86_64_asm.opcode.CMPL, ret, mhl_a[0], mhl_b[0]);
+            ChooseInstruction(x86_64_asm.opcode.JNB, ret, new libasm.hardware_addressoflabel(ga_label, false));
+            ChooseInstruction(x86_64_asm.opcode.JB, ret, new libasm.hardware_addressoflabel(lb_label, false));
+            ChooseInstruction(x86_64_asm.opcode.JMP, ret, new libasm.hardware_addressoflabel(eq_label, false));
+
+            /* Now if this is a brif, we just insert the fail label here as the fall through,
+             * otherwise we need code to set the return value to 0/1 */
+            if (is_set)
+            {
+                string fall_through_label = "L" + (state.next_blk++).ToString();
+                ret.Add(new tybel.LabelNode(success_label, true));
+                ChooseInstruction(x86_64_asm.opcode.MOVL, ret, br_target, new libasm.const_location { c = 1 });
+                ChooseInstruction(x86_64_asm.opcode.JMP, ret, new libasm.hardware_addressoflabel(fall_through_label, false));
+                ret.Add(new tybel.LabelNode(fail_label, true));
+                ChooseInstruction(x86_64_asm.opcode.MOVL, ret, br_target, new libasm.const_location { c = 0 });
+                ret.Add(new tybel.LabelNode(fall_through_label, true));
+            }
+            else
+                ret.Add(new tybel.LabelNode(fail_label, true));
+        }
+
         internal override void BrIf(Encoder.EncoderState state, Stack regs_in_use, hardware_location br_target, hardware_location a_loc, hardware_location b_loc, ThreeAddressCode.OpName op, CliType dt, List<tybel.Node> ret)
         {
+            if (dt == CliType.int64 && ia == IA.i586)
+            {
+                BrIf64on32(state, regs_in_use, br_target, a_loc, b_loc, op, dt, ret);
+                return;
+            }
+
             a_loc = ResolveStackLoc(this, state, a_loc);
             b_loc = ResolveStackLoc(this, state, b_loc);
             br_target = ResolveStackLoc(this, state, br_target);

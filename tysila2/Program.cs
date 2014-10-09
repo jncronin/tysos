@@ -246,7 +246,12 @@ namespace tysila
                             Assembler.TypeToCompile ttc = new Assembler.TypeToCompile(tdr, ass);
 
                             if (options.EnableRTTI)
+                            {
+                                //if (tdr.IsValueType(ass))
+                                //    ttc.tsig = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = ttc.tsig.Type }, ass);
+
                                 ass.Requestor.RequestTypeInfo(ttc);
+                            }
 
                             for (Metadata.TableIndex ti = tdr.MethodList; ti < Metadata.GetLastMethod(tdr); ti++)
                             {
@@ -260,6 +265,8 @@ namespace tysila
                                         Signature.BaseMethod bmeth = mdr.GetSignature();
                                         //Assembler.TypeToCompile ttc = new Assembler.TypeToCompile(mdr.owning_type, ass);
                                         Assembler.MethodToCompile mtc = new Assembler.MethodToCompile { _ass = ass, meth = mdr, msig = bmeth, tsigp = ttc.tsig, type = ttc.type, m = tdr.m, MetadataToken = ti.ToToken().ToUInt32() };
+                                        //if(mtc.type.IsValueType(ass))
+                                        //    mtc.tsigp = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = mtc.tsig }, ass);
                                         ass.Requestor.RequestMethod(mtc);
                                         //ass.Requestor.RequestMethodInfo(mtc);
                                     }

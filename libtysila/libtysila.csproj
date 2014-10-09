@@ -91,6 +91,7 @@
     <Compile Include="frontend\cil\OpcodeEncodings\conv.cs" />
     <Compile Include="frontend\cil\DecomposeComplexOpcodes.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\array.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\obj.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\exceptions.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\fld.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\flip.cs" />

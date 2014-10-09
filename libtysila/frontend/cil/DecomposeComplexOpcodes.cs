@@ -31,7 +31,7 @@ namespace libtysila.frontend.cil
 
         static DecomposeComplexOpcodes()
         {
-            DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.newobj)] = DecomposeOpcodes.newobj.Decompose_newobj;
+            //DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.newobj)] = DecomposeOpcodes.newobj.Decompose_newobj;
             DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.isinst)] = DecomposeOpcodes.isinst.Decompose_isinst;
             DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.box)] = DecomposeOpcodes.box.Decompose_box;
             DecomposeOpcodeList[Opcode.OpcodeVal(Opcode.SingleOpcodes.unbox)] = DecomposeOpcodes.box.Decompose_unbox;

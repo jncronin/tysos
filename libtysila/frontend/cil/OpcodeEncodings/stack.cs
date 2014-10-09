@@ -75,5 +75,13 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             ass.Assign(state, il.stack_vars_before, loc_a, loc_b, ct, il.il.tybel);
             ass.Assign(state, il.stack_vars_before, loc_b, t1, ct, il.il.tybel);
         }
+
+        public static void tybel_pushback(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            int p = il.il.inline_int;
+
+            throw new NotImplementedException();
+        }
     }
 }

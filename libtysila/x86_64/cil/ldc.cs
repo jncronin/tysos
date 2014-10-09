@@ -91,6 +91,30 @@ namespace libtysila.x86_64.cil
             il.stack_after.Push(new Signature.Param(BaseType_Type.I4));
         }
 
+        public static void tybel_ldc_r4(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            uint p = LSB_Assembler.FromByteArrayU4S(il.il.inline_val, 0);
+
+            Signature.Param p_ret = new Signature.Param(BaseType_Type.R4);
+            libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(p_ret, ass);
+            dest = x86_64_Assembler.ResolveStackLoc(ass as x86_64_Assembler, state, dest);
+            libasm.hardware_location act_dest = dest;
+
+            /* Load the bytes to Rax, then copy to the xmm */
+            if (!(act_dest is libasm.x86_64_xmm))
+                act_dest = x86_64_Assembler.Xmm0;
+
+            ass.Assign(state, il.stack_vars_before, x86_64_Assembler.Rax, new libasm.const_location { c = p },
+                Assembler.CliType.int32, il.il.tybel);
+            ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.MOVD, il.il.tybel, act_dest, x86_64_Assembler.Rax);
+
+            if (!dest.Equals(act_dest))
+                ass.Assign(state, il.stack_vars_before, dest, act_dest, Assembler.CliType.F32, il.il.tybel);
+
+            il.stack_after.Push(p_ret);
+        }
+
         public static void tybel_ldnull(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {

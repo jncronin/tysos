@@ -197,6 +197,8 @@ namespace libtysila.frontend.cil
                     case Opcode.InlineVar.InlineI:
                         line.inline_int = LSB_Assembler.FromByteArrayI4S(code, offset);
                         line.inline_uint = LSB_Assembler.FromByteArrayU4S(code, offset);
+                        line.inline_val = new byte[4];
+                        LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 4);
                         offset += 4;
                         break;
                     case Opcode.InlineVar.InlineField:
@@ -206,18 +208,26 @@ namespace libtysila.frontend.cil
                     case Opcode.InlineVar.InlineTok:
                     case Opcode.InlineVar.InlineType:
                         line.inline_tok = new Token(LSB_Assembler.FromByteArrayU4S(code, offset), m);
+                        line.inline_val = new byte[4];
+                        LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 4);
                         offset += 4;
                         break;
                     case Opcode.InlineVar.InlineI8:
                         line.inline_int64 = LSB_Assembler.FromByteArrayI8S(code, offset);
+                        line.inline_val = new byte[8];
+                        LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 8);
                         offset += 8;
                         break;
                     case Opcode.InlineVar.InlineR:
                         line.inline_dbl = LSB_Assembler.FromByteArrayR8S(code, offset);
+                        line.inline_val = new byte[8];
+                        LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 8);
                         offset += 8;
                         break;
                     case Opcode.InlineVar.InlineVar:
                         line.inline_int = LSB_Assembler.FromByteArrayI2S(code, offset);
+                        line.inline_val = new byte[2];
+                        LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 2);
                         offset += 2;
                         break;
                     case Opcode.InlineVar.ShortInlineBrTarget:
@@ -226,10 +236,14 @@ namespace libtysila.frontend.cil
                         line.inline_int = LSB_Assembler.FromByteArrayI1S(code, offset);
                         line.inline_uint = LSB_Assembler.FromByteArrayU1S(code, offset);
                         offset += 1;
+                        line.inline_val = new byte[1];
+                        LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 1);
                         break;
                     case Opcode.InlineVar.ShortInlineR:
                         line.inline_sgl = LSB_Assembler.FromByteArrayR4S(code, offset);
                         offset += 4;
+                        line.inline_val = new byte[4];
+                        LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 4);
                         break;
                     case Opcode.InlineVar.InlineSwitch:
                         uint switch_len = LSB_Assembler.FromByteArrayU4S(code, offset);

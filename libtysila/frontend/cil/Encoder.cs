@@ -82,6 +82,16 @@ namespace libtysila.frontend.cil
             {
                 start.stack_vars_before = ass.GetStack();
                 start.stack_before = new util.Stack<Signature.Param>();
+
+                if (start.ehclause_start != null)
+                {
+                    if (start.ehclause_start.IsCatch || start.ehclause_start.IsFault)
+                    {
+                        Signature.Param except_obj_type = Metadata.GetTTC(start.ehclause_start.ClassToken, mtc.GetTTC(ass), mtc.msig, ass).tsig;
+                        start.stack_vars_before.GetAddressFor(except_obj_type, ass);
+                        start.stack_before.Push(except_obj_type);
+                    }
+                }
                 DFEncode(start, mtc, ass, visited, ref next_block, state, attrs);
             }
 
@@ -543,7 +553,12 @@ namespace libtysila.frontend.cil
                         las.Add(mptr_type);
                     }
                     else
-                        throw new Exception("Function on value type with neither managed pointer or boxed type specified");
+                    {
+                        /* Assume we're a managed pointer method */
+                        Signature.Param mptr_type = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = this_bct }, ass);
+                        las.Add(mptr_type);
+                        //throw new Exception("Function on value type with neither managed pointer or boxed type specified");
+                    }
                 }
                 else
                 {

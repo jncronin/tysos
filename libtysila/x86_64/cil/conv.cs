@@ -28,6 +28,17 @@ namespace libtysila
 {
     partial class x86_64_Assembler
     {
+        internal bool IsFloat(CliType ct)
+        {
+            switch (ct)
+            {
+                case CliType.F32:
+                case CliType.F64:
+                    return true;
+                default:
+                    return false;
+            }
+        }
         internal override void Conv(Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, Signature.BaseType dest_type, Signature.BaseType src_type, bool signed, List<tybel.Node> ret)
         {
             dest = ResolveStackLoc(this, state, dest);
@@ -35,11 +46,28 @@ namespace libtysila
 
             libasm.hardware_location act_dest_loc = dest;
 
-            if (!(dest is x86_64_gpr))
+            if (IsFloat(dest_type.CliType(this)) == false && !(dest is x86_64_gpr))
                 act_dest_loc = Rax;
+            if (IsFloat(dest_type.CliType(this)) == true && !(dest is x86_64_xmm))
+                act_dest_loc = Xmm0;
         
             BaseType_Type act_src = src_type.Type;
             BaseType_Type act_dest = dest_type.Type;
+
+            switch (src_type.Type)
+            {
+                case BaseType_Type.Object:
+                case BaseType_Type.String:
+                    src_type.Type = BaseType_Type.I;
+                    break;
+            }
+            switch (dest_type.Type)
+            {
+                case BaseType_Type.Object:
+                case BaseType_Type.String:
+                    dest_type.Type = BaseType_Type.I;
+                    break;
+            }
 
             if (src_type.Type == BaseType_Type.I)
                 act_src = ia == IA.i586 ? BaseType_Type.I4 : BaseType_Type.I8;
@@ -71,6 +99,7 @@ namespace libtysila
             {
                 libasm.multiple_hardware_location mhl_dest = mhl_split(this, state, dest, 2, 4);
                 dest = mhl_dest.hlocs[0];
+                dt = CliType.int32;
             }
 
             switch (dt)
@@ -97,6 +126,12 @@ namespace libtysila
                         case BaseType_Type.U4:
                         case BaseType_Type.U8:
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            break;
+                        case BaseType_Type.R4:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSS2SIL, ret, act_dest_loc, src);
+                            break;
+                        case BaseType_Type.R8:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSD2SIL, ret, act_dest_loc, src);
                             break;
                         default:
                             throw new NotImplementedException();
@@ -130,6 +165,30 @@ namespace libtysila
                         case BaseType_Type.U8:
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
                             break;
+                        case BaseType_Type.R4:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSS2SIQ, ret, act_dest_loc, src);
+                            break;
+                        case BaseType_Type.R8:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSD2SIQ, ret, act_dest_loc, src);
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+                    break;
+
+                case CliType.F32:
+                    switch (act_src)
+                    {
+                        case BaseType_Type.I1:
+                        case BaseType_Type.I2:
+                        case BaseType_Type.I4:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SSL, ret, act_dest_loc, src);
+                            break;
+
+                        case BaseType_Type.I8:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SSQ, ret, act_dest_loc, src);
+                            break;
+
                         default:
                             throw new NotImplementedException();
                     }

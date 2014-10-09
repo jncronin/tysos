@@ -135,6 +135,12 @@ namespace libtysila
                             throw new Exception("Trying to request method of uninstantiated generic type");
                     }
                 }
+
+                if (mtc.type.IsValueType(ass))
+                {
+                    //if (!(mtc.tsig is Signature.ManagedPointer) && !(mtc.tsig is Signature.BoxedType))
+                    //    throw new Exception("Attempt to request method on value type without pointer or boxed type reference");
+                }
 #endif
                 base.RequestMethod(mtc);
                 if (ignore_libsupcs(mtc.type.m))

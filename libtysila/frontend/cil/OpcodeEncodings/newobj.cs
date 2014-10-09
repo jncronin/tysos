@@ -57,6 +57,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             Signature.Param type_pushes = type.tsig;
             Layout l = Layout.GetLayout(type, ass, false);
+            int str_ctor_idx = -1;
 
             // Determine the parameter count
             int arg_count = 0;
@@ -94,8 +95,16 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             }
             else
             {
+                /* String types need special code to calculate the size of the string */
+                libasm.hardware_location obj_size = new libasm.const_location { c = l.ClassSize };
+                if (Signature.ParamCompare(type_pushes, new Signature.Param(BaseType_Type.String), ass))
+                {
+                    obj_size = t2;
+                    str_ctor_idx = get_string_size(il, ass, mtc, ref next_block, state, attrs, constructor.Value, loc_params, t2);
+                }
+
                 ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("gcmalloc", false), t1,
-                    new libasm.hardware_location[] { new libasm.const_location { c = l.ClassSize } }, ass.callconv_gcmalloc, il.il.tybel);
+                    new libasm.hardware_location[] { obj_size }, ass.callconv_gcmalloc, il.il.tybel);
             }
             ass.Assign(state, il.stack_vars_before, loc_obj, t1, Assembler.CliType.O, il.il.tybel);
 
@@ -174,7 +183,10 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     }
                 }
 
-                if (constructor.Value.msig is Signature.Method)
+                if (str_ctor_idx != -1)
+                    enc_str_ctor(il, ass, mtc, ref next_block, state, attrs, str_ctor_idx, loc_params);
+
+                else if (constructor.Value.msig is Signature.Method)
                 {
                     Signature.Method msigm = constructor.Value.msig as Signature.Method;
 
@@ -197,6 +209,117 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             }
 
             il.stack_after.Push(type_pushes);
+        }
+
+        private static void enc_str_ctor(CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Encoder.EncoderState state, 
+            Assembler.MethodAttributes attrs, int str_ctor_idx, libasm.hardware_location[] loc_params)
+        {
+            libasm.hardware_location t2 = ass.GetTemporary2(state);
+            Stack used_locs = il.stack_vars_before.Clone();
+            used_locs.MarkUsed(ass.GetTemporary(state)); used_locs.MarkUsed(t2);
+
+            int str_length_offset = ass.GetStringFieldOffset(Assembler.StringFields.length);
+            int str_data_offset = ass.GetStringFieldOffset(Assembler.StringFields.data_offset);
+
+            libasm.hardware_location length_ptr = new libasm.hardware_contentsof { base_loc = loc_params[0], const_offset = str_length_offset,
+                size = 4 };
+            libasm.hardware_location data_ptr = new libasm.hardware_contentsof { base_loc = loc_params[0], const_offset = str_data_offset };
+            libasm.hardware_location const_2 = new libasm.const_location { c = 2 };
+
+            switch (str_ctor_idx)
+            {
+                case 1:
+                    throw new NotImplementedException();
+
+                case 2:
+                    throw new NotImplementedException();
+
+                case 3:
+                    /* new string(char *value, int startIndex, int length) */
+                    ass.Assign(state, used_locs, length_ptr, loc_params[3], Assembler.CliType.int32, il.il.tybel);
+                    ass.Mul(state, used_locs, loc_params[2], loc_params[2], const_2, Assembler.CliType.int32, il.il.tybel);
+                    ass.Conv(state, used_locs, loc_params[2], loc_params[2], new Signature.BaseType(BaseType_Type.I), new Signature.BaseType(BaseType_Type.I4), true, il.il.tybel);
+                    ass.Add(state, used_locs, loc_params[1], loc_params[1], loc_params[2], Assembler.CliType.native_int, il.il.tybel);
+                    ass.Mul(state, used_locs, loc_params[3], loc_params[3], const_2, Assembler.CliType.int32, il.il.tybel);
+                    ass.LoadAddress(state, used_locs, t2, data_ptr, il.il.tybel);
+                    ass.MemCpy(state, used_locs, t2, loc_params[1], loc_params[3], il.il.tybel);
+                    return;
+
+                case 4:
+                    throw new NotImplementedException();
+
+                case 5:
+                    throw new NotImplementedException();
+
+                case 6:
+                    throw new NotImplementedException();
+
+                case 7:
+                    throw new NotImplementedException();
+
+                case 8:
+                    throw new NotImplementedException();
+
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private static int get_string_size(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs, Assembler.MethodToCompile str_mtc, libasm.hardware_location[] loc_params,
+            libasm.hardware_location loc_dest)
+        {
+            Signature.Method c_1 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(BaseType_Type.Char), new Signature.Param(BaseType_Type.I4) } };
+            Signature.Method c_2 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(new Signature.ZeroBasedArray { ElemType = new Signature.BaseType(BaseType_Type.Char) }, ass) } };
+            Signature.Method c_3 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(new Signature.UnmanagedPointer { BaseType = new Signature.BaseType(BaseType_Type.Char) }, ass), new Signature.Param(BaseType_Type.I4), new Signature.Param(BaseType_Type.I4) } };
+            Signature.Method c_4 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(new Signature.UnmanagedPointer { BaseType = new Signature.BaseType(BaseType_Type.I1) }, ass) } };
+            Signature.Method c_5 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(new Signature.ZeroBasedArray { ElemType = new Signature.BaseType(BaseType_Type.Char) }, ass), new Signature.Param(BaseType_Type.I4), new Signature.Param(BaseType_Type.I4) } };
+            Signature.Method c_6 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(new Signature.UnmanagedPointer { BaseType = new Signature.BaseType(BaseType_Type.Char) }, ass) } };
+            Signature.Method c_7 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(new Signature.UnmanagedPointer { BaseType = new Signature.BaseType(BaseType_Type.I1) }, ass), new Signature.Param(BaseType_Type.I4), new Signature.Param(BaseType_Type.I4), new Signature.Param(Metadata.GetTypeDef("mscorlib", "System.Text", "Encoding", ass), ass) } };
+            Signature.Method c_8 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(new Signature.UnmanagedPointer { BaseType = new Signature.BaseType(BaseType_Type.I1) }, ass), new Signature.Param(BaseType_Type.I4), new Signature.Param(BaseType_Type.I4) } };
+
+            Stack used_locs = il.stack_vars_before.Clone();
+            used_locs.MarkUsed(ass.GetTemporary(state));
+            used_locs.MarkUsed(ass.GetTemporary2(state));
+                
+            if (Signature.BaseMethodSigCompare(c_1, str_mtc.msig, ass))
+            {
+                throw new NotImplementedException();
+            }
+            else if (Signature.BaseMethodSigCompare(c_2, str_mtc.msig, ass))
+            {
+                throw new NotImplementedException();
+            }
+            else if (Signature.BaseMethodSigCompare(c_3, str_mtc.msig, ass))
+            {
+                /* new string(char * value, int startIndex, int length) */
+                ass.Assign(state, used_locs, loc_dest, loc_params[3], Assembler.CliType.int32, il.il.tybel);
+                ass.Mul(state, used_locs, loc_dest, loc_dest, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
+                return 3;
+            }
+            else if (Signature.BaseMethodSigCompare(c_4, str_mtc.msig, ass))
+            {
+                throw new NotImplementedException();
+            }
+            else if (Signature.BaseMethodSigCompare(c_5, str_mtc.msig, ass))
+            {
+                throw new NotImplementedException();
+            }
+            else if (Signature.BaseMethodSigCompare(c_6, str_mtc.msig, ass))
+            {
+                throw new NotImplementedException();
+            }
+            else if (Signature.BaseMethodSigCompare(c_7, str_mtc.msig, ass))
+            {
+                throw new NotImplementedException();
+            }
+            else if (Signature.BaseMethodSigCompare(c_8, str_mtc.msig, ass))
+            {
+                throw new NotImplementedException();
+            }
+            else
+                throw new Assembler.AssemblerException("newobj: unknown System.String constructor: " + str_mtc.ToString(),
+                    il.il, mtc);
         }
 
         public static void enc_newobj(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
@@ -370,8 +493,11 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             else
                 throw new Exception("stack type is not a managed or unmanaged pointer");
 
+            Assembler.TypeToCompile typeTok = Metadata.GetTTC(il.il.inline_tok, mtc.GetTTC(ass), mtc.msig, ass);
+            Signature.Param p_T = typeTok.tsig;
+
             Signature.Param et = new Signature.Param(bt, ass);
-            if (Signature.ParamCompare(et, new Signature.Param(il.il.inline_tok, ass), ass) == false)
+            if (Signature.ParamCompare(et, p_T, ass) == false)
                 throw new Exception("initobj: token does not match stack type");
 
             int len = ass.GetSizeOf(et);
