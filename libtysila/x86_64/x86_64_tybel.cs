@@ -564,9 +564,13 @@ namespace libtysila
                         case CliType.int64:
                             if((FitsSByte(vara.ConstVal) && (optype == x86_64.x86_64_asm.optype.Imm8)))
                                 return true;
+                            if ((FitsSByte(vara.ConstVal) || FitsByte(vara.ConstVal)) && optype == x86_64.x86_64_asm.optype.UImm8)
+                                return true;
                             if((FitsInt16(vara.ConstVal) && (optype == x86_64.x86_64_asm.optype.Imm16)))
                                 return true;
                             if((FitsInt32(vara.ConstVal) && (optype == x86_64.x86_64_asm.optype.Imm32)))
+                                return true;
+                            if ((FitsInt32(vara.ConstVal) || FitsUInt32(vara.ConstVal)) && optype == x86_64.x86_64_asm.optype.UImm32)
                                 return true;
                             if((GetBitness() == Bitness.Bits64) && (dt == CliType.int64) && (optype == x86_64.x86_64_asm.optype.Imm64))
                                 return true;
@@ -593,7 +597,7 @@ namespace libtysila
                             }
                             else
                             {
-                                if (optype == x86_64.x86_64_asm.optype.Imm32)
+                                if (optype == x86_64.x86_64_asm.optype.Imm32 || optype == x86_64.x86_64_asm.optype.UImm32)
                                     return true;
                             }
                         }
@@ -609,7 +613,7 @@ namespace libtysila
                         }
                         else
                         {
-                            if (optype == x86_64.x86_64_asm.optype.Imm32)
+                            if (optype == x86_64.x86_64_asm.optype.Imm32 || optype == x86_64.x86_64_asm.optype.UImm32)
                                 return true;
                         }
                     }                            

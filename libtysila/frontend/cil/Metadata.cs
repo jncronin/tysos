@@ -644,7 +644,7 @@ namespace libtysila
             public bool ExcludedByArch = false;
 
             public MethodBody Body = new MethodBody();
-            public frontend.cil.CilGraph instrs = null;
+            internal frontend.cil.CilGraph instrs = null;
 
             public string ReferenceAlias = null;
             public string CallConvOverride = null;
@@ -903,6 +903,7 @@ namespace libtysila
             static TypeDefRow enum_row = null;
             static TypeDefRow delegate_row = null;
             static TypeDefRow object_row = null;
+            static TypeDefRow nullable_row = null;
 
             internal static TypeDefRow GetSystemDelegate(Assembler ass)
             {
@@ -911,6 +912,15 @@ namespace libtysila
                 if (delegate_row == null)
                     throw new Exception("System.Delegate not found");
                 return delegate_row;
+            }
+
+            internal static TypeDefRow GetSystemNullable(Assembler ass)
+            {
+                if (nullable_row == null)
+                    nullable_row = Metadata.GetTypeDef("mscorlib", "System", "Nullable`1", ass);
+                if (nullable_row == null)
+                    throw new Exception("System.Nullable`1 not found");
+                return nullable_row;
             }
 
             internal static TypeDefRow GetSystemEnum(Assembler ass)
@@ -938,6 +948,14 @@ namespace libtysila
                 if (valuetype_row == null)
                     throw new Exception("System.ValueType not found");
                 return valuetype_row;
+            }
+
+            public bool IsNullable
+            {
+                get
+                {
+                    return this == nullable_row;
+                }
             }
 
             public bool IsValueType(Assembler ass)

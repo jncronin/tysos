@@ -28,7 +28,7 @@ namespace libtysila
     {
         protected internal virtual CliType ResolveNativeInt(CliType dt)
         {
-            if ((dt == CliType.native_int) || (dt == CliType.O) || (dt == CliType.reference))
+            if ((dt == CliType.native_int) || (dt == CliType.O) || (dt == CliType.reference) || (dt == CliType.virtftnptr))
             {
                 if (GetBitness() == Bitness.Bits32)
                     return CliType.int32;

@@ -216,6 +216,22 @@ namespace libtysila
                 return false;
             return true;
         }
+
+        internal bool FitsByte(object o)
+        {
+            if (o.GetType() == typeof(Single))
+                return false;
+            if (o.GetType() == typeof(Double))
+                return false;
+            if (o.GetType() == typeof(IntPtr))
+                o = ((IntPtr)o).ToInt64();
+            else if (o.GetType() == typeof(UIntPtr))
+                o = ((UIntPtr)o).ToUInt64();
+            if ((Convert.ToInt64(o) < Byte.MinValue) || (Convert.ToInt64(o) > Byte.MaxValue))
+                return false;
+            return true;
+        }
+
         internal static bool FitsInt32(object o)
         {
             if (o.GetType() == typeof(Single))
@@ -230,6 +246,22 @@ namespace libtysila
                 return false;
             return true;
         }
+
+        internal static bool FitsUInt32(object o)
+        {
+            if (o.GetType() == typeof(Single))
+                return true;
+            if (o.GetType() == typeof(Double))
+                return false;
+            if (o.GetType() == typeof(IntPtr))
+                o = ((IntPtr)o).ToInt64();
+            else if (o.GetType() == typeof(UIntPtr))
+                o = ((UIntPtr)o).ToUInt64();
+            if ((Convert.ToInt64(o) < UInt32.MinValue) || (Convert.ToInt64(o) > UInt32.MaxValue))
+                return false;
+            return true;
+        }
+
         internal bool FitsInt16(object o)
         {
             if (o.GetType() == typeof(Single))

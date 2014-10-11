@@ -355,7 +355,9 @@ namespace libtysila
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_8)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_m1)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_s)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i8)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_i8;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_r4)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_r4;
+            OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_r8)].TybelEncoder = x86_64.cil.ldc.tybel_ldc_r8;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldnull)].TybelEncoder = x86_64.cil.ldc.tybel_ldnull;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)].TybelEncoder = x86_64.cil.ret.tybel_ret;
             OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.ceq)].TybelEncoder = x86_64.cil.brset.tybel_brset;
@@ -1319,7 +1321,7 @@ namespace libtysila
             throw new NotImplementedException();
         }
 
-        static libasm.multiple_hardware_location mhl_split(x86_64_Assembler ass, libtysila.frontend.cil.Encoder.EncoderState state, 
+        internal static libasm.multiple_hardware_location mhl_split(x86_64_Assembler ass, libtysila.frontend.cil.Encoder.EncoderState state, 
             libasm.hardware_location src, int n, int stack_split_size)
         {
             if (src is libasm.multiple_hardware_location)
@@ -1439,6 +1441,7 @@ namespace libtysila
 
         internal override void MemSet(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location c, hardware_location n, List<tybel.Node> ret)
         {
+#if false
             int max_move = ia == IA.i586 ? 4 : 8;
             int max_inline = max_move * 4;
 
@@ -1490,7 +1493,13 @@ namespace libtysila
                 }
             }
             else
+#endif
                 Call(state, regs_in_use, new hardware_addressoflabel("memset", false), null, new hardware_location[] { dest, c, n }, callconv_memset, ret);
+        }
+
+        internal override void MemSetW(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location c, hardware_location n, List<tybel.Node> ret)
+        {
+            Call(state, regs_in_use, new hardware_addressoflabel("memsetw", false), null, new hardware_location[] { dest, c, n }, callconv_memset, ret);
         }
 
         internal override void MemCpy(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, hardware_location n, List<tybel.Node> ret)
@@ -1542,7 +1551,7 @@ namespace libtysila
             {
                 save_regs = new List<hardware_location>(util.Intersect<libasm.hardware_location>(regs_in_use.UsedLocations, cc.CallerPreservesLocations));
                 for (int i = 0; i < save_regs.Count; i++)
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(save_regs[i]));
+                    Save(state, regs_in_use, save_regs[i], ret);
             }
 
             // Push arguments
@@ -1552,7 +1561,7 @@ namespace libtysila
                 throw new Exception("Supplied arguments do not match those in the calling convention");
 
             for (int i = 0; i < p.Length; i++)
-                EncMov(this, state, cc.Arguments[i].ValueLocation, p[i], ret);
+                Assign(state, regs_in_use, cc.Arguments[i].ValueLocation, p[i], cc.Arguments[i].Type.CliType(this), ret);
 
             // Execute call
             ChooseInstruction(x86_64.x86_64_asm.opcode.CALL, ret, vara.MachineReg(dest));
@@ -1569,7 +1578,7 @@ namespace libtysila
 
                 // Restore saved args
                 for (int i = save_regs.Count - 1; i >= 0; i--)
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.POP, ret, vara.MachineReg(save_regs[i]));
+                    Restore(state, regs_in_use, save_regs[i], ret);
             }
         }
 
@@ -1728,71 +1737,146 @@ namespace libtysila
 
             dest = ResolveStackLoc(this, state, dest);
             libasm.hardware_location act_dest = dest;
-            if (!(dest is x86_64_gpr))
-                act_dest = Rdx;
 
-            switch (size)
+            if (dest is x86_64_xmm)
             {
-                case 1:
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
-                    break;
+                switch (size)
+                {
+                    case 4:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSS, ret, dest, new libasm.hardware_contentsof { base_loc = src_addr, size = 4 });
+                        break;
 
-                case 2:
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
-                    break;
+                    case 8:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSD, ret, dest, new libasm.hardware_contentsof { base_loc = src_addr, size = 8 });
+                        break;
 
-                case 4:
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
-                    break;
-
-                case 8:
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
-                    break;
-
-                default:
-                    throw new NotImplementedException();
+                    default:
+                        throw new NotSupportedException();
+                }
             }
+            else
+            {
+                if (size > 8)
+                {
+                    LoadAddress(state, regs_in_use, Rdx, dest, ret);
+                    MemCpy(state, regs_in_use, Rdx, src_addr, size, ret);
+                    return;
+                }
 
-            if (!dest.Equals(act_dest))
-                EncMov(this, state, dest, act_dest, ret);
+                if (!(dest is x86_64_gpr))
+                    act_dest = Rdx;
+
+                switch (size)
+                {
+                    case 1:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                        break;
+
+                    case 2:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                        break;
+
+                    case 4:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                        break;
+
+                    case 8:
+                        if (ia == IA.i586)
+                        {
+                            libasm.multiple_hardware_location mhl_dest = mhl_split(this, state, dest, 2, 4);
+
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, Rdx, new libasm.hardware_contentsof { base_loc = src_addr, size = 4, const_offset = 0 });
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, mhl_dest[0], Rdx);
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, Rdx, new libasm.hardware_contentsof { base_loc = src_addr, size = 4, const_offset = 4 });
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, mhl_dest[1], Rdx);
+                            return;
+                        }
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
+                }
+
+                if (!dest.Equals(act_dest))
+                    EncMov(this, state, dest, act_dest, ret);
+            }
         }
 
         internal override void Poke(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest_addr, hardware_location src, int size, List<tybel.Node> ret)
         {
-            src = ResolveStackLoc(this, state, src);
-            if (!(src is x86_64_gpr))
-            {
-                EncMov(this, state, Rax, src, ret);
-                src = Rax;
-            }
-
             dest_addr = ResolveStackLoc(this, state, dest_addr);
+
             if(!(dest_addr is x86_64_gpr))
             {
                 EncMov(this, state, Rdx, dest_addr, ret);
                 dest_addr = Rdx;
             }
 
-            switch (size)
+            src = ResolveStackLoc(this, state, src);
+            libasm.hardware_location act_src = src;
+            if (src is x86_64_xmm)
             {
-                case 1:
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(src));
-                    break;
+                switch (size)
+                {
+                    case 4:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSS, ret, new libasm.hardware_contentsof { base_loc = dest_addr, size = 4 }, src);
+                        break;
 
-                case 2:
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(src));
-                    break;
+                    case 8:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSD, ret, new libasm.hardware_contentsof { base_loc = dest_addr, size = 8 }, src);
+                        break;
 
-                case 4:
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(src));
-                    break;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else
+            {
+                if (size > 8)
+                {
+                    LoadAddress(state, regs_in_use, Rax, src, ret);
+                    MemCpy(state, regs_in_use, dest_addr, Rax, size, ret);
+                    return;
+                }
 
-                case 8:
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(src));
-                    break;
+                if (!(src is x86_64_gpr))
+                {
+                    EncMov(this, state, Rax, src, ret);
+                    act_src = Rax;
+                }
 
-                default:
-                    throw new NotImplementedException();
+                switch (size)
+                {
+                    case 1:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(act_src));
+                        break;
+
+                    case 2:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(act_src));
+                        break;
+
+                    case 4:
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(act_src));
+                        break;
+
+                    case 8:
+                        if (ia == IA.i586)
+                        {
+                            libasm.multiple_hardware_location mhl_src = mhl_split(this, state, src, 2, 4);
+
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, Rdx, mhl_src[0]);
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, new libasm.hardware_contentsof { base_loc = dest_addr, size = 4, const_offset = 0 }, Rdx);
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, Rdx, mhl_src[1]);
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, new libasm.hardware_contentsof { base_loc = dest_addr, size = 4, const_offset = 4 }, Rdx);
+                            return;
+                        }
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(new libasm.hardware_contentsof { base_loc = dest_addr, size = size }), vara.MachineReg(act_src));
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
+                }
             }
         }
 
@@ -1832,11 +1916,12 @@ namespace libtysila
             }
         }
 
-        internal override void BinNumOp(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location a, hardware_location b, ThreeAddressCode.Op op, List<tybel.Node> ret)
+        internal override void NumOp(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location a, hardware_location b, ThreeAddressCode.Op op, List<tybel.Node> ret)
         {
             dest = ResolveStackLoc(this, state, dest);
             a = ResolveStackLoc(this, state, a);
-            b = ResolveStackLoc(this, state, b);
+            if(b != null)
+                b = ResolveStackLoc(this, state, b);
 
             op = ResolveNativeIntOp(op);
 
@@ -1916,7 +2001,9 @@ namespace libtysila
                         case CliType.int64:
                             if (ia == IA.i586)
                             {
-                                throw new NotImplementedException();
+                                Call(state, regs_in_use, new libasm.hardware_addressoflabel("__divdi3", false), dest,
+                                    new hardware_location[] { a, b }, callconv_numop_q_qq, ret);
+                                return;
                             }
                             else
                             {
@@ -1933,30 +2020,29 @@ namespace libtysila
                     }
                     break;
 
-                case ThreeAddressCode.OpName.rem:
+                case ThreeAddressCode.OpName.div_un:
                     switch (op.Type)
                     {
                         case CliType.int32:
-                            opc1 = x86_64.x86_64_asm.opcode.IDIVL;
-                            idiv_ret = Rdx;
+                            opc1 = x86_64.x86_64_asm.opcode.DIVL;
+                            idiv_ret = Rax;
                             break;
                         case CliType.int64:
                             if (ia == IA.i586)
                             {
-                                throw new NotImplementedException();
+                                Call(state, regs_in_use, new libasm.hardware_addressoflabel("__udivdi3", false), dest,
+                                    new hardware_location[] { a, b }, callconv_numop_q_qq, ret);
+                                return;
                             }
                             else
                             {
-                                opc1 = x86_64.x86_64_asm.opcode.IDIVQ;
-                                idiv_ret = Rdx;
+                                opc1 = x86_64.x86_64_asm.opcode.DIVQ;
+                                idiv_ret = Rax;
                             }
                             break;
                         case CliType.F32:
-                            opc1 = x86_64.x86_64_asm.opcode.DIVSS;
-                            break;
                         case CliType.F64:
-                            opc1 = x86_64.x86_64_asm.opcode.DIVSD;
-                            break;
+                            throw new NotImplementedException();
                     }
                     break;
 
@@ -1969,7 +2055,9 @@ namespace libtysila
                         case CliType.int64:
                             if (ia == IA.i586)
                             {
-                                throw new NotImplementedException();
+                                Call(state, regs_in_use, new libasm.hardware_addressoflabel("__mulvdi3", false), dest,
+                                    new hardware_location[] { a, b }, callconv_numop_q_qq, ret);
+                                return;
                             }
                             else
                                 opc1 = x86_64.x86_64_asm.opcode.IMULQ;
@@ -1980,6 +2068,77 @@ namespace libtysila
                         case CliType.F64:
                             opc1 = x86_64.x86_64_asm.opcode.MULSD;
                             break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.mul_un:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.MULL;
+                            idiv_ret = Rax;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                Call(state, regs_in_use, new hardware_addressoflabel("__muldi3", false), dest,
+                                    new hardware_location[] { a, b }, callconv_numop_q_qq, ret);
+                                return;
+                            }
+                            else
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.MULQ;
+                                idiv_ret = Rax;
+                            }
+                            break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.neg:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.NEGL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                Call(state, regs_in_use, new libasm.hardware_addressoflabel("__negdi3", false), dest,
+                                    new hardware_location[] { a }, callconv_numop_q_q, ret);
+                                return;
+                            }
+                            opc1 = x86_64.x86_64_asm.opcode.NEGQ;
+                            break;
+                        case CliType.F32:
+                            Call(state, regs_in_use, new libasm.hardware_addressoflabel("__negsf2", false), dest,
+                                new hardware_location[] { a }, callconv_numop_s_s, ret);
+                            return;
+
+                        case CliType.F64:
+                            Call(state, regs_in_use, new libasm.hardware_addressoflabel("__negdf2", false), dest,
+                                new hardware_location[] { a }, callconv_numop_d_d, ret);
+                            return;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.not:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.NOTL;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.NOTL;
+                                opc2 = x86_64.x86_64_asm.opcode.NOTL;
+                            }
+                            else
+                                opc1 = x86_64.x86_64_asm.opcode.NOTQ;
+                            break;
+                        case CliType.F32:
+                        case CliType.F64:
+                            throw new NotImplementedException();
                     }
                     break;
 
@@ -1998,6 +2157,58 @@ namespace libtysila
                             else
                                 opc1 = x86_64.x86_64_asm.opcode.ORQ;
                             break;
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.rem:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.IDIVL;
+                            idiv_ret = Rdx;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                Call(state, regs_in_use, new libasm.hardware_addressoflabel("__moddi3", false), dest,
+                                    new hardware_location[] { a, b }, callconv_numop_q_qq, ret);
+                                return;
+                            }
+                            else
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.IDIVQ;
+                                idiv_ret = Rdx;
+                            }
+                            break;
+                        case CliType.F32:
+                        case CliType.F64:
+                            throw new NotSupportedException();
+                    }
+                    break;
+
+                case ThreeAddressCode.OpName.rem_un:
+                    switch (op.Type)
+                    {
+                        case CliType.int32:
+                            opc1 = x86_64.x86_64_asm.opcode.DIVL;
+                            idiv_ret = Rdx;
+                            break;
+                        case CliType.int64:
+                            if (ia == IA.i586)
+                            {
+                                Call(state, regs_in_use, new libasm.hardware_addressoflabel("__umoddi3", false), dest,
+                                    new hardware_location[] { a, b }, callconv_numop_q_qq, ret);
+                                return;
+                            }
+                            else
+                            {
+                                opc1 = x86_64.x86_64_asm.opcode.DIVQ;
+                                idiv_ret = Rdx;
+                            }
+                            break;
+                        case CliType.F32:
+                        case CliType.F64:
+                            throw new NotSupportedException();
                     }
                     break;
 
@@ -2125,7 +2336,6 @@ namespace libtysila
             if (opc2 != x86_64.x86_64_asm.opcode.NOP)
             {
                 libasm.multiple_hardware_location mhl_a = mhl_split(this, state, a, 2, 4);
-                libasm.multiple_hardware_location mhl_b = mhl_split(this, state, b, 2, 4);
                 libasm.multiple_hardware_location mhl_dest = mhl_split(this, state, dest, 2, 4);
                 libasm.hardware_location b_0, b_1;
                 if (b_is_int32)
@@ -2133,8 +2343,14 @@ namespace libtysila
                     b_0 = b;
                     b_1 = b;
                 }
+                else if (b == null)
+                {
+                    b_0 = null;
+                    b_1 = null;
+                }
                 else
                 {
+                    libasm.multiple_hardware_location mhl_b = mhl_split(this, state, b, 2, 4);
                     b_0 = mhl_b[0];
                     b_1 = mhl_b[1];
                 }
@@ -2142,22 +2358,40 @@ namespace libtysila
                 ChooseInstruction(mov, ret, vara.MachineReg(Rax), vara.MachineReg(mhl_a.hlocs[0]));
                 ChooseInstruction(mov, ret, vara.MachineReg(Rdx), vara.MachineReg(mhl_a.hlocs[1]));
 
-                if (int64_backwards == false)
+                if (b != null)
                 {
-                    ChooseInstruction(opc1, ret, vara.MachineReg(Rax), vara.MachineReg(b_0));
-                    ChooseInstruction(opc2, ret, vara.MachineReg(Rdx), vara.MachineReg(b_1));
+                    if (int64_backwards == false)
+                    {
+                        ChooseInstruction(opc1, ret, vara.MachineReg(Rax), vara.MachineReg(b_0));
+                        ChooseInstruction(opc2, ret, vara.MachineReg(Rdx), vara.MachineReg(b_1));
+                    }
+                    else
+                    {
+                        ChooseInstruction(opc2, ret, vara.MachineReg(Rdx), vara.MachineReg(b_1));
+                        ChooseInstruction(opc1, ret, vara.MachineReg(Rax), vara.MachineReg(b_0));
+                    }
                 }
                 else
                 {
-                    ChooseInstruction(opc2, ret, vara.MachineReg(Rdx), vara.MachineReg(b_1));
-                    ChooseInstruction(opc1, ret, vara.MachineReg(Rax), vara.MachineReg(b_0));
+                    if (int64_backwards == false)
+                    {
+                        ChooseInstruction(opc1, ret, vara.MachineReg(Rax));
+                        ChooseInstruction(opc2, ret, vara.MachineReg(Rdx));
+                    }
+                    else
+                    {
+                        ChooseInstruction(opc2, ret, vara.MachineReg(Rdx));
+                        ChooseInstruction(opc1, ret, vara.MachineReg(Rax));
+                    }
                 }
                 ChooseInstruction(mov, ret, vara.MachineReg(mhl_dest.hlocs[0]), vara.MachineReg(Rax));
                 ChooseInstruction(mov, ret, vara.MachineReg(mhl_dest.hlocs[1]), vara.MachineReg(Rdx));
             }
             else
             {
-                if (opc1 == x86_64.x86_64_asm.opcode.IDIVL || opc1 == x86_64.x86_64_asm.opcode.IDIVQ)
+                if (opc1 == x86_64.x86_64_asm.opcode.IDIVL || opc1 == x86_64.x86_64_asm.opcode.IDIVQ ||
+                    opc1 == x86_64.x86_64_asm.opcode.DIVL || opc1 == x86_64.x86_64_asm.opcode.DIVQ ||
+                    opc1 == x86_64.x86_64_asm.opcode.MULL || opc1 == x86_64.x86_64_asm.opcode.MULQ)
                 {
                     ChooseInstruction(mov, ret, Rax, a);
                     ChooseInstruction(opc1, ret, b);
@@ -2165,13 +2399,41 @@ namespace libtysila
                 }
                 else if ((dest is x86_64_reg) && dest.Equals(a))
                 {
-                    ChooseInstruction(opc1, ret, vara.MachineReg(a), vara.MachineReg(b));
+                    if (b == null)
+                        ChooseInstruction(opc1, ret, vara.MachineReg(a));
+                    else
+                        ChooseInstruction(opc1, ret, vara.MachineReg(a), vara.MachineReg(b));
                 }
                 else
                 {
-                    ChooseInstruction(mov, ret, vara.MachineReg(temp), vara.MachineReg(a));
-                    ChooseInstruction(opc1, ret, vara.MachineReg(temp), vara.MachineReg(b));
-                    ChooseInstruction(mov, ret, vara.MachineReg(dest), vara.MachineReg(temp));
+                    if (dest is x86_64_gpr)
+                    {
+                        if (b == null)
+                        {
+                            ChooseInstruction(mov, ret, dest, a);
+                            ChooseInstruction(opc1, ret, dest);
+                        }
+                        else
+                        {
+                            ChooseInstruction(mov, ret, dest, a);
+                            ChooseInstruction(opc1, ret, dest, b);
+                        }
+                    }
+                    else
+                    {
+                        if (b == null)
+                        {
+                            ChooseInstruction(mov, ret, temp, a);
+                            ChooseInstruction(opc1, ret, temp);
+                            ChooseInstruction(mov, ret, dest, temp);
+                        }
+                        else
+                        {
+                            ChooseInstruction(mov, ret, vara.MachineReg(temp), vara.MachineReg(a));
+                            ChooseInstruction(opc1, ret, vara.MachineReg(temp), vara.MachineReg(b));
+                            ChooseInstruction(mov, ret, vara.MachineReg(dest), vara.MachineReg(temp));
+                        }
+                    }
                 }
             }
         }
@@ -2292,16 +2554,30 @@ namespace libtysila
 
         internal override void Save(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location loc, List<tybel.Node> ret)
         {
-            if (!(loc is x86_64_gpr))
+            if (loc is x86_64_gpr)
+                ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(loc));
+            else if (loc is x86_64_xmm)
+            {
+                ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.SUBL : x86_64.x86_64_asm.opcode.SUBQ, ret, Rsp,
+                    new libasm.const_location { c = 8 });
+                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, new libasm.hardware_contentsof { base_loc = Rsp, size = 8 }, loc);
+            }
+            else
                 throw new NotImplementedException();
-            ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(loc));
         }
 
         internal override void Restore(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location loc, List<tybel.Node> ret)
         {
-            if (!(loc is x86_64_gpr))
+            if (loc is x86_64_gpr)
+                ChooseInstruction(x86_64.x86_64_asm.opcode.POP, ret, vara.MachineReg(loc));
+            else if (loc is x86_64_xmm)
+            {
+                ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, loc, new libasm.hardware_contentsof { base_loc = Rsp, size = 8 } );
+                ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.ADDL : x86_64.x86_64_asm.opcode.ADDQ, ret, Rsp,
+                    new libasm.const_location { c = 8 });
+            }
+            else
                 throw new NotImplementedException();
-            ChooseInstruction(x86_64.x86_64_asm.opcode.POP, ret, vara.MachineReg(loc));
         }
     }
 }

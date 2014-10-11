@@ -32,7 +32,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location loc_value = il.stack_vars_after.Pop(ass);
             Signature.Param p_value = il.stack_after.Pop();
 
-            if (!Signature.ParamCompare(p_value, new Signature.Param(BaseType_Type.I4), ass))
+            if (p_value.CliType(ass) != Assembler.CliType.int32)
                 throw new Assembler.AssemblerException("switch: value is not of type Int32 (" + p_value.ToString() + ")",
                     il.il, mtc);
 

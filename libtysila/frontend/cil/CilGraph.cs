@@ -52,7 +52,8 @@ namespace libtysila.frontend.cil
             /* Add the instructions to the graph */
             util.Set<int> visited = new util.Set<int>();
             foreach (int start in starts)
-                DFAdd(ret, start, null, offset_map, visited);
+                ret.DFAdd(start, offset_map, visited);
+//                DFAdd(ret, start, null, offset_map, visited);
 
             /* Add exception handler start node hints */
             if (method.exceptions != null)
@@ -85,6 +86,43 @@ namespace libtysila.frontend.cil
             }
         }
 
+        void DFAdd(int il_offset, Dictionary<int, CilNode> offset_map, util.Set<int> visited)
+        {
+            if (visited.Contains(il_offset))
+                return;
+
+            CilNode n = offset_map[il_offset];
+            Starts.Add(n);
+
+            util.Stack<int> stack = new util.Stack<int>();
+            stack.Push(il_offset);
+
+            while (stack.Count > 0)
+            {
+                il_offset = stack.Pop();
+                n = offset_map[il_offset];
+
+                if (!visited.Contains(il_offset))
+                {
+                    visited.Add(il_offset);
+
+                    foreach (int il_offset_after in n.il.il_offsets_after)
+                    {
+                        CilNode next = offset_map[il_offset_after];
+                        n.Next.Add(next);
+                        next.Prev.Add(n);
+                    }
+                }
+
+                for (int i = n.il.il_offsets_after.Count - 1; i >= 0; i--)
+                {
+                    int il_offset_after = n.il.il_offsets_after[i];
+                    if (!visited.Contains(il_offset_after))
+                        stack.Push(il_offset_after);
+                }
+            }
+        }
+
         static void DFAdd(CilGraph ret, int il_offset, CilNode parent, Dictionary<int, CilNode> offset_map, util.Set<int> visited)
         {
             if (visited.Contains(il_offset))
@@ -102,6 +140,11 @@ namespace libtysila.frontend.cil
                 next.Prev.Add(n);
                 DFAdd(ret, next_il, n, offset_map, visited);
             }
+        }
+
+        public void Add(InstructionLine il)
+        {
+            Add(new CilNode { il = il });
         }
 
         public override void Add(timple.BaseNode n)
@@ -235,15 +278,15 @@ namespace libtysila.frontend.cil
                     case Opcode.InlineVar.ShortInlineVar:
                         line.inline_int = LSB_Assembler.FromByteArrayI1S(code, offset);
                         line.inline_uint = LSB_Assembler.FromByteArrayU1S(code, offset);
-                        offset += 1;
                         line.inline_val = new byte[1];
                         LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 1);
+                        offset += 1;
                         break;
                     case Opcode.InlineVar.ShortInlineR:
                         line.inline_sgl = LSB_Assembler.FromByteArrayR4S(code, offset);
-                        offset += 4;
                         line.inline_val = new byte[4];
                         LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 4);
+                        offset += 4;
                         break;
                     case Opcode.InlineVar.InlineSwitch:
                         uint switch_len = LSB_Assembler.FromByteArrayU4S(code, offset);

@@ -162,10 +162,18 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after.Push(dest_p);
 
             Signature.BaseType src_type = null;
-            if (srcp.Type is Signature.ManagedPointer)
+            if ((srcp.Type is Signature.ManagedPointer) || (srcp.Type is Signature.UnmanagedPointer) || srcp.CliType(ass) == Assembler.CliType.O)
+            {
+                if (ass.Options.VerifiableCIL)
+                    throw new Assembler.AssemblerException(il.il.opcode.ToString() + ": conversion from " + srcp.ToString() +
+                        " is not verifiable", il.il, mtc);
+
                 src_type = new Signature.BaseType(BaseType_Type.I);
+            }
             else if (srcp.Type is Signature.BaseType)
                 src_type = srcp.Type as Signature.BaseType;
+            else if (srcp.Type is Signature.ComplexType && ((Signature.ComplexType)srcp.Type).IsEnum)
+                src_type = ass.GetVerificationType(srcp).Type as Signature.BaseType;
             else
                 throw new Assembler.AssemblerException(il.il.opcode.ToString() + ": invalid source type: " + srcp.ToString(),
                     il.il, mtc);
@@ -175,7 +183,9 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             // Perform overflow testing if requested
             if (ovf)
             {
-                throw new NotImplementedException();
+                Assembler.AssemblerException e = new Assembler.AssemblerException(il.il.opcode.ToString() + ": overflow testing " +
+                    "requested but currently not implemented", il.il, mtc);
+                ass.EmitWarning(e);
             }
         }
 

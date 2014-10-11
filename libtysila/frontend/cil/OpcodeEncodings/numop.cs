@@ -67,6 +67,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             public Assembler.CliType dt;
             public ThreeAddressCode.Op op;
             public ThreeAddressCode.Op throw_op = ThreeAddressCode.Op.OpNull(ThreeAddressCode.OpName.invalid);
+            public bool ovf = false;
+            public bool un = false;
         }
 
         static Dictionary<binnumop_key, numop_val> binnumops = new Dictionary<binnumop_key, numop_val>();
@@ -85,6 +87,22 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             binnumops[new binnumop_key { a_type = Assembler.CliType.F32, b_type = Assembler.CliType.F32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add) }] = new numop_val { dt = Assembler.CliType.F32, op = ThreeAddressCode.Op.OpR4(ThreeAddressCode.OpName.add) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.F64, b_type = Assembler.CliType.F64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add) }] = new numop_val { dt = Assembler.CliType.F64, op = ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.add) };
 
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.add), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), ovf = true };
+
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf_un) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf_un) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.add), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.reference, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf_un) }] = new numop_val { dt = Assembler.CliType.reference, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.reference, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf_un) }] = new numop_val { dt = Assembler.CliType.reference, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.reference, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf_un) }] = new numop_val { dt = Assembler.CliType.reference, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.reference, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.add_ovf_un) }] = new numop_val { dt = Assembler.CliType.reference, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), ovf = true, un = true };
+
             binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.sub) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub) };
@@ -96,6 +114,21 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             binnumops[new binnumop_key { a_type = Assembler.CliType.F64, b_type = Assembler.CliType.F64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub) }] = new numop_val { dt = Assembler.CliType.F64, op = ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.sub) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.reference, b_type = Assembler.CliType.reference, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.sub) };
 
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.sub), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.sub), ovf = true };
+
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf_un) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf_un) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.sub), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.sub), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.reference, b_type = Assembler.CliType.reference, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.reference, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf_un) }] = new numop_val { dt = Assembler.CliType.reference, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.sub), ovf = true, un = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.reference, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.sub_ovf_un) }] = new numop_val { dt = Assembler.CliType.reference, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.sub), ovf = true, un = true };
+
             binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.mul) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul) };
@@ -103,7 +136,19 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.mul) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.F32, b_type = Assembler.CliType.F32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul) }] = new numop_val { dt = Assembler.CliType.F32, op = ThreeAddressCode.Op.OpR4(ThreeAddressCode.OpName.mul) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.F64, b_type = Assembler.CliType.F64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul) }] = new numop_val { dt = Assembler.CliType.F64, op = ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.mul) };
-            
+
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.mul), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.mul), ovf = true };
+
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf_un) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul_un), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf_un) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.mul_un), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul_un), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul_un), ovf = true };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.mul_ovf_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.mul_un), ovf = true };
+
             binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.div_un) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.div_un) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.div_un) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.div_un) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.div_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.div_un) };
@@ -127,6 +172,14 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.rem) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.F32, b_type = Assembler.CliType.F32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem) }] = new numop_val { dt = Assembler.CliType.F32, op = ThreeAddressCode.Op.OpR4(ThreeAddressCode.OpName.rem) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.F64, b_type = Assembler.CliType.F64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem) }] = new numop_val { dt = Assembler.CliType.F64, op = ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.rem) };
+
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem_un) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.rem_un) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem_un) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.rem_un) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.rem_un) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.rem_un) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.rem_un) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.F32, b_type = Assembler.CliType.F32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem_un) }] = new numop_val { dt = Assembler.CliType.F32, op = ThreeAddressCode.Op.OpR4(ThreeAddressCode.OpName.rem_un) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.F64, b_type = Assembler.CliType.F64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.rem_un) }] = new numop_val { dt = Assembler.CliType.F64, op = ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.rem_un) };
 
             binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.int32, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.and) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.and) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.int64, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.and) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.and) };
@@ -167,6 +220,15 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.shr_un) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.shr_un) };
             binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.native_int, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.shr_un) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.shr_un) };
 
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.none, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.neg) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.neg) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.none, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.neg) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.neg) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.none, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.neg) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.neg) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.F32, b_type = Assembler.CliType.none, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.neg) }] = new numop_val { dt = Assembler.CliType.F32, op = ThreeAddressCode.Op.OpR4(ThreeAddressCode.OpName.neg) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.F64, b_type = Assembler.CliType.none, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.neg) }] = new numop_val { dt = Assembler.CliType.F64, op = ThreeAddressCode.Op.OpR8(ThreeAddressCode.OpName.neg) };
+
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int32, b_type = Assembler.CliType.none, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.not) }] = new numop_val { dt = Assembler.CliType.int32, op = ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.not) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.int64, b_type = Assembler.CliType.none, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.not) }] = new numop_val { dt = Assembler.CliType.int64, op = ThreeAddressCode.Op.OpI8(ThreeAddressCode.OpName.not) };
+            binnumops[new binnumop_key { a_type = Assembler.CliType.native_int, b_type = Assembler.CliType.none, opcode = Opcode.OpcodeVal(Opcode.SingleOpcodes.not) }] = new numop_val { dt = Assembler.CliType.native_int, op = ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.not) };
         }
 
         public static void tybel_binnumop(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
@@ -189,9 +251,38 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location d_loc = il.stack_vars_after.GetAddressFor(d_p, ass);
             il.stack_after.Push(d_p);
 
-            ass.BinNumOp(state, il.stack_vars_before, d_loc, a_loc, b_loc, v.op, il.il.tybel);
+            if(v.ovf)
+            {
+                ass.EmitWarning(new Assembler.AssemblerException(il.il.opcode.ToString() + ": request for overflow check " +
+                    "but this is currently not implemented", il.il, mtc));
+            }
+
+            ass.NumOp(state, il.stack_vars_before, d_loc, a_loc, b_loc, v.op, il.il.tybel);
 
             if(v.throw_op.Operator != ThreeAddressCode.OpName.invalid)
+                throw new NotImplementedException();
+        }
+
+        public static void tybel_unnumop(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location a_loc = il.stack_vars_after.Pop(ass);
+            Signature.Param a_p = il.stack_after.Pop();
+
+            Assembler.CliType a_ct = a_p.CliType(ass);
+
+            binnumop_key k = new binnumop_key { a_type = a_ct, b_type = Assembler.CliType.none, opcode = il.il.opcode.opcode };
+            numop_val v;
+            if (!binnumops.TryGetValue(k, out v))
+                throw new Exception("Invalid binary num op combination: " + k.ToString());
+
+            Signature.Param d_p = new Signature.Param(v.dt);
+            libasm.hardware_location d_loc = il.stack_vars_after.GetAddressFor(d_p, ass);
+            il.stack_after.Push(d_p);
+
+            ass.NumOp(state, il.stack_vars_before, d_loc, a_loc, null, v.op, il.il.tybel);
+
+            if (v.throw_op.Operator != ThreeAddressCode.OpName.invalid)
                 throw new NotImplementedException();
         }
 

@@ -48,6 +48,24 @@ namespace libtysila
         internal Dictionary<MethodToCompile, AssembleBlockOutput> CompiledMethodCache; /* = new Dictionary<MethodToCompile, AssembleBlockOutput>(); */
         internal Dictionary<MethodToCompile, bool> dry_run_cache; /* = new Dictionary<MethodToCompile, bool>(); */
 
+        internal System.IO.TextWriter _warn_out = null;
+        public System.IO.TextWriter WarningsOutput { get { return _warn_out; } set { _warn_out = value; } }
+        internal List<AssemblerException> warnings = new List<AssemblerException>();
+        public List<AssemblerException> Warnings { get { return warnings; } }
+
+        public void EmitWarning(AssemblerException e)
+        {
+            if (_warn_out != null)
+                _warn_out.WriteLine(e.ToString());
+            warnings.Add(e);
+            if (Options.WarningsAsErrors)
+            {
+                if (_warn_out != null)
+                    _warn_out.WriteLine("Treating warnings as errors");
+                throw e;
+            }
+        }
+
         Architecture _arch;
         internal AssemblerOptions _options;
         public AssemblerOptions Options { get { return _options; } }
@@ -60,6 +78,7 @@ namespace libtysila
         public const int throw_NullReferenceException = 3;
         public const int throw_MissingMethodException = 4;
         public const int throw_IndexOutOfRangeException = 5;
+        public const int throw_NotImplementedException = 6;
 
         internal abstract List<libasm.hardware_location> GetLocalVarsLocations(List<Signature.Param> lvs_p, MethodAttributes attrs);
 
@@ -73,12 +92,13 @@ namespace libtysila
         internal abstract void Add(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, CliType dt, List<tybel.Node> ret);
         internal abstract void Mul(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, CliType dt, List<tybel.Node> ret);
         internal abstract void MemSet(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location c, libasm.hardware_location n, List<tybel.Node> ret);
+        internal abstract void MemSetW(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location c, libasm.hardware_location n, List<tybel.Node> ret);
         internal abstract void MemCpy(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location src, libasm.hardware_location n, List<tybel.Node> ret);
         internal abstract void Call(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location retval, libasm.hardware_location[] p, CallConv cc, List<tybel.Node> ret);
         internal abstract void Poke(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest_addr, libasm.hardware_location src, int size, List<tybel.Node> ret);
         internal abstract void Peek(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location src_addr, int size, List<tybel.Node> ret);
         internal abstract void Enter(libtysila.frontend.cil.Encoder.EncoderState state, MethodAttributes attrs, List<tybel.Node> ret);
-        internal abstract void BinNumOp(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, ThreeAddressCode.Op op, List<tybel.Node> ret);
+        internal abstract void NumOp(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, ThreeAddressCode.Op op, List<tybel.Node> ret);
         internal abstract void Conv(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location src, Signature.BaseType dest_type, Signature.BaseType src_type, bool signed, List<tybel.Node> ret);
         internal abstract void ThrowIf(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location a, libasm.hardware_location b, libasm.hardware_location throw_dest, libasm.hardware_location throw_obj, CliType dt, ThreeAddressCode.OpName op, List<tybel.Node> ret);
         internal abstract void BrEhclause(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, List<tybel.Node> ret);
@@ -86,7 +106,6 @@ namespace libtysila
         internal abstract void BrIf(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location br_target, libasm.hardware_location a, libasm.hardware_location b, ThreeAddressCode.OpName op, CliType dt, List<tybel.Node> ret);
         internal abstract void Save(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location loc, List<tybel.Node> ret);
         internal abstract void Restore(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location loc, List<tybel.Node> ret);
-
 
         internal virtual Stack GetStack(libasm.hardware_stackloc.StackType stack_type) { return new DefaultStack(stack_type); }
         internal virtual Stack GetStack() { return GetStack(hardware_stackloc.StackType.Var); }
@@ -222,6 +241,7 @@ namespace libtysila
             public string CallingConvention = "default";
             public bool AllowTysilaOpcodes = false;
             public bool VerifiableCIL = false;
+            public bool WarningsAsErrors = false;
         }
 
         public class AssemblerState

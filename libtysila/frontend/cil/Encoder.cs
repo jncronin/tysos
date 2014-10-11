@@ -92,7 +92,8 @@ namespace libtysila.frontend.cil
                         start.stack_before.Push(except_obj_type);
                     }
                 }
-                DFEncode(start, mtc, ass, visited, ref next_block, state, attrs);
+                //DFEncode(start, mtc, ass, visited, ref next_block, state, attrs);
+                DFEncode(start, mtc, ass, state, attrs);
             }
 
             /* Reorder the linear stream for rewritten nodes */
@@ -110,6 +111,8 @@ namespace libtysila.frontend.cil
                     }
 
                     state.offset_map[old.il.il_offset] = old.replaced_by[0];
+
+                    i--;
                 }
             }
 
@@ -155,6 +158,80 @@ namespace libtysila.frontend.cil
             }
 
             return ret;
+        }
+
+        private static void DFEncode(CilNode n, Assembler.MethodToCompile mtc, Assembler ass, EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            util.Set<CilNode> visited = new util.Set<CilNode>();
+            util.Stack<CilNode> stack = new util.Stack<CilNode>();
+
+            stack.Push(n);
+
+            while (stack.Count > 0)
+            {
+                n = stack.Pop();
+                if (!visited.Contains(n))
+                {
+                    visited.Add(n);
+
+                    /* Set up stack */
+                    if (n.stack_vars_before == null)
+                    {
+                        if (n.Prev.Count == 0)
+                        {
+                            throw new NotImplementedException();
+                        }
+                        if (n.Prev.Count == 1)
+                        {
+                            n.stack_vars_before = ((CilNode)n.Prev[0]).stack_vars_after.Clone();
+                            n.stack_before = new util.Stack<Signature.Param>(((CilNode)n.Prev[0]).stack_after);
+                        }
+                        else
+                        {
+                            // TODO merge stacks
+                            n.stack_vars_before = ((CilNode)n.Prev[0]).stack_vars_after.Clone();
+                            n.stack_before = new util.Stack<Signature.Param>(((CilNode)n.Prev[0]).stack_after);
+                        }
+                    }
+
+                    /* Decompose opcodes */
+                    CilNode new_n = DecomposeComplexOpcodes.DecomposeComplexOpts(n, ass, mtc, ref state.next_blk, attrs);
+                    if (new_n != n)
+                    {
+                        stack.Push(new_n);
+                        continue;
+                    }
+
+                    /* Encode the current opcode */
+                    if (n.il.opcode.TybelEncoder == null)
+                        throw new Exception("No encoding available for " + n.il.ToString());
+                    n.stack_vars_after = n.stack_vars_before.Clone();
+                    n.stack_after = new util.Stack<Signature.Param>(n.stack_before);
+                    n.il.tybel = new List<tybel.Node>();
+
+                    if (n.il_label >= 0)
+                        n.il.tybel.Add(new tybel.LabelNode("L" + n.il_label.ToString(), true));
+                    n.il.tybel.Add(new tybel.CilNode { Node = n });
+
+                    if (n.stack_vars_before.ByteSize > state.largest_var_stack)
+                        state.largest_var_stack = n.stack_vars_before.ByteSize;
+                    n.il.opcode.TybelEncoder(n, ass, mtc, ref state.next_blk, state, attrs);
+                    if (n.stack_vars_after.ByteSize > state.largest_var_stack)
+                        state.largest_var_stack = n.stack_vars_after.ByteSize;
+
+                    if (n.stack_vars_before.UsedLocations != null)
+                        state.used_locs.AddRange(n.stack_vars_before.UsedLocations);
+                    if (n.stack_vars_after.UsedLocations != null)
+                        state.used_locs.AddRange(n.stack_vars_after.UsedLocations);
+                }
+
+                /* Push children to stack (right child first, so that left child is popped first) */
+                for (int i = n.Next.Count - 1; i >= 0; i--)
+                {
+                    if (!visited.Contains((CilNode)n.Next[i]))
+                        stack.Push((CilNode)n.Next[i]);
+                }                
+            }
         }
 
         private static void DFEncode(CilNode n, Assembler.MethodToCompile mtc, Assembler ass, util.Set<CilNode> visited, ref int next_block,

@@ -71,7 +71,6 @@
     <Compile Include="Assembler_InfoStructures.cs" />
     <Compile Include="Assembler_list_assemblers.cs" />
     <Compile Include="Assembler_method.cs" />
-    <Compile Include="Assembler_opcodes.cs" />
     <Compile Include="Assembler_Requestor.cs" />
     <Compile Include="Assembler_type.cs" />
     <Compile Include="Assembler_var.cs" />
@@ -80,11 +79,11 @@
     <Compile Include="frontend\cil\DecomposeOpcodes\box.cs" />
     <Compile Include="frontend\cil\DecomposeOpcodes\isinst.cs" />
     <Compile Include="frontend\cil\DecomposeOpcodes\ldtoken.cs" />
-    <Compile Include="frontend\cil\DecomposeOpcodes\newobj.cs" />
     <Compile Include="frontend\cil\Encoder.cs" />
     <Compile Include="frontend\cil\InstructionLine.cs" />
     <Compile Include="frontend\cil\Opcode.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\args.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\box.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\br.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\call.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\castclass.cs" />

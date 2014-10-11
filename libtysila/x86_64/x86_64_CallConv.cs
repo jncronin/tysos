@@ -87,7 +87,10 @@ namespace libtysila
             if (m.Params.Count == 0)
                 ret.Arguments = new List<ArgumentLocation>();
             else if (m.Params.Count == 1)
-                ret.Arguments = new List<ArgumentLocation> { new ArgumentLocation { ValueLocation = new hardware_contentsof { base_loc = x86_64_Assembler.Rbp, const_offset = 8, size = 8 }, ValueSize = 8 } };
+            {
+                int sz = ass.GetSizeOfPointer();
+                ret.Arguments = new List<ArgumentLocation> { new ArgumentLocation { ValueLocation = new hardware_contentsof { base_loc = x86_64_Assembler.Rbp, const_offset = sz, size = sz }, ValueSize = sz, Type = new Signature.Param(BaseType_Type.I) } };
+            }
             else
                 throw new Exception("No more than one argument is allowed on an ISR");
 
@@ -121,7 +124,8 @@ namespace libtysila
                             const_offset = stack_pos,
                             size = v_size
                         },
-                        ValueSize = v_size
+                        ValueSize = v_size,
+                        Type = p
                     };
                     stack_pos += v_size;
                     stack_pos = util.align(stack_pos, pointer_size);
@@ -142,7 +146,8 @@ namespace libtysila
                             const_offset = stack_pos,
                             size = v_size
                         },
-                        ValueSize = v_size
+                        ValueSize = v_size,
+                        Type = p
                     };
                     stack_pos += v_size;
                     stack_pos = util.align(stack_pos, pointer_size);
@@ -201,7 +206,13 @@ namespace libtysila
 
             if (m.HasThis && !m.ExplicitThis)
             {
-                ArgumentLocation al = new ArgumentLocation { ValueLocation = amd64_gprs[reg_pos++], ValueSize = pointer_size };
+                Signature.Param this_ptr = mtc.tsigp;
+                if (mtc.type.IsValueType(ass))
+                {
+                    if (!(mtc.tsig is Signature.BoxedType) && !(mtc.tsig is Signature.ManagedPointer))
+                        this_ptr = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = mtc.tsig }, ass);
+                }
+                ArgumentLocation al = new ArgumentLocation { ValueLocation = amd64_gprs[reg_pos++], ValueSize = pointer_size, Type = this_ptr };
 
                 if ((mtc.type != null) && mtc.type.IsValueType(ass) && !(mtc.tsig is Signature.BoxedType))
                     al.ExpectsVTRef = true;
@@ -293,7 +304,14 @@ namespace libtysila
 
             if (m.HasThis && !m.ExplicitThis)
             {
-                ArgumentLocation al = new ArgumentLocation { ValueLocation = new hardware_contentsof { base_loc = base_reg, const_offset = stack_pos, size = pointer_size }, ValueSize = pointer_size };
+                Signature.Param this_ptr = mtc.tsigp;
+                if (mtc.type.IsValueType(ass))
+                {
+                    if (!(mtc.tsig is Signature.BoxedType) && !(mtc.tsig is Signature.ManagedPointer))
+                        this_ptr = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = mtc.tsig }, ass);
+                }
+
+                ArgumentLocation al = new ArgumentLocation { ValueLocation = new hardware_contentsof { base_loc = base_reg, const_offset = stack_pos, size = pointer_size }, ValueSize = pointer_size, Type = this_ptr };
 
                 if ((mtc.type != null) && mtc.type.IsValueType(ass) && !(mtc.tsig is Signature.BoxedType))
                     al.ExpectsVTRef = true;
@@ -310,7 +328,7 @@ namespace libtysila
                     v_size = 8;
                 if (i586 && (v_size < 4))
                     v_size = 4;
-                ret.Arguments.Add(new ArgumentLocation { ValueSize = v_size, ValueLocation = new hardware_contentsof { base_loc = base_reg, const_offset = stack_pos, size = v_size } });
+                ret.Arguments.Add(new ArgumentLocation { ValueSize = v_size, ValueLocation = new hardware_contentsof { base_loc = base_reg, const_offset = stack_pos, size = v_size }, Type = p });
 
                 /*
                 if (v_size > pointer_size)

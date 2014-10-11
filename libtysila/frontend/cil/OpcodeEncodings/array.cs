@@ -140,8 +140,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             else
                 throw new NotImplementedException("ldelem: array is not of type ZeroBasedArray");
 
-            if(!Signature.ParamCompare(p_index, new Signature.Param(BaseType_Type.I), ass) &&
-                !Signature.ParamCompare(p_index, new Signature.Param(BaseType_Type.I4), ass))
+            if(p_index.CliType(ass) != Assembler.CliType.int32 && p_index.CliType(ass) != Assembler.CliType.native_int)
                 throw new Assembler.AssemblerException("ldelem: index is not of types int32 or native int " +
                     "(instead of type " + p_index.ToString() + ")", il.il, mtc);
 
@@ -178,7 +177,10 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(type, ass);
                 ass.Peek(state, il.stack_vars_before, loc_ret, t1, ass.GetPackedSizeOf(type), il.il.tybel);
                 //ass.Assign(state, il.stack_vars_before, loc_ret, new libasm.hardware_contentsof { base_loc = t1, size = ass.GetPackedSizeOf(type) }, type.CliType(ass), il.il.tybel);
-                ass.Conv(state, il.stack_vars_before, loc_ret, loc_ret, new Signature.BaseType(type.CliType(ass)), new Signature.BaseType(type), signed, il.il.tybel);
+
+                if(type.CliType(ass) != Assembler.CliType.vt)
+                    ass.Conv(state, il.stack_vars_before, loc_ret, loc_ret, new Signature.BaseType(type.CliType(ass)),
+                        new Signature.BaseType(ass.GetUnderlyingType(type)), signed, il.il.tybel);
 
                 il.stack_after.Push(type);
             }
@@ -241,8 +243,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             else
                 throw new NotImplementedException("stelem: array is not of type ZeroBasedArray");
 
-            if (!Signature.ParamCompare(p_index, new Signature.Param(BaseType_Type.I), ass) &&
-                !Signature.ParamCompare(p_index, new Signature.Param(BaseType_Type.I4), ass))
+            if (p_index.CliType(ass) != Assembler.CliType.int32 && p_index.CliType(ass) != Assembler.CliType.native_int)
                 throw new Assembler.AssemblerException("stelem: index is not of types int32 or native int " +
                     "(instead of type " + p_index.ToString() + ")", il.il, mtc);
 

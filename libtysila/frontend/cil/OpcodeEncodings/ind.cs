@@ -242,7 +242,9 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             Signature.Param p_val = il.stack_after.Pop();
             Signature.Param p_addr = il.stack_after.Pop();
 
-            if (!((p_addr.Type is Signature.ManagedPointer) || ((p_addr.Type is Signature.BaseType) && (((Signature.BaseType)p_addr.Type).Type == BaseType_Type.I)) || (p_addr.Type is Signature.UnmanagedPointer)))
+            if (!((p_addr.Type is Signature.ManagedPointer) || ((p_addr.Type is Signature.BaseType) &&
+                (((Signature.BaseType)p_addr.Type).Type == BaseType_Type.I || ((Signature.BaseType)p_addr.Type).Type == BaseType_Type.U)) ||
+                (p_addr.Type is Signature.UnmanagedPointer)))
                 throw new Exception("stind without valid addr type: " + p_addr.Type.ToString());
 
             if (ass.Options.VerifiableCIL)
@@ -315,8 +317,10 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             Signature.Param p_addr = il.stack_after.Pop();
 
-            if (!((p_addr.Type is Signature.ManagedPointer) || ((p_addr.Type is Signature.BaseType) && (((Signature.BaseType)p_addr.Type).Type == BaseType_Type.I)) || (p_addr.Type is Signature.UnmanagedPointer)))
-                throw new Exception("stind without valid addr type: " + p_addr.Type.ToString());
+            if (!((p_addr.Type is Signature.ManagedPointer) || ((p_addr.Type is Signature.BaseType) && 
+                (((Signature.BaseType)p_addr.Type).Type == BaseType_Type.I || ((Signature.BaseType)p_addr.Type).Type == BaseType_Type.U)) ||
+                (p_addr.Type is Signature.UnmanagedPointer)))
+                throw new Exception("ldind without valid addr type: " + p_addr.Type.ToString());
 
             if ((p_addr.Type is Signature.ManagedPointer) && il.il.opcode.opcode1 == Opcode.SingleOpcodes.ldind_ref)
                 T = new Signature.Param(((Signature.ManagedPointer)p_addr.Type).ElemType, ass);
@@ -324,7 +328,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             if (ass.Options.VerifiableCIL)
             {
                 if (!(p_addr.Type is Signature.ManagedPointer))
-                    throw new Exception("stind without addr being managed pointer");
+                    throw new Exception("ldind without addr being managed pointer");
                 Signature.BaseOrComplexType t_addr = ((Signature.ManagedPointer)p_addr.Type).ElemType;
                 if (!ass.IsAssignableTo(T, new Signature.Param(t_addr, ass)))
                     throw new Assembler.AssemblerException("ldind: stack type '" + t_addr.ToString() + "' is not " +

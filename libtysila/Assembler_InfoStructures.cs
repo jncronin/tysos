@@ -182,9 +182,8 @@ namespace libtysila
                 SetByteArray(ai, tysos_assembly_offsets["Int32 __object_id"], ToByteArraySignExtend(next_object_id.Increment, 4));
 
                 // String assemblyName
-                //var v_n = m.StringTable.GetStringAddress(m.ModuleName, this);
-                throw new NotImplementedException();
-                //of.AddDataRelocation(ai_top + tysos_assembly_offsets["String assemblyName"], v_n.base_var.v.label, DataToDataRelocType(), v_n.constant_offset);
+                vara v_n = m.StringTable.GetStringAddress(m.ModuleName, this);
+                of.AddDataRelocation(ai_top + tysos_assembly_offsets["String assemblyName"], v_n.LabelVal, DataToDataRelocType(), v_n.Offset);
 
                 // IntPtr _Types
                 of.AddDataRelocation(ai_top + tysos_assembly_offsets["IntPtr _Types"], mangled_assembly_name, DataToDataRelocType(), ai.Length);
@@ -240,9 +239,8 @@ namespace libtysila
                 SetByteArray(mdi, tysos_module_offsets["Int32 __object_id"], ToByteArraySignExtend(next_object_id.Increment, 4));
 
                 // String name
-                throw new NotImplementedException();
-                //var v_n = m.StringTable.GetStringAddress(m.ModuleName, this);
-                //of.AddDataRelocation(mdi_top + tysos_module_offsets["String name"], v_n.base_var.v.label, DataToDataRelocType(), v_n.constant_offset);
+                vara v_n = m.StringTable.GetStringAddress(m.ModuleName, this);
+                of.AddDataRelocation(mdi_top + tysos_module_offsets["String name"], v_n.LabelVal, DataToDataRelocType(), v_n.Offset);
 
                 // System.Reflection.Assembly assembly
                 of.AddDataRelocation(mdi_top + tysos_module_offsets["System.Reflection.Assembly assembly"], Mangler2.MangleAssembly(m, this), DataToDataRelocType(), 0);

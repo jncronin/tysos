@@ -141,7 +141,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             if (request_is_load)
             {
                 libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(ftc.fsig, ass);
-                if (size <= ass.GetSizeOfPointer())
+                if (size <= ass.GetSizeOfPointer() || dt == Assembler.CliType.F32 || dt == Assembler.CliType.F64)
                     ass.Peek(state, il.stack_vars_before, dest, fld_address, size, il.il.tybel);
                 else
                 {
@@ -153,7 +153,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             }
             else
             {
-                if (size <= ass.GetSizeOfPointer())
+                if (size <= ass.GetSizeOfPointer() || dt == Assembler.CliType.F32 || dt == Assembler.CliType.F64)
                     ass.Poke(state, il.stack_vars_before, fld_address, val, size, il.il.tybel);
                 else
                 {

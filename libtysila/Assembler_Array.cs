@@ -67,6 +67,7 @@
  */
 
 
+using libtysila.frontend.cil;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -251,13 +252,12 @@ namespace libtysila
             // Create its methods
 
             // static int vector_index(int[] lobounds, int[] sizes, int idx1, int idx2, int idx3, ...)
-#if false
             Metadata.MethodDefRow vector_index_mdr = new Metadata.MethodDefRow();
             vector_index_mdr.Body = new Metadata.MethodBody();
 
             Signature.Method vector_index_msig = new Signature.Method { CallingConvention = libtysila.Signature.Method.CallConv.Default, ExplicitThis = false, GenParamCount = 0, HasThis = false,
                 m = array_type.m, ParamCount = rank + 2, RetType = new Signature.Param(BaseType_Type.I4) };
-            Assembler.cfg_node vector_index_meth_node = new cfg_node(0, new MethodToCompile(this, vector_index_mdr, vector_index_msig, array_type, array_sig, null));
+            CilGraph vector_index_meth_node = new CilGraph();
 
             for (int x = 0; x < rank; x++)
             {
@@ -270,11 +270,11 @@ namespace libtysila
                      * sub
                      */
 
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = x + 2 });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = 0 });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4_s], inline_int = x });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldelem_i4], int_array = true });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.sub] });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = x + 2 });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = 0 });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_s)], inline_int = x });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldelem_i4)], int_array = true });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.sub)] });
                 }
                 else        // x >= 1
                 {
@@ -290,21 +290,21 @@ namespace libtysila
                      * sub
                      */
 
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_1] });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4_s], inline_int = x });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldelem_i4], int_array = true });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.mul] });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = x + 2 });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.add] });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4_s], inline_int = x });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldelem_i4], int_array = true });
-                    vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.sub] });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_1)] });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_s)], inline_int = x });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldelem_i4)], int_array = true });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.mul)] });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = x + 2 });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.add)] });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_s)], inline_int = x });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldelem_i4)], int_array = true });
+                    vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.sub)] });
                 }
             }
-            vector_index_meth_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ret] });
+            vector_index_meth_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
 
-            vector_index_mdr.nodes = new List<cfg_node> { vector_index_meth_node };
+            vector_index_mdr.instrs = vector_index_meth_node;
             vector_index_mdr.Body.InitLocals = false;
             vector_index_mdr.Body.LocalVars = null;
             vector_index_mdr.Body.MaxStack = 3;
@@ -328,12 +328,12 @@ namespace libtysila
             // instance ElemType Get(int i1, int i2, int i3, ...)
             Metadata.MethodDefRow get_mdr = new Metadata.MethodDefRow();
             get_mdr.Body = new Metadata.MethodBody();
-            Assembler.cfg_node get_node = new cfg_node(0, new MethodToCompile(this, get_mdr, null, array_type, array_sig, null));
+            CilGraph get_node = new CilGraph();
             _get_array_index_stack(get_node, rank, elem_type, inner_array_fr, lobounds_fr, sizes_fr, vector_index_mdr, ret);
-            get_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldelem], inline_tok = new TTCToken { ttc = elem_type }, int_array = true });
-            get_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ret] });
+            get_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldelem)], inline_tok = new TTCToken { ttc = elem_type }, int_array = true });
+            get_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
 
-            get_mdr.nodes = new List<cfg_node> { get_node };
+            get_mdr.instrs = get_node;
             get_mdr.Body.InitLocals = false;
             get_mdr.Body.LocalVars = null;
             get_mdr.Body.MaxStack = (uint)(rank + 3);
@@ -365,15 +365,15 @@ namespace libtysila
             // instance object GetValueImpl(int pos)
             Metadata.MethodDefRow getvalueimpl_mdr = new Metadata.MethodDefRow();
             getvalueimpl_mdr.Body = new Metadata.MethodBody();
-            Assembler.cfg_node getvalueimpl_node = new cfg_node(0, new MethodToCompile(this, getvalueimpl_mdr, null, array_type, array_sig, null));
-            getvalueimpl_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            getvalueimpl_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldfld], inline_tok = new FTCToken { ftc = inner_array_ftc } });
-            getvalueimpl_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_1] });
-            getvalueimpl_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldelem], inline_tok = new TTCToken { ttc = elem_type }, int_array = true });
-            getvalueimpl_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.box], inline_tok = new TTCToken { ttc = elem_type } });
-            getvalueimpl_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ret] });
+            CilGraph getvalueimpl_node = new CilGraph();
+            getvalueimpl_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            getvalueimpl_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)], inline_tok = new FTCToken { ftc = inner_array_ftc } });
+            getvalueimpl_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_1)] });
+            getvalueimpl_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldelem)], inline_tok = new TTCToken { ttc = elem_type }, int_array = true });
+            getvalueimpl_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.box)], inline_tok = new TTCToken { ttc = elem_type } });
+            getvalueimpl_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
 
-            getvalueimpl_mdr.nodes = new List<cfg_node> { getvalueimpl_node };
+            getvalueimpl_mdr.instrs = getvalueimpl_node;
             getvalueimpl_mdr.Body.InitLocals = false;
             getvalueimpl_mdr.Body.LocalVars = null;
             getvalueimpl_mdr.Body.MaxStack = 1;
@@ -405,13 +405,13 @@ namespace libtysila
             // instance void Set(int i1, int i2, int i3, ..., ElemType val)
             Metadata.MethodDefRow set_mdr = new Metadata.MethodDefRow();
             set_mdr.Body = new Metadata.MethodBody();
-            Assembler.cfg_node set_node = new cfg_node(0, new MethodToCompile(this, set_mdr, null, array_type, array_sig, null));
+            CilGraph set_node = new CilGraph();
             _get_array_index_stack(set_node, rank, elem_type, inner_array_fr, lobounds_fr, sizes_fr, vector_index_mdr, ret);
-            set_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = rank + 1 });
-            set_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stelem], inline_tok = new TTCToken { ttc = elem_type }, int_array = true });
-            set_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ret] });
+            set_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = rank + 1 });
+            set_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stelem)], inline_tok = new TTCToken { ttc = elem_type }, int_array = true });
+            set_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
 
-            set_mdr.nodes = new List<cfg_node> { set_node };
+            set_mdr.instrs = set_node;
             set_mdr.Body.InitLocals = false;
             set_mdr.Body.LocalVars = null;
             set_mdr.Body.MaxStack = (uint)(rank + 4);
@@ -444,12 +444,12 @@ namespace libtysila
             // instance ElemType & Address(int i1, int i2, int i3, ...)
             Metadata.MethodDefRow addr_mdr = new Metadata.MethodDefRow();
             addr_mdr.Body = new Metadata.MethodBody();
-            Assembler.cfg_node addr_node = new cfg_node(0, new MethodToCompile(this, addr_mdr, null, array_type, array_sig, null));
+            CilGraph addr_node = new CilGraph();
             _get_array_index_stack(addr_node, rank, elem_type, inner_array_fr, lobounds_fr, sizes_fr, vector_index_mdr, ret);
-            addr_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldelema], inline_tok = new TTCToken { ttc = elem_type }, int_array = true });
-            addr_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ret] });
+            addr_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldelema)], inline_tok = new TTCToken { ttc = elem_type }, int_array = true });
+            addr_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
 
-            addr_mdr.nodes = new List<cfg_node> { addr_node };
+            addr_mdr.instrs = addr_node;
             addr_mdr.Body.InitLocals = false;
             addr_mdr.Body.LocalVars = null;
             addr_mdr.Body.MaxStack = (uint)(rank + 3);
@@ -482,61 +482,61 @@ namespace libtysila
             Metadata.MethodDefRow ctor_1_mdr = new Metadata.MethodDefRow();
             ctor_1_mdr.Body = new Metadata.MethodBody();
             ctor_1_mdr.Body.LVars = new Signature.LocalVars { Vars = new List<Signature.Param> { new Signature.Param(BaseType_Type.I4) } };
-            Assembler.cfg_node ctor_1_node = new cfg_node(0, new MethodToCompile(this, ctor_1_mdr, null, array_type, array_sig, null));
+            CilGraph ctor_1_node = new CilGraph();
 
             TypeToCompile Int32_ttc = Metadata.GetTTC("mscorlib", "System", "Int32", this);
             TypeToCompile Int32_arr_ttc = new TypeToCompile { _ass = this, tsig = new Signature.Param(new Signature.ZeroBasedArray { ElemType = Int32_ttc.tsig.Type, numElems = rank }, this), type = Int32_ttc.type };
             TypeToCompile ET_arr_ttc = new TypeToCompile { _ass = this, tsig = new Signature.Param(new Signature.ZeroBasedArray { ElemType = elem_type.tsig.Type }, this), type = elem_type.type };
 
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[0xfd2b], inline_tok = new StringToken { str = mangled_et } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = elemtype_ftc } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = rank });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = rank_ftc } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = elem_size });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = elemsize_ftc } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = rank * GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)) });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = Int32_arr_ttc } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = lobounds_ftc } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = rank * GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)) });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = Int32_arr_ttc } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = sizes_ftc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2b], inline_tok = new StringToken { str = mangled_et } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = elemtype_ftc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = rank });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = rank_ftc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = elem_size });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = elemsize_ftc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = rank * GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)) });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = Int32_arr_ttc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = lobounds_ftc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = rank * GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)) });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = Int32_arr_ttc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = sizes_ftc } });
             for (int x = 0; x < rank; x++)
             {
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldfld], inline_tok = new FTCToken { ftc = lobounds_ftc } });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = x });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4_0] });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stelem_i4], int_array = true });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)], inline_tok = new FTCToken { ftc = lobounds_ftc } });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = x });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_0)] });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stelem_i4)], int_array = true });
             }
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4_1] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_1)] });
             for (int x = 0; x < rank; x++)
             {
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldfld], inline_tok = new FTCToken { ftc = sizes_ftc } });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = x });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = x + 1 });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stelem_i4], int_array = true });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = x + 1 });
-                ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.mul] });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)], inline_tok = new FTCToken { ftc = sizes_ftc } });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = x });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = x + 1 });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stelem_i4)], int_array = true });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = x + 1 });
+                ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.mul)] });
             }
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.dup] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stloc_0] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = elem_size });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.mul] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = ET_arr_ttc } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = inner_array_ftc } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldloc_0] });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = ia_length_ftc } });
-            ctor_1_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ret] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stloc_0)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = elem_size });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.mul)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = ET_arr_ttc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = inner_array_ftc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloc_0)] });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = ia_length_ftc } });
+            ctor_1_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
 
-            ctor_1_mdr.nodes = new List<cfg_node> { ctor_1_node };
+            ctor_1_mdr.instrs = ctor_1_node;
             ctor_1_mdr.Body.InitLocals = false;
             ctor_1_mdr.Body.LocalVars = null;
             ctor_1_mdr.Body.MaxStack = 5;
@@ -569,57 +569,57 @@ namespace libtysila
             Metadata.MethodDefRow ctor_2_mdr = new Metadata.MethodDefRow();
             ctor_2_mdr.Body = new Metadata.MethodBody();
             ctor_2_mdr.Body.LVars = new Signature.LocalVars { Vars = new List<Signature.Param> { new Signature.Param(BaseType_Type.I4) } };
-            Assembler.cfg_node ctor_2_node = new cfg_node(0, new MethodToCompile(this, ctor_2_mdr, null, array_type, array_sig, null));
+            CilGraph ctor_2_node = new CilGraph();
 
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[0xfd2b], inline_tok = new StringToken { str = mangled_et } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = elemtype_ftc } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = rank });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = rank_ftc } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = elem_size });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = elemsize_ftc } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = rank * GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)) });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = Int32_arr_ttc } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = lobounds_ftc } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = rank * GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)) });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = Int32_arr_ttc } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = sizes_ftc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2b], inline_tok = new StringToken { str = mangled_et } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = elemtype_ftc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = rank });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = rank_ftc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = elem_size });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = elemsize_ftc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = rank * GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)) });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = Int32_arr_ttc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = lobounds_ftc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = rank * GetPackedSizeOf(new Signature.Param(BaseType_Type.I4)) });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = Int32_arr_ttc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = sizes_ftc } });
             for (int x = 0; x < rank; x++)
             {
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldfld], inline_tok = new FTCToken { ftc = lobounds_ftc } });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = x });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = 2 * x + 1 });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stelem_i4], int_array = true });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)], inline_tok = new FTCToken { ftc = lobounds_ftc } });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = x });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = 2 * x + 1 });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stelem_i4)], int_array = true });
             }
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4_1] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4_1)] });
             for (int x = 0; x < rank; x++)
             {
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldfld], inline_tok = new FTCToken { ftc = sizes_ftc } });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = x });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = 2 * x + 2 });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stelem_i4], int_array = true });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = 2 * x + 2 });
-                ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.mul] });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)], inline_tok = new FTCToken { ftc = sizes_ftc } });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = x });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = 2 * x + 2 });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stelem_i4)], int_array = true });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = 2 * x + 2 });
+                ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.mul)] });
             }
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.dup] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stloc_0] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldc_i4], inline_int = elem_size });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.mul] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = ET_arr_ttc } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = inner_array_ftc } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldloc_0] });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.stfld], inline_tok = new FTCToken { ftc = ia_length_ftc } });
-            ctor_2_node.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ret] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.dup)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stloc_0)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldc_i4)], inline_int = elem_size });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.mul)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[0xfd2a], inline_tok = new TTCToken { ttc = ET_arr_ttc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = inner_array_ftc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloc_0)] });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.stfld)], inline_tok = new FTCToken { ftc = ia_length_ftc } });
+            ctor_2_node.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
 
-            ctor_2_mdr.nodes = new List<cfg_node> { ctor_2_node };
+            ctor_2_mdr.instrs = ctor_2_node;
             ctor_2_mdr.Body.InitLocals = false;
             ctor_2_mdr.Body.LocalVars = null;
             ctor_2_mdr.Body.MaxStack = 5;
@@ -646,13 +646,11 @@ namespace libtysila
             ctor_2_mdr.msig = ctor_2_sig;
 
             array_type.Methods.Add(ctor_2_mdr);
-#endif
 
             return ret;
         }
 
-#if false
-        void _get_array_index_stack(Assembler.cfg_node ret, int rank, Assembler.TypeToCompile elem_type, Metadata.FieldRow inner_array_fr,
+        void _get_array_index_stack(CilGraph ret, int rank, Assembler.TypeToCompile elem_type, Metadata.FieldRow inner_array_fr,
             Metadata.FieldRow lobounds_fr, Metadata.FieldRow sizes_fr, Metadata.MethodDefRow vector_index_mdr, Assembler.TypeToCompile array_type)
         {
             /* Return a method containing the following instructions:
@@ -671,10 +669,10 @@ namespace libtysila
              * This is then perfect for passing to ldelem, ldelema and stelem
              */
 
-            ret.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ret.instrs.Add(new InstructionLine
+            ret.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ret.Add(new InstructionLine
             {
-                opcode = Opcodes[(int)SingleOpcodes.ldfld],
+                opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)],
                 inline_tok = new FTCToken
                 {
                     ftc = new FieldToCompile
@@ -689,10 +687,10 @@ namespace libtysila
                     }
                 }
             });
-            ret.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ret.instrs.Add(new InstructionLine
+            ret.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ret.Add(new InstructionLine
             {
-                opcode = Opcodes[(int)SingleOpcodes.ldfld],
+                opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)],
                 inline_tok = new FTCToken
                 {
                     ftc = new FieldToCompile
@@ -707,10 +705,10 @@ namespace libtysila
                     }
                 }
             });
-            ret.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_0] });
-            ret.instrs.Add(new InstructionLine
+            ret.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            ret.Add(new InstructionLine
             {
-                opcode = Opcodes[(int)SingleOpcodes.ldfld],
+                opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)],
                 inline_tok = new FTCToken
                 {
                     ftc = new FieldToCompile
@@ -726,10 +724,10 @@ namespace libtysila
                 }
             });
             for (int x = 0; x < rank; x++)
-                ret.instrs.Add(new InstructionLine { opcode = Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = x + 1 });
-            ret.instrs.Add(new InstructionLine
+                ret.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = x + 1 });
+            ret.Add(new InstructionLine
             {
-                opcode = Opcodes[(int)SingleOpcodes.call],
+                opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)],
                 inline_tok = new MTCToken
                 {
                     mtc = new MethodToCompile
@@ -743,7 +741,6 @@ namespace libtysila
                 }
             });
         }
-#endif
 
         internal enum ArrayFields { rank, lobounds, sizes, elem_size, inner_array, elemtype, inner_array_length, array_type_size, getvalueimpl_vtbl_offset };
         bool array_fields_calculated = false;

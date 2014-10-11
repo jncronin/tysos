@@ -19,6 +19,7 @@
  * THE SOFTWARE.
  */
 
+using libtysila.frontend.cil;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -251,9 +252,9 @@ namespace libtysila
 
             /* ldarg x n, call, ret */
             for (int i = 0; i < get_arg_count(mtc.msig); i++)
-                instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[(int)SingleOpcodes.ldarg_s], inline_int = i });
-            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[(int)SingleOpcodes.call], inline_tok = new MTCToken { mtc = mtc } });
-            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[(int)SingleOpcodes.ret] });
+                instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)], inline_int = i });
+            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = new MTCToken { mtc = mtc } });
+            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
 
             return instrs;
         }
@@ -264,10 +265,10 @@ namespace libtysila
             /* write out a trampoline function */
             TypeToCompile unboxed_type = new TypeToCompile { _ass = this, type = mtc.type, tsig = new Signature.Param(((Signature.BoxedType)mtc.tsigp.Type).Type, this) };
 
-            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[(int)SingleOpcodes.ldarg_0] });
+            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
             instrs.Add(new frontend.cil.InstructionLine
             {
-                opcode = frontend.cil.OpcodeList.Opcodes[(int)SingleOpcodes.unbox],
+                opcode = frontend.cil.OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.unbox)],
                 inline_tok = new TTCToken
                 {
                     ttc = unboxed_type
@@ -277,8 +278,8 @@ namespace libtysila
                 instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[0xfe09], inline_int = i });
 
             MethodToCompile unboxed_meth = new MethodToCompile { _ass = this, tsigp = unboxed_type.tsig, type = unboxed_type.type, meth = mtc.meth, msig = mtc.msig };
-            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[(int)SingleOpcodes.call], inline_tok = new MTCToken { mtc = unboxed_meth } });
-            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[(int)SingleOpcodes.ret] });
+            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.call)], inline_tok = new MTCToken { mtc = unboxed_meth } });
+            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
 
             return instrs;
         }
@@ -291,12 +292,26 @@ namespace libtysila
 
         private frontend.cil.CilGraph RewriteVararg(MethodToCompile mtc)
         {
-            throw new NotImplementedException();
+            /* Write out a function to throw a NotImplementedException */
+            frontend.cil.CilGraph instrs = new frontend.cil.CilGraph();
+
+            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[frontend.cil.Opcode.OpcodeVal(frontend.cil.Opcode.DoubleOpcodes.sthrow)], inline_int = throw_NotImplementedException });
+
+            EmitWarning(new AssemblerException("vararg methods are not supported - rewriting method to throw exception", null, mtc));
+
+            return instrs;
         }
 
         private frontend.cil.CilGraph RewriteNonCLSCompliant(MethodToCompile mtc)
         {
-            throw new NotImplementedException();
+            /* Write out a function to throw a NotImplementedException */
+            frontend.cil.CilGraph instrs = new frontend.cil.CilGraph();
+
+            instrs.Add(new frontend.cil.InstructionLine { opcode = frontend.cil.OpcodeList.Opcodes[frontend.cil.Opcode.OpcodeVal(frontend.cil.Opcode.DoubleOpcodes.sthrow)], inline_int = throw_NotImplementedException });
+
+            EmitWarning(new AssemblerException("vararg methods are not supported - rewriting method to throw exception", null, mtc));
+
+            return instrs;
         }
 
         public void ParseAttributes(Metadata m, Assembler.MethodToCompile mtc, MethodAttributes attrs)
@@ -432,6 +447,10 @@ namespace libtysila
                                             o = true;
                                         else
                                             throw new Exception("Invalid boolean value in custom attribute: " + b.ToString());
+                                        break;
+                                    case BaseType_Type.I4:
+                                        o = LSB_Assembler.FromByteArrayI4S(car.Value, offset);
+                                        offset += 4;
                                         break;
                                     default:
                                         throw new NotImplementedException();

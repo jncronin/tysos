@@ -464,6 +464,9 @@ namespace libtysila
 
             public T Pop()
             {
+                if (l.Count == 0)
+                    return default(T);
+
                 T ret = l[l.Count - 1];
                 l.RemoveAt(l.Count - 1);
                 return ret;

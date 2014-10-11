@@ -384,6 +384,18 @@ namespace libtysila
                     }
                     break;
 
+                case CliType.F32:
+                case CliType.F64:
+                    if(!(a_loc is x86_64_xmm) && !(b_loc is x86_64_xmm))
+                    {
+                        if (!(((a_loc is hardware_contentsof) || (a_loc is hardware_stackloc)) && (b_loc is const_location)))
+                        {
+                            x86_64_Assembler.EncMov(this, state, x86_64_Assembler.Xmm0, a_loc, dt, ret);
+                            a_loc = x86_64_Assembler.Xmm0;
+                        }
+                    }
+                    break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -400,6 +412,12 @@ namespace libtysila
                         throw new NotImplementedException();
                     else
                         cmp_op = x86_64_asm.opcode.CMPQ;
+                    break;
+                case CliType.F32:
+                    cmp_op = x86_64_asm.opcode.COMISS;
+                    break;
+                case CliType.F64:
+                    cmp_op = x86_64_asm.opcode.COMISD;
                     break;
                 default:
                     throw new NotImplementedException();

@@ -80,28 +80,27 @@ namespace libtysila.frontend.cil.DecomposeOpcodes
             rth_ttc.type = th_type;
             rth_ttc.tsig = new Signature.Param(rth_ttc.type, ass);
 
-            timple.BaseNode i_1 = n.InsertAfter(new CilNode
+            CilNode i_1 = new CilNode
             {
                 il = new InstructionLine
                 {
                     opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.newobj)],
                     inline_tok = new TTCToken { ttc = rth_ttc }
                 }
-            });
+            };
 
-            timple.BaseNode i_2 = i_1.InsertAfter(new CilNode
+            CilNode i_2 = new CilNode
             {
                 il = new InstructionLine
                 {
                     opcode = init_opcode,
                     inline_tok = n.il.inline_tok
                 }
-            });
+            };
 
-            n.Remove();
-            n.replaced_by = new List<CilNode> { (CilNode)i_1, (CilNode)i_2 };
+            n.replaced_by = new List<CilNode> { i_1, i_2 };
 
-            return (CilNode)i_1;
+            return i_1;
         }
     }
 }

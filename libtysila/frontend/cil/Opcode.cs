@@ -268,7 +268,8 @@ namespace libtysila.frontend.cil
             instruction_label = 0x2e,
             pushback = 0x2f,
             throwtrue = 0x30,
-            bringforward = 0x31
+            bringforward = 0x31,
+            sthrow = 0x32
         }
 
         public enum PopBehaviour { Pop0 = 1, Pop1 = 2, PopI = 8, PopI8 = 32, PopR4 = 64, PopR8 = 128, PopRef = 256, VarPop = 512 };

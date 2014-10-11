@@ -39,6 +39,7 @@ namespace libtysila
                     return false;
             }
         }
+
         internal override void Conv(Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, Signature.BaseType dest_type, Signature.BaseType src_type, bool signed, List<tybel.Node> ret)
         {
             dest = ResolveStackLoc(this, state, dest);
@@ -118,9 +119,11 @@ namespace libtysila
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
                             break;
                         case BaseType_Type.U1:
+                        case BaseType_Type.Boolean:
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
                             break;
                         case BaseType_Type.U2:
+                        case BaseType_Type.Char:
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXW, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
                             break;
                         case BaseType_Type.U4:
@@ -154,9 +157,11 @@ namespace libtysila
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
                             break;
                         case BaseType_Type.U1:
+                        case BaseType_Type.Boolean:
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
                             break;
                         case BaseType_Type.U2:
+                        case BaseType_Type.Char:
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXW, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
                             break;
                         case BaseType_Type.U4:
@@ -179,14 +184,87 @@ namespace libtysila
                 case CliType.F32:
                     switch (act_src)
                     {
+                        case BaseType_Type.U1:
+                        case BaseType_Type.Boolean:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, Rax, src);
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SSL, ret, act_dest_loc, Rax);
+                            break;
+
+                        case BaseType_Type.U2:
+                        case BaseType_Type.Char:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXW, ret, Rax, src);
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SSL, ret, act_dest_loc, Rax);
+                            break;
+
                         case BaseType_Type.I1:
                         case BaseType_Type.I2:
                         case BaseType_Type.I4:
+                        case BaseType_Type.U4:
                             ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SSL, ret, act_dest_loc, src);
                             break;
 
                         case BaseType_Type.I8:
-                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SSQ, ret, act_dest_loc, src);
+                            if (ia == IA.i586)
+                            {
+                                Call(state, regs_in_use, new hardware_addressoflabel("__floatdisf", false), act_dest_loc,
+                                    new hardware_location[] { src }, callconv_numop_s_q, ret);
+                            }
+                            else
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SSQ, ret, act_dest_loc, src);
+                            break;
+                        case BaseType_Type.U8:
+                            Call(state, regs_in_use, new hardware_addressoflabel("__floatundisf", false), act_dest_loc,
+                                new hardware_location[] { src }, callconv_numop_s_q, ret);
+                            break;
+
+                        case BaseType_Type.R8:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSD2SS, ret, act_dest_loc, src);
+                            break;
+
+                        default:
+                            throw new NotImplementedException();
+                    }
+                    break;
+
+                case CliType.F64:
+                    switch (act_src)
+                    {
+                        case BaseType_Type.U1:
+                        case BaseType_Type.Boolean:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXB, ret, Rax, src);
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SDL, ret, act_dest_loc, Rax);
+                            break;
+
+                        case BaseType_Type.U2:
+                        case BaseType_Type.Char:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVZXW, ret, Rax, src);
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SDL, ret, act_dest_loc, Rax);
+                            break;
+
+                        case BaseType_Type.I1:
+                        case BaseType_Type.I2:
+                        case BaseType_Type.I4:
+                        case BaseType_Type.U4:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SDL, ret, act_dest_loc, src);
+                            break;
+
+                        case BaseType_Type.I8:
+                            if (ia == IA.i586)
+                            {
+                                Call(state, regs_in_use, new hardware_addressoflabel("__floatdidf", false), act_dest_loc,
+                                    new hardware_location[] { src }, callconv_numop_d_q, ret);
+                            }
+                            else
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSI2SDQ, ret, act_dest_loc, src);
+                            break;
+
+                        case BaseType_Type.U8:
+                            Call(state, regs_in_use, new hardware_addressoflabel("__floatundidf", false), act_dest_loc,
+                                new hardware_location[] { src }, callconv_numop_d_q, ret);
+                            break;
+
+                        case BaseType_Type.R4:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.CVTSS2SD, ret, act_dest_loc, src);
                             break;
 
                         default:

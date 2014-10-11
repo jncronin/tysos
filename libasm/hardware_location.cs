@@ -69,6 +69,9 @@ namespace libasm
         public virtual var_semantic GetSemantic() { return new var_semantic(); }
 
         #endregion
+
+        public static implicit operator hardware_location(int i)
+        { return new const_location { c = i }; }
     }
 
     public class multiple_hardware_location : hardware_location
@@ -163,6 +166,9 @@ namespace libasm
                 return false;
             }
         }
+
+        public static implicit operator const_location(int i)
+        { return new const_location { c = i }; }
     }
 
     public struct hloc_constraint

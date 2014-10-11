@@ -271,6 +271,7 @@ namespace libtysila
                             break;
 
                         case x86_64.x86_64_asm.optype.Imm8:
+                        case x86_64_asm.optype.UImm8:
                             imm = ops[i].ConstVal;
                             imm_len = 1;
                             break;
@@ -281,6 +282,7 @@ namespace libtysila
                             break;
 
                         case x86_64.x86_64_asm.optype.Imm32:
+                        case x86_64_asm.optype.UImm32:
                             switch (ops[i].VarType)
                             {
                                 case vara.vara_type.Label:

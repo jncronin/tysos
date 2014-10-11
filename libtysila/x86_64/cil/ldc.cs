@@ -91,6 +91,38 @@ namespace libtysila.x86_64.cil
             il.stack_after.Push(new Signature.Param(BaseType_Type.I4));
         }
 
+        public static void tybel_ldc_i8(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            long p = il.il.inline_int64;
+
+            libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(Assembler.CliType.int64), ass);
+
+            if (((x86_64_Assembler)ass).ia == x86_64_Assembler.IA.i586)
+            {
+                x86_64_Assembler x = ass as x86_64_Assembler;
+                libasm.multiple_hardware_location mhl_dest = x86_64_Assembler.mhl_split(x, state, dest, 2, 4);
+                int low = ass.FromByteArrayI4(il.il.inline_val, 0);
+                int high = ass.FromByteArrayI4(il.il.inline_val, 4);
+                ass.Assign(state, il.stack_vars_before, mhl_dest[0], new libasm.const_location { c = low }, Assembler.CliType.int32, il.il.tybel);
+                ass.Assign(state, il.stack_vars_before, mhl_dest[1], new libasm.const_location { c = high }, Assembler.CliType.int32, il.il.tybel);
+            }
+            else
+            {
+                libasm.hardware_location src = new libasm.const_location { c = p };
+
+                if(!(dest is libasm.x86_64_gpr))
+                {
+                    x86_64_Assembler.EncMov(ass as x86_64_Assembler, state, x86_64_Assembler.Rax, src, Assembler.CliType.int64, il.il.tybel);
+                    x86_64_Assembler.EncMov(ass as x86_64_Assembler, state, dest, x86_64_Assembler.Rax, Assembler.CliType.int64, il.il.tybel);
+                }
+                else
+                    x86_64_Assembler.EncMov(ass as x86_64_Assembler, state, dest, src, Assembler.CliType.int64, il.il.tybel);
+            }
+
+            il.stack_after.Push(new Signature.Param(BaseType_Type.I8));
+        }
+
         public static void tybel_ldc_r4(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
@@ -111,6 +143,45 @@ namespace libtysila.x86_64.cil
 
             if (!dest.Equals(act_dest))
                 ass.Assign(state, il.stack_vars_before, dest, act_dest, Assembler.CliType.F32, il.il.tybel);
+
+            il.stack_after.Push(p_ret);
+        }
+
+        public static void tybel_ldc_r8(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            ulong p = LSB_Assembler.FromByteArrayU8S(il.il.inline_val, 0);
+
+            Signature.Param p_ret = new Signature.Param(BaseType_Type.R8);
+            libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(p_ret, ass);
+            dest = x86_64_Assembler.ResolveStackLoc(ass as x86_64_Assembler, state, dest);
+            libasm.hardware_location act_dest = dest;
+
+            if (!(act_dest is libasm.x86_64_xmm))
+                act_dest = x86_64_Assembler.Xmm0;
+
+            x86_64_Assembler x = ass as x86_64_Assembler;
+            if (x.ia == x86_64_Assembler.IA.i586)
+            {
+                /* Push the immediate value x2 then load with movsd and restore the stack pointer */
+                uint low = LSB_Assembler.FromByteArrayU4S(il.il.inline_val, 0);
+                uint high = LSB_Assembler.FromByteArrayU4S(il.il.inline_val, 1);
+                x.ChooseInstruction(x86_64_asm.opcode.PUSH, il.il.tybel, new libasm.const_location { c = high });
+                x.ChooseInstruction(x86_64_asm.opcode.PUSH, il.il.tybel, new libasm.const_location { c = low });
+                x.ChooseInstruction(x86_64_asm.opcode.MOVSD, il.il.tybel, act_dest, new libasm.hardware_contentsof { base_loc = x86_64_Assembler.Rsp, size = 8 });
+                x.ChooseInstruction(x86_64_asm.opcode.ADDL, il.il.tybel, x86_64_Assembler.Rsp, new libasm.const_location { c = 8 });
+            }
+            else
+            {
+                /* Load the bytes to Rax, then copy to the xmm */
+
+                ass.Assign(state, il.stack_vars_before, x86_64_Assembler.Rax, new libasm.const_location { c = p },
+                    Assembler.CliType.int64, il.il.tybel);
+                ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.MOVQ, il.il.tybel, act_dest, x86_64_Assembler.Rax);
+            }
+
+            if (!dest.Equals(act_dest))
+                ass.Assign(state, il.stack_vars_before, dest, act_dest, Assembler.CliType.F64, il.il.tybel);
 
             il.stack_after.Push(p_ret);
         }

@@ -229,10 +229,23 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             switch (str_ctor_idx)
             {
                 case 1:
-                    throw new NotImplementedException();
+                    /* new string(char c, int count) */
+                    ass.Assign(state, used_locs, length_ptr, loc_params[2], Assembler.CliType.int32, il.il.tybel);
+                    ass.LoadAddress(state, used_locs, t2, data_ptr, il.il.tybel);
+                    ass.MemSetW(state, used_locs, t2, loc_params[1], loc_params[2], il.il.tybel);
+                    return;
 
                 case 2:
-                    throw new NotImplementedException();
+                    /* new string(char[] value) */
+                    ass.Assign(state, used_locs, t2, loc_params[1], Assembler.CliType.native_int, il.il.tybel);
+                    ass.Assign(state, used_locs, t2, new libasm.hardware_contentsof { base_loc = t2, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.sizes), size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+                    ass.Assign(state, used_locs, length_ptr, new libasm.hardware_contentsof { base_loc = t2, const_offset = 0, size = 4 }, Assembler.CliType.int32, il.il.tybel);
+                    ass.Assign(state, used_locs, t2, loc_params[1], Assembler.CliType.native_int, il.il.tybel);
+                    ass.Assign(state, used_locs, loc_params[1], new libasm.hardware_contentsof { base_loc = t2, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+                    ass.Assign(state, used_locs, t2, new libasm.hardware_contentsof { base_loc = t2, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length), size = 4 }, Assembler.CliType.int32, il.il.tybel);
+                    ass.LoadAddress(state, used_locs, loc_params[0], data_ptr, il.il.tybel);
+                    ass.MemCpy(state, used_locs, loc_params[0], loc_params[1], t2, il.il.tybel);
+                    return;
 
                 case 3:
                     /* new string(char *value, int startIndex, int length) */
@@ -249,7 +262,16 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     throw new NotImplementedException();
 
                 case 5:
-                    throw new NotImplementedException();
+                    /* new string(char *value, int startIndex, int length) */
+                    ass.Assign(state, used_locs, length_ptr, loc_params[3], Assembler.CliType.int32, il.il.tybel);
+                    ass.Mul(state, used_locs, loc_params[2], loc_params[2], const_2, Assembler.CliType.int32, il.il.tybel);
+                    ass.Conv(state, used_locs, loc_params[2], loc_params[2], new Signature.BaseType(BaseType_Type.I), new Signature.BaseType(BaseType_Type.I4), true, il.il.tybel);
+                    ass.Assign(state, used_locs, loc_params[1], new libasm.hardware_contentsof { base_loc = loc_params[1], const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+                    ass.Add(state, used_locs, loc_params[1], loc_params[1], loc_params[2], Assembler.CliType.native_int, il.il.tybel);
+                    ass.Mul(state, used_locs, loc_params[3], loc_params[3], const_2, Assembler.CliType.int32, il.il.tybel);
+                    ass.LoadAddress(state, used_locs, t2, data_ptr, il.il.tybel);
+                    ass.MemCpy(state, used_locs, t2, loc_params[1], loc_params[3], il.il.tybel);
+                    return;
 
                 case 6:
                     throw new NotImplementedException();
@@ -279,16 +301,30 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             Signature.Method c_8 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(new Signature.UnmanagedPointer { BaseType = new Signature.BaseType(BaseType_Type.I1) }, ass), new Signature.Param(BaseType_Type.I4), new Signature.Param(BaseType_Type.I4) } };
 
             Stack used_locs = il.stack_vars_before.Clone();
+            libasm.hardware_location t2 = ass.GetTemporary2(state);
             used_locs.MarkUsed(ass.GetTemporary(state));
             used_locs.MarkUsed(ass.GetTemporary2(state));
                 
             if (Signature.BaseMethodSigCompare(c_1, str_mtc.msig, ass))
             {
-                throw new NotImplementedException();
+                /* new string(char c, int count) */
+                ass.Assign(state, used_locs, loc_dest, loc_params[2], Assembler.CliType.int32, il.il.tybel);
+                ass.Mul(state, used_locs, loc_dest, loc_dest, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
+                return 1;
             }
             else if (Signature.BaseMethodSigCompare(c_2, str_mtc.msig, ass))
             {
-                throw new NotImplementedException();
+                /* new string(char[] value) */
+                libasm.hardware_location loc_value = loc_params[1];
+                if (!(loc_value is libasm.x86_64_gpr))
+                {
+                    ass.Assign(state, used_locs, t2, loc_value, Assembler.CliType.native_int, il.il.tybel);
+                    loc_value = t2;
+                }
+                ass.Assign(state, used_locs, loc_dest,
+                    new libasm.hardware_contentsof { base_loc = loc_value, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length),
+                        size = 4 }, Assembler.CliType.int32, il.il.tybel);
+                return 2;
             }
             else if (Signature.BaseMethodSigCompare(c_3, str_mtc.msig, ass))
             {
@@ -303,7 +339,10 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             }
             else if (Signature.BaseMethodSigCompare(c_5, str_mtc.msig, ass))
             {
-                throw new NotImplementedException();
+                /* new string(char[] value, int startIndex, int length) */
+                ass.Assign(state, used_locs, loc_dest, loc_params[3], Assembler.CliType.int32, il.il.tybel);
+                ass.Mul(state, used_locs, loc_dest, loc_dest, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
+                return 3;              
             }
             else if (Signature.BaseMethodSigCompare(c_6, str_mtc.msig, ass))
             {
@@ -539,6 +578,67 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, bt.CliType(ass)), vara.ContentsOf(v_addr, bt.CliType(ass)), vara.Const(0, bt.CliType(ass)), vara.Void()));
             //foreach(vara v in v_vt.vara_list)
             //    il.tacs.Add(new timple.TimpleNode(new ThreeAddressCode.Op(ThreeAddressCode.OpName.assign, v.DataType), v, vara.Const(0, v.DataType), vara.Void()));
+        }
+
+        public static void tybel_localloc(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* Unless overridden in an arch-specific assembler, the default is just to call gcmalloc */
+            if (ass.Options.VerifiableCIL)
+                throw new Assembler.AssemblerException("localloc: localloc is never verifiable", il.il, mtc);
+
+            Signature.Param p_size = il.stack_after.Pop();
+            libasm.hardware_location loc_size = il.stack_vars_after.Pop(ass);
+
+            if (p_size.CliType(ass) != Assembler.CliType.native_int)
+            {
+                if (p_size.CliType(ass) != Assembler.CliType.int32)
+                    throw new Assembler.AssemblerException("localloc: type of size if not int32 or native int", il.il, mtc);
+                ass.Conv(state, il.stack_vars_before, loc_size, loc_size, new Signature.BaseType(BaseType_Type.U),
+                    new Signature.BaseType(BaseType_Type.U4), true, il.il.tybel);
+            }
+
+            Signature.Param p_ret = new Signature.Param(BaseType_Type.I);
+            libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_ret, ass);
+
+            ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("gcmalloc", false), loc_ret,
+                new libasm.hardware_location[] { loc_size }, ass.callconv_gcmalloc, il.il.tybel);
+
+            il.stack_after.Push(p_ret);
+        }
+
+        public static void tybel_gcmalloc(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_size = il.stack_after.Pop();
+            libasm.hardware_location loc_size = il.stack_vars_after.Pop(ass);
+
+            if(p_size.CliType(ass) != Assembler.CliType.native_int)
+            {
+                if(p_size.CliType(ass) != Assembler.CliType.int32)
+                    throw new Assembler.AssemblerException("gcmalloc: size must be int32 or native int", il.il, mtc);
+
+                libasm.hardware_location t1 = ass.GetTemporary(state, Assembler.CliType.native_int);
+                ass.Conv(state, il.stack_vars_before, t1, loc_size, new Signature.BaseType(BaseType_Type.U),
+                    new Signature.BaseType(BaseType_Type.I4), false, il.il.tybel);
+                loc_size = t1;
+            }
+
+            Assembler.TypeToCompile typeTok = Metadata.GetTTC(il.il.inline_tok, mtc.GetTTC(ass), mtc.msig, ass);
+            Signature.Param p_T = typeTok.tsig;
+
+            if (p_T.Type.IsValueType(ass))
+            {
+                throw new Assembler.AssemblerException("gcmalloc: typeTok must be a reference type (is instead " +
+                    p_T.ToString() + ")", il.il, mtc);
+            }
+
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_T, ass);
+
+            ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("gcmalloc", false), loc_dest,
+                new libasm.hardware_location[] { loc_size }, ass.callconv_gcmalloc, il.il.tybel);
+
+            il.stack_after.Push(p_T);
         }
     }
 }

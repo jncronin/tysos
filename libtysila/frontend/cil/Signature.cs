@@ -648,6 +648,11 @@ namespace libtysila
             {
                 return Type.Value.GetHashCode() ^ 0x3c4d1a2b;
             }
+
+            public override string ToString()
+            {
+                return Type.Value.ToString();
+            }
         }
 
         public abstract class BaseArray : BaseOrComplexType
