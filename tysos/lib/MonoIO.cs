@@ -36,6 +36,7 @@ namespace tysos.lib
         internal const System.IO.FileAttributes InvalidFileAttributes = (System.IO.FileAttributes)(-1);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [libsupcs.ReinterpretAsMethod]
         internal static extern tysos.IFile ReinterpretAsIFile(IntPtr handle);
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_23get_VolumeSeparatorChar_Rc_P0")]

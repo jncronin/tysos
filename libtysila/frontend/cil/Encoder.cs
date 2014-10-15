@@ -52,12 +52,17 @@ namespace libtysila.frontend.cil
             attrs.cc = state.cc;
             state.mtc = mtc;
 
+            if (attrs.attrs.ContainsKey("libsupcs.ISR"))
+                state.cc = ass.call_convs["isr"](mtc, CallConv.StackPOV.Callee, ass);
+
             /* For now, have all local args and vars be on the stack */
             Stack arg_stack = ass.GetStack(libasm.hardware_stackloc.StackType.Arg);
             state.la_locs = new List<libasm.hardware_location>();
             state.la_stack = arg_stack;
             foreach (Signature.Param la in state.las)
                 state.la_locs.Add(arg_stack.GetAddressFor(la, ass));
+            if (state.cc.HiddenRetValArgument != null)
+                arg_stack.GetAddressFor(new Signature.Param(BaseType_Type.I), ass);
 
             Stack var_stack = ass.GetStack(libasm.hardware_stackloc.StackType.LocalVar);
             state.lv_locs = new List<libasm.hardware_location>();
@@ -85,7 +90,7 @@ namespace libtysila.frontend.cil
 
                 if (start.ehclause_start != null)
                 {
-                    if (start.ehclause_start.IsCatch || start.ehclause_start.IsFault)
+                    if (start.ehclause_start.IsCatch)
                     {
                         Signature.Param except_obj_type = Metadata.GetTTC(start.ehclause_start.ClassToken, mtc.GetTTC(ass), mtc.msig, ass).tsig;
                         start.stack_vars_before.GetAddressFor(except_obj_type, ass);
@@ -129,7 +134,7 @@ namespace libtysila.frontend.cil
                 {
                     Stack vs = ass.GetStack();
                     util.Stack<Signature.Param> ps = new util.Stack<Signature.Param>();
-                    CilNode c1 = new CilNode { stack_vars_before = vs, stack_before = ps, il_label = -1, il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloca_s)], inline_int = i } };
+                    CilNode c1 = new CilNode { stack_vars_before = vs, stack_before = ps, il_label = -1, il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldloca_s)], inline_uint = (uint)i } };
                     DFEncode(c1, mtc, ass, visited, ref next_block, state, attrs);
                     CilNode c2 = new CilNode { stack_vars_before = c1.stack_vars_after, stack_before = c1.stack_after, il_label = -1, il = new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.DoubleOpcodes.initobj)], inline_tok = new TTCToken { ttc = Metadata.GetTTC(state.lvs[i], mtc.GetTTC(ass), mtc.msig, ass) } } };
                     DFEncode(c2, mtc, ass, visited, ref next_block, state, attrs);

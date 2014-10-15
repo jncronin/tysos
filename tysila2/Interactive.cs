@@ -984,6 +984,7 @@ namespace tysila
                 Metadata.MethodDefRow mdr = Metadata.GetMethodDef(meth.ToToken(), i.ass);*/
                 Metadata.MethodDefRow mdr = i.cur_type.Value.type.Methods[rowno];
                 Signature.BaseMethod msig = Signature.ResolveGenericMember(Signature.ParseMethodSig(mdr), i.cur_type.Value.tsig.Type, null, i.ass);
+                msig.Method.meth = mdr;
                 Assembler.MethodToCompile mtc = new Assembler.MethodToCompile { _ass = i.ass, meth = mdr, msig = msig, tsigp = i.cur_type.Value.tsig, type = i.cur_type.Value.type };
 
                 return new Row { obj = mtc, fields = new string[] { rowno.ToString(), Signature.GetString(msig, mdr.Name, mdr.GetParamNames(), i.ass), mdr.Name } };

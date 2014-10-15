@@ -71,6 +71,8 @@ namespace libtysila
 
             Assembler _ass;
 
+            public Assembler.CliType CLIType { get { return CliType(_ass); } }
+
             public Assembler Assembler { get { return _ass; } }
 
             public override bool Equals(object obj)
@@ -137,7 +139,7 @@ namespace libtysila
                     check_basetype(((Metadata.TypeDefRow)t.Value).TypeFullName);
                 if (Type == null)
                 {
-                    Type = new ComplexType(t, ass);
+                    Type = ComplexType.Create(t, ass);
                 }
             }
 
@@ -203,8 +205,12 @@ namespace libtysila
                     Type = new BaseType(BaseType_Type.Object);
                 else if (p == "System.String")
                     Type = new BaseType(BaseType_Type.String);
+                else if (p == "System.TypedReference")
+                    Type = new BaseType(BaseType_Type.TypedByRef);
                 else if (p == "System.UninstantiatedGenericParam")
                     Type = new BaseType(BaseType_Type.UninstantiatedGenericParam);
+                else if (p == "System.UninstantiatedGenericMethodParam")
+                    Type = new BaseType(BaseType_Type.UninstantiatedGenericMethodParam);
                 else if (p == "System.VirtFtnPtr")
                     Type = new BaseType(BaseType_Type.VirtFtnPtr);
                 else if (p == "System.Void")
@@ -311,13 +317,56 @@ namespace libtysila
 
             public virtual bool IsConcreteType { get { return false; } }
 
-            public bool IsInstantiable
+            public virtual bool IsGenericTypeInstantiation
+            {
+                get
+                {
+                    if (this is Signature.GenericType)
+                        return true;
+                    else if (this is Signature.BaseType)
+                        return false;
+                    else if (this is Signature.ComplexType)
+                        return false;
+                    else if (this is Signature.ManagedPointer)
+                        return ((Signature.ManagedPointer)this).ElemType.IsGenericTypeInstantiation;
+                    else if (this is Signature.UnmanagedPointer)
+                        return ((Signature.UnmanagedPointer)this).BaseType.IsGenericTypeInstantiation;
+                    else if (this is Signature.BoxedType)
+                        return ((Signature.BoxedType)this).Type.IsGenericTypeInstantiation;
+                    else if (this is Signature.BaseArray)
+                        return ((Signature.BaseArray)this).ElemType.IsGenericTypeInstantiation;
+                    else
+                        throw new NotSupportedException();
+                }
+            }
+
+            public bool IsWeakLinkage
+            {
+                get
+                {
+                    if (IsGenericTypeInstantiation)
+                        return true;
+                    if (this is Signature.BoxedType)
+                        return true;
+                    if (this is Signature.ManagedPointer)
+                        return true;
+                    if (this is Signature.UnmanagedPointer)
+                        return true;
+                    if (this is Signature.BaseArray)
+                        return true;
+                    return false;
+                }
+            }
+
+            public virtual bool IsInstantiable
             {
                 get
                 {
                     if (this is Signature.BaseType)
                     {
                         if (((Signature.BaseType)this).Type == BaseType_Type.UninstantiatedGenericParam)
+                            return false;
+                        if (((Signature.BaseType)this).Type == BaseType_Type.UninstantiatedGenericMethodParam)
                             return false;
                     }
                     foreach (BaseOrComplexType bct in this.GetBaseTypes())
@@ -486,6 +535,7 @@ namespace libtysila
                     case BaseType_Type.TypedByRef:
                         return "TypedReference";
                     case BaseType_Type.UninstantiatedGenericParam:
+                    case BaseType_Type.UninstantiatedGenericMethodParam:
                         return "T";
                     case BaseType_Type.VirtFtnPtr:
                         return "VirtFtnPtr";
@@ -581,6 +631,13 @@ namespace libtysila
             }
         }
 
+        public class GenericTypeDefinition : ComplexType
+        {
+            public override bool IsInstantiable { get { return false; } }
+
+            public GenericTypeDefinition(Assembler ass) : base(ass) { }
+        }
+
         public class ComplexType : BaseOrComplexType
         {
             public Token Type;
@@ -617,27 +674,33 @@ namespace libtysila
             }
 
             public ComplexType(Assembler ass) { a = ass; }
-            public ComplexType(Token t, Assembler ass)
+
+            public static ComplexType Create(Token t, Assembler ass)
             {
-                a = ass;
                 if (t.Value is Metadata.TypeRefRow)
                     t = new Token(Metadata.GetTypeDef(t, ass));
 
-                Type = t;
-
                 Metadata.TypeDefRow tdr = Metadata.GetTypeDef(t, ass);
+                ComplexType ret;
+                if (tdr.IsGeneric)
+                    ret = new GenericTypeDefinition(ass);
+                else
+                    ret = new ComplexType(ass);
+                ret.Type = t;
                 if (tdr.IsValueType(ass))
-                    isValueType = true;
+                    ret.isValueType = true;
                 if (tdr.IsEnum(ass))
-                    isEnum = true;
+                    ret.isEnum = true;
 
                 if (t.Value is Metadata.TypeSpecRow)
-                    Signature = ((Metadata.TypeSpecRow)t.Value).Signature;
+                    ret.Signature = ((Metadata.TypeSpecRow)t.Value).Signature;
                 else
                 {
-                    Signature = new List<byte> { isValueType ? (byte)0x11 : (byte)0x12 };
-                    ((List<byte>)Signature).AddRange(new Token(tdr).CompressTypeDefOrRef());
+                    ret.Signature = new List<byte> { ret.isValueType ? (byte)0x11 : (byte)0x12 };
+                    ((List<byte>)ret.Signature).AddRange(new Token(tdr).CompressTypeDefOrRef());
                 }
+
+                return ret;
             }
 
             public override bool Equals(object obj)
@@ -838,9 +901,22 @@ namespace libtysila
                 ret.Add(GenType);
                 return ret;
             }
+
+            public override bool IsInstantiable
+            {
+                get
+                {
+                    foreach (BaseOrComplexType gp in GenParams)
+                    {
+                        if (!gp.IsInstantiable)
+                            return false;
+                    }
+                    return true;
+                }
+            }
         }
 
-        public class BaseMethod {
+        public abstract class BaseMethod {
             public IEnumerable<byte> Signature;
             public Metadata m;
 
@@ -852,6 +928,8 @@ namespace libtysila
             {
                 return base.GetHashCode();
             }
+
+            public abstract bool IsInstantiable { get; }
 
             public Method Method
             {
@@ -884,6 +962,19 @@ namespace libtysila
                     hc ^= (gp.GetHashCode() << (i % 32));
                 }
                 return hc;
+            }
+
+            public override bool IsInstantiable
+            {
+                get
+                {
+                    foreach (BaseOrComplexType gp in GenParams)
+                    {
+                        if (!gp.IsInstantiable)
+                            return false;
+                    }
+                    return true;
+                }
             }
         }
 
@@ -927,6 +1018,15 @@ namespace libtysila
             public int ParamCount;
             public Param RetType;
             public List<Param> Params = new List<Param>();
+
+            public Method() { }
+
+            public Metadata.MethodDefRow meth;
+
+            public override bool IsInstantiable
+            {
+                get { return meth.IsGeneric == false; }
+            }
 
             public override bool Equals(object obj)
             {
@@ -1093,31 +1193,6 @@ namespace libtysila
             return ret;
         }
 
-        static public BaseMethod ParseMangledMethodSig(Metadata m, byte[] s, Assembler ass)
-        {
-            int x = 0;
-            return ParseMangledMethodSig(m, s, ref x, ass);
-        }
-        static public BaseMethod ParseMangledMethodSig(Metadata m, byte[] s, ref int offset, Assembler ass)
-        {
-            BaseMethod msig = ParseMethodDefSig(m, s, ref offset, ass);
-
-            if (msig.Method.CallingConvention != Method.CallConv.Generic)
-                return msig;
-
-            if (s[offset] != 0xa)
-                throw new Exception("Invalid generic method");
-            offset++;
-
-            GenericMethod ret = msig as GenericMethod;
-
-            int gen_params = Metadata.ReadCompressedInteger(s, ref offset);
-            for (int i = 0; i < gen_params; i++)
-                ret.GenParams.Add(ParseTypeSig(m, s, ref offset, ass));
-
-            return ret;
-        }
-
         static public void ParseCustomMods(Metadata m, byte[] s, ref int offset, HasCustomMods cm)
         {
             while ((s[offset] == 0x1f) || (s[offset] == 0x20))
@@ -1212,6 +1287,13 @@ namespace libtysila
                         Metadata.TableId.TypeSpec }).ToToken(m);
                 if (ret.Type.Value is Metadata.TypeRefRow)
                     ret.Type = new Token(Metadata.GetTypeDef(ret.Type.Value, ass));
+
+                if (Metadata.GetTypeDef(ret.Type, ass).IsGeneric)
+                {
+                    GenericTypeDefinition gtd = new GenericTypeDefinition(ass);
+                    gtd.Type = ret.Type;
+                    ret = gtd;
+                }
                 r = ret;
             }
             else if (s[offset] == 0x1d)
@@ -1299,11 +1381,11 @@ namespace libtysila
 
         public static Signature.BaseMethod ResolveGenericMember(Signature.BaseMethod orig_sig, Signature.BaseOrComplexType parent, Signature.BaseMethod containing_meth, Assembler ass)
         {
-            if ((!((parent is GenericType) ||
+            /*if ((!((parent is GenericType) ||
                 ((parent is BoxedType) && (((BoxedType)parent).Type is GenericType)) ||
                 ((parent is ManagedPointer) && (((ManagedPointer)parent).ElemType is GenericType))))
                 && (!(containing_meth is GenericMethod)))
-                return orig_sig;
+                return orig_sig;*/
 
             if (orig_sig is Signature.Method)
             {
@@ -1433,7 +1515,7 @@ namespace libtysila
             else if (p.Type is GenericMethodParam)
             {
                 if (!(containing_meth is GenericMethod))
-                    return new Param(BaseType_Type.UninstantiatedGenericParam, p.name);
+                    return new Param(BaseType_Type.UninstantiatedGenericMethodParam, p.name);
 
                 return new Param (ass)
                 {
@@ -1452,13 +1534,27 @@ namespace libtysila
 
                 foreach (Signature.BaseOrComplexType gp in ((GenericType)p.Type).GenParams)
                     gt.GenParams.Add(ResolveGenericParam(new Signature.Param(gp, ass), containing_sig, containing_meth, ass).Type);
-                return new Param (ass)
+
+                if (gt.IsInstantiable)
                 {
-                    CustomMods = p.CustomMods,
-                    Type = gt,
-                    Pinned = p.Pinned,
-                    name = p.name
-                };
+                    return new Param(ass)
+                    {
+                        CustomMods = p.CustomMods,
+                        Type = gt,
+                        Pinned = p.Pinned,
+                        name = p.name
+                    };
+                }
+                else
+                {
+                    return new Param(ass)
+                    {
+                        CustomMods = p.CustomMods,
+                        Type = gt.GenType,
+                        Pinned = p.Pinned,
+                        name = p.name
+                    };
+                }
             }
             else if (p.Type is ZeroBasedArray)
             {

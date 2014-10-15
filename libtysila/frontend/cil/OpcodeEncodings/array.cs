@@ -293,12 +293,12 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             if (!Signature.ParamCompare(p_numelems, new Signature.Param(BaseType_Type.I), ass) &&
                 !Signature.ParamCompare(p_numelems, new Signature.Param(BaseType_Type.U), ass))
             {
-                if (!Signature.ParamCompare(p_numelems, new Signature.Param(BaseType_Type.I4), ass))
+                if (p_numelems.CliType(ass) != Assembler.CliType.int32)
                     throw new Assembler.AssemblerException("newarr: numElems is not of type int32 or native int " +
                         "(is of type " + p_numelems.ToString() + ")", il.il, mtc);
 
                 ass.Conv(state, il.stack_vars_before, t2, loc_numelems, new Signature.BaseType(BaseType_Type.I),
-                    new Signature.BaseType(BaseType_Type.I4), false, il.il.tybel);
+                    new Signature.BaseType(p_numelems), false, il.il.tybel);
                 loc_numelems = t2;
                 p_numelems = new Signature.Param(BaseType_Type.I4);
             }

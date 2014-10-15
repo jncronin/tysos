@@ -22,37 +22,76 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using libtysila;
 
 namespace tysila
 {
     class WholeFileRequestor : libtysila.Assembler.MemberRequestor
     {
-        bool started_iterating = false;
+        util.Stack<Assembler.TypeToCompile> types = new util.Stack<Assembler.TypeToCompile>();
+        util.Stack<Assembler.MethodToCompile> methods = new util.Stack<Assembler.MethodToCompile>();
+        util.Stack<Metadata> modules = new util.Stack<Metadata>();
+        util.Stack<Metadata> assemblies = new util.Stack<Metadata>();
 
-        int mod_idx = 0;
-        int ass_idx = 0;
-        int meth_mod_idx = 0;
-        int meth_idx = 0;
-        int type_mod_idx = 0;
-        int type_idx = 0;
-        int gm_idx;
-        int sf_mod_idx = 0;
-        int sf_idx = 0;
+        util.Stack<Assembler.MethodToCompile> generic_methods = new util.Stack<Assembler.MethodToCompile>();
+        util.Set<Assembler.MethodToCompile> generic_methods_done = new util.Set<Assembler.MethodToCompile>();
 
-        List<libtysila.Metadata> modules = new List<libtysila.Metadata>();
-        List<libtysila.Metadata> mods_to_do = new List<libtysila.Metadata>();
-        List<libtysila.Metadata> ass_to_do = new List<libtysila.Metadata>();
-        List<libtysila.Assembler.MethodToCompile> meths_to_do = new List<libtysila.Assembler.MethodToCompile>();
-        List<libtysila.Assembler.TypeToCompile> types_to_do = new List<libtysila.Assembler.TypeToCompile>();
-        List<libtysila.Assembler.MethodToCompile> gmis_to_do = new List<libtysila.Assembler.MethodToCompile>();
-        List<libtysila.Assembler.TypeToCompile> sfs_to_do = new List<libtysila.Assembler.TypeToCompile>();
+        util.Set<Assembler.TypeToCompile> generic_types_done = new util.Set<Assembler.TypeToCompile>();
+        util.Set<Assembler.MethodToCompile> generic_type_methods_done = new util.Set<Assembler.MethodToCompile>();
 
         public void RequestWholeModule(libtysila.Metadata module)
         {
-            if (started_iterating)
-                throw new Exception("Cannot add modules after iteration has started");
-            if (!modules.Contains(module))
-                modules.Add(module);
+            if (ass.Options.EnableRTTI)
+            {
+                modules.Push(module);
+                assemblies.Push(module);
+            }
+
+            foreach (Metadata.TypeDefRow tdr in module.Tables[(int)Metadata.TableId.TypeDef])
+            {
+                if (tdr.ExcludedByArch)
+                    continue;
+                types.Push(new Assembler.TypeToCompile { _ass = ass, tsig = new Signature.Param(tdr, ass), type = tdr });
+            }
+
+            if (module.ModuleName == "libsupcs")
+            {
+                Signature.Param vf_p = new Signature.Param(BaseType_Type.VirtFtnPtr);
+                Metadata.TypeDefRow vf_tdr = Metadata.GetTypeDef(vf_p.Type, ass);
+                Assembler.TypeToCompile vf_ttc = new libtysila.Assembler.TypeToCompile { _ass = ass, type = vf_tdr, tsig = vf_p };
+                types.Push(vf_ttc);
+
+                Signature.Param gp_p = new Signature.Param(BaseType_Type.UninstantiatedGenericParam);
+                Metadata.TypeDefRow gp_tdr = Metadata.GetTypeDef(gp_p.Type, ass);
+                Assembler.TypeToCompile gp_ttc = new Assembler.TypeToCompile { _ass = ass, type = gp_tdr, tsig = gp_p };
+                types.Push(gp_ttc);
+
+                Signature.Param gmp_p = new Signature.Param(BaseType_Type.UninstantiatedGenericMethodParam);
+                Metadata.TypeDefRow gmp_tdr = Metadata.GetTypeDef(gmp_p.Type, ass);
+                Assembler.TypeToCompile gmp_ttc = new Assembler.TypeToCompile { _ass = ass, type = gmp_tdr, tsig = gmp_p };
+                types.Push(gmp_ttc);
+            }
+
+            foreach (Metadata.MethodDefRow mdr in module.Tables[(int)Metadata.TableId.MethodDef])
+            {
+                if (mdr.IsGeneric)
+                    continue;
+                if (mdr.owning_type.IsGeneric)
+                    continue;
+                if (mdr.ExcludedByArch)
+                    continue;
+                if (mdr.owning_type.ExcludedByArch)
+                    continue;
+                methods.Push(new Assembler.MethodToCompile
+                {
+                    _ass = ass,
+                    tsigp = new Signature.Param(mdr.owning_type, ass),
+                    type = mdr.owning_type,
+                    meth = mdr,
+                    msig = mdr.GetSignature(),
+                    m = mdr.m
+                });
+            }
         }
 
         public override void ExcludeModule(libtysila.Metadata module)
@@ -87,121 +126,149 @@ namespace tysila
 
         public override libtysila.Assembler.MethodToCompile GetNextMethod()
         {
-            started_iterating = true;
-
-            if (meth_mod_idx != -1)
-            {
-                if (meth_idx >= modules[meth_mod_idx].Tables[(int)libtysila.Metadata.TableId.MethodDef].Length)
-                {
-                    meth_mod_idx++;
-                    meth_idx = 0;
-                }
-
-                if (meth_mod_idx >= modules.Count)
-                {
-                    meth_mod_idx = -1;
-                    meth_idx = 0;
-                }
-                else
-                {
-                    libtysila.Metadata.MethodDefRow mdr = modules[meth_mod_idx].Tables[(int)libtysila.Metadata.TableId.MethodDef][meth_idx++] as libtysila.Metadata.MethodDefRow;
-                    libtysila.Assembler.TypeToCompile ttc = new libtysila.Assembler.TypeToCompile(libtysila.Metadata.GetOwningType(mdr.m, mdr), ass);
-                    libtysila.Signature.BaseMethod msig = mdr.GetSignature();
-                    return new libtysila.Assembler.MethodToCompile { _ass = ass, m = mdr.m, meth = mdr, msig = msig, type = ttc.type, tsigp = ttc.tsig };
-                }
-            }
-
-            if (meth_mod_idx == -1)
-                return meths_to_do[meth_idx++];
-            throw new Exception();
+            return methods.Pop();
         }
 
         public override libtysila.Assembler.MethodToCompile GetNextGenericMethodInfo()
         {
-            started_iterating = true;
-            return gmis_to_do[gm_idx++];
+            return generic_methods.Pop();
         }
 
         public override libtysila.Assembler.TypeToCompile GetNextTypeInfo()
         {
-            started_iterating = true;
-
-            if (type_mod_idx != -1)
-            {
-                if (type_idx >= modules[type_mod_idx].Tables[(int)libtysila.Metadata.TableId.TypeDef].Length)
-                {
-                    type_mod_idx++;
-                    type_idx = 0;
-                }
-
-                if (type_mod_idx >= modules.Count)
-                {
-                    type_mod_idx = -1;
-                    type_idx = 0;
-                }
-                else
-                {
-                    libtysila.Metadata.TypeDefRow tdr = modules[type_mod_idx].Tables[(int)libtysila.Metadata.TableId.TypeDef][type_idx++] as libtysila.Metadata.TypeDefRow;
-                    libtysila.Assembler.TypeToCompile ttc = new libtysila.Assembler.TypeToCompile(tdr, ass);
-                    if (tdr.IsGeneric)
-                        return GetNextTypeInfo();
-                    else
-                        return ttc;
-                }
-            }
-
-            if (type_mod_idx == -1)
-                return types_to_do[type_idx++];
-            throw new Exception();
+            return types.Pop();
         }
 
         public override libtysila.Assembler.TypeToCompile GetNextStaticFields()
         {
-            started_iterating = true;
-
-            if (sf_mod_idx != -1)
-            {
-                if (sf_idx >= modules[sf_mod_idx].Tables[(int)libtysila.Metadata.TableId.TypeDef].Length)
-                {
-                    sf_mod_idx++;
-                    sf_idx = 0;
-                }
-
-                if (sf_mod_idx >= modules.Count)
-                {
-                    sf_mod_idx = -1;
-                    sf_idx = 0;
-                }
-                else
-                {
-                    libtysila.Metadata.TypeDefRow tdr = modules[sf_mod_idx].Tables[(int)libtysila.Metadata.TableId.TypeDef][sf_idx++] as libtysila.Metadata.TypeDefRow;
-                    libtysila.Assembler.TypeToCompile ttc = new libtysila.Assembler.TypeToCompile(tdr, ass);
-                    return ttc;
-                }
-            }
-
-            if (sf_mod_idx == -1)
-                return sfs_to_do[sf_idx++];
-            throw new Exception();
+            throw new NotImplementedException();
         }
 
         public override libtysila.Metadata GetNextAssembly()
         {
-            if (ass_idx >= modules.Count)
-                return ass_to_do[ass_idx++ - modules.Count];
-            return modules[ass_idx++];
+            return assemblies.Pop();
         }
 
         public override libtysila.Metadata GetNextModule()
         {
-            if (mod_idx >= modules.Count)
-                return mods_to_do[mod_idx++ - modules.Count];
-            return modules[mod_idx++];
+            return modules.Pop();
         }
 
         public override void PurgeAll()
         {
             throw new NotImplementedException();
+        }
+
+        public override bool MoreAssemblies
+        {
+            get { return assemblies.Count > 0; }
+        }
+
+        public override bool MoreGenericMethodInfos
+        {
+            get { return generic_methods.Count > 0; }
+        }
+
+        public override bool MoreMethods
+        {
+            get { return methods.Count > 0; }
+        }
+
+        public override bool MoreModules
+        {
+            get { return modules.Count > 0; }
+        }
+
+        public override bool MoreTypeInfos
+        {
+            get { return types.Count > 0; }
+        }
+
+        public override bool MoreStaticFields
+        {
+            get { return false; }
+        }
+
+        public override void RequestAssembly(Metadata module)
+        {
+            base.RequestAssembly(module);
+        }
+
+        public override void RequestModule(Metadata module)
+        {
+            base.RequestModule(module);
+        }
+
+        public override void RequestGenericMethodInfo(Assembler.MethodToCompile mtc)
+        {
+            base.RequestGenericMethodInfo(mtc);
+            if (mtc.meth.ExcludedByArch)
+                return;
+
+            //if (mtc.IsInstantiable == false)
+            //    throw new Exception();
+
+            if (!generic_methods_done.Contains(mtc))
+            {
+                generic_methods_done.Add(mtc);
+                generic_methods.Push(mtc);
+            }
+        }
+
+        public override void RequestMethod(Assembler.MethodToCompile mtc)
+        {
+            base.RequestMethod(mtc);
+            if (mtc.meth.ExcludedByArch)
+                return;
+            if (mtc.type.ExcludedByArch)
+                return;
+
+            if (mtc.IsInstantiable == false)
+                throw new Exception();
+
+            /* Is this a method on an instantiated generic type or generic method instantiation? */
+            if (mtc.tsig.IsWeakLinkage || (mtc.msig is Signature.GenericMethod))
+            {
+                if (!generic_type_methods_done.Contains(mtc))
+                {
+                    generic_type_methods_done.Add(mtc);
+                    methods.Push(mtc);
+                }
+            }
+
+            /* otherwise don't do anything (methods in this module are already
+             * requested) */
+        }
+
+        public override void RequestTypeInfo(Assembler.TypeToCompile ttc)
+        {
+            base.RequestTypeInfo(ttc);
+            if (ttc.type.ExcludedByArch)
+                return;
+
+            if (ttc.IsInstantiable == false)
+            {
+                int asdfgfdas = 0;
+            }
+
+            /* Is this a generic type instantiation? */
+            if (ttc.tsig.Type.IsWeakLinkage)
+            {
+                if (!generic_types_done.Contains(ttc))
+                {
+                    generic_types_done.Add(ttc);
+                    types.Push(ttc);
+                }
+            }
+
+            /* otherwise don't do anything (non-generic types in this module are
+             * already requested) */
+        }
+
+        public override void RequestStaticFields(Assembler.TypeToCompile ttc)
+        {
+            base.RequestStaticFields(ttc);
+            RequestTypeInfo(ttc);
         }
     }
 }

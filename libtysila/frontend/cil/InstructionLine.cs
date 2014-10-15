@@ -48,6 +48,7 @@ namespace libtysila.frontend.cil
         public int inline_int;
         public uint inline_uint;
         public long inline_int64;
+        public ulong inline_uint64;
         public double inline_dbl;
         public float inline_sgl;
         public Token inline_tok;

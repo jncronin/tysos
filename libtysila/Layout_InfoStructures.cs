@@ -105,6 +105,7 @@ namespace libtysila
             internal int OffsetWithinStructure;
             internal int OverallOffset;
             internal bool SymbolIsExternal = true;
+            internal bool SymbolIsWeak = false;
 
             internal Layout _layout;
 
@@ -222,7 +223,8 @@ namespace libtysila
                     int ca_offset = 2;
                     int len = Metadata.ReadCompressedInteger(car.Value, ref ca_offset);
                     string s = new UTF8Encoding().GetString(car.Value, ca_offset, len);
-                    vt_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Symbol, OffsetWithinStructure = vt_offset, SymbolName = s });
+                    vt_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Symbol, 
+                        OffsetWithinStructure = vt_offset, SymbolName = s, SymbolIsWeak = ttc.tsig.Type.IsWeakLinkage });
                 }
             }
 
@@ -387,6 +389,7 @@ namespace libtysila
             if (ass.Options.EnableRTTI == false)
                 ti_layout.PredefinedLength = 2 * ass.GetSizeOfPointer(); // vtbl + obj_id (aligned to multiple of ptr size)
             TypeInfoType ti_type = TypeInfoType.NonGeneric;
+            bool is_instantiable = true;
             if ((this.implflags & libsupcs.TysosType.IF_GT) != 0)
             {
                 ti_type = TypeInfoType.GenericType;
@@ -401,7 +404,6 @@ namespace libtysila
             }
 
             //bool is_instantiable = IsInstantiable(ttc.tsig.Type, ass, true, false);
-            bool is_instantiable = true;
             if ((implflags & libsupcs.TysosType.IF_TYPE_MASK) == libsupcs.TysosType.IF_MPTR)
                 is_instantiable = false;
             if ((implflags & libsupcs.TysosType.IF_TYPE_MASK) == libsupcs.TysosType.IF_PTR)
@@ -411,7 +413,8 @@ namespace libtysila
             //bool is_instantiable = (((implflags & libsupcs.TysosType.IF_TYPE_MASK) == 0) || ((implflags & libsupcs.TysosType.IF_TYPE_MASK) == libsupcs.TysosType.IF_ENUM));
 
             // TypeInfo symbol
-            ti_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Symbol, OffsetWithinStructure = 0, SymbolName = Mangler2.MangleTypeInfo(ttc, ass) });
+            ti_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Symbol, OffsetWithinStructure = 0, 
+                SymbolName = Mangler2.MangleTypeInfo(ttc, ass), SymbolIsWeak = ttc.tsig.Type.IsWeakLinkage });
             
             // __vtbl pointer
             string vtbl_name = "__tysos_type_vt";
@@ -610,7 +613,9 @@ namespace libtysila
                             fi_list_offset += ass.GetSizeOfPointer();
 
                             // Now write out the field info itself
-                            fi_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Symbol, OffsetWithinStructure = fi_offset, SymbolName = Mangler2.MangleFieldInfoSymbol(f.field, ass), SymbolIsExternal = false });
+                            fi_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Symbol,
+                                OffsetWithinStructure = fi_offset, SymbolName = Mangler2.MangleFieldInfoSymbol(f.field, ass),
+                                SymbolIsExternal = false, SymbolIsWeak = ttc.tsig.Type.IsWeakLinkage });
 
                             // __vtbl pointer
                             fi_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = fi_offset + fi_l.InstanceFieldOffsets["IntPtr __vtbl"], Relocation = new LayoutEntry.RelocationType { name = "__tysos_field_vt", rel_type = ass.DataToDataRelocType(), value = 0 } });
@@ -707,6 +712,12 @@ namespace libtysila
                     IEnumerable<Assembler.MethodToCompile> meths = GetMethods(ttc, ass);
                     foreach (Assembler.MethodToCompile mtc in meths)
                     {
+                        /* Do not write out special methods */
+                        if (mtc.meth.CustomAttributes != null)
+                        {
+                            if (mtc.meth.CustomAttributes.ContainsKey("libsupcs.ReinterpretAsMethod"))
+                                continue;
+                        }
                         // First write an entry in the method info list
                         mi_list_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.InternalReference, OffsetWithinStructure = mi_list_offset, InternalReference = new LayoutEntry.InternalReferenceType { Id = ID_MethodInfos, Offset = mi_offset } });
                         mi_list_offset += ass.GetSizeOfPointer();
@@ -834,9 +845,10 @@ namespace libtysila
             List<Assembler.MethodToCompile> ret = new List<Assembler.MethodToCompile>();
 
             foreach (Metadata.MethodDefRow mdr in typeDefRow.Methods)
-            {
+            {               
                 Assembler.MethodToCompile mtc = new Assembler.MethodToCompile { _ass = ass, type = typeDefRow, tsigp = new Signature.Param(tsig, ass), meth = mdr, msig = mdr.ActualSignature };
                 mtc.msig = Signature.ResolveGenericMember(mtc.msig, tsig, null, ass);
+                mtc.msig.Method.meth = mdr;
                 ret.Add(mtc);
             }
 
@@ -869,7 +881,15 @@ namespace libtysila
                 offset += sls[i].PredefinedLength;
             }
 
-            sls[0].Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Symbol, SymbolName = Mangler2.MangleMethodInfoSymbol(mtc, ass) });
+            bool is_weak = false;
+            if (mtc.msig is Signature.GenericMethod)
+                is_weak = true;
+            if (mtc.tsig.IsWeakLinkage)
+                is_weak = true;
+
+            is_weak = true;
+            sls[0].Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Symbol,
+                SymbolName = Mangler2.MangleMethodInfoSymbol(mtc, ass), SymbolIsWeak = is_weak });
 
             return sls;
         }
@@ -883,8 +903,14 @@ namespace libtysila
             Layout mi_l = ass.GetTysosMethodLayout();
             Layout eh_l = ass.GetEHClausesLayout();
 
-            // Now write out the field info itself
-            mi_layout.Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Symbol, OffsetWithinStructure = mi_offset, SymbolName = Mangler2.MangleMethodInfoSymbol(mtc, ass), SymbolIsExternal = false });
+            // Now write out the method info itself
+            bool is_weak = false;
+            if (mtc.msig is Signature.GenericMethod)
+                is_weak = true;
+            if (mtc.tsig.IsWeakLinkage)
+                is_weak = true;
+            mi_layout.Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Symbol, OffsetWithinStructure = mi_offset,
+                SymbolName = Mangler2.MangleMethodInfoSymbol(mtc, ass), SymbolIsExternal = false, SymbolIsWeak = is_weak });
 
             // __vtbl pointer
             mi_layout.Entries.Add(new LayoutEntry { _layout = l, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = mi_offset + mi_l.InstanceFieldOffsets["IntPtr __vtbl"], Relocation = new LayoutEntry.RelocationType { name = "__tysos_method_vt", rel_type = ass.DataToDataRelocType(), value = 0 } });
@@ -935,9 +961,7 @@ namespace libtysila
 
             if (mtc.meth.IgnoreAttribute == true)
                 is_instantiable = false;
-            if (mtc.msig is Signature.GenericMethod)
-                is_instantiable = false;
-            if (mtc.msig.Method.CallingConvention == Signature.Method.CallConv.Generic)
+            if (mtc.IsInstantiable == false)
                 is_instantiable = false;
             if (is_instantiable && ((l.implflags & libsupcs.TysosType.IF_GTD) == 0) && do_meth_address)
             {

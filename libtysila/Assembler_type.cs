@@ -128,7 +128,7 @@ namespace libtysila
                 if (l.StaticFields.Count > 0)
                 {
                     of.AlignData(GetSizeOfPointer());
-                    of.AddDataSymbol(of.GetData().Count, l.static_object_name);
+                    of.AddDataSymbol(of.GetData().Count, l.static_object_name, ttc.tsig.Type.IsWeakLinkage);
                     for (int i = 0; i < l.StaticClassSize; i++)
                         of.GetData().Add(0);
                 }
@@ -193,7 +193,7 @@ namespace libtysila
                         {
                             case Layout.LayoutEntry.LayoutEntryType.Symbol:
                                 if (le.SymbolIsExternal)
-                                    of.AddDataSymbol(start_offset + le_offset, le.SymbolName);
+                                    of.AddDataSymbol(start_offset + le_offset, le.SymbolName, le.SymbolIsWeak);
                                 break;
 
                             case Layout.LayoutEntry.LayoutEntryType.Const:

@@ -87,6 +87,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             // Allocate space for the new object
             libasm.hardware_location loc_obj = il.stack_vars_after.GetAddressFor(type_pushes, ass);
             libasm.hardware_location t2 = ass.GetTemporary2(state);
+            libasm.hardware_location str_length = null;
 
             if (type.type.IsValueType(ass) && !(type.tsig.Type is Signature.BoxedType))
             {
@@ -100,7 +101,9 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 if (Signature.ParamCompare(type_pushes, new Signature.Param(BaseType_Type.String), ass))
                 {
                     obj_size = t2;
-                    str_ctor_idx = get_string_size(il, ass, mtc, ref next_block, state, attrs, constructor.Value, loc_params, t2);
+                    str_length = ass.GetTemporary3(state, Assembler.CliType.int32);
+                    str_ctor_idx = get_string_size(il, ass, mtc, ref next_block, state, attrs, constructor.Value, loc_params, t2,
+                        ref str_length);
                 }
 
                 ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("gcmalloc", false), t1,
@@ -184,7 +187,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 }
 
                 if (str_ctor_idx != -1)
-                    enc_str_ctor(il, ass, mtc, ref next_block, state, attrs, str_ctor_idx, loc_params);
+                    enc_str_ctor(il, ass, mtc, ref next_block, state, attrs, str_ctor_idx, loc_params, str_length);
 
                 else if (constructor.Value.msig is Signature.Method)
                 {
@@ -212,7 +215,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
         }
 
         private static void enc_str_ctor(CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block, Encoder.EncoderState state, 
-            Assembler.MethodAttributes attrs, int str_ctor_idx, libasm.hardware_location[] loc_params)
+            Assembler.MethodAttributes attrs, int str_ctor_idx, libasm.hardware_location[] loc_params, libasm.hardware_location loc_strlength)
         {
             libasm.hardware_location t2 = ass.GetTemporary2(state);
             Stack used_locs = il.stack_vars_before.Clone();
@@ -232,7 +235,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     /* new string(char c, int count) */
                     ass.Assign(state, used_locs, length_ptr, loc_params[2], Assembler.CliType.int32, il.il.tybel);
                     ass.LoadAddress(state, used_locs, t2, data_ptr, il.il.tybel);
-                    ass.MemSetW(state, used_locs, t2, loc_params[1], loc_params[2], il.il.tybel);
+                    ass.WMemSet(state, used_locs, t2, loc_params[1], loc_params[2], il.il.tybel);
                     return;
 
                 case 2:
@@ -259,7 +262,12 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     return;
 
                 case 4:
-                    throw new NotImplementedException();
+                    /* new string(sbyte *value) */
+                    ass.Assign(state, used_locs, length_ptr, loc_strlength, Assembler.CliType.int32, il.il.tybel);
+                    ass.LoadAddress(state, used_locs, t2, data_ptr, il.il.tybel);
+                    ass.Call(state, used_locs, new libasm.hardware_addressoflabel("mbstowcs", false), null,
+                        new libasm.hardware_location[] { t2, loc_params[1], loc_strlength }, ass.callconv_mbstowcs, il.il.tybel);
+                    return;
 
                 case 5:
                     /* new string(char *value, int startIndex, int length) */
@@ -289,7 +297,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
         private static int get_string_size(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs, Assembler.MethodToCompile str_mtc, libasm.hardware_location[] loc_params,
-            libasm.hardware_location loc_dest)
+            libasm.hardware_location loc_dest, ref libasm.hardware_location loc_strlength)
         {
             Signature.Method c_1 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(BaseType_Type.Char), new Signature.Param(BaseType_Type.I4) } };
             Signature.Method c_2 = new Signature.Method { HasThis = true, RetType = new Signature.Param(BaseType_Type.Void), Params = new List<Signature.Param> { new Signature.Param(new Signature.ZeroBasedArray { ElemType = new Signature.BaseType(BaseType_Type.Char) }, ass) } };
@@ -310,6 +318,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 /* new string(char c, int count) */
                 ass.Assign(state, used_locs, loc_dest, loc_params[2], Assembler.CliType.int32, il.il.tybel);
                 ass.Mul(state, used_locs, loc_dest, loc_dest, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
+                loc_strlength = loc_params[2];
                 return 1;
             }
             else if (Signature.BaseMethodSigCompare(c_2, str_mtc.msig, ass))
@@ -324,6 +333,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 ass.Assign(state, used_locs, loc_dest,
                     new libasm.hardware_contentsof { base_loc = loc_value, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length),
                         size = 4 }, Assembler.CliType.int32, il.il.tybel);
+                loc_strlength = null;
                 return 2;
             }
             else if (Signature.BaseMethodSigCompare(c_3, str_mtc.msig, ass))
@@ -331,17 +341,26 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 /* new string(char * value, int startIndex, int length) */
                 ass.Assign(state, used_locs, loc_dest, loc_params[3], Assembler.CliType.int32, il.il.tybel);
                 ass.Mul(state, used_locs, loc_dest, loc_dest, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
+                loc_strlength = loc_params[3];
                 return 3;
             }
             else if (Signature.BaseMethodSigCompare(c_4, str_mtc.msig, ass))
             {
-                throw new NotImplementedException();
+                /* new string(sbyte * value) */
+                used_locs.MarkUsed(ass.GetTemporary3(state));
+
+                ass.Call(state, used_locs, new libasm.hardware_addressoflabel("strlen", false), loc_strlength,
+                    new libasm.hardware_location[] { loc_params[1] }, ass.callconv_strlen, il.il.tybel);
+                ass.Assign(state, used_locs, loc_dest, loc_strlength, Assembler.CliType.int32, il.il.tybel);
+                ass.Mul(state, used_locs, loc_dest, loc_dest, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
+                return 4;
             }
             else if (Signature.BaseMethodSigCompare(c_5, str_mtc.msig, ass))
             {
                 /* new string(char[] value, int startIndex, int length) */
                 ass.Assign(state, used_locs, loc_dest, loc_params[3], Assembler.CliType.int32, il.il.tybel);
                 ass.Mul(state, used_locs, loc_dest, loc_dest, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
+                loc_strlength = loc_params[3];
                 return 3;              
             }
             else if (Signature.BaseMethodSigCompare(c_6, str_mtc.msig, ass))

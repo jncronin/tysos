@@ -41,6 +41,7 @@ namespace Elf64
         public const UInt32 SHT_REL = 9;
         public const UInt32 SHT_SHLIB = 10;
         public const UInt32 SHT_DYNSYM = 11;
+        public const UInt32 SHT_GROUP = 17;
     }
 
     class SectionFlags
@@ -48,6 +49,12 @@ namespace Elf64
         public const UInt64 SHF_WRITE = 1;
         public const UInt64 SHF_ALLOC = 2;
         public const UInt64 SHF_EXECINSTR = 4;
+        public const UInt64 SHF_GROUP = 0x200;
+    }
+
+    class GroupFlags
+    {
+        public const UInt32 GRP_COMDAT = 0x1;
     }
 
     class Elf32_Shdr

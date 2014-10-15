@@ -212,8 +212,16 @@ namespace libtysila
                 o = ((IntPtr)o).ToInt64();
             else if (o.GetType() == typeof(UIntPtr))
                 o = ((UIntPtr)o).ToUInt64();
-            if ((Convert.ToInt64(o) < SByte.MinValue) || (Convert.ToInt64(o) > SByte.MaxValue))
-                return false;
+            try
+            {
+                if ((Convert.ToInt64(o) < SByte.MinValue) || (Convert.ToInt64(o) > SByte.MaxValue))
+                    return false;
+            }
+            catch (OverflowException)
+            {
+                if (Convert.ToUInt64(o) > (ulong)SByte.MaxValue)
+                    return true;
+            }
             return true;
         }
 
@@ -227,8 +235,17 @@ namespace libtysila
                 o = ((IntPtr)o).ToInt64();
             else if (o.GetType() == typeof(UIntPtr))
                 o = ((UIntPtr)o).ToUInt64();
-            if ((Convert.ToInt64(o) < Byte.MinValue) || (Convert.ToInt64(o) > Byte.MaxValue))
-                return false;
+            try
+            {
+                if ((Convert.ToInt64(o) < Byte.MinValue) || (Convert.ToInt64(o) > Byte.MaxValue))
+                    return false;
+            }
+            catch (OverflowException)
+            {
+                if (Convert.ToUInt64(o) > (ulong)Byte.MaxValue)
+                    return false;
+            }
+
             return true;
         }
 
@@ -242,8 +259,16 @@ namespace libtysila
                 o = ((IntPtr)o).ToInt64();
             else if (o.GetType() == typeof(UIntPtr))
                 o = ((UIntPtr)o).ToUInt64();
-            if ((Convert.ToInt64(o) < Int32.MinValue) || (Convert.ToInt64(o) > Int32.MaxValue))
-                return false;
+            try
+            {
+                if ((Convert.ToInt64(o) < Int32.MinValue) || (Convert.ToInt64(o) > Int32.MaxValue))
+                    return false;
+            }
+            catch (OverflowException)
+            {
+                if (Convert.ToUInt64(o) > (ulong)Int32.MaxValue)
+                    return false;
+            }
             return true;
         }
 
@@ -257,8 +282,16 @@ namespace libtysila
                 o = ((IntPtr)o).ToInt64();
             else if (o.GetType() == typeof(UIntPtr))
                 o = ((UIntPtr)o).ToUInt64();
-            if ((Convert.ToInt64(o) < UInt32.MinValue) || (Convert.ToInt64(o) > UInt32.MaxValue))
-                return false;
+            try
+            {
+                if ((Convert.ToInt64(o) < UInt32.MinValue) || (Convert.ToInt64(o) > UInt32.MaxValue))
+                    return false;
+            }
+            catch (OverflowException)
+            {
+                if (Convert.ToUInt64(o) > (ulong)UInt32.MaxValue)
+                    return false;
+            }
             return true;
         }
 
@@ -272,8 +305,16 @@ namespace libtysila
                 o = ((IntPtr)o).ToInt64();
             else if (o.GetType() == typeof(UIntPtr))
                 o = ((UIntPtr)o).ToUInt64();
-            if ((Convert.ToInt64(o) < Int16.MinValue) || (Convert.ToInt64(o) > Int16.MaxValue))
-                return false;
+            try
+            {
+                if ((Convert.ToInt64(o) < Int16.MinValue) || (Convert.ToInt64(o) > Int16.MaxValue))
+                    return false;
+            }
+            catch (OverflowException)
+            {
+                if (Convert.ToUInt64(o) > (ulong)Int16.MaxValue)
+                    return false;
+            }
             return true;
         }
         internal bool FitsInt12(object o)
@@ -286,8 +327,16 @@ namespace libtysila
                 o = ((IntPtr)o).ToInt64();
             else if (o.GetType() == typeof(UIntPtr))
                 o = ((UIntPtr)o).ToUInt64();
-            if ((Convert.ToInt64(o) < -2048) || (Convert.ToInt64(o) > 2047))
-                return false;
+            try
+            {
+                if ((Convert.ToInt64(o) < -2048) || (Convert.ToInt64(o) > 2047))
+                    return false;
+            }
+            catch (OverflowException)
+            {
+                if (Convert.ToUInt64(o) > 2047)
+                    return false;
+            }
             return true;
         }
         protected bool IsSigned(object o)

@@ -244,5 +244,35 @@ namespace tysos.jit
         {
             throw new NotImplementedException();
         }
+
+        public override bool MoreAssemblies
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override bool MoreGenericMethodInfos
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override bool MoreMethods
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override bool MoreModules
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override bool MoreStaticFields
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override bool MoreTypeInfos
+        {
+            get { throw new NotImplementedException(); }
+        }
     }
 }

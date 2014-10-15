@@ -51,6 +51,7 @@ namespace tysos
     class IPC
     {
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
+        [libsupcs.ReinterpretAsMethod]
         public static extern IPCMessage ReinterpretAsIPCMessage(ulong addr);
 
         internal static bool InitIPC(Process p)

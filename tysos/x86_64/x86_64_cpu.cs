@@ -37,6 +37,7 @@ namespace tysos.x86_64
             public Scheduler sched;
 
             [MethodImpl(MethodImplOptions.InternalCall)]
+            [libsupcs.ReinterpretAsMethod]
             internal unsafe static extern data ReinterpretAsX86_64_data(ulong addr);
         }
 

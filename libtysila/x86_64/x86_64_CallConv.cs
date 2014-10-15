@@ -38,6 +38,12 @@ namespace libtysila
             x86_64_Assembler.Xmm1, x86_64_Assembler.Xmm2, x86_64_Assembler.Xmm3, x86_64_Assembler.Xmm4,
             x86_64_Assembler.Xmm5, x86_64_Assembler.Xmm6, x86_64_Assembler.Xmm7
         };
+        static List<hardware_location> isr_i386_preserves = new List<hardware_location> {
+            x86_64_Assembler.Rax, x86_64_Assembler.Rbx, x86_64_Assembler.Rcx, x86_64_Assembler.Rdx,
+            x86_64_Assembler.Rsi, x86_64_Assembler.Rdi,
+            x86_64_Assembler.Xmm0, x86_64_Assembler.Xmm1, x86_64_Assembler.Xmm2, x86_64_Assembler.Xmm3,
+            x86_64_Assembler.Xmm4, x86_64_Assembler.Xmm5, x86_64_Assembler.Xmm6, x86_64_Assembler.Xmm7
+        };
         static List<hardware_location> cdecl_x86_64_preserves_with_rax = new List<hardware_location> {
             x86_64_Assembler.Rax, x86_64_Assembler.Rcx, x86_64_Assembler.Rdx, x86_64_Assembler.Xmm0,
             x86_64_Assembler.Xmm1, x86_64_Assembler.Xmm2, x86_64_Assembler.Xmm3, x86_64_Assembler.Xmm4,
@@ -56,11 +62,20 @@ namespace libtysila
             x86_64_Assembler.R8, x86_64_Assembler.R9, x86_64_Assembler.R10, x86_64_Assembler.R11,
             x86_64_Assembler.R12, x86_64_Assembler.R13, x86_64_Assembler.R14, x86_64_Assembler.R15
         };
+        static List<hardware_location> isr_x86_64_preserves = new List<hardware_location> {
+            x86_64_Assembler.Rax, x86_64_Assembler.Rbx, x86_64_Assembler.Rcx, x86_64_Assembler.Rdx,
+            x86_64_Assembler.Rsi, x86_64_Assembler.Rdi,
+            x86_64_Assembler.R8, x86_64_Assembler.R9, x86_64_Assembler.R10, x86_64_Assembler.R11,
+            x86_64_Assembler.R12, x86_64_Assembler.R13, x86_64_Assembler.R14, x86_64_Assembler.R15,
+            x86_64_Assembler.Xmm0, x86_64_Assembler.Xmm1, x86_64_Assembler.Xmm2, x86_64_Assembler.Xmm3,
+            x86_64_Assembler.Xmm4, x86_64_Assembler.Xmm5, x86_64_Assembler.Xmm6, x86_64_Assembler.Xmm7,
+            x86_64_Assembler.Xmm8, x86_64_Assembler.Xmm9, x86_64_Assembler.Xmm10, x86_64_Assembler.Xmm11,
+            x86_64_Assembler.Xmm12, x86_64_Assembler.Xmm13, x86_64_Assembler.Xmm14, x86_64_Assembler.Xmm15
+        };
         static List<hardware_location> cdecl_callee_preserves = new List<hardware_location> {
             x86_64_Assembler.Rbx, x86_64_Assembler.Rdi, x86_64_Assembler.Rsi };
-
     
-        public static CallConv isr(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
+        public static CallConv isr2(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
         {
             CallConv ret = new CallConv();
 
@@ -110,10 +125,20 @@ namespace libtysila
         static ArgumentLocation amd64_argloc(var_semantic vs, int v_size, hardware_location base_reg, ref int stack_pos,
             ref int reg_pos, ref int xmm_pos, int pointer_size, Signature.Param p, Assembler ass)
         {
+            if (vs.needs_virtftnptr)
+            {
+                if (ass.GetSizeOf(new Signature.Param(Assembler.CliType.virtftnptr)) == 8)
+                    vs.needs_int64 = true;
+                else if (ass.GetSizeOf(new Signature.Param(Assembler.CliType.virtftnptr)) == 4)
+                    vs.needs_int32 = true;
+                else
+                    vs.needs_vtype = true;
+            }            
+
             if (vs.needs_integer)
             {
                 if (reg_pos < amd64_gprs.Length)
-                    return new ArgumentLocation { ValueLocation = amd64_gprs[reg_pos++], ValueSize = v_size };
+                    return new ArgumentLocation { ValueLocation = amd64_gprs[reg_pos++], ValueSize = v_size, Type = p };
                 else
                 {
                     ArgumentLocation ret = new ArgumentLocation
@@ -135,7 +160,7 @@ namespace libtysila
             else if (vs.needs_float)
             {
                 if (xmm_pos < amd64_xmms.Length)
-                    return new ArgumentLocation { ValueLocation = amd64_xmms[xmm_pos++], ValueSize = v_size };
+                    return new ArgumentLocation { ValueLocation = amd64_xmms[xmm_pos++], ValueSize = v_size, Type = p };
                 else
                 {
                     ArgumentLocation ret = new ArgumentLocation
@@ -154,8 +179,36 @@ namespace libtysila
                     return ret;
                 }
             }
+            else if(vs.needs_vtype)
+            {
+                ArgumentLocation ret = new ArgumentLocation { ValueSize = v_size, 
+                    ValueLocation = new hardware_contentsof { base_loc = base_reg, const_offset = stack_pos, size = v_size }, Type = p };
+                stack_pos += v_size;
+                stack_pos = util.align(stack_pos, pointer_size);
+                return ret;
+            }
             else
                 throw new Exception("Argument type " + Signature.GetString(p, ass) + " currently not supported by amd64 calling convention");
+        }
+
+        public static CallConv isr(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
+        {
+            CallConv ret = sysv_i386(mtc, pov, ass);
+            ret.Name = "isr";
+
+            bool i586 = false;
+            if (((x86_64_Assembler)ass).ia == x86_64_Assembler.IA.i586)
+                i586 = true;
+
+            ret.CalleePreservesLocations = i586 ? isr_i386_preserves : isr_x86_64_preserves;
+
+            if (mtc.msig.Method.Params.Count > 1)
+                throw new Exception("ISRs can only have zero or one arguments");
+            if (mtc.msig.Method.RetType != null && !((mtc.msig.Method.RetType.Type is Signature.BaseType) && 
+                (((Signature.BaseType)mtc.msig.Method.RetType.Type).Type == BaseType_Type.Void)))
+                throw new Exception("ISRs cannot return a value");
+
+            return ret;
         }
 
         public static CallConv amd64(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
@@ -173,6 +226,8 @@ namespace libtysila
 
             CallConv ret = new CallConv();
 
+            ret.Name = "amd64";
+
             ret.CallerCleansStack = true;
 
             ret.Arguments = new List<ArgumentLocation>();
@@ -186,6 +241,16 @@ namespace libtysila
             ret.CalleePreservesLocations.Add(x86_64_Assembler.R13);
             ret.CalleePreservesLocations.Add(x86_64_Assembler.R14);
             ret.CalleePreservesLocations.Add(x86_64_Assembler.R15);
+
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Rax);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Rcx);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Rdx);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Rsi);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Rdi);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.R8);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.R9);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.R10);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.R11);
 
             int stack_pos = 0;
             int pointer_size = 8;
@@ -203,6 +268,26 @@ namespace libtysila
             }
 
             Signature.Method m = mtc.msig.Method;
+
+            if (m.RetType == null)
+                ret.ReturnValue = null;
+            else if (m.RetType.CliType(ass) == Assembler.CliType.none)
+                ret.ReturnValue = null;
+            else if (m.RetType.CliType(ass) == Assembler.CliType.void_)
+                ret.ReturnValue = null;
+            else
+            {
+                var_semantic ret_vs = ass.GetSemantic(m.RetType.CliType(ass), ass.GetSizeOf(m.RetType));
+
+                if (ret_vs.needs_integer)
+                    ret.ReturnValue = x86_64_Assembler.Rax;
+                else if (ret_vs.needs_float)
+                    ret.ReturnValue = x86_64_Assembler.Xmm0;
+                else if (ret_vs.needs_vtype)
+                    ret.HiddenRetValArgument = amd64_gprs[reg_pos++];
+                else
+                    throw new Exception("Return type " + Signature.GetString(m.RetType, ass) + " currently not supported by amd64 calling convention");
+            }
 
             if (m.HasThis && !m.ExplicitThis)
             {
@@ -227,26 +312,7 @@ namespace libtysila
                     v_size = 8;
 
                 var_semantic vs = ass.GetSemantic(p.CliType(ass), v_size);
-                if (vs.needs_integer)
-                    ret.Arguments.Add(amd64_argloc(vs, v_size, base_reg, ref stack_pos, ref reg_pos, ref xmm_pos, pointer_size, p, ass));
-            }
-
-            if (m.RetType == null)
-                ret.ReturnValue = null;
-            else if (m.RetType.CliType(ass) == Assembler.CliType.none)
-                ret.ReturnValue = null;
-            else if (m.RetType.CliType(ass) == Assembler.CliType.void_)
-                ret.ReturnValue = null;
-            else
-            {
-                var_semantic ret_vs = ass.GetSemantic(m.RetType.CliType(ass), ass.GetSizeOf(m.RetType));
-
-                if (ret_vs.needs_integer)
-                    ret.ReturnValue = x86_64_Assembler.Rax;
-                else if (ret_vs.needs_float)
-                    ret.ReturnValue = x86_64_Assembler.Xmm0;
-                else
-                    throw new Exception("Return type " + Signature.GetString(m.RetType, ass) + " currently not supported by amd64 calling convention");
+                ret.Arguments.Add(amd64_argloc(vs, v_size, base_reg, ref stack_pos, ref reg_pos, ref xmm_pos, pointer_size, p, ass));
             }
 
             ret.StackSpaceUsed = stack_pos;
@@ -258,6 +324,8 @@ namespace libtysila
         public static CallConv sysv_i386(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
         {
             CallConv ret = new CallConv();
+
+            ret.Name = "sysv_i386";
 
             ret.CallerCleansStack = true;
 

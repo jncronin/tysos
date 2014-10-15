@@ -73,6 +73,7 @@ using System.Text;
  *                      u1O             # Object
  *                      u1V             # VirtFtnPtr
  *                      u1P             # Uninstantiated generic param
+ *                      u1p             # Uninstantiated generic method param
  *                      u1A<array-def>  # ComplexArray
  *                      u1Z<elem-type>  # ZeroBasedArray, <elem-type> is of type <type name>
  *                      u1t             # this pointer
@@ -389,6 +390,9 @@ namespace libtysila
                         break;
                     case BaseType_Type.UninstantiatedGenericParam:
                         sb.Append("u1P");
+                        break;
+                    case BaseType_Type.UninstantiatedGenericMethodParam:
+                        sb.Append("u1p");
                         break;
                     case BaseType_Type.RefGenericParam:
                         sb.Append("u1R");
@@ -764,8 +768,7 @@ namespace libtysila
             else if (ReadString("N", c, ref x))
             {
                 // Read ComplexType
-                Signature.ComplexType ct = new Signature.ComplexType(ass);
-                ct._ass = ass;
+                Signature.ComplexType ct;
 
                 string mod = ReadStringWithLength(c, ref x);
                 string nspace = ReadStringWithLength(c, ref x);
@@ -775,6 +778,10 @@ namespace libtysila
                 state.cur_nspace = nspace;
 
                 Metadata.TypeDefRow tdr = Metadata.GetTypeDef(mod, nspace, name, ass);
+                if (tdr.IsGeneric)
+                    ct = new Signature.GenericTypeDefinition(ass);
+                else
+                    ct = new Signature.ComplexType(ass);
                 ct.Type = new Token(tdr);
                 type = ct;
             }

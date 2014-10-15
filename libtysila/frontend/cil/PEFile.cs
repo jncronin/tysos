@@ -1035,6 +1035,24 @@ namespace libtysila
                 tdr._InterfaceImpls.Add(iir);
             }
 
+            foreach (Metadata.GenericParamRow gpr in m.Tables[(int)Metadata.TableId.GenericParam])
+            {
+                if (gpr.Owner.TableId == Metadata.TableId.TypeDef)
+                {
+                    Metadata.TypeDefRow tdr = gpr.Owner.Value as Metadata.TypeDefRow;
+                    if (tdr.GenericParams == null)
+                        tdr.GenericParams = new List<Metadata.GenericParamRow>();
+                    tdr.GenericParams.Add(gpr);
+                }
+                else if (gpr.Owner.TableId == Metadata.TableId.MethodDef)
+                {
+                    Metadata.MethodDefRow mdr = gpr.Owner.Value as Metadata.MethodDefRow;
+                    if (mdr.GenericParams == null)
+                        mdr.GenericParams = new List<Metadata.GenericParamRow>();
+                    mdr.GenericParams.Add(gpr);
+                }
+            }
+
             /* Now read the method body structures */
             foreach(Metadata.MethodDefRow mth in m.Tables[(int)Metadata.TableId.MethodDef]) {
                 if (mth.RVA == 0)

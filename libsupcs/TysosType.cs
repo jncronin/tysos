@@ -104,26 +104,33 @@ namespace libsupcs
         public const int IF_SIMPLE_ET_SHIFT = 24;
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern TysosField ReinterpretAsFieldInfo(IntPtr addr);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern TysosField ReinterpretAsFieldInfo(object obj);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern TysosMethod ReinterpretAsMethodInfo(IntPtr addr);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern TysosType ReinterpretAsType(IntPtr addr);
 
         [Bits32Only]
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern TysosType ReinterpretAsType(uint addr);
 
         [Bits64Only]
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern TysosType ReinterpretAsType(ulong addr);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern TysosType ReinterpretAsType(object obj);
 
         public virtual int GetClassSize() { return ClassSize; }

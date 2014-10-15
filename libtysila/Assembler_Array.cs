@@ -256,7 +256,7 @@ namespace libtysila
             vector_index_mdr.Body = new Metadata.MethodBody();
 
             Signature.Method vector_index_msig = new Signature.Method { CallingConvention = libtysila.Signature.Method.CallConv.Default, ExplicitThis = false, GenParamCount = 0, HasThis = false,
-                m = array_type.m, ParamCount = rank + 2, RetType = new Signature.Param(BaseType_Type.I4) };
+                m = array_type.m, ParamCount = rank + 2, RetType = new Signature.Param(BaseType_Type.I4), meth = vector_index_mdr };
             CilGraph vector_index_meth_node = new CilGraph();
 
             for (int x = 0; x < rank; x++)
@@ -353,7 +353,8 @@ namespace libtysila
                 HasThis = true,
                 m = array_type.m,
                 ParamCount = rank,
-                RetType = new Signature.Param(elem_type.tsig.Type, this)
+                RetType = new Signature.Param(elem_type.tsig.Type, this),
+                meth = get_mdr
             };
             for (int x = 0; x < rank; x++)
                 get_sig.Params.Add(new Signature.Param(BaseType_Type.I4));
@@ -393,7 +394,8 @@ namespace libtysila
                 HasThis = true,
                 m = array_type.m,
                 ParamCount = 1,
-                RetType = new Signature.Param(BaseType_Type.Object)
+                RetType = new Signature.Param(BaseType_Type.Object),
+                meth = getvalueimpl_mdr
             };
             getvalueimpl_sig.Params.Add(new Signature.Param(BaseType_Type.I4));
             getvalueimpl_mdr.msig = getvalueimpl_sig;
@@ -431,7 +433,8 @@ namespace libtysila
                 HasThis = true,
                 m = array_type.m,
                 ParamCount = rank + 1,
-                RetType = new Signature.Param(BaseType_Type.Void)
+                RetType = new Signature.Param(BaseType_Type.Void),
+                meth = set_mdr
             };
             for(int x = 0; x < rank; x++)
                 set_sig.Params.Add(new Signature.Param(BaseType_Type.I4));
@@ -469,7 +472,8 @@ namespace libtysila
                 HasThis = true,
                 m = array_type.m,
                 ParamCount = rank,
-                RetType = new Signature.Param(new Signature.ManagedPointer { ElemType = elem_type.tsig.Type }, this)
+                RetType = new Signature.Param(new Signature.ManagedPointer { ElemType = elem_type.tsig.Type }, this),
+                meth = addr_mdr
             };
             for (int x = 0; x < rank; x++)
                 addr_sig.Params.Add(new Signature.Param(BaseType_Type.I4));
@@ -556,7 +560,8 @@ namespace libtysila
                 HasThis = true,
                 m = array_type.m,
                 ParamCount = rank,
-                RetType = new Signature.Param(BaseType_Type.Void)
+                RetType = new Signature.Param(BaseType_Type.Void),
+                meth = ctor_1_mdr
             };
             for (int x = 0; x < rank; x++)
                 ctor_1_sig.Params.Add(new Signature.Param(BaseType_Type.I4));
@@ -639,7 +644,8 @@ namespace libtysila
                 HasThis = true,
                 m = array_type.m,
                 ParamCount = rank,
-                RetType = new Signature.Param(BaseType_Type.Void)
+                RetType = new Signature.Param(BaseType_Type.Void),
+                meth = ctor_2_mdr
             };
             for (int x = 0; x < (2 * rank); x++)
                 ctor_2_sig.Params.Add(new Signature.Param(BaseType_Type.I4));

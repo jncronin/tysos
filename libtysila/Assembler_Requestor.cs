@@ -71,6 +71,14 @@ namespace libtysila
             public Assembler Assembler { get { return ass; } set { ass = value; } }
 
             public abstract void PurgeAll();
+
+            public abstract bool MoreTypeInfos { get; }
+            public abstract bool MoreMethods { get; }
+            public abstract bool MoreModules { get; }
+            public abstract bool MoreAssemblies { get; }
+            public abstract bool MoreGenericMethodInfos { get; }
+            public abstract bool MoreStaticFields { get; }
+            public virtual bool MoreToDo { get { return MoreTypeInfos || MoreMethods || MoreModules || MoreAssemblies || MoreGenericMethodInfos || MoreStaticFields; } }
         }
 
         public class FileBasedMemberRequestor : MemberRequestor
@@ -311,13 +319,13 @@ namespace libtysila
             internal List<Metadata> _compiled_modules = new List<Metadata>();
             internal List<Metadata> _compiled_assemblies = new List<Metadata>();
 
-            public bool MoreTypeInfos { get { if (_requested_tis.Count == 0) return false; return true; } }
-            public bool MoreMethods { get { if (_requested_meths.Count == 0) return false; return true; } }
-            public bool MoreModules { get { if (_requested_modules.Count == 0) return false; return true; } }
-            public bool MoreAssemblies { get { if (_requested_assemblies.Count == 0) return false; return true; } }
-            public bool MoreGenericMethodInfos { get { if (_requested_gmis.Count == 0) return false; return true; } }
-            public bool MoreStaticFields { get { if (_requested_sfs.Count == 0) return false; return true; } }
-            public bool MoreToDo { get { lock (ti_lock) { lock (meth_lock) { lock (type_lock) { lock (gmi_lock) { lock (assembly_lock) { lock (module_lock) { lock(static_fields_lock) { if (MoreTypeInfos || MoreMethods || MoreModules || MoreAssemblies || MoreGenericMethodInfos || MoreStaticFields) return true; else return false; } } } } } } } } }
+            public override bool MoreTypeInfos { get { if (_requested_tis.Count == 0) return false; return true; } }
+            public override bool MoreMethods { get { if (_requested_meths.Count == 0) return false; return true; } }
+            public override bool MoreModules { get { if (_requested_modules.Count == 0) return false; return true; } }
+            public override bool MoreAssemblies { get { if (_requested_assemblies.Count == 0) return false; return true; } }
+            public override bool MoreGenericMethodInfos { get { if (_requested_gmis.Count == 0) return false; return true; } }
+            public override bool MoreStaticFields { get { if (_requested_sfs.Count == 0) return false; return true; } }
+            public override bool MoreToDo { get { lock (ti_lock) { lock (meth_lock) { lock (type_lock) { lock (gmi_lock) { lock (assembly_lock) { lock (module_lock) { lock (static_fields_lock) { if (MoreTypeInfos || MoreMethods || MoreModules || MoreAssemblies || MoreGenericMethodInfos || MoreStaticFields) return true; else return false; } } } } } } } } }
 
             public void PurgeRequestedTypeInfos() { _requested_tis.Clear(); }
             public void PurgeRequestedMethods() { _requested_meths.Clear(); }

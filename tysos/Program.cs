@@ -42,6 +42,7 @@ namespace tysos
         internal static string[] kernel_cmd_line;
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
+        [libsupcs.ReinterpretAsMethod]
         public static extern Multiboot.Header ReinterpretAsMboot(ulong addr);
 
         [libsupcs.ExtraArgument(0, 0x18)]
@@ -539,6 +540,8 @@ namespace tysos
         }
 
         [libsupcs.MethodAlias("__mbstrlen")]
+        [libsupcs.MethodAlias("mbstrlen")]
+        [libsupcs.MethodAlias("strlen")]
         [libsupcs.AlwaysCompile]
         unsafe internal static int MbStrLen(sbyte* value)
         {
@@ -554,7 +557,16 @@ namespace tysos
             return length;
         }
 
-        [libsupcs.MethodAlias("__mbstowcs")]
+        [libsupcs.MethodAlias("wmemset")]
+        unsafe internal static char* wmemset(char* wcs, char wc, int n)
+        {
+            char *dest = wcs;
+            for (int i = 0; i < n; i++)
+                *dest++ = wc;
+            return wcs;
+        }
+
+        [libsupcs.MethodAlias("mbstowcs")]
         [libsupcs.AlwaysCompile]
         unsafe static void MbsToWcs(char* dest, sbyte* src, int length)
         {
@@ -570,6 +582,7 @@ namespace tysos
 
         static int next_obj_id = 0x1000;
         [libsupcs.MethodAlias("__get_new_obj_id")]
+        [libsupcs.MethodAlias("getobjid")]
         [libsupcs.AlwaysCompile]
         internal static int GetNewObjId()
         {
@@ -651,6 +664,20 @@ namespace tysos
                 return cur_cpu_data.CurrentThread.thread_id;
         }
 
+        [libsupcs.MethodAlias("_ZX15OtherOperationsM_0_18GetFunctionAddress_Ru1I_P1u1S")]
+        [libsupcs.AlwaysCompile]
+        static ulong GetFunctionAddress(string name)
+        {
+            return stab.GetAddress(name);
+        }
+
+        [libsupcs.MethodAlias("_ZX15OtherOperationsM_0_22GetStaticObjectAddress_Ru1I_P1u1S")]
+        [libsupcs.AlwaysCompile]
+        static ulong GetStaticObjectAddress(string name)
+        {
+            return stab.GetAddress(name);
+        }
+
         [libsupcs.MethodAlias("_ZW18System#2EThreading6ThreadM_0_23GetCachedCurrentCulture_RU22System#2EGlobalization11CultureInfo_P1u1t")]
         [libsupcs.AlwaysCompile]
         static System.Globalization.CultureInfo Thread_GetCachedCurrentCulture(System.Threading.Thread thread)
@@ -660,6 +687,24 @@ namespace tysos
              */
 
             return System.Globalization.CultureInfo.InvariantCulture;
+        }
+
+        [libsupcs.MethodAlias("__floatundidf")]
+        static void floatundidf()
+        {
+            throw new NotImplementedException("__floatundidf");
+        }
+
+        [libsupcs.MethodAlias("__negdf2")]
+        static void negdf2()
+        {
+            throw new NotImplementedException("__negdf2");
+        }
+
+        [libsupcs.MethodAlias("__negsf2")]
+        static void negsf2()
+        {
+            throw new NotImplementedException("__negsf2");
         }
 
         internal static void IdleFunction()

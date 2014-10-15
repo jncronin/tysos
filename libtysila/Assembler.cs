@@ -92,7 +92,7 @@ namespace libtysila
         internal abstract void Add(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, CliType dt, List<tybel.Node> ret);
         internal abstract void Mul(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location a, libasm.hardware_location b, CliType dt, List<tybel.Node> ret);
         internal abstract void MemSet(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location c, libasm.hardware_location n, List<tybel.Node> ret);
-        internal abstract void MemSetW(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location c, libasm.hardware_location n, List<tybel.Node> ret);
+        internal abstract void WMemSet(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location c, libasm.hardware_location n, List<tybel.Node> ret);
         internal abstract void MemCpy(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location src, libasm.hardware_location n, List<tybel.Node> ret);
         internal abstract void Call(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest, libasm.hardware_location retval, libasm.hardware_location[] p, CallConv cc, List<tybel.Node> ret);
         internal abstract void Poke(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest_addr, libasm.hardware_location src, int size, List<tybel.Node> ret);
@@ -114,6 +114,12 @@ namespace libtysila
         public virtual libasm.hardware_location GetTemporary(libtysila.frontend.cil.Encoder.EncoderState state) { return GetTemporary(state, CliType.native_int); }
         public abstract libasm.hardware_location GetTemporary2(libtysila.frontend.cil.Encoder.EncoderState state, Assembler.CliType ct);
         public virtual libasm.hardware_location GetTemporary2(libtysila.frontend.cil.Encoder.EncoderState state) { return GetTemporary2(state, CliType.native_int); }
+        public abstract libasm.hardware_location GetTemporary3(libtysila.frontend.cil.Encoder.EncoderState state, Assembler.CliType ct);
+        public virtual libasm.hardware_location GetTemporary3(libtysila.frontend.cil.Encoder.EncoderState state) { return GetTemporary2(state, CliType.native_int); }
+
+        public virtual void ReleaseTemporary() { }
+        public virtual void ReleaseTemporary2() { }
+        public virtual void ReleaseTemporary3() { }
 
         internal abstract Dictionary<libasm.hardware_location, libasm.hardware_location> AllocateStackLocations(Assembler.MethodAttributes attrs);
 
@@ -318,6 +324,18 @@ namespace libtysila
             public uint? MetadataToken;
             public Metadata m;
 
+            public bool IsInstantiable
+            {
+                get
+                {
+                    if (tsig.IsInstantiable == false)
+                        return false;
+                    if (msig.IsInstantiable == false)
+                        return false;
+                    return true;
+                }
+            }
+
             public enum GenericMethodType { Undetermined, No, ValueTypesOnly, RefImplementation, CallsRefImplementation };
             GenericMethodType _GenMethodType;
             public GenericMethodType GenMethodType
@@ -503,6 +521,18 @@ namespace libtysila
                     return false;
                 return true;
             }
+
+            public bool IsInstantiable
+            {
+                get
+                {
+                    if (fsig.Type.IsInstantiable == false)
+                        return false;
+                    if (definedin_tsig.Type.IsInstantiable == false)
+                        return false;
+                    return true;
+                }
+            }
         }
 
         public struct TypeToCompile : IEquatable<Assembler.TypeToCompile>
@@ -551,6 +581,8 @@ namespace libtysila
             {
                 return tsig.GetHashCode();
             }
+
+            public bool IsInstantiable { get { return tsig.Type.IsInstantiable; } }
         }
 
         internal interface IStackAllocator
@@ -1384,6 +1416,20 @@ namespace libtysila
             {
                 Metadata.TypeDefRow ugp_tdr = new Metadata.TypeDefRow { m = corlib, ass = this };
                 ugp_tdr._ActualTypeName = "UnstantiatedGenericParam";
+                ugp_tdr._ActualTypeNamespace = "System";
+                ugp_tdr.CustomAttrs = new List<Metadata.CustomAttributeRow>();
+                ugp_tdr.Extends = new Metadata.TableIndex(Metadata.TypeDefRow.GetSystemValueType(this));
+                ugp_tdr.Fields = new List<Metadata.FieldRow>();
+                ugp_tdr.Flags = 0x100109;
+                ugp_tdr.Methods = new List<Metadata.MethodDefRow>();
+
+                basetype_tdrs.Add(bt.Type, ugp_tdr);
+                return ugp_tdr;
+            }
+            else if (bt.Type == BaseType_Type.UninstantiatedGenericMethodParam)
+            {
+                Metadata.TypeDefRow ugp_tdr = new Metadata.TypeDefRow { m = corlib, ass = this };
+                ugp_tdr._ActualTypeName = "UnstantiatedGenericMethodParam";
                 ugp_tdr._ActualTypeNamespace = "System";
                 ugp_tdr.CustomAttrs = new List<Metadata.CustomAttributeRow>();
                 ugp_tdr.Extends = new Metadata.TableIndex(Metadata.TypeDefRow.GetSystemValueType(this));

@@ -29,9 +29,13 @@ namespace tysos
     class Exceptions
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [libsupcs.ReinterpretAsMethod]
         internal static extern libsupcs.TysosMethod ReinterpretAsTysosMethod(ulong addr);
+
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [libsupcs.ReinterpretAsMethod]
         internal static extern libsupcs.TysosMethod.EHClause ReinterpretAsEHClause(ulong addr);
+
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void CallExceptionHandler(ulong addr, ulong rbp);
 

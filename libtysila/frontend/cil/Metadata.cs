@@ -61,6 +61,7 @@ namespace libtysila
         VirtFtnPtr = 0xfe,
 
         UninstantiatedGenericParam = 0xfd,
+        UninstantiatedGenericMethodParam = 0xfb,
         RefGenericParam = 0xfc,
 
         Byte = 0x100
@@ -416,6 +417,26 @@ namespace libtysila
             public Metadata GetMetadata() { return m; }
 
             public List<CustomAttributeRow> CustomAttrs = new List<CustomAttributeRow>();
+
+            Dictionary<string, Dictionary<string, object>> CustomAttrsCache = null;
+            public Dictionary<string, Dictionary<string, object>> CustomAttributes
+            {
+                get
+                {
+                    if (CustomAttrs == null)
+                        return null;
+
+                    if (CustomAttrsCache == null)
+                    {
+                        CustomAttrsCache = new Dictionary<string, Dictionary<string, object>>();
+
+                        foreach (CustomAttributeRow car in CustomAttrs)
+                            ass.ParseCustomAttribute(car, CustomAttrsCache);
+                    }
+
+                    return CustomAttrsCache;
+                }
+            }
         }
 
         public class AssemblyRow : TableRow, ITableRow
@@ -650,6 +671,8 @@ namespace libtysila
             public string CallConvOverride = null;
             public bool WeakLinkage = false;
 
+            public List<GenericParamRow> GenericParams = null;
+
             public Signature.LocalVars GetLocalVars(Assembler ass)
             {
                 if (Body.LVars != null)
@@ -690,13 +713,17 @@ namespace libtysila
             {
                 if (msig != null)
                     return msig;
-                return libtysila.Signature.ParseMethodDefSig(this.m, Signature, ass);
+                Signature.BaseMethod ret = libtysila.Signature.ParseMethodDefSig(this.m, Signature, ass);
+                ret.Method.meth = this;
+                return ret;
             }
 
             public override string ToString()
             {
                 return Name;
             }
+
+            public bool IsGeneric { get { return GenericParams != null; } }
         }
 
         public class MethodBody
@@ -887,6 +914,8 @@ namespace libtysila
             List<FieldRow> _all_instance_fields = null;
             List<MethodDefRow> _all_virtual_methods = null;
 
+            public List<GenericParamRow> GenericParams = null;
+
             public bool IsAbstract { get { if ((Flags & 0x80) == 0x80) return true; return false; } }
             public bool IsInterface { get { if ((Flags & 0x20) == 0x20) return true; return false; } }
             public bool IsAutoLayout { get { if ((Flags & 0x18) == 0x00) return true; return false; } }
@@ -1038,18 +1067,25 @@ namespace libtysila
 
                 if (this == delegate_row)
                 {
-                    _is_delegate = true;
-                    return true;
-                }
-
-                if (Extends.Value == null)
-                {
                     _is_delegate = false;
                     return false;
                 }
 
-                _is_delegate = GetTypeDef(Extends.ToToken(), ass).IsDelegate(ass);
-                return _is_delegate.Value;
+                TableIndex extends = Extends;
+                while (extends.Value != null)
+                {
+                    TypeDefRow extends_tdr = GetTypeDef(extends.ToToken(), ass);
+                    if (extends_tdr == delegate_row)
+                    {
+                        _is_delegate = true;
+                        return true;
+                    }
+
+                    extends = extends_tdr.Extends;
+                }
+
+                _is_delegate = false;
+                return false;
             }
 
             public List<FieldRow> GetAllInstanceFields(Assembler ass)
@@ -1142,17 +1178,7 @@ namespace libtysila
                 return "TypeDefRow: " + this.TypeFullName;
             }
 
-            public bool IsGeneric {
-                get
-                {
-                    foreach (Metadata.GenericParamRow gpr in m.Tables[(int)Metadata.TableId.GenericParam])
-                    {
-                        if (gpr.Owner.Value == this)
-                            return true;
-                    }
-                    return false;
-                }
-            }
+            public bool IsGeneric { get { return GenericParams != null; } }
 
             public bool IsNested { get { if (_NestedParent == null) return false; return true; } }
         }
@@ -1613,7 +1639,8 @@ namespace libtysila
                         m = meth_sig.m,
                         ParamCount = arg_no + 1,
                         RetType = meth_sig.RetType,
-                        Params = new List<Signature.Param>()
+                        Params = new List<Signature.Param>(),
+                        meth = mdr
                     };
                     foreach (Signature.Param p in meth_sig.Params)
                         new_sig.Params.Add(p);
@@ -1935,6 +1962,7 @@ namespace libtysila
                 Assembler.MethodToCompile ret = new Assembler.MethodToCompile(ass, tableIndex.ToToken(tableIndex.Metadata).ToUInt32());
                 ret.meth = tableIndex.Value as Metadata.MethodDefRow;
                 ret.msig = Signature.ResolveGenericMember(Signature.ParseMethodSig(ret.meth), parent.tsig.Type, containing_meth, ass);
+                ret.msig.Method.meth = ret.meth;
                 ret.type = GetOwningType(ret.meth.m, ret.meth);
                 ret.tsigp = Signature.ResolveGenericParam(new Signature.Param(ret.type, ass), parent.tsig.Type, containing_meth, ass);
                 ret.MetadataToken = tableIndex.ToToken().ToUInt32();
@@ -1961,6 +1989,7 @@ namespace libtysila
 
                 mtc.MetadataToken = tableIndex.ToToken().ToUInt32();
                 mtc.m = tableIndex.Metadata;
+                mtc.msig.Method.meth = mtc.meth;
                 return mtc;
             }
             else if (tableIndex.TableId == TableId.MethodSpec)
@@ -1976,6 +2005,7 @@ namespace libtysila
                     gm.GenMethod = Signature.ResolveGenericMember(base_meth.msig, parent.tsig.Type, gm, ass) as Signature.Method;
                     //gm.GenMethod = base_meth.msig.Method;
                 }
+                ret.msig.Method.meth = ret.meth;
                 ret.type = GetOwningType(ret.meth.m, ret.meth);
                 ret.tsigp = Signature.ResolveGenericParam(new Signature.Param(ret.type, ass), parent.tsig.Type, null, ass);
                 ret.MetadataToken = tableIndex.ToToken().ToUInt32();

@@ -35,6 +35,16 @@ namespace libtysila.x86_64.cil
                 libasm.hardware_location retval = il.stack_vars_after.Pop(ass);
                 ((x86_64_Assembler)ass).Assign(state, il.stack_vars_before, state.cc.ReturnValue, retval, il.stack_after.Pop().CliType(ass), il.il.tybel);
             }
+            if (state.cc.HiddenRetValArgument != null)
+            {
+                libasm.hardware_location retval = il.stack_vars_after.Pop(ass);
+                libasm.hardware_location t1 = ass.GetTemporary(state, Assembler.CliType.native_int);
+                libasm.hardware_location t2 = ass.GetTemporary2(state, Assembler.CliType.native_int);
+                ass.LoadAddress(state, il.stack_vars_before, t1, retval, il.il.tybel);
+                ass.Assign(state, il.stack_vars_before, t2, state.la_stack.GetAddressOf(state.cc.Arguments.Count, ass), Assembler.CliType.native_int,
+                    il.il.tybel);
+                ass.MemCpy(state, il.stack_vars_before, t2, t1, ass.GetSizeOf(state.cc.MethodSig.Method.RetType), il.il.tybel);
+            }
 
             il.il.tybel.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.RestoreCalleeSaved, Val = state.used_locs });
             ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.LEAVE, il.il.tybel);

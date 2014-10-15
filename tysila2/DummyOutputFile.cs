@@ -63,10 +63,10 @@ namespace tysila
         public void AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak)
         { }
 
-        public void AddDataSymbol(int offset, string name)
+        public void AddDataSymbol(int offset, string name, bool is_weak)
         { }
 
-        public void AddRodataSymbol(int offset, string name)
+        public void AddRodataSymbol(int offset, string name, bool is_weak)
         { }
 
         public void AddTextRelocation(int offset, string name, uint rel_type, long value)

@@ -30,7 +30,7 @@ namespace libtysila.x86_64.cil
         public static void tybel_ldloc(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            int p = 0;
+            int p = -1;
 
             switch (il.il.opcode.opcode1)
             {
@@ -47,11 +47,19 @@ namespace libtysila.x86_64.cil
                     p = 3;
                     break;
                 case Opcode.SingleOpcodes.ldloc_s:
-                    p = il.il.inline_int;
+                    p = (int)il.il.inline_uint;
                     break;
-                default:
-                    throw new Exception("Unimplemented ldloc opcode: " + il.ToString());
+                case Opcode.SingleOpcodes.double_:
+                    switch (il.il.opcode.opcode2)
+                    {
+                        case Opcode.DoubleOpcodes.ldloc:
+                            p = (int)il.il.inline_uint;
+                            break;
+                    }
+                    break;
             }
+            if(p == -1)
+                throw new Exception("Unimplemented ldloc opcode: " + il.ToString());
 
             libasm.hardware_location src = state.lv_locs[p];
             libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(state.lvs[p], ass);
@@ -64,7 +72,7 @@ namespace libtysila.x86_64.cil
         public static void tybel_ldloca(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            int p = il.il.inline_int;
+            int p = (int)il.il.inline_uint;
 
             libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(Assembler.CliType.native_int), ass);
             libasm.hardware_location src = state.lv_locs[p];
@@ -77,7 +85,7 @@ namespace libtysila.x86_64.cil
         public static void tybel_stloc(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            int p = 0;
+            int p = -1;
 
             switch (il.il.opcode.opcode1)
             {
@@ -94,11 +102,19 @@ namespace libtysila.x86_64.cil
                     p = 3;
                     break;
                 case Opcode.SingleOpcodes.stloc_s:
-                    p = il.il.inline_int;
+                    p = (int)il.il.inline_uint;
                     break;
-                default:
-                    throw new Exception("Unimplemented stloc opcode: " + il.ToString());
+                case Opcode.SingleOpcodes.double_:
+                    switch (il.il.opcode.opcode2)
+                    {
+                        case Opcode.DoubleOpcodes.stloc:
+                            p = (int)il.il.inline_uint;
+                            break;
+                    }
+                    break;
             }
+            if(p == -1)
+                throw new Exception("Unimplemented stloc opcode: " + il.ToString());
 
             il.stack_after.Pop();
             libasm.hardware_location src = il.stack_vars_after.Pop(ass);

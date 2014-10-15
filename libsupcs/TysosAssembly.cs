@@ -89,6 +89,7 @@ namespace libsupcs
         public DateTime CompileTime { get { return new DateTime(compile_time); } }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern TysosModule ReinterpretAsTysosModule(System.Reflection.Module module);
     }
 }

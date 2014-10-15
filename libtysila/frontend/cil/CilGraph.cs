@@ -142,9 +142,11 @@ namespace libtysila.frontend.cil
             }
         }
 
-        public void Add(InstructionLine il)
+        public CilNode Add(InstructionLine il)
         {
-            Add(new CilNode { il = il });
+            CilNode ret = new CilNode { il = il };
+            Add(ret);
+            return ret;
         }
 
         public override void Add(timple.BaseNode n)
@@ -257,6 +259,7 @@ namespace libtysila.frontend.cil
                         break;
                     case Opcode.InlineVar.InlineI8:
                         line.inline_int64 = LSB_Assembler.FromByteArrayI8S(code, offset);
+                        line.inline_uint64 = LSB_Assembler.FromByteArrayU8S(code, offset);
                         line.inline_val = new byte[8];
                         LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 8);
                         offset += 8;
@@ -269,6 +272,7 @@ namespace libtysila.frontend.cil
                         break;
                     case Opcode.InlineVar.InlineVar:
                         line.inline_int = LSB_Assembler.FromByteArrayI2S(code, offset);
+                        line.inline_uint = LSB_Assembler.FromByteArrayU2S(code, offset);
                         line.inline_val = new byte[2];
                         LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 2);
                         offset += 2;

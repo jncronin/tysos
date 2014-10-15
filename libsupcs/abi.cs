@@ -68,6 +68,13 @@ namespace libsupcs
         public MethodReferenceAliasAttribute(string alias) { }
     }
 
+    /** <summary>Mark the method as a 'ReinterpretAs' method that performs a cast without type checking</summary> */
+    [global::System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    public sealed class ReinterpretAsMethodAttribute : System.Attribute
+    {
+        public ReinterpretAsMethodAttribute() { }
+    }
+
     [global::System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
     public sealed class MethodAliasAttribute : System.Attribute
     {
@@ -222,24 +229,30 @@ namespace libsupcs
     {
         [Bits64Only]
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern ulong ReinterpretAsUlong(object o);
 
         [Bits32Only]
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern uint ReinterpretAsUInt(object o);
 
         [Bits64Only]
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern object ReinterpretAsObject(ulong addr);
 
         [Bits32Only]
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern object ReinterpretAsObject(uint addr);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern System.UIntPtr ReinterpretAsUIntPtr(object o);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern System.IntPtr ReinterpretAsIntPtr(object o);
 
         [Bits64Only]

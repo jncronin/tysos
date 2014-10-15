@@ -477,6 +477,7 @@ namespace libtysila
             foreach (Metadata.MethodDefRow mdr in iface_ttc.type.Methods)
             {
                 Signature.BaseMethod msig = Signature.ResolveGenericMember(mdr.GetSignature(), iface_ttc.tsig.Type, null, ass);
+                msig.Method.meth = mdr;
 
                 Method m = new Method
                 {
@@ -616,6 +617,7 @@ namespace libtysila
                 if (mdr.Name == method.meth.Name)
                 {
                     Signature.BaseMethod test_msig = Signature.ResolveGenericMember(mdr.GetSignature(), parent.tsig.Type, null, ass);
+                    test_msig.Method.meth = mdr;
                     if (Signature.BaseMethodSigCompare(test_msig, method.msig, ass))
                     {
                         /* Return null if the implementation is marked abstract */
@@ -672,6 +674,7 @@ namespace libtysila
             foreach (Metadata.MethodDefRow mdr in mdrs)
             {
                 Signature.BaseMethod msig = Signature.ResolveGenericMember(mdr.GetSignature(), ttc.tsig.Type, null, ass);
+                msig.Method.meth = mdr;
 
                 Method m = new Method
                 {
@@ -1026,6 +1029,49 @@ namespace libtysila
             {
                 return false;
             }
+        }
+    }
+
+    partial class Assembler
+    {
+        internal enum VTTIFields { vtbl_extendsvtblptr, vtbl_ifaceptr, vtbl_typeinfoptr, ti_vtblptr, ti_objid };
+        bool vtti_fields_calculated = false;
+        int vtti_vtbl_extendsvtblptr_offset, vtti_vtbl_ifaceptr_offset, vtti_vtbl_typeinfoptr_offset;
+        int vtti_ti_vtblptr, vtti_ti_objid;
+
+        internal int GetVTTIFieldOffset(VTTIFields field)
+        {
+            if (!vtti_fields_calculated)
+            {
+                // Generate the layout of System.Object to interrogate about its fields
+
+                Assembler.TypeToCompile obj_ttc = Metadata.GetTTC("mscorlib", "System", "Object", this);
+                Layout l = Layout.GetTypeInfoLayout(obj_ttc, this, false, false);
+
+                vtti_ti_vtblptr = l.vtbl_offset;
+                vtti_ti_objid = l.obj_id_offset;
+                vtti_vtbl_typeinfoptr_offset = 0;
+                vtti_vtbl_ifaceptr_offset = GetSizeOfPointer();
+                vtti_vtbl_extendsvtblptr_offset = GetSizeOfPointer() * 2;
+
+                vtti_fields_calculated = true;
+            }
+
+            switch (field)
+            {
+                case VTTIFields.ti_objid:
+                    return vtti_ti_objid;
+                case VTTIFields.ti_vtblptr:
+                    return vtti_ti_vtblptr;
+                case VTTIFields.vtbl_extendsvtblptr:
+                    return vtti_vtbl_extendsvtblptr_offset;
+                case VTTIFields.vtbl_ifaceptr:
+                    return vtti_vtbl_ifaceptr_offset;
+                case VTTIFields.vtbl_typeinfoptr:
+                    return vtti_vtbl_typeinfoptr_offset;
+            }
+
+            throw new NotSupportedException();
         }
     }
 }

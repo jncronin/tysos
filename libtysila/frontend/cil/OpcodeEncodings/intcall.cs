@@ -22,6 +22,14 @@
 using System;
 using System.Collections.Generic;
 
+namespace libtysila
+{
+    partial class Assembler
+    {
+        protected internal virtual void InitArchIntCalls(Dictionary<string, libtysila.frontend.cil.Opcode.TybelEncodeFunc> int_calls) { }
+    }
+}
+
 namespace libtysila.frontend.cil.OpcodeEncodings
 {
     partial class call
@@ -34,6 +42,52 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             int_calls["_Zu1SM_0_9get_Chars_Rc_P2u1ti"] = string_getChars;
             int_calls["_Zu1SM_0_10get_Length_Ri_P1u1t"] = string_getLength;
+
+            int_calls["_ZX15ArrayOperationsM_0_17GetArrayClassSize_Ri_P0"] = get_array_class_size;
+            int_calls["_ZX15ArrayOperationsM_0_19GetInnerArrayOffset_Ri_P0"] = get_array_inner_array_offset;
+            int_calls["_ZX15ArrayOperationsM_0_14GetSizesOffset_Ri_P0"] = get_array_sizes_offset;
+            int_calls["_ZX15ArrayOperationsM_0_17GetLoboundsOffset_Ri_P0"] = get_array_lobounds_offset;
+            int_calls["_ZX15ArrayOperationsM_0_17GetElemTypeOffset_Ri_P0"] = get_array_elem_type_offset;
+            int_calls["_ZX15ArrayOperationsM_0_25GetInnerArrayLengthOffset_Ri_P0"] = get_array_inner_array_length_offset;
+            int_calls["_ZX15ArrayOperationsM_0_17GetElemSizeOffset_Ri_P0"] = get_array_elem_size_offset;
+            int_calls["_ZX15ArrayOperationsM_0_13GetRankOffset_Ri_P0"] = get_array_rank_offset;
+            int_calls["_ZX16MemoryOperationsM_0_16GetInternalArray_RPv_P1W6System5Array"] = get_array_internal_array_Pv_u1A;
+
+            int_calls["_ZX15OtherOperationsM_0_3Mul_Ru1I_P2u1Iu1I"] = mul_I;
+            int_calls["_ZX15OtherOperationsM_0_3Mul_Ru1U_P2u1Uu1U"] = mul_U;
+            int_calls["_ZX15OtherOperationsM_0_3Sub_Ru1I_P2u1Iu1I"] = sub_I;
+            int_calls["_ZX15OtherOperationsM_0_3Sub_Ru1U_P2u1Uu1U"] = sub_U;
+            int_calls["_ZX15OtherOperationsM_0_3Add_Ru1I_P2u1Iu1I"] = add_I;
+            int_calls["_ZX15OtherOperationsM_0_3Add_Ru1U_P2u1Uu1U"] = add_U;
+
+            int_calls["_ZX15OtherOperationsM_0_14GetPointerSize_Ri_P0"] = get_pointer_size;
+            int_calls["_ZX9TysosTypeM_0_14GetSizeAsField_Ri_P1u1t"] = null;
+            int_calls["_ZX9TysosTypeM_0_21GetSizeAsArrayElement_Ri_P1u1t"] = null;
+
+            int_calls["_ZX15OtherOperationsM_0_5CallI_Rv_P1u1U"] = call_I;
+            int_calls["_ZX15OtherOperationsM_0_5CallI_Rv_P1y"] = call_I;
+            int_calls["_ZX15OtherOperationsM_0_5CallI_Rv_P1i"] = call_I;
+
+            int_calls["_ZX15OtherOperationsM_0_4Halt_Rv_P0"] = halt;
+
+            int_calls["_ZX15ClassOperationsM_0_27GetVtblExtendsVtblPtrOffset_Ru1U_P0"] = get_vtbl_extendsvtblptr_offset;
+            int_calls["_ZX15ClassOperationsM_0_26GetVtblInterfacesPtrOffset_Ru1U_P0"] = get_vtbl_ifaceptr_offset;
+            int_calls["_ZX15ClassOperationsM_0_24GetVtblTypeInfoPtrOffset_Ru1U_P0"] = get_vtbl_typeinfoptr_offset;
+            int_calls["_ZX15ClassOperationsM_0_22GetObjectIdFieldOffset_Ru1U_P0"] = get_ti_objid_offset;
+            int_calls["_ZX15ClassOperationsM_0_18GetVtblFieldOffset_Ru1U_P0"] = get_ti_vtbl_offset;
+
+            int_calls["_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Uy"] = poke_U8;
+            int_calls["_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Uj"] = poke_U4;
+            int_calls["_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Ut"] = poke_U2;
+            int_calls["_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Uh"] = poke_U1;
+            int_calls["_ZX16MemoryOperationsM_0_6PeekU8_Ry_P1u1U"] = peek_U8;
+            int_calls["_ZX16MemoryOperationsM_0_6PeekU4_Rj_P1u1U"] = peek_U4;
+            int_calls["_ZX16MemoryOperationsM_0_6PeekU2_Rt_P1u1U"] = peek_U2;
+            int_calls["_ZX16MemoryOperationsM_0_6PeekU1_Rh_P1u1U"] = peek_U1;
+
+            int_calls["_ZX15OtherOperationsM_0_16GetUsedStackSize_Ri_P0"] = get_used_stack_size;
+
+            ass.InitArchIntCalls(int_calls);
         }
 
         private static bool enc_intcall(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
@@ -54,7 +108,48 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             if (int_calls.TryGetValue(mangled_name, out enc_func))
             {
+                if (enc_func == null)
+                    throw new Assembler.AssemblerException("call: internal call " + call_mtc.ToString() + " not currently implemented",
+                        il.il, mtc);
                 enc_func(il, ass, mtc, ref next_block, state, attrs);
+                return true;
+            }
+
+            /* Handle ReinterpretAs functions */
+            if (call_mtc.meth.CustomAttributes.ContainsKey("libsupcs.ReinterpretAsMethod"))
+            {
+                Signature.Param p_from = call_mtc.msig.Method.Params[0];
+                Signature.Param p_to = call_mtc.msig.Method.RetType;
+
+                il.stack_after.Pop();
+                il.stack_after.Push(p_to);
+
+                libasm.hardware_location loc_from = il.stack_vars_after.Pop(ass);
+                libasm.hardware_location loc_to = il.stack_vars_after.GetAddressFor(p_to, ass);
+                ass.Assign(state, il.stack_vars_before, loc_to, loc_from, p_to.CliType(ass), il.il.tybel);
+                return true;
+            }
+
+            /* Handle GetArg functions */
+            if (call_mtc.ToString().StartsWith("_ZX14CastOperationsM_0_") && call_mtc.ToString().Contains("GetArg"))
+            {
+                /* Strip out the argument number */
+                List<char> arg_no = new List<char>();
+                int idx = "GetArg".Length;
+                while (Char.IsDigit(call_mtc.meth.Name[idx]))
+                {
+                    arg_no.Add(call_mtc.meth.Name[idx]);
+                    idx++;
+                }
+                string arg_no_s = new string(arg_no.ToArray());
+                int arg_no_i = Int32.Parse(arg_no_s);
+
+                libasm.hardware_location src = state.la_locs[arg_no_i];
+                libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(state.las[arg_no_i], ass);
+
+                ass.Assign(state, il.stack_vars_before, dest, src, state.las[arg_no_i].CliType(ass), il.il.tybel);
+
+                il.stack_after.Push(state.las[arg_no_i]);
                 return true;
             }
             return false;
@@ -74,8 +169,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
         static void string_getLength(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            libasm.hardware_location loc_str = il.stack_vars_before.Pop(ass);
-            Signature.Param p_str = il.stack_before.Pop();
+            libasm.hardware_location loc_str = il.stack_vars_after.Pop(ass);
+            Signature.Param p_str = il.stack_after.Pop();
 
             libasm.hardware_location t1 = ass.GetTemporary(state);
 
@@ -91,11 +186,11 @@ namespace libtysila.frontend.cil.OpcodeEncodings
         static void string_getChars(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            libasm.hardware_location loc_idx = il.stack_vars_before.Pop(ass);
-            libasm.hardware_location loc_str = il.stack_vars_before.Pop(ass);
+            libasm.hardware_location loc_idx = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_str = il.stack_vars_after.Pop(ass);
 
-            Signature.Param p_idx = il.stack_before.Pop();
-            Signature.Param p_str = il.stack_before.Pop();
+            Signature.Param p_idx = il.stack_after.Pop();
+            Signature.Param p_str = il.stack_after.Pop();
 
             libasm.hardware_location t1 = ass.GetTemporary(state);
             libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.Char), ass);
@@ -111,41 +206,437 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after.Push(new Signature.Param(BaseType_Type.Char));
         }
 
-        static void string_getChars(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,
-            ref int next_block, List<vara> la_vars, List<vara> lv_vars, List<Signature.Param> las, List<Signature.Param> lvs,
-            Assembler.MethodAttributes attrs)
+        static void get_array_class_size(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
-            // char get_Chars(int32 idx)
-            // if(idx >= length) throw IndexOutOfRangeException
-            // if(idx < 0) throw IndexOutOfRangeException
-            // addr = obj + obj.ClassSize + idx * char.Size
-            // retval = peek_u2(addr)
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
 
-            vara v_str = il.stack_vars_before[il.stack_before.Count - 2];
-            vara v_idx = il.stack_vars_before[il.stack_before.Count - 1];
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetArrayFieldOffset(Assembler.ArrayFields.array_type_size),
+                Assembler.CliType.int32, il.il.tybel);
 
-            vara v_length = vara.Logical(next_variable++, Assembler.CliType.int32);
-            vara v_addr = vara.Logical(next_variable++, Assembler.CliType.native_int);
-            vara v_offset = vara.Logical(next_variable++, Assembler.CliType.int32);
-            vara v_ret = vara.Logical(next_variable++, Assembler.CliType.int32);
+            il.stack_after.Push(p_dest);
+        }
 
-            //enc_checknullref(i, v_str);
+        static void get_array_inner_array_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
 
-            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.assign), v_length, vara.ContentsOf(v_str, ass.GetStringFieldOffset(Assembler.StringFields.length), Assembler.CliType.int32), vara.Void()));
-            il.tacs.Add(new timple.TimpleThrowBrNode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.throwge_un), v_idx, v_length, vara.Label("sthrow", false), vara.Const(Assembler.throw_IndexOutOfRangeException, Assembler.CliType.int32)));
-            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.mul), v_offset, v_idx, vara.Const(2, Assembler.CliType.int32)));
-            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.add), v_offset, v_offset, vara.Const(ass.GetStringFieldOffset(Assembler.StringFields.data_offset), Assembler.CliType.int32)));
-            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.conv_i4_uzx), v_addr, v_offset, vara.Void()));
-            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), v_addr, v_addr, v_str));
-            il.tacs.Add(new timple.TimpleNode(ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.peek_u2), v_ret, v_addr, vara.Void()));
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array),
+                Assembler.CliType.int32, il.il.tybel);
 
-            il.stack_vars_after.Pop();
-            il.stack_vars_after.Pop();
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_array_sizes_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetArrayFieldOffset(Assembler.ArrayFields.sizes),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_array_lobounds_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetArrayFieldOffset(Assembler.ArrayFields.lobounds),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_array_elem_type_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetArrayFieldOffset(Assembler.ArrayFields.elemtype),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_array_inner_array_length_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_array_elem_size_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetArrayFieldOffset(Assembler.ArrayFields.elem_size),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_array_rank_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetArrayFieldOffset(Assembler.ArrayFields.rank),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_array_internal_array_Pv_u1A(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            libasm.hardware_location loc_array = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(
+                new Signature.UnmanagedPointer { _ass = ass, BaseType = new Signature.BaseType(BaseType_Type.Void) }, ass);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            if (!(loc_array is libasm.register))
+            {
+                libasm.hardware_location t1 = ass.GetTemporary(state, Assembler.CliType.native_int);
+                ass.Assign(state, il.stack_vars_before, t1, loc_array, Assembler.CliType.native_int, il.il.tybel);
+                loc_array = t1;
+            }
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, 
+                new libasm.hardware_contentsof { base_loc = loc_array, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.array_type_size), 
+                    size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void mul_I(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
             il.stack_after.Pop();
             il.stack_after.Pop();
 
-            il.stack_vars_after.Push(v_ret);
-            il.stack_after.Push(new Signature.Param(BaseType_Type.Char));
+            libasm.hardware_location loc_b = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_a = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.NumOp(state, il.stack_vars_before, loc_dest, loc_a, loc_b, ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.mul), il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void mul_U(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+
+            libasm.hardware_location loc_b = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_a = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.U);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.NumOp(state, il.stack_vars_before, loc_dest, loc_a, loc_b, ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.mul_un), il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void add_I(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+
+            libasm.hardware_location loc_b = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_a = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.NumOp(state, il.stack_vars_before, loc_dest, loc_a, loc_b, ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void add_U(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+
+            libasm.hardware_location loc_b = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_a = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.U);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.NumOp(state, il.stack_vars_before, loc_dest, loc_a, loc_b, ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.add), il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void sub_I(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+
+            libasm.hardware_location loc_b = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_a = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.NumOp(state, il.stack_vars_before, loc_dest, loc_a, loc_b, ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.sub), il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void sub_U(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+
+            libasm.hardware_location loc_b = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_a = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.U);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.NumOp(state, il.stack_vars_before, loc_dest, loc_a, loc_b, ThreeAddressCode.Op.OpI(ThreeAddressCode.OpName.sub), il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_pointer_size(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetSizeOfPointer(),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void call_I(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            libasm.hardware_location loc_target = il.stack_vars_after.Pop(ass);
+
+            if (!(loc_target is libasm.register))
+            {
+                libasm.hardware_location t1 = ass.GetTemporary(state, Assembler.CliType.native_int);
+                ass.Assign(state, il.stack_vars_before, t1, loc_target, Assembler.CliType.native_int, il.il.tybel);
+                loc_target = t1;
+            }
+
+            ass.Call(state, il.stack_vars_before, loc_target, null, new libasm.hardware_location[] { }, ass.callconv_null, il.il.tybel);
+        }
+
+        static void halt(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* This should be replaced in arch-specific assemblers to disable interrupts, pause cpu etc */
+
+            int l_halt = state.next_blk++;
+            string s_halt = "L" + l_halt.ToString();
+            il.il.tybel.Add(new tybel.LabelNode(s_halt, true));
+            ass.Br(state, il.stack_vars_before, new libasm.hardware_addressoflabel(s_halt, false), il.il.tybel);
+        }
+
+        static void get_vtbl_extendsvtblptr_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetVTTIFieldOffset(Assembler.VTTIFields.vtbl_extendsvtblptr),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_vtbl_ifaceptr_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetVTTIFieldOffset(Assembler.VTTIFields.vtbl_ifaceptr),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_vtbl_typeinfoptr_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetVTTIFieldOffset(Assembler.VTTIFields.vtbl_typeinfoptr),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_ti_objid_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetVTTIFieldOffset(Assembler.VTTIFields.ti_objid),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void get_ti_vtbl_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetVTTIFieldOffset(Assembler.VTTIFields.ti_vtblptr),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void peek_U1(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.U1);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Peek(state, il.stack_vars_before, loc_dest, loc_addr, 1, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void peek_U2(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.U2);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Peek(state, il.stack_vars_before, loc_dest, loc_addr, 2, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void peek_U4(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.U4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Peek(state, il.stack_vars_before, loc_dest, loc_addr, 4, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void peek_U8(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.U8);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Peek(state, il.stack_vars_before, loc_dest, loc_addr, 8, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void poke_U1(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+            libasm.hardware_location loc_v = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            ass.Poke(state, il.stack_vars_before, loc_addr, loc_v, 1, il.il.tybel);
+        }
+
+        static void poke_U2(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+            libasm.hardware_location loc_v = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            ass.Poke(state, il.stack_vars_before, loc_addr, loc_v, 2, il.il.tybel);
+        }
+
+        static void poke_U4(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+            libasm.hardware_location loc_v = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            ass.Poke(state, il.stack_vars_before, loc_addr, loc_v, 4, il.il.tybel);
+        }
+
+        static void poke_U8(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+            libasm.hardware_location loc_v = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_addr = il.stack_vars_after.Pop(ass);
+
+            ass.Poke(state, il.stack_vars_before, loc_addr, loc_v, 8, il.il.tybel);
+        }
+
+        static void get_used_stack_size(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("sthrow", false), null,
+                new libasm.hardware_location[] { Assembler.throw_NotImplementedException }, ass.callconv_sthrow, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
         }
     }
 }

@@ -170,7 +170,7 @@ namespace libtysila
                 int ai_top = data_sect.Count;
 
                 string mangled_assembly_name = Mangler2.MangleAssembly(m, this);
-                of.AddDataSymbol(ai_top, mangled_assembly_name);
+                of.AddDataSymbol(ai_top, mangled_assembly_name, false);
 
                 // Create the field info struct in memory
                 byte[] ai = new byte[tysos_assembly_l.ClassSize];
@@ -227,7 +227,7 @@ namespace libtysila
                 IList<byte> data_sect = of.GetData();
                 int mdi_top = data_sect.Count;
 
-                of.AddDataSymbol(mdi_top, Mangler2.MangleModule(m, this));
+                of.AddDataSymbol(mdi_top, Mangler2.MangleModule(m, this), false);
 
                 // Create the field info struct in memory
                 byte[] mdi = new byte[tysos_module_l.ClassSize];

@@ -105,6 +105,10 @@ namespace libtysila.tybel
                     }
                     else
                     {
+                        if (rr.Target.StartsWith("L"))
+                        {
+                            throw new Exception("local label: " + rr.Target + " not found");
+                        }
                         relocs.Add(new libasm.RelocationBlock
                         {
                             Offset = code.Count,

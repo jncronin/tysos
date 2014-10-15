@@ -284,14 +284,19 @@ namespace Elf32
                 ehdr.e_syms.name_to_sym.Add(name, ehdr.e_syms.defined_syms.Count - 1);
         }
 
-        public void AddDataSymbol(int offset, string name)
+        public void AddDataSymbol(int offset, string name, bool is_weak)
         {
+            byte st_info = 0;
+            if (is_weak)
+                st_info |= Elf32_Symbol_Shdr.Elf32_Sym.BindingFlags.STB_WEAK;
+            else
+                st_info |= Elf32_Symbol_Shdr.Elf32_Sym.BindingFlags.STB_GLOBAL;
+
             ehdr.e_syms.defined_syms.Add(new Elf32_Symbol_Shdr.Elf32_Sym
             {
                 name = name,
                 st_name = ehdr.e_symstr.GetOffset(name),
-                st_info = Elf32_Symbol_Shdr.Elf32_Sym.BindingFlags.STB_GLOBAL |
-                Elf32_Symbol_Shdr.Elf32_Sym.SymbolTypes.STT_OBJECT,
+                st_info = (byte)(st_info | Elf32_Symbol_Shdr.Elf32_Sym.SymbolTypes.STT_OBJECT),
                 st_shndx = ehdr.data.index,
                 st_value = Convert.ToUInt32(offset),
                 st_size = 4,
@@ -300,14 +305,19 @@ namespace Elf32
             ehdr.e_syms.name_to_sym.Add(name, ehdr.e_syms.defined_syms.Count - 1);
         }
 
-        public void AddRodataSymbol(int offset, string name)
+        public void AddRodataSymbol(int offset, string name, bool is_weak)
         {
+            byte st_info = 0;
+            if (is_weak)
+                st_info |= Elf32_Symbol_Shdr.Elf32_Sym.BindingFlags.STB_WEAK;
+            else
+                st_info |= Elf32_Symbol_Shdr.Elf32_Sym.BindingFlags.STB_GLOBAL;
+
             ehdr.e_syms.defined_syms.Add(new Elf32_Symbol_Shdr.Elf32_Sym
             {
                 name = name,
                 st_name = ehdr.e_symstr.GetOffset(name),
-                st_info = Elf32_Symbol_Shdr.Elf32_Sym.BindingFlags.STB_GLOBAL |
-                Elf32_Symbol_Shdr.Elf32_Sym.SymbolTypes.STT_OBJECT,
+                st_info = (byte)(st_info | Elf32_Symbol_Shdr.Elf32_Sym.SymbolTypes.STT_OBJECT),
                 st_shndx = ehdr.rodata.index,
                 st_value = Convert.ToUInt32(offset),
                 st_size = 4,
@@ -342,7 +352,7 @@ namespace Elf32
             string[] s_files = s_filename.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
             string s_file = string.Join("_", s_files);
 
-            AddRodataSymbol(GetRodata().Count, "_static_fields_" + libtysila.Mangler2.EncodeString(s_file));
+            AddRodataSymbol(GetRodata().Count, "_static_fields_" + libtysila.Mangler2.EncodeString(s_file), false);
             foreach (static_fields_pointer sp in static_fields)
             {
                 AddRodataRelocation(GetRodata().Count, sp.static_object, ass.DataToDataRelocType(), 0);

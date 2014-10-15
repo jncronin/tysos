@@ -99,7 +99,8 @@ namespace tysila
                 return -1;
             }
 
-            libtysila.Assembler ass = libtysila.Assembler.CreateAssembler(arch, new FileSystemFileLoader(), null, Program.options);
+            WholeFileRequestor req = new WholeFileRequestor();
+            libtysila.Assembler ass = libtysila.Assembler.CreateAssembler(arch, new FileSystemFileLoader(), req, Program.options);
             comment += "arch: " + arch.ToString() + nl;
             comment += "comp-date: " + DateTime.Now.ToLongDateString() + " " + DateTime.Now.ToLongTimeString() + nl;
             comment += "endtysila" + nl;
@@ -177,201 +178,8 @@ namespace tysila
                     return -1;
                 }
 
-                /* Add in all symbols specified in the files referenced on the --exclude command line to the Requestor
-                 * implying they have already been compiled and do not need to be done so again */
-                foreach (string exclude_file in exclude_files)
-                {
-                    StreamReader sr = new StreamReader(exclude_file);
-
-                    while (!sr.EndOfStream)
-                    {
-                        string mangled_name = sr.ReadLine();
-
-                        if (mangled_name.StartsWith("_"))
-                        {
-                            try
-                            {
-                                Mangler2.ObjectToMangle obj = Mangler2.DemangleName(mangled_name, ass);
-
-                                switch (obj.ObjectType)
-                                {
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.FieldInfo:
-                                        throw new Exception("Discrete FieldInfo objects are no longer supported");
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.Method:
-                                        ass.Requestor.ExcludeMethod(Mangler2.GetMethod(obj, ass));
-                                        break;
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.MethodInfo:
-                                        ass.Requestor.ExcludeGenericMethodInfo(Mangler2.GetMethod(obj, ass));
-                                        break;
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.TypeInfo:
-                                        ass.Requestor.ExcludeTypeInfo(Mangler2.GetType(obj, ass));
-                                        break;
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.Assembly:
-                                        ass.Requestor.ExcludeAssembly(ass.FindAssembly(obj.ObjectName));
-                                        break;
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.Module:
-                                        ass.Requestor.ExcludeModule(ass.FindAssembly(obj.ObjectName));
-                                        break;
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.NotFound:
-                                        break;
-                                }
-                            }
-                            catch (Exception) { }
-                        }
-                    }
-
-                    sr.Close();
-                }
-
-                // Limit to only compiling types in the assembly listed on the command line, if requested
-                if (requested_module_only)
-                    ass.Requestor.ModulesToAssemble.Add(m);
-
-                /* If whole-module is specified then we need to compile all non-generic types, and
-                 *  all non-generic modules within those types.
-                 *  
-                 * In addition, we need to add each string contained in _all_ modules to the StringTable */
-
-                // As each table row is unique, and the requested method list is empty, skip checking for duplicates in Requestor
-                //ass.Requestor.skip_checks = true;
-                if (whole_module)
-                {
-                    List<Metadata.TypeDefRow> non_generic_types = new List<Metadata.TypeDefRow>();
-                    List<Metadata.MethodDefRow> non_generic_meths = new List<Metadata.MethodDefRow>();
-                    foreach (Metadata.TypeDefRow tdr in m.Tables[(int)Metadata.TableId.TypeDef])
-                    {
-                        if (!tdr.IsGeneric)
-                        {
-                            non_generic_types.Add(tdr);
-                            Assembler.TypeToCompile ttc = new Assembler.TypeToCompile(tdr, ass);
-
-                            if (options.EnableRTTI)
-                            {
-                                //if (tdr.IsValueType(ass))
-                                //    ttc.tsig = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = ttc.tsig.Type }, ass);
-
-                                ass.Requestor.RequestTypeInfo(ttc);
-                            }
-
-                            for (Metadata.TableIndex ti = tdr.MethodList; ti < Metadata.GetLastMethod(tdr); ti++)
-                            {
-                                if (ti.TableId == Metadata.TableId.MethodDef)
-                                {
-                                    Metadata.MethodDefRow mdr = ti.Value as Metadata.MethodDefRow;
-                                    if ((mdr.Signature[0] & 0x10) == 0)
-                                    {
-                                        non_generic_meths.Add(mdr);
-                                        //Signature.BaseMethod bmeth = Signature.ParseMethodDefSig(m, mdr.Signature);
-                                        Signature.BaseMethod bmeth = mdr.GetSignature();
-                                        //Assembler.TypeToCompile ttc = new Assembler.TypeToCompile(mdr.owning_type, ass);
-                                        Assembler.MethodToCompile mtc = new Assembler.MethodToCompile { _ass = ass, meth = mdr, msig = bmeth, tsigp = ttc.tsig, type = ttc.type, m = tdr.m, MetadataToken = ti.ToToken().ToUInt32() };
-                                        //if(mtc.type.IsValueType(ass))
-                                        //    mtc.tsigp = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = mtc.tsig }, ass);
-                                        ass.Requestor.RequestMethod(mtc);
-                                        //ass.Requestor.RequestMethodInfo(mtc);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Add in strings for the non compiled methods
-                    // TODO
-                    IEnumerable<Metadata.MethodDefRow> non_compiled_meths = util.Except<Metadata.MethodDefRow>((Metadata.MethodDefRow[])m.Tables[(int)Metadata.TableId.MethodDef], non_generic_meths);
-                    /*foreach (Metadata.MethodDefRow ncm in non_compiled_meths)
-                    {
-                        byte[] impl = ncm.Body.Body;
-                        if (impl != null)
-                        {
-                            List<Assembler.cfg_node> nodes = ass.BuildControlGraph(impl, m, new Assembler.AssemblerState(), new Assembler.MethodToCompile(ass, ncm, null, ncm.owning_type, null));
-                            foreach (Assembler.cfg_node node in nodes)
-                            {
-                                foreach (Assembler.InstructionLine inst in node.instrs)
-                                {
-                                    if (inst.opcode.opcode1 == Assembler.SingleOpcodes.ldstr)
-                                        m.StringTable.GetStringAddress(((Metadata.UserStringHeapItem)inst.inline_tok.Value).Value, ass);
-                                }
-                            }
-                        }
-                    }*/
-                }
-                // Turn duplicate checks back on
-                ass.Requestor.SkipChecks(false);
-
-                // Clear the ModulesToAssemble list - some extra ones may be specified in other modules
-                ass.Requestor.ModulesToAssemble.Clear();
-
-                // Add in objects specified in '--include' options
-                foreach (string include_file in include_files)
-                {
-                    StreamReader sr = new StreamReader(include_file);
-
-                    while (!sr.EndOfStream)
-                    {
-                        string mangled_name = sr.ReadLine();
-
-                        if (mangled_name.StartsWith("_"))
-                        {
-                            try
-                            {
-                                Mangler2.ObjectToMangle obj = Mangler2.DemangleName(mangled_name, ass);
-
-                                switch (obj.ObjectType)
-                                {
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.Method:
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.MethodInfo:
-                                        extra_methods.Add(mangled_name);
-                                        break;
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.TypeInfo:
-                                        extra_typeinfos.Add(mangled_name);
-                                        break;
-                                    case Mangler2.ObjectToMangle.ObjectTypeType.NotFound:
-                                        WriteLine("Object: " + mangled_name + ", specified in: " + include_file +
-                                            " was not found");
-                                        return -1;
-                                    default:
-                                        WriteLine("Objects of type " + obj.ObjectType.ToString() + " are not permitted in " +
-                                            " include files (" + mangled_name + " specified in " + include_file + ")");
-                                        return -1; 
-                                }
-                            }
-                            catch (Exception) { }
-                        }
-                    }
-
-                    sr.Close();
-                }
-
-
-                // Add in extra types, methods and typeinfos requested on the command line
-                ass.Options.InExtraAdd = true;
-                foreach (string e in extra_types)
-                {
-                    Assembler.TypeToCompile ttc = Mangler2.DemangleType(e, ass);
-                    ass.Requestor.RequestTypeInfo(ttc);
-
-                    Layout l = Layout.GetLayout(ttc, ass);
-                    foreach (Layout.Method vm in l.VirtualMethods)
-                    {
-                        if (vm.implementation_mtc.HasValue)
-                            ass.Requestor.RequestMethod(vm.implementation_mtc.Value);
-                    }
-                }
-                foreach (string e in extra_typeinfos)
-                {
-                    Assembler.TypeToCompile ttc = Mangler2.DemangleType(e, ass);
-                    ass.Requestor.RequestTypeInfo(ttc);
-                }
-                foreach (string e in extra_methods)
-                {
-                    Assembler.MethodToCompile mtc = Mangler2.DemangleMethod(e, ass);
-                    ass.Requestor.RequestMethod(mtc);
-                }
-                ass.Options.InExtraAdd = false;
-
-                // Limit to only compiling types in the assembly listed on the command line, if requested
-                if (requested_module_only)
-                    ass.Requestor.ModulesToAssemble.Add(m);
+                // Add the modules non-generic types and methods to the list of those to compile
+                req.RequestWholeModule(m);
 
                 // Find the entry point
                 if (f.GetStartToken() != 0x0)
@@ -389,29 +197,7 @@ namespace tysila
                         m = tdr.m,
                         MetadataToken = ept.ToUInt32()
                     };
-                    ass.Requestor.RequestMethod(start_point);
                     ew.SetEntryPoint(Mangler2.MangleMethod(start_point, ass));
-                }
-
-                // Identify those methods with the always compile attribute
-                foreach (Metadata.CustomAttributeRow car in m.Tables[(int)Metadata.TableId.CustomAttribute])
-                {
-                    Assembler.MethodToCompile camtc = Metadata.GetMTC(car.Type, new Assembler.TypeToCompile(), null, ass);
-
-                    string caname = Mangler2.MangleMethod(camtc, ass);
-                    if (caname == "_ZX22AlwaysCompileAttributeM_0_7#2Ector_Rv_P1u1t")
-                    {
-                        Metadata.MethodDefRow mdr = Metadata.GetMethodDef(car.Parent.ToToken(), ass);
-                        Metadata.TypeDefRow tdr = Metadata.GetOwningType(mdr.m, mdr);
-                        ass.Requestor.RequestMethod(new Assembler.MethodToCompile
-                        {
-                            _ass = ass,
-                            meth = mdr,
-                            msig = Signature.ParseMethodDefSig(m, mdr.Signature, ass),
-                            type = tdr,
-                            tsigp = new Signature.Param(new Token(tdr), ass)
-                        });
-                    }
                 }
 
                 // Do the actual compilation

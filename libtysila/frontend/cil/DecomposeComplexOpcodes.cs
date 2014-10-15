@@ -70,12 +70,16 @@ namespace libtysila.frontend.cil
                         next.Prev[next.Prev.IndexOf(n)] = last;
                     }
 
+                    if(n.replaced_by.Count > 0)
+                        n.replaced_by[0].il_label = n.il_label;
+
                     for (int i = 0; i < n.replaced_by.Count; i++)
                     {
                         if (i != 0)
                         {
                             n.replaced_by[i].Prev.Clear();
                             n.replaced_by[i].Prev.Add(n.replaced_by[i - 1]);
+                            n.replaced_by[i].il_label = next_block++;
                         }
                         if (i != (n.replaced_by.Count - 1))
                         {

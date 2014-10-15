@@ -33,6 +33,7 @@ namespace libsupcs.x86_64
         ulong cur_rip;
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         private static extern libsupcs.TysosMethod ReinterpretAsMethodInfo(ulong addr);
 
         public Unwinder()

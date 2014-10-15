@@ -39,6 +39,15 @@ namespace libtysila
 
         public bool CallerCleansStack = true;
 
+        public string Name;
+
+        public override string ToString()
+        {
+            if (Name != null)
+                return Name;
+            return base.ToString();
+        }
+
         //public hardware_location[] CalleePreservesLocations = new hardware_location[] { };
         public List<hardware_location> CalleePreservesLocations = new List<hardware_location>();
         public List<hardware_location> CallerPreservesLocations = new List<hardware_location>();
@@ -49,6 +58,7 @@ namespace libtysila
         public hardware_location ReturnValue;
 
         public List<ArgumentLocation> Arguments;
+        public hardware_location HiddenRetValArgument;
 
         public int StackSpaceUsed = 0;
 
@@ -265,7 +275,7 @@ namespace libtysila
             }
         }
 
-        internal CallConv callconv_memsetw
+        internal CallConv callconv_wmemset
         {
             get
             {
@@ -277,7 +287,15 @@ namespace libtysila
         {
             get
             {
-                return MakeStaticCall("default", new Signature.Param(BaseType_Type.I4), new List<Signature.Param> { new Signature.Param(BaseType_Type.I4) }, ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.call));
+                return MakeStaticCall("default", new Signature.Param(BaseType_Type.I4), new List<Signature.Param> { new Signature.Param(BaseType_Type.I) }, ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.call));
+            }
+        }
+
+        internal CallConv callconv_strlen
+        {
+            get
+            {
+                return MakeStaticCall("default", new Signature.Param(BaseType_Type.I4), new List<Signature.Param> { new Signature.Param(BaseType_Type.I) }, ThreeAddressCode.Op.OpI4(ThreeAddressCode.OpName.call));
             }
         }
 
@@ -286,6 +304,14 @@ namespace libtysila
             get
             {
                 return MakeStaticCall("default", new Signature.Param(BaseType_Type.Void), new List<Signature.Param> { new Signature.Param(BaseType_Type.I), new Signature.Param(BaseType_Type.I), new Signature.Param(BaseType_Type.I4) }, ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call));
+            }
+        }
+
+        internal CallConv callconv_null
+        {
+            get
+            {
+                return MakeStaticCall("default", new Signature.Param(BaseType_Type.Void), new List<Signature.Param> { }, ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call));
             }
         }
 

@@ -7,6 +7,7 @@ MSCORLIB=../mono/corlib/mscorlib.obj
 LIBTYSILA=../libtysila/libtysila.obj
 LIBSUPCS=../libsupcs/libsupcs.a
 LIBSTDCS=../libstdcs/libstdcs.a
+LIBASM=../libasm/libasm.o
 LD=x86_64-elf-ld
 BZIP2=bzip2
 
@@ -63,6 +64,9 @@ $(LIBSUPCS):
 $(LIBSTDCS):
 	cd ../libstdcs && make
 
+$(LIBASM):
+	cd ../libasm && make
+
 $(MSCORLIB_SYMS): $(MSCORLIB)
 	cd ../mono/corlib && make
 
@@ -75,8 +79,8 @@ $(LIBTYSILA_SYMS): $(LIBTYSILA)
 $(GUI_SYMS):
 	./make_gui_syms.sh
 
-$(KERNEL): $(KERNELOBJ) halt.o cpu.o undefined.o x86_64/switcher.o x86_64/exceptions.o $(MSCORLIB) $(LIBTYSILA) $(LIBSUPCS) $(LIBSTDCS) $(GC_x86_64) $(ELFHASH)
-	$(LD) $(LDFLAGS) -o $(KERNEL) $(KERNELOBJ) halt.o cpu.o undefined.o x86_64/switcher.o x86_64/exceptions.o $(LIBTYSILA) $(MSCORLIB) $(LIBSTDCS) $(LIBSUPCS) $(GC_x86_64) $(LDADD)
+$(KERNEL): $(KERNELOBJ) halt.o cpu.o undefined.o x86_64/switcher.o x86_64/exceptions.o $(MSCORLIB) $(LIBTYSILA) $(LIBSUPCS) $(LIBSTDCS) $(GC_x86_64) $(ELFHASH) $(LIBASM)
+	$(LD) $(LDFLAGS) -o $(KERNEL) $(KERNELOBJ) halt.o cpu.o undefined.o x86_64/switcher.o x86_64/exceptions.o $(LIBASM) $(LIBTYSILA) $(MSCORLIB) $(LIBSTDCS) $(LIBSUPCS) $(GC_x86_64) $(LDADD)
 	x86_64-elf-objdump -d $(KERNEL) > ../tysos.txt
 	x86_64-elf-objdump -d $(KERNELOBJ) > ../tysos.obj.txt
 	$(ELFHASH) -v1 -32 $(KERNEL)

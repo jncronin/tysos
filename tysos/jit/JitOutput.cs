@@ -102,12 +102,12 @@ namespace tysos.jit
             text_sym.Add(name, offset);
         }
 
-        public void AddDataSymbol(int offset, string name)
+        public void AddDataSymbol(int offset, string name, bool is_weak)
         {
             data_sym.Add(name, offset);
         }
 
-        public void AddRodataSymbol(int offset, string name)
+        public void AddRodataSymbol(int offset, string name, bool is_weak)
         {
             rodata_sym.Add(name, offset);
         }

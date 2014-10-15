@@ -40,7 +40,7 @@ namespace tysila
         internal static void DoCompile(Assembler ass, IOutputFile w, IDoCompileFeedback dcf) { DoCompile(ass, w, null, dcf); }
         internal static void DoCompile(Assembler ass, IOutputFile w, List<string> unimplemented_internal_calls, IDoCompileFeedback dcf)
         {
-            Assembler.FileBasedMemberRequestor Requestor = ass.Requestor as Assembler.FileBasedMemberRequestor;
+            Assembler.MemberRequestor Requestor = ass.Requestor;
 
             while (Requestor.MoreToDo || (rtc.Count > 0))
             {

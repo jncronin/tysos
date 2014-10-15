@@ -78,7 +78,7 @@ namespace libtysila
                 int str_tab_start = of.GetRodata().Count;
 
                 of.AlignRodata(ass.GetSizeOfPointer());
-                of.AddRodataSymbol(of.GetRodata().Count, Label);
+                of.AddRodataSymbol(of.GetRodata().Count, Label, false);
                 foreach (byte b in str_tab)
                     of.GetRodata().Add(b);
 

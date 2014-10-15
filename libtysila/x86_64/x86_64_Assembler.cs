@@ -525,17 +525,19 @@ namespace libtysila
                 case CliType.O:
                 case CliType.reference:
                 case CliType.void_:
+                case CliType.virtftnptr:
                     if(ia == IA.x86_64)
                         return 8;
                     else
                         return 4;                    
                 case CliType.vt:
                     return GetSizeOfType(p);
+                    /*
                 case CliType.virtftnptr:
                     if (ia == IA.x86_64)
                         return 16;
                     else
-                        return 8;
+                        return 8;*/
                 default:
                     throw new NotSupportedException();
             }
@@ -1304,19 +1306,19 @@ namespace libtysila
                 return loc;
             hardware_stackloc sl = loc as hardware_stackloc;
 
-            /* local args are relative to rbp - offset - len
-             * local vars are relative to rbp - la_size - offset - len
-             * vars are relative to rbp - la_size - lv_size - offset - len
+            /* local args are relative to rbp - offset - len - 8 (size for temp 3 on stack)
+             * local vars are relative to rbp - la_size - offset - len - 8
+             * vars are relative to rbp - la_size - lv_size - offset - len - 8
              */
 
             switch (sl.stack_type)
             {
                 case hardware_stackloc.StackType.Arg:
-                    return new hardware_contentsof { base_loc = Rbp, const_offset = -(sl.loc + sl.size), size = sl.size };
+                    return new hardware_contentsof { base_loc = Rbp, const_offset = -(sl.loc + sl.size + 8), size = sl.size };
                 case hardware_stackloc.StackType.LocalVar:
-                    return new hardware_contentsof { base_loc = Rbp, const_offset = -(state.la_stack.ByteSize + sl.loc + sl.size), size = sl.size };
+                    return new hardware_contentsof { base_loc = Rbp, const_offset = -(state.la_stack.ByteSize + sl.loc + sl.size + 8), size = sl.size };
                 case hardware_stackloc.StackType.Var:
-                    return new hardware_contentsof { base_loc = Rbp, const_offset = -(state.la_stack.ByteSize + state.lv_stack.ByteSize + sl.loc + sl.size), size = sl.size };
+                    return new hardware_contentsof { base_loc = Rbp, const_offset = -(state.la_stack.ByteSize + state.lv_stack.ByteSize + sl.loc + sl.size + 8), size = sl.size };
             }
             throw new NotImplementedException();
         }
@@ -1497,9 +1499,9 @@ namespace libtysila
                 Call(state, regs_in_use, new hardware_addressoflabel("memset", false), null, new hardware_location[] { dest, c, n }, callconv_memset, ret);
         }
 
-        internal override void MemSetW(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location c, hardware_location n, List<tybel.Node> ret)
+        internal override void WMemSet(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location c, hardware_location n, List<tybel.Node> ret)
         {
-            Call(state, regs_in_use, new hardware_addressoflabel("memsetw", false), null, new hardware_location[] { dest, c, n }, callconv_memset, ret);
+            Call(state, regs_in_use, new hardware_addressoflabel("wmemset", false), null, new hardware_location[] { dest, c, n }, callconv_wmemset, ret);
         }
 
         internal override void MemCpy(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, hardware_location n, List<tybel.Node> ret)
@@ -1560,6 +1562,8 @@ namespace libtysila
             if (p.Length != cc.Arguments.Count)
                 throw new Exception("Supplied arguments do not match those in the calling convention");
 
+            if (cc.HiddenRetValArgument != null)
+                LoadAddress(state, regs_in_use, cc.HiddenRetValArgument, retval, ret);
             for (int i = 0; i < p.Length; i++)
                 Assign(state, regs_in_use, cc.Arguments[i].ValueLocation, p[i], cc.Arguments[i].Type.CliType(this), ret);
 
@@ -1569,7 +1573,7 @@ namespace libtysila
             if (returns)
             {
                 // Store return value
-                if (retval != null)
+                if (retval != null && cc.HiddenRetValArgument == null)
                     Assign(state, regs_in_use, retval, cc.ReturnValue, cc.MethodSig.Method.RetType.CliType(this), ret);
 
                 // Restore stack
@@ -1584,6 +1588,8 @@ namespace libtysila
 
         internal override void Assign(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src, CliType dt, List<tybel.Node> ret)
         {
+            if (dest.Equals(src))
+                return;
             /* Get the size of a value-type argument */
             if (dt == CliType.vt)
             {
@@ -1724,6 +1730,15 @@ namespace libtysila
                 default:
                     throw new NotSupportedException();
             }
+        }
+
+        public override hardware_location GetTemporary3(frontend.cil.Encoder.EncoderState state, CliType ct)
+        {
+            /* Return RBP - pointer size */
+            if (ct == CliType.vt)
+                throw new Exception("x86_64: cannot allocate temporary 3 as value type");
+
+            return new libasm.hardware_contentsof { base_loc = Rbp, const_offset = -8, size = GetSizeOf(new Signature.Param(ct)) };
         }
 
         internal override void Peek(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location src_addr, int size, List<tybel.Node> ret)
@@ -1891,9 +1906,9 @@ namespace libtysila
             if (attrs.attrs.ContainsKey("libsupcs.ISR"))
                 is_isr = true;
 
-            if (is_isr)
+            /* if (is_isr)
                 throw new NotImplementedException();
-            else
+            else */
             {
                 /* Set up frame pointer */
                 ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(Rbp));
@@ -1901,7 +1916,7 @@ namespace libtysila
                     vara.MachineReg(Rbp), vara.MachineReg(Rsp));
 
                 /* Reserve stack space for args, vars and temporaries */
-                int stack_reserve = state.la_stack.ByteSize + state.lv_stack.ByteSize + state.largest_var_stack;
+                int stack_reserve = state.la_stack.ByteSize + state.lv_stack.ByteSize + state.largest_var_stack + 8;
                 if (stack_reserve > 0)
                 {
                     ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.SUBL : x86_64.x86_64_asm.opcode.SUBQ,
@@ -1911,8 +1926,13 @@ namespace libtysila
                 /* Copy arguments to stack arg space */
                 for (int i = 0; i < state.cc.Arguments.Count; i++)
                 {
-                    EncMov(this, state, state.la_stack.GetAddressOf(i, this), state.cc.Arguments[i].ValueLocation, ret);
+                    Assign(state, null, state.la_stack.GetAddressOf(i, this), state.cc.Arguments[i].ValueLocation,
+                        state.cc.Arguments[i].Type.CliType(this), ret);
+                    //EncMov(this, state, state.la_stack.GetAddressOf(i, this), state.cc.Arguments[i].ValueLocation,
+                    //    state.cc.Arguments[i].Type.CliType(this), ret);
                 }
+                if (state.cc.HiddenRetValArgument != null)
+                    EncMov(this, state, state.la_stack.GetAddressOf(state.cc.Arguments.Count, this), state.cc.HiddenRetValArgument, ret);
             }
         }
 

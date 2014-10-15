@@ -74,9 +74,12 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             Signature.Param p_T = typeTok.tsig;
 
             /* Ensure dest is a pointer to T */
-            if (!(p_dest.Type is Signature.ManagedPointer) || !Signature.BCTCompare(((Signature.ManagedPointer)p_dest.Type).ElemType, p_T.Type, ass))
-                throw new Assembler.AssemblerException("stobj: dest (" + p_dest.ToString() + ") is not a pointer to " +
-                    "T (" + p_T.ToString() + ")", il.il, mtc);
+            if (ass.Options.VerifiableCIL)
+            {
+                if (!(p_dest.Type is Signature.ManagedPointer) || !Signature.BCTCompare(((Signature.ManagedPointer)p_dest.Type).ElemType, p_T.Type, ass))
+                    throw new Assembler.AssemblerException("stobj: dest (" + p_dest.ToString() + ") is not a pointer to " +
+                        "T (" + p_T.ToString() + ")", il.il, mtc);
+            }
 
             /* Ensure src is verifier-assignable-to T */
             if(!ass.IsAssignableTo(p_T, p_src))

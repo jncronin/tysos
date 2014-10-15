@@ -170,6 +170,7 @@
     <Compile Include="x86_64\x86_64_Assembler_CompiledInstruction.cs" />
     <Compile Include="x86_64\x86_64_Assembler_intcall.cs" />
     <Compile Include="x86_64\x86_64_CallConv.cs" />
+    <Compile Include="x86_64\x86_64_intcalls.cs" />
     <Compile Include="x86_64\x86_64_MiniAssembler.cs" />
     <Compile Include="x86_64\x86_64_Stack.cs" />
     <Compile Include="x86_64\x86_64_tybel.cs" />
