@@ -539,47 +539,6 @@ namespace tysos
             indent--;
         }
 
-        [libsupcs.MethodAlias("__mbstrlen")]
-        [libsupcs.MethodAlias("mbstrlen")]
-        [libsupcs.MethodAlias("strlen")]
-        [libsupcs.AlwaysCompile]
-        unsafe internal static int MbStrLen(sbyte* value)
-        {
-            /* For ASCII strings only!  This doesn't properly handle UTF-8 yet */
-            int length = 0;
-
-            while (*value != 0x00)
-            {
-                length++;
-                value++;
-            }
-
-            return length;
-        }
-
-        [libsupcs.MethodAlias("wmemset")]
-        unsafe internal static char* wmemset(char* wcs, char wc, int n)
-        {
-            char *dest = wcs;
-            for (int i = 0; i < n; i++)
-                *dest++ = wc;
-            return wcs;
-        }
-
-        [libsupcs.MethodAlias("mbstowcs")]
-        [libsupcs.AlwaysCompile]
-        unsafe static void MbsToWcs(char* dest, sbyte* src, int length)
-        {
-            for (int i = 0; i < length; i++)
-            {
-                /* For ASCII strings only!  This doesn't properly handle UTF-8 yet */
-                *dest = (char)*src;
-
-                dest++;
-                src++;
-            }
-        }
-
         static int next_obj_id = 0x1000;
         [libsupcs.MethodAlias("__get_new_obj_id")]
         [libsupcs.MethodAlias("getobjid")]

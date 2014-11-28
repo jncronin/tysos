@@ -33,6 +33,7 @@ namespace tybuild
     class Solution
     {
         public Dictionary<Guid, ProjectId> Projects = new Dictionary<Guid, ProjectId>();
+        public ProjectId MainProject = null;
         string base_dir;
         string _config;
 
@@ -57,13 +58,16 @@ namespace tybuild
                     p.ProjectFile = tybuild.AppendDirSplit(base_dir) + 
 						tybuild.ReplaceDirSplit(split_line[5]);
                     p.Guid = new Guid(split_line[7]);
+
+                    if(Projects.Count == 0)
+                        MainProject = p;
                     Projects.Add(p.Guid, p);
                 }
             }
             r.Close();
 
             /* Now load up the projects themselves */
-	    load_projects(config);
+	        load_projects(config);
         }
 
         void load_projects(string config)
@@ -92,6 +96,8 @@ namespace tybuild
             ProjectId prid = new ProjectId("", proj.AssemblyName, proj.Guid);
             prid.Project = proj;
             Projects.Add(proj.Guid, prid);
+
+            MainProject = prid;
 
             foreach (ProjectId pref in proj.ProjectReferences)
                 Projects.Add(pref.Guid, pref);

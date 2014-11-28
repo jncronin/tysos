@@ -43,6 +43,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             int_calls["_Zu1SM_0_9get_Chars_Rc_P2u1ti"] = string_getChars;
             int_calls["_Zu1SM_0_10get_Length_Ri_P1u1t"] = string_getLength;
 
+            int_calls["_Zu1OM_0_7GetType_RW6System4Type_P1u1t"] = object_GetType;
+
             int_calls["_ZX15ArrayOperationsM_0_17GetArrayClassSize_Ri_P0"] = get_array_class_size;
             int_calls["_ZX15ArrayOperationsM_0_19GetInnerArrayOffset_Ri_P0"] = get_array_inner_array_offset;
             int_calls["_ZX15ArrayOperationsM_0_14GetSizesOffset_Ri_P0"] = get_array_sizes_offset;
@@ -104,6 +106,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             string mangled_name = Mangler2.MangleMethod(call_mtc, ass);
 
+            il.il.int_call_mtc = call_mtc;
+
             Opcode.TybelEncodeFunc enc_func;
 
             if (int_calls.TryGetValue(mangled_name, out enc_func))
@@ -164,6 +168,23 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             if (int_calls.TryGetValue(Mangler2.MangleMethod(mtc, ass), out intcall) == false)
                 return false;
             return intcall != null;
+        }
+
+        static void object_GetType(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location loc_obj = il.stack_vars_after.Pop(ass);
+            Signature.Param p_obj = il.stack_after.Pop();
+
+            libasm.hardware_location t1 = ass.GetTemporary(state);
+
+            Signature.Param p_ret = il.il.int_call_mtc.msig.Method.RetType;
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_ret, ass);
+
+            ass.Assign(state, il.stack_vars_before, t1, new libasm.hardware_contentsof { base_loc = loc_obj, size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+            ass.Assign(state, il.stack_vars_before, loc_dest, new libasm.hardware_contentsof { base_loc = t1, size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+
+            il.stack_after.Push(p_ret);
         }
 
         static void string_getLength(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,

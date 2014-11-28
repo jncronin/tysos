@@ -47,13 +47,14 @@ namespace tirc
 
             /* Generate tybel code */
             libtysila.timple.Optimizer.OptimizeReturn opt = libtysila.timple.Optimizer.Optimize(p.tacs["test2"]);
-            libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, ass, new List<libasm.hardware_location>());
+            //libtysila.tybel.Tybel tybel = libtysila.tybel.Tybel.GenerateTybel(opt, ass, new List<libasm.hardware_location>());
+            libtysila.tybel.Tybel tybel = null;
 
             /* Generate code */
             List<byte> code = new List<byte>();
             List<libasm.ExportedSymbol> syms = new List<libasm.ExportedSymbol>();
             List<libasm.RelocationBlock> relocs = new List<libasm.RelocationBlock>();
-            tybel.Assemble(code, syms, relocs, ass);
+            //tybel.Assemble(code, syms, relocs, ass);
 
             /* Dump dissassembly */
             tydisasm.tydisasm d = tydisasm.tydisasm.GetDisassembler(ass.Arch.InstructionSet);

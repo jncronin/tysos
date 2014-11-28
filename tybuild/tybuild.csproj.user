@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartWorkingDirectory>C:\Users\jncronin\Documents\Visual Studio 2008\Projects\Tysos\processes\applications\Console\</StartWorkingDirectory>
-    <StartArguments>/p:Configuration=Release /v /tools:3_5</StartArguments>
+    <StartWorkingDirectory>D:\tysos\tysos\</StartWorkingDirectory>
+    <StartArguments>/p:Configuration=Release /v /tools:3_5 /M</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <StartWorkingDirectory>C:\Users\jncronin\Documents\Visual Studio 2008\Projects\Tysos\mono\corlib\</StartWorkingDirectory>

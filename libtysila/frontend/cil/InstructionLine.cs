@@ -67,6 +67,8 @@ namespace libtysila.frontend.cil
         public bool allow_obj_numop = false;
 
         public List<int> il_offsets_after = new List<int>();
+
+        public Assembler.MethodToCompile int_call_mtc;
         
         /** <summary>The immediate offset after the current line.  The instruction at this offset may not actually
          * be executed next (see il_offsets_after instead), it it purely for purposes of calculating jumps that are

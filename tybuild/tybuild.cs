@@ -26,6 +26,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Text;
 
 namespace tybuild
 {
@@ -111,6 +112,7 @@ namespace tybuild
             bool use_temp = false;
             bool _unsafe = false;
             bool _debug = false;
+            bool depends = false;
             List<string> extra_add = new List<string>();
             List<string> extra_defines = new List<string>();
             List<string> extra_refs = null;
@@ -123,21 +125,32 @@ namespace tybuild
 #endif
                 foreach (string arg in args)
                 {
-                    if (arg.StartsWith("/p:Configuration="))
+                    if (arg.StartsWith("/p:Configuration=") || arg.StartsWith("-p:Configuration="))
                         config = arg.Substring("/p:Configuration=".Length);
-                    else if ((arg == "/v") || (arg == "/verbose"))
+                    else if ((arg == "/v") || (arg == "/verbose") || arg == "-v" || arg == "--verbose")
                         verbosity = 2;
-                    else if (arg == "/debug")
+                    else if (arg == "/M" || arg == "-M")
+                        depends = true;
+                    else if (arg == "/debug" || arg == "--debug")
                         _debug = true;
-                    else if ((arg == "/q") || (arg == "/quiet"))
+                    else if ((arg == "/q") || (arg == "/quiet") || arg == "-q" || arg == "--quiet")
                         verbosity = 0;
                     else if (arg.StartsWith("/dump:"))
                     {
                         if (!dump(arg.Substring("/dump:".Length)))
                             return 0;
                     }
-                    else if(arg.StartsWith("/define:"))
+                    else if (arg.StartsWith("--dump:"))
+                    {
+                        if (!dump(arg.Substring("--dump:".Length)))
+                            return 0;
+                    }
+                    else if (arg.StartsWith("/define:"))
                         extra_defines.Add(arg.Substring("/define:".Length));
+                    else if (arg.StartsWith("-D:"))
+                        extra_defines.Add(arg.Substring("-D:".Length));
+                    else if (arg.StartsWith("--define:"))
+                        extra_defines.Add(arg.Substring("--define:".Length));
                     else if (arg.StartsWith("/project:"))
                     {
                         if (project_names == null)
@@ -268,10 +281,34 @@ namespace tybuild
                 }
 
                 int ret;
-                if(dump_options)
-                    ret = s.Build(3, true, use_temp, project_names);
-				else
-                    ret = s.Build(verbosity, false, use_temp, project_names);
+                if (depends)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append(s.MainProject.Project.OutputFile);
+                    sb.Append(": ");
+                    sb.Append(s.MainProject.Project.SourceList);
+
+                    foreach (ProjectId pid in s.MainProject.Project.ProjectReferences)
+                    {
+                        string rel_path = pid.Project.OutputFile;
+                        string abs_path = s.MainProject.Project.BaseDir + rel_path;
+                        FileInfo fi = new FileInfo(abs_path);
+                        sb.Append(" \"");
+                        sb.Append(fi.FullName);
+                        sb.Append("\"");
+                    }
+
+                    string output = sb.ToString();
+                    System.Console.WriteLine(output);
+                    ret = 0;
+                }
+                else
+                {
+                    if (dump_options)
+                        ret = s.Build(3, true, use_temp, project_names);
+                    else
+                        ret = s.Build(verbosity, false, use_temp, project_names);
+                }
 				return ret;
 #if !DEBUG
 			} catch (Exception e) {

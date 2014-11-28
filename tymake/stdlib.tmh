@@ -1,0 +1,43 @@
+﻿/* tymake standard library */
+
+if(!defined(STDLIB_TMH))
+{
+	STDLIB_TMH = 1;
+	STDLIB = 1;
+	STDLIB_VER = 1;
+
+	/* autodir will insert a rule to automatically create an output directory if it
+	 *  referenced in the depends section of a rule (or directly referenced by a
+	 *  build statement)
+	 */
+
+	export function autodir(string name)
+	{
+		export rulefor name {
+			mkdir(_RULE_OUTPUT);
+		}
+	}
+
+	export function typroject(string name, string config, string tools_ver, int unsafe)
+	{
+		_p = _typroject(name, config, tools_ver, unsafe);
+
+		_depends = [];
+		foreach(dep in _p.ProjectReferences)
+		{
+			_depends.add(typroject(dep, config, tools_ver, unsafe));
+		}
+
+		export rulefor _p.OutputFile inputs { _p.Sources } depends { _depends }
+		{
+			_p.Build();
+		}
+
+		return _p.OutputFile;
+	}
+
+	export function typroject(string name)
+	{
+		return typroject(name, "Release", "", 0);
+	}
+}

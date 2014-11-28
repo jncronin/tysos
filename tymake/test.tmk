@@ -1,0 +1,164 @@
+﻿// Set TARGET if not already set
+TARGET ?= "x86_64";
+YASM ?= "yasm";
+
+ROOT = "../../..";
+
+function x86_yasm()
+{
+	export rulefor "%.o" inputs { "%.asm" } depends { "test.tmk" } {
+		shellcmd("$YASM $YASMFLAGS -o $_RULE_OUTPUT $_RULE_INPUT");
+	}
+}
+
+function tycobj(string name)
+{
+	return "../../../tysos/" + name;
+}
+
+if (TARGET == "x86_64")
+{
+	CC = "f:/cygwin64/usr/local/cross/bin/x86_64-elf-gcc.exe";
+	AR = "x86_64-elf-ar";
+	RANLIB = "x86_64-elf-ranlib";
+	YASMFLAGS = "-felf64";
+	TYSILAARCH = "x86_64s-elf64-tysos";
+	LDFLAGS = "-fno-use-linker-plugin -Ttext 0x40000000 -nostdlib";
+	TYSOS_CPU_OBJ = [ tycobj("x86_64/cpu.o"), tycobj("x86_64/halt.o"), tycobj("x86_64/exceptions.o"), tycobj("x86_64/switcher.o") ];
+	LIBSUPCS_CPU_OBJ = [ "../../../libsupcs/x86_64_arith.o", "../../../libsupcs/x86_64_cpu.o", "../../../libsupcs/x86_64_Invoke.o" ];
+	
+	x86_yasm();
+}
+else if (TARGET == "x86")
+{
+	CC = "i586-elf-gcc";
+	YASMFLAGS = "-felf";
+	TYSILAARCH = "i586-elf-tysos";
+
+	x86_yasm();
+}
+else if (TARGET == "arm")
+{
+	CC = "arm-none-elf-gcc";
+	TYSILAARCH = "arm-elf-tysos";
+}
+
+// Rules
+function objfromexe(string exe)
+{
+	return dir(exe) + "/" + basefname(exe) + ".obj";
+}
+
+TYSILAPROJ = "../../../tysila2/tysila2.csproj";
+TYSILA = typroject(TYSILAPROJ, "Release", "3.5", 1);
+TYSOS = typroject("../../../tysos/tysos.csproj", "Release", "3.5", 1);
+TYSOSOBJ = objfromexe(TYSOS);
+MSCORLIB = "../../../mono/corlib/mscorlib.dll";
+MSCORLIBOBJ = objfromexe(MSCORLIB);
+LIBSUPCS = typroject("../../../libsupcs/libsupcs.csproj", "Release", "3.5", 1);
+LIBSUPCSOBJ = objfromexe(LIBSUPCS);
+LIBSUPCSA = dir(LIBSUPCS) + "/" + basefname(LIBSUPCS) + ".a";
+LIBSTDCS = typroject("../../../libstdcs/libstdcs.csproj", "Release", "3.5", 1);
+LIBSTDCSOBJ = objfromexe(LIBSTDCS);
+LIBASMOBJ = objfromexe(typroject("../../../libasm/libasm.csproj", "Release", "3.5", 1));
+LIBTYSILAOBJ = objfromexe(typroject("../../../libtysila/libtysila.csproj", "Release", "3.5", 1));
+MSCORLIBDIR = dir(MSCORLIB);
+TINYGCOBJ = "../../../tinygc/gc.o";
+
+KERNEL = "../../../tysos.bin";
+
+rulefor "%.obj" inputs { "%.exe" } depends { TYSILA } {
+	shellcmd("$TYSILA -o $_RULE_OUTPUT --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
+}
+rulefor "%.obj" inputs { "%.dll" } depends { TYSILA } {
+	shellcmd("$TYSILA -o $_RULE_OUTPUT --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
+}
+
+
+rulefor KERNEL inputs { TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ, LIBASMOBJ, LIBTYSILAOBJ, tycobj("undefined.o"),
+	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA } {
+	shellcmd("$CC -o $_RULE_OUTPUT $LDFLAGS $_RULE_INPUTS");
+}
+
+rulefor "%.o" inputs { "%.c" } depends { "test.tmk" } {
+	shellcmd("$CC -o $_RULE_OUTPUT -ffreestanding -c $_RULE_INPUT");
+}
+
+rulefor "%.o" inputs { "%.s" } depends { "test.tmk" } {
+	shellcmd("$CC -o $_RULE_OUTPUT -ffreestanding -c $_RULE_INPUT");
+}
+
+rulefor LIBSUPCSA inputs { LIBSUPCSOBJ, LIBSUPCS_CPU_OBJ } depends { "test.tmk" } {
+	shellcmd("$AR -cru $_RULE_OUTPUT $_RULE_INPUTS");
+	shellcmd("$RANLIB $_RULE_OUTPUT");
+}
+
+rulefor "%.tgc.o" inputs { "%.c" } depends { "test.tmk" } {
+	shellcmd("$CC -o $_RULE_OUTPUT -I../../../tinygc -ffreestanding -c $_RULE_INPUT");
+}
+
+SETJMP = "../../../tinygc/setjmp." + TARGET + ".o";
+rulefor TINYGCOBJ inputs { "../../../tinygc/dlmalloc.tgc.o", "../../../tinygc/printf.tgc.o", "../../../tinygc/sbrk.tgc.o",
+	"../../../tinygc/stdlib.tgc.o", "../../../tinygc/tinygc.tgc.o", SETJMP } depends { "test.tmk" } {
+	shellcmd("$CC -Wl,-r $LDFLAGS -o $_RULE_OUTPUT $_RULE_INPUTS");
+}
+
+print("Building for $TARGET\n");
+
+OUTDIR = ROOT + "/iso_image";
+autodir(OUTDIR);
+ISODIR = OUTDIR + "/iso";
+autodir(ISODIR);
+BOOTDIR = ISODIR + "/boot";
+autodir(BOOTDIR);
+GRUBDIR = BOOTDIR + "/grub";
+autodir(GRUBDIR);
+
+ISOIMAGE = OUTDIR + "/tysos.iso";
+GRUBCFG = OUTDIR + "/grub.cfg";
+
+PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj") ];
+
+GRUB_MKIMAGE = "grub-mkimage";
+COREIMG = OUTDIR + "/core.img";
+XORRISO = "xorriso";
+CDBOOT = "f:/cygwin64/usr/local/lib/grub/i386-pc/cdboot.img";
+GRUBPREFIX_CFG = OUTDIR + "/grub_prefix.cfg";
+ELTORITO = GRUBDIR + "/eltorito.img";
+
+rulefor ISOIMAGE inputs { KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG } depends { ISODIR, BOOTDIR, GRUBDIR, CDBOOT }
+{
+	cp(KERNEL, ISODIR);
+	cp(GRUBCFG, GRUBDIR);
+	cp(LIBSUPCS, ISODIR);
+	cp(MSCORLIB, ISODIR);
+
+	foreach(proc in PROCESSES)
+	{
+		cp(proc, ISODIR);
+	}
+
+	shellcmd("$GRUB_MKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -O i386-pc biosdisk multiboot configfile normal iso9660");
+	
+	fcdboot = fopen(CDBOOT);
+	fcoreimg = fopen(COREIMG);
+
+	bcdboot = [];
+	fcdboot.Read(bcdboot, 0, fcdboot.Length);
+
+	bcoreimg = [];
+	fcoreimg.Read(bcoreimg, 0, fcoreimg.Length);
+
+	if(exists(ELTORITO))
+	{
+		rm(ELTORITO);
+	}
+
+	feltorito = fopen(ELTORITO);
+	feltorito.Write(bcdboot, 0, fcdboot.Length);
+	feltorito.Write(bcoreimg, 0, fcoreimg.Length);
+
+	shellcmd("$XORRISO -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
+}
+
+build(ISOIMAGE);

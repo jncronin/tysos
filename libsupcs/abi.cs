@@ -182,11 +182,21 @@ namespace libsupcs
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         public static extern void Poke(System.UIntPtr addr, ulong v);
 
-        [MethodImpl(MethodImplOptions.InternalCall)]
         [Bits64Only]
-        public static extern void QuickClearAligned16(ulong addr, ulong size);
+        [WeakLinkage]
+        public static void QuickClearAligned16(ulong addr, ulong size)
+        {
+            unsafe
+            {
+                MemSet((void*)addr, 0, (int)size);
+            }
+        }
 
-        [MethodReferenceAlias("__memcpy")]
+        [MethodReferenceAlias("memset")]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static unsafe extern void* MemSet(void* s, int c, int size);
+
+        [MethodReferenceAlias("memcpy")]
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static unsafe extern void* MemCpy(void* dest, void* src, int size);
 
