@@ -113,7 +113,7 @@ whileblock	:	WHILE LPAREN expr RPAREN stmtblock	{ $$ = new WhileBlock { test = $
 doblock		:	DO stmtblock WHILE LPAREN expr RPAREN	{ $$ = new DoBlock { test = $5, code = $2 }; }
 			;
 
-makerule	:	RULEFOR strlabelexpr inputsstmt dependsstmt stmtblock	{ $$ = new MakeRuleStatement { output_file = $2, inputs_list = $3, depend_list = $4, rules = $5 }; }
+makerule	:	RULEFOR expr inputsstmt dependsstmt stmtblock	{ $$ = new MakeRuleStatement { output_file = $2, inputs_list = $3, depend_list = $4, rules = $5 }; }
 			;
 
 dependsstmt	:	DEPENDS dependsblock								{ $$ = $2; }

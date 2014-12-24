@@ -95,6 +95,14 @@ static struct vmem_map_entry *get_intersect(UINTPTR base, UINTPTR length)
 	return NULL;
 }
 
+EFI_PHYSICAL_ADDRESS get_pmem_for_vmem(UINTPTR vaddr)
+{
+	struct vmem_map_entry *isect = get_intersect(vaddr, 1);
+	if(isect == NULL)
+		return 0;
+	return vaddr - isect->base + isect->src;
+}
+
 EFI_STATUS allocate_fixed(UINTPTR base, UINTPTR length, EFI_PHYSICAL_ADDRESS src)
 {
 	if(get_intersect(base, length) != NULL)
@@ -263,6 +271,11 @@ EFI_STATUS build_page_tables(EFI_PHYSICAL_ADDRESS *pml4t_out)
 
 		cur_vmem = cur_vmem->next;
 	}
+
+	/* Point the last entry back to itself */
+	uint64_t recursive_entry = (uint64_t)pml4t;
+	recursive_entry |= 0x3;
+	*(uint64_t *)(pml4t + 0xff8) = recursive_entry;
 
 	if(pml4t_out)
 		*pml4t_out = pml4t;

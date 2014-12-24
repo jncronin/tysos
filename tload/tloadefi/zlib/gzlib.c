@@ -5,14 +5,12 @@
 
 #include "gzguts.h"
 
-#if defined(_WIN32) && !defined(__BORLANDC__)
-#  define LSEEK _lseeki64
-#else
+#include <unistd.h>
+
 #if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
 #  define LSEEK lseek64
 #else
 #  define LSEEK lseek
-#endif
 #endif
 
 /* Local functions */
@@ -239,9 +237,6 @@ local gzFile gz_open(path, fd, mode)
 
     /* open the file with the appropriate flags (or just use fd) */
     state->fd = fd > -1 ? fd : (
-#ifdef _WIN32
-        fd == -2 ? _wopen(path, oflag, 0666) :
-#endif
         open((const char *)path, oflag, 0666));
     if (state->fd == -1) {
         free(state->path);

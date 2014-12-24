@@ -1443,60 +1443,66 @@ namespace libtysila
 
         internal override void MemSet(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location c, hardware_location n, List<tybel.Node> ret)
         {
-#if false
             int max_move = ia == IA.i586 ? 4 : 8;
             int max_inline = max_move * 4;
 
-            if (n is const_location && (int)((const_location)n).c <= max_inline)
+            if (n is const_location && c is const_location && dest is x86_64_gpr && !is_unencodable_r8_rm8(dest) &&
+                (int)((const_location)n).c <= max_inline)
             {
                 int to_move = (int)((const_location)n).c;
+                int _c = (int)((const_location)c).c & 0xff;
 
-                /* We can inline this as a series of moves */
-                c = ResolveStackLoc(this, state, c);
-                if(!(c is x86_64_gpr) || is_unencodable_r8_rm8(c))
-                {
-                    EncMov(this, state, Rdx, c, ret);
-                    c = Rdx;
-                }
-                dest = ResolveStackLoc(this, state, dest);
-                if (!(dest is x86_64_gpr) || is_unencodable_r8_rm8(dest))
-                {
-                    EncMov(this, state, Rax, dest, ret);
-                    dest = Rax;
-                }
+                uint v_4 = (uint)_c + (((uint)_c) << 8) + (((uint)_c) << 16) + (((uint)_c) << 24);
+                ushort v_2 = (ushort)((ushort)_c + (((ushort)_c) << 8));
+                byte v_1 = (byte)_c;
 
                 int cur_offset = 0;
                 if (ia == IA.x86_64)
                 {
+                    ulong v_8 = (ulong)_c + (((ulong)_c) << 8) + (((ulong)_c) << 16) + (((ulong)_c) << 24) +
+                        (((ulong)_c) << 32) + (((ulong)_c) << 40) + (((ulong)_c) << 48) + (((ulong)_c) << 56);
                     while (to_move >= 8)
                     {
-                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 8, const_offset = cur_offset }), vara.MachineReg(c));
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 8, const_offset = cur_offset }), vara.MachineReg(new const_location { c = v_8 }));
                         to_move -= 8;
                         cur_offset += 8;
                     }
                 }
                 while (to_move >= 4)
                 {
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 8, const_offset = cur_offset }), vara.MachineReg(c));
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 4, const_offset = cur_offset }), vara.MachineReg(new const_location { c = v_4 }));
                     to_move -= 4;
                     cur_offset += 4;
                 }
                 while (to_move >= 2)
                 {
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 8, const_offset = cur_offset }), vara.MachineReg(c));
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 2, const_offset = cur_offset }), vara.MachineReg(new const_location { c = v_2 }));
                     to_move -= 2;
                     cur_offset += 2;
                 }
                 while (to_move >= 1)
                 {
-                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 8, const_offset = cur_offset }), vara.MachineReg(c));
+                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(new hardware_contentsof { base_loc = dest, size = 1, const_offset = cur_offset }), vara.MachineReg(new const_location { c = v_1 }));
                     to_move -= 1;
                     cur_offset += 1;
                 }
+
+                return;
             }
-            else
-#endif
-                Call(state, regs_in_use, new hardware_addressoflabel("memset", false), null, new hardware_location[] { dest, c, n }, callconv_memset, ret);
+
+            Call(state, regs_in_use, new hardware_addressoflabel("memset", false), null, new hardware_location[] { dest, c, n }, callconv_memset, ret);
+        }
+
+        internal override void RunOnce(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location flags, List<tybel.Node> ret)
+        {
+            int blk_id = state.next_blk++;
+            string blk_l = "L" + blk_id.ToString();
+
+            ChooseInstruction(x86_64.x86_64_asm.opcode.TESTL, ret, flags, vara.Const(1));
+            ChooseInstruction(x86_64.x86_64_asm.opcode.JZ, ret, vara.Label(blk_l, false));
+            ChooseInstruction(x86_64.x86_64_asm.opcode.RETN, ret);
+            ret.Add(new tybel.LabelNode(blk_l, true));
+            ChooseInstruction(x86_64.x86_64_asm.opcode.ORL, ret, flags, vara.Const(1));
         }
 
         internal override void WMemSet(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location c, hardware_location n, List<tybel.Node> ret)
@@ -1561,6 +1567,20 @@ namespace libtysila
                 ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.SUBL : x86_64.x86_64_asm.opcode.SUBQ, ret, vara.MachineReg(Rsp), vara.Const(cc.StackSpaceUsed));
             if (p.Length != cc.Arguments.Count)
                 throw new Exception("Supplied arguments do not match those in the calling convention");
+
+            // Is fptr also a argument location?  If so, use rax instead
+            for (int i = 0; i < p.Length; i++)
+            {
+                if (dest.Equals(cc.Arguments[i].ValueLocation))
+                {
+                    Assign(state, regs_in_use, Rax, dest, CliType.native_int, ret);
+                    Stack temp_stack = regs_in_use.Clone();
+                    temp_stack.MarkUsed(Rax);
+                    dest = Rax;
+                    regs_in_use = temp_stack;
+                    break;
+                }
+            }
 
             if (cc.HiddenRetValArgument != null)
                 LoadAddress(state, regs_in_use, cc.HiddenRetValArgument, retval, ret);
@@ -1818,6 +1838,19 @@ namespace libtysila
             }
         }
 
+        internal override void LocAlloc(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest_loc, int size, List<tybel.Node> ret)
+        {
+            dest_loc = ResolveStackLoc(this, state, dest_loc);
+
+            ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.SUBL : x86_64.x86_64_asm.opcode.SUBQ, ret, vara.MachineReg(Rsp), vara.Const(size));
+            Assign(state, regs_in_use, dest_loc, Rsp, CliType.native_int, ret);
+        }
+
+        internal override void LocDeAlloc(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, int size, List<tybel.Node> ret)
+        {
+            ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.ADDL : x86_64.x86_64_asm.opcode.ADDQ, ret, vara.MachineReg(Rsp), vara.Const(size));
+        }
+
         internal override void Poke(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest_addr, hardware_location src, int size, List<tybel.Node> ret)
         {
             dest_addr = ResolveStackLoc(this, state, dest_addr);
@@ -2015,6 +2048,7 @@ namespace libtysila
                     switch (op.Type)
                     {
                         case CliType.int32:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.XORL, ret, vara.MachineReg(Rdx), vara.MachineReg(Rdx));
                             opc1 = x86_64.x86_64_asm.opcode.IDIVL;
                             idiv_ret = Rax;
                             break;
@@ -2027,6 +2061,7 @@ namespace libtysila
                             }
                             else
                             {
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.XORQ, ret, vara.MachineReg(Rdx), vara.MachineReg(Rdx));
                                 opc1 = x86_64.x86_64_asm.opcode.IDIVQ;
                                 idiv_ret = Rax;
                             }                                
@@ -2044,6 +2079,7 @@ namespace libtysila
                     switch (op.Type)
                     {
                         case CliType.int32:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.XORL, ret, vara.MachineReg(Rdx), vara.MachineReg(Rdx));
                             opc1 = x86_64.x86_64_asm.opcode.DIVL;
                             idiv_ret = Rax;
                             break;
@@ -2056,6 +2092,7 @@ namespace libtysila
                             }
                             else
                             {
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.XORQ, ret, vara.MachineReg(Rdx), vara.MachineReg(Rdx));
                                 opc1 = x86_64.x86_64_asm.opcode.DIVQ;
                                 idiv_ret = Rax;
                             }
@@ -2184,6 +2221,7 @@ namespace libtysila
                     switch (op.Type)
                     {
                         case CliType.int32:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.XORL, ret, vara.MachineReg(Rdx), vara.MachineReg(Rdx));
                             opc1 = x86_64.x86_64_asm.opcode.IDIVL;
                             idiv_ret = Rdx;
                             break;
@@ -2196,6 +2234,7 @@ namespace libtysila
                             }
                             else
                             {
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.XORQ, ret, vara.MachineReg(Rdx), vara.MachineReg(Rdx));
                                 opc1 = x86_64.x86_64_asm.opcode.IDIVQ;
                                 idiv_ret = Rdx;
                             }
@@ -2210,6 +2249,7 @@ namespace libtysila
                     switch (op.Type)
                     {
                         case CliType.int32:
+                            ChooseInstruction(x86_64.x86_64_asm.opcode.XORL, ret, vara.MachineReg(Rdx), vara.MachineReg(Rdx));
                             opc1 = x86_64.x86_64_asm.opcode.DIVL;
                             idiv_ret = Rdx;
                             break;
@@ -2222,6 +2262,7 @@ namespace libtysila
                             }
                             else
                             {
+                                ChooseInstruction(x86_64.x86_64_asm.opcode.XORQ, ret, vara.MachineReg(Rdx), vara.MachineReg(Rdx));
                                 opc1 = x86_64.x86_64_asm.opcode.DIVQ;
                                 idiv_ret = Rdx;
                             }

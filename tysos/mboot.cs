@@ -56,6 +56,8 @@ namespace Multiboot
         public uint machine_major_type;
         public uint machine_minor_type;
 
+        public bool has_vga;
+
         public ulong fb_base;
         public uint fb_w;
         public uint fb_h;

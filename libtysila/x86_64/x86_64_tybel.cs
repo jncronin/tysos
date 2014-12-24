@@ -595,6 +595,12 @@ namespace libtysila
                                 if (optype == x86_64.x86_64_asm.optype.Imm64)
                                     return true;
                             }
+                            else if (Arch.InstructionSet == "x86_64s")
+                            {
+                                if (optype == x86_64.x86_64_asm.optype.RM32 || optype == x86_64.x86_64_asm.optype.Imm32 ||
+                                    optype == x86_64.x86_64_asm.optype.UImm32)
+                                    return true;
+                            }
                             else
                             {
                                 if (optype == x86_64.x86_64_asm.optype.Imm32 || optype == x86_64.x86_64_asm.optype.UImm32)

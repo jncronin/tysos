@@ -127,7 +127,8 @@ namespace libtysila.tybel
 
                     rb.Offset = code.Count;
 
-                    byte[] rbs = ass.ToByteArraySignExtend(rb.Value, rb.Size);
+                    //byte[] rbs = ass.ToByteArraySignExtend(rb.Value, rb.Size);
+                    byte[] rbs = ass.ToByteArraySignExtend(0, rb.Size);
                     code.AddRange(rbs);
                     relocs.Add(rb);
                 }

@@ -153,8 +153,11 @@ namespace tysos.x86_64
             VirtMem.map_page(bda_va, 0x0);
 
             /* Set up the debug outputs */
-            BootInfoOutput = new Vga(bda_va, vga_fb_va, VirtMem);
             DebugOutput = new SerialDebug();
+            if (mboot.has_vga)
+                BootInfoOutput = new Vga(bda_va, vga_fb_va, VirtMem);
+            else
+                BootInfoOutput = DebugOutput;
 
             /* Say hi */
             Formatter.WriteLine("Tysos x86_64 architecture initialising", DebugOutput);

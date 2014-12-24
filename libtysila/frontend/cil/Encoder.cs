@@ -121,6 +121,30 @@ namespace libtysila.frontend.cil
                 }
             }
 
+            // Is this a static constructor?
+            if ((mtc.meth.Flags & 0x1800) == 0x1800 && mtc.meth.Name == ".cctor")
+            {
+                ass.RunOnce(state, new DefaultStack(), new libasm.hardware_addressoflabel(Mangler2.MangleTypeStatic(mtc.GetTTC(ass), ass), true), ret);
+            }
+
+            // Add calls to initialize static constructors
+            foreach (Assembler.TypeToCompile static_field_type in attrs.types_whose_static_fields_are_referenced)
+            {
+                // Does the type have a static constructor?
+                foreach (Metadata.MethodDefRow mdr in static_field_type.type.Methods)
+                {
+                    if ((mdr.Flags & 0x1800) == 0x1800 && mdr.Name == ".cctor")
+                    {
+                        Assembler.MethodToCompile static_cctor = new Assembler.MethodToCompile(ass, mdr, mdr.ActualSignature, static_field_type.type,
+                            static_field_type.tsig);
+                        CallConv static_cctor_cc = ass.call_convs[ass.Options.CallingConvention](static_cctor, CallConv.StackPOV.Caller, ass);
+                        ass.Call(state, new DefaultStack(), new libasm.hardware_addressoflabel(Mangler2.MangleMethod(static_cctor, ass), false),
+                            null, new libasm.hardware_location[] { }, static_cctor_cc, ret);
+                        ass.Requestor.RequestMethod(static_cctor);
+                    }
+                }
+            }
+
             /* Add the method prefix */
             ass.Enter(state, attrs, ret);
 
@@ -143,6 +167,8 @@ namespace libtysila.frontend.cil
                     ret.AddRange(c2.il.tybel);
                 }
             }
+
+
 
             /* Finally loop through again and add the tacs to the output stream */
             foreach (CilNode n in instrs.LinearStream)

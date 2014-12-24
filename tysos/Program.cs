@@ -45,14 +45,13 @@ namespace tysos
         [libsupcs.ReinterpretAsMethod]
         public static extern Multiboot.Header ReinterpretAsMboot(ulong addr);
 
-        [libsupcs.ExtraArgument(0, 0x18)]
-        static void Main()
+        [libsupcs.MethodAlias("kmain")]
+        static void KMain(Multiboot.Header mboot)
         {
             // Disable profiling until we have enabled the arch.DebugOutput port
             do_profile = false;
 
             // Get the multiboot header
-            Multiboot.Header mboot = ReinterpretAsMboot(libsupcs.CastOperations.GetArg0U8());
             mboot_header = mboot;
 
             /* Create a temporary heap, then initialize the architecture (default to x86_64 for now)
@@ -63,7 +62,12 @@ namespace tysos
             gc.simple_heap.Init(heap_start, mboot.heap_end);
 
             arch = new tysos.x86_64.Arch();
-            arch.Init(new System.UIntPtr(mboot.heap_start), new System.UIntPtr(tysos.x86_64.Arch.GetRecommendedChunkLength()), mboot);
+
+            UIntPtr chunk_vaddr = new UIntPtr(mboot.heap_start);
+            UIntPtr chunk_length = new UIntPtr(tysos.x86_64.Arch.GetRecommendedChunkLength());
+            arch.Init(chunk_vaddr, chunk_length, mboot);
+
+            while (true) ;
 
             // test dynamic types
             if (test_dynamic() == null)

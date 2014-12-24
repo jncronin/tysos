@@ -37,5 +37,6 @@ size_t efilibc_console_fwrite(const void *ptr, size_t size, size_t nmemb, void *
 size_t efilibc_serial_fwrite(const void *ptr, size_t size, size_t nmemb, void *data);
 size_t efilibc_console_fread(void *ptr, size_t size, size_t nmemb, void *data);
 int efilibc_setup_serial(int port_no);
+void efilibc_register_external_malloc(void *(*my_ext_malloc)(size_t));
 
 #endif

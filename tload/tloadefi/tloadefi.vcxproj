@@ -109,10 +109,12 @@
     <ClInclude Include="efilibc\inc\dirent.h" />
     <ClInclude Include="efilibc\inc\efilibc.h" />
     <ClInclude Include="efilibc\inc\errno.h" />
+    <ClInclude Include="efilibc\inc\fcntl.h" />
     <ClInclude Include="efilibc\inc\stdio.h" />
     <ClInclude Include="efilibc\inc\stdlib.h" />
     <ClInclude Include="efilibc\inc\string.h" />
     <ClInclude Include="efilibc\inc\sys\param.h" />
+    <ClInclude Include="efilibc\inc\sys\types.h" />
     <ClInclude Include="efilibc\inc\unistd.h" />
     <ClInclude Include="efilibc\inc\wchar.h" />
     <ClInclude Include="efiwindow\inc\ewbitmap.h" />

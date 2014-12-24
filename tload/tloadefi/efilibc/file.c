@@ -47,6 +47,8 @@ typedef struct _DIR
 #include <string.h>
 #include <assert.h>
 #include <efilibc.h>
+#include <fcntl.h>
+#include <sys/types.h>
 
 /* fileno -> FILE * mappings */
 #define MAX_FILENO		1024
@@ -163,6 +165,32 @@ DIR *opendir(const char *name)
 	return ret;
 }
 
+int open(const char *pathname, int flags, ...)
+{
+	const char *mode;
+
+	const char *r = "r", *w = "w", *rw = "r+";
+
+	int access_flag = flags & O_ACCMODE;
+	if(access_flag & O_RDONLY)
+		mode = r;
+	else if(access_flag & O_WRONLY)
+		mode = w;
+	else if(access_flag & O_RDWR)
+		mode = rw;
+	else
+	{
+		errno = EINVAL;
+		return -1;
+	}
+
+	FILE *ret = fopen(pathname, mode);
+	if(ret == NULL)
+		return -1;
+
+	return ret->fileno;
+}
+
 FILE *fopen(const char *path, const char *mode)
 {
 	if(fopen_root == NULL)
@@ -232,6 +260,20 @@ FILE *fopen(const char *path, const char *mode)
 	return ret;
 }
 
+ssize_t read(int fildes, void *buf, size_t nbyte)
+{
+	if(fildes >= next_fileno || fildes < 0 || fileno_map[fildes] == NULL)
+	{
+		errno = EBADF;
+		return (ssize_t)-1;
+	}
+
+	size_t ret = fread(buf, 1, nbyte, fileno_map[fildes]);
+	if(ret == 0 && fileno_map[fildes]->eof != 1)
+		return (ssize_t)-1;
+	return (ssize_t)ret;
+}
+
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
 	if(stream == stdin)
@@ -257,7 +299,22 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 	return buf_size / size;
 }
 
-size_t fwrite(void *ptr, size_t size, size_t nmemb, FILE *stream)
+ssize_t write(int fildes, const void *buf, size_t nbyte)
+{
+	if(fildes >= next_fileno || fildes < 0 || fileno_map[fildes] == NULL)
+	{
+		errno = EBADF;
+		return (ssize_t)-1;
+	}
+
+	size_t ret = fwrite(buf, 1, nbyte, fileno_map[fildes]);
+	
+	if(ret != nbyte)
+		return (ssize_t)-1;
+	return (ssize_t)ret;
+}
+
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
 	if(stream == stdin)
 		return 0;
@@ -274,7 +331,7 @@ size_t fwrite(void *ptr, size_t size, size_t nmemb, FILE *stream)
 
 	UINTN buf_size = size * nmemb;
 	UINTN old_buf_size = buf_size;
-	EFI_STATUS s = stream->f->Write(stream->f, &buf_size, ptr);
+	EFI_STATUS s = stream->f->Write(stream->f, &buf_size, (void *)ptr);
 	if(EFI_ERROR(s))
 		return 0;
 
@@ -297,6 +354,20 @@ int fputc(int c, FILE *stream)
 	if(fwrite(&c, 1, 1, stream) != 1)
 		return EOF;
 	return c;
+}
+
+int close(int fildes)
+{
+	if(fildes >= next_fileno || fildes < 0 || fileno_map[fildes] == NULL)
+	{
+		errno = EBADF;
+		return -1;
+	}
+
+	if(fclose(fileno_map[fildes]) == 0)
+		return 0;
+	else
+		return -1;
 }
 
 int fclose(FILE *stream)
@@ -370,6 +441,21 @@ int isatty(int fd)
 		errno = EINVAL;
 		return ret;
 	}
+}
+
+off_t lseek(int fildes, off_t offset, int whence)
+{
+	if(fildes >= next_fileno || fildes < 0 || fileno_map[fildes] == NULL)
+	{
+		errno = EBADF;
+		return (off_t)-1;
+	}
+
+	int ret = fseek(fileno_map[fildes], (long)offset, whence);
+	if(ret == 0)
+		return (off_t)ftell(fileno_map[fildes]);
+	else
+		return (off_t)-1;
 }
 
 int fseek(FILE *stream, long pos, int whence)

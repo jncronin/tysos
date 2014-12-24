@@ -11,12 +11,12 @@ if(!defined(STDLIB_TMH))
 	 *  build statement)
 	 */
 
-	export function autodir(string name)
+	/*export function autodir(string name)
 	{
 		export rulefor name {
 			mkdir(_RULE_OUTPUT);
 		}
-	}
+	}*/
 
 	export function typroject(string name, string config, string tools_ver, int unsafe)
 	{

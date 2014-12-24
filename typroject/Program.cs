@@ -585,6 +585,16 @@ namespace typroject
                 return c_proc.ExitCode;
             }
 
+            /* Copy project references to output directory */
+            System.IO.FileInfo o_fi = new FileInfo(OutputFile);
+            string dest_dir = add_dir_split(o_fi.DirectoryName);
+            foreach (Project pref in ProjectReferences)
+            {
+                string src = pref.OutputFile;
+                string dest = dest_dir + new System.IO.FileInfo(src).Name;
+                File.Copy(src, dest, true);
+            }
+
             return 0;
         }
     }

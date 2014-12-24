@@ -25,8 +25,18 @@
 #include <efi.h>
 #include <efilib.h>
 
+static void *(*ext_malloc)(size_t) = NULL;
+
+void efilibc_register_external_malloc(void *(*my_ext_malloc)(size_t))
+{
+	ext_malloc = my_ext_malloc;
+}
+
 void *malloc(size_t size)
 {
+	if(ext_malloc != NULL)
+		return ext_malloc(size);
+
 	void *buf;
 	EFI_STATUS s = BS->AllocatePool(EfiLoaderData, (UINTN)(size + sizeof(size_t)), &buf);
 	if(EFI_ERROR(s))

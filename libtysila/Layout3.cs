@@ -709,9 +709,6 @@ namespace libtysila
                     static_field_count++;
             }
 
-            if (static_field_count == 0)
-                return;
-
             // add a flags field
             StaticFields.Add(new Field
             {

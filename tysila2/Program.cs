@@ -282,10 +282,11 @@ namespace tysila
             StreamWriter cmsw = new StreamWriter(new MemoryStream());
 
             StreamWriter oci = null;
+            System.IO.FileInfo header_fi = new FileInfo(output_header);
             if (output_cinit != null)
             {
                 oci = new StreamWriter(new FileStream(output_cinit, FileMode.Create, FileAccess.Write));
-                oci.WriteLine("#include \"" + output_header + "\"");
+                oci.WriteLine("#include \"" + header_fi.Name + "\"");
                 oci.WriteLine("#include <string.h>");
                 oci.WriteLine("#include <stdlib.h>");
                 oci.WriteLine("#include <stdint.h>");

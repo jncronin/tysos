@@ -36,6 +36,8 @@ typedef void FILE;
 
 int printf(const char *fmt, ...);
 int sprintf(char *buffer, const char *fmt, ...);
+int snprintf(char *buffer, size_t size, const char *fmt, ...);
+int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 int fprintf(FILE *stream, const char *fmt, ...);
 int vprintf(const char *format, va_list ap);
 int vfprintf(FILE *stream, const char *format, va_list ap);
@@ -58,7 +60,7 @@ char *gets(char *s);
 
 FILE *fopen(const char *path, const char *mode);
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
-size_t fwrite(void *ptr, size_t size, size_t nmemb, FILE *stream);
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
 int fclose(FILE *fp);
 int fflush(FILE *stream);
 

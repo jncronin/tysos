@@ -44,8 +44,7 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr3_Ry_P0:
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr3_Rv_P1y:
-	mov rax, [rsp + 8]
-	mov cr3, rax
+	mov cr3, rdi
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr0_Ry_P0:
@@ -53,8 +52,7 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr0_Ry_P0:
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr0_Rv_P1y:
-	mov rax, [rsp + 8]
-	mov cr0, rax
+	mov cr0, rdi
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr2_Ry_P0:
@@ -62,8 +60,7 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr2_Ry_P0:
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr2_Rv_P1y:
-	mov rax, [rsp + 8]
-	mov cr2, rax
+	mov cr2, rdi
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr4_Ry_P0:
@@ -71,8 +68,7 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr4_Ry_P0:
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr4_Rv_P1y:
-	mov rax, [rsp + 8]
-	mov cr4, rax
+	mov cr4, rdi
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_4Lidt_Rv_P2yt:
@@ -81,15 +77,15 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_4Lidt_Rv_P2yt:
 
 	sub rsp, 0x10
 	
-	mov rax, [rbp + 16]
-	mov rbx, rax
+	mov rax, rdi
+	mov rcx, rax
 
-	shr rbx, 48
-	shl rax, 16
-	add rax, [rbp + 24]
+	shr rcx, 48
+	shl rcx, 16
+	add rax, rsi
 
 	mov [rsp], rax
-	mov [rsp + 8], rbx
+	mov [rsp + 8], rcx
 
 	lidt [rsp]
 
@@ -97,15 +93,14 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_4Lidt_Rv_P2yt:
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Ltr_Rv_P1y:
-	ltr [rsp + 8]
+	ltr dx
 	ret
 
 _ZX16MemoryOperationsM_0_19QuickClearAligned16_Rv_P2yy:
 	push rbp
 	mov rbp, rsp
 
-	mov	rdi, [rbp + 16]
-	mov rcx, [rbp + 24]
+	mov rcx, rsi
 
 	shr rcx, 4
 
@@ -130,9 +125,7 @@ __memcpy:
 
 	push 0 ; methodinfo
 
-	mov rdi, [rbp + 16]
-	mov rsi, [rbp + 24]
-	mov ecx, [rbp + 32]
+	mov ecx, edx
 
 	rep movsb
 
@@ -145,9 +138,8 @@ __memset:
 
 	push 0 ; methodinfo
 
-	mov rdi, [rbp + 16]
-	mov eax, [rbp + 24]
-	mov ecx, [rbp + 32]
+	mov eax, esi
+	mov ecx, edx
 
 	rep stosb
 
@@ -160,9 +152,8 @@ __memsetw:
 
 	push 0 ; methodinfo
 
-	mov rdi, [rbp + 16]
-	mov eax, [rbp + 24]
-	mov ecx, [rbp + 32]
+	mov eax, esi
+	mov ecx, edx
 
 	rep stosw
 
@@ -175,9 +166,7 @@ __memcmp:
 
 	push 0 ; methodinfo
 
-	mov rdi, [rbp + 16]
-	mov rsi, [rbp + 24]
-	mov ecx, [rbp + 32]
+	mov ecx, edx
 	xor eax, eax
 
 .doloop:
@@ -198,9 +187,7 @@ __memmove:
 
 	push 0 ; methodinfo
 
-	mov rdi, [rbp + 16]
-	mov rsi, [rbp + 24]
-	mov ecx, [rbp + 32]
+	mov ecx, edx
 	
 	cmp rdi, rsi
 	ja .domove
@@ -239,7 +226,10 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_RSP_Ry_P0:
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_9set_Mxcsr_Rv_P1j:
-	ldmxcsr [rsp + 8]
+	sub rsp, 8
+	mov dword [rsp], edi
+	ldmxcsr [rsp]
+	add rsp, 8
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_9get_Mxcsr_Rj_P0:
@@ -251,22 +241,25 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_9get_Mxcsr_Rj_P0:
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_6_Cpuid_Rv_P2jPj:
 	; void _Cpuid(uint req_no, uint *buf)
-
+	push rbx
+	
 	xor rcx, rcx
-	mov dword eax, [rsp + 8]
+	mov dword eax, edi
+
 	cpuid
 	
-	mov rdi, [rsp + 16]
+	mov rdi, rsi
 	mov dword [rdi], eax
 	mov dword [rdi + 4], ebx
 	mov dword [rdi + 8], ecx
 	mov dword [rdi + 12], edx
 
+	pop rbx
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5RdMsr_Ry_P1j:
 	; static ulong RdMsr(uint reg_no)
-	mov dword ecx, [rsp + 8]
+	mov dword ecx, edi
 	rdmsr
 	sub rsp, 8
 	mov dword [rsp], eax
@@ -296,8 +289,10 @@ _conv_u8_r8:
 _ZW6System4MathM_0_5Round_Rd_P1d:
 	; rely on the mxcsr rounding mode being round-to-even (set up in Arch)
 
-	cvtsd2si	rax, [rsp + 8]
+	push		rdi
+	cvtsd2si	rax, [rsp]
 	cvtsi2sd	xmm0, rax
+	pop			rdi
 
 	ret
 
@@ -307,7 +302,7 @@ _ZW6System4MathM_0_5Floor_Rd_P1d:
 	sub rsp, 8
 	stmxcsr [rsp]
 	mov eax, [rsp]
-	mov ebx, eax
+	mov ecx, eax
 
 	; mask out then set rounding bits
 	and eax, 0xffff9fff
@@ -318,11 +313,13 @@ _ZW6System4MathM_0_5Floor_Rd_P1d:
 	ldmxcsr [rsp]
 
 	; do the conversion
-	cvtsd2si	rax, [rsp + 16]
+	push		rdi
+	cvtsd2si	rax, [rsp]
 	cvtsi2sd	xmm0, rax
+	pop			rdi
 
 	; restore mxcsr
-	mov [rsp], ebx
+	mov [rsp], ecx
 	ldmxcsr [rsp]
 
 	add rsp, 8
@@ -342,23 +339,23 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5Break_Rv_P0:
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_6Invlpg_Rv_P1y:
-	mov rax, [rsp + 8]
+	mov rax, rdi
 	invlpg [rax]
 
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_RBP_Rv_P1y:
-	mov rbp, [rsp + 8]
+	mov rbp, rdi
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Int_Rv_P1h:
-	mov rax, [rsp + 8]
+	mov rax, rdi
 	cmp rax, 256
 	
 	jae .invalid
 	shl rax, 2
-	mov rbx, .int_list
-	add rax, rbx
+	mov rcx, .int_list
+	add rax, rcx
 	jmp rax
 
 .invalid:

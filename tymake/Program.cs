@@ -21,6 +21,7 @@ namespace tymake
             new DirectoryFunction { name = "dir" }.Execute(s);
             new DirectoryFunction { name = "basefname" }.Execute(s);
             new DirectoryFunction { name = "ext" }.Execute(s);
+            new DirectoryFunction { name = "autodir" }.Execute(s);
             new TyProject().Execute(s);
             new CopyFunction().Execute(s);
             new FOpenFunction().Execute(s);
@@ -199,9 +200,32 @@ namespace tymake
 
         public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
         {
+            if (name == "autodir")
+            {
+                System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(passed_args[0].strval);
+
+                while (di != null)
+                {
+                    List<Expression> depend_list = new List<Expression>();
+                    if (di.Parent != null)
+                        depend_list.Add(new StringExpression { val = di.Parent.FullName });
+
+                    MakeRuleStatement mr = new MakeRuleStatement
+                    {
+                        output_file = new StringExpression { val = di.FullName },
+                        rules = new tymake.MkDirCommandStatement { dir = new StringExpression { val = di.FullName } },
+                        export = true,
+                        depend_list = depend_list,
+                        inputs_list = new List<Expression>()
+                    };
+                    mr.Execute(s);
+                    di = di.Parent;
+                }
+
+                return new Expression.EvalResult(0);
+            }
+
             System.IO.FileInfo fi = new System.IO.FileInfo(passed_args[0].strval);
-            if (!fi.Exists)
-                throw new Exception(name + ": " + passed_args[0].strval + " does not exist");
             if (name == "dir")
                 return new Expression.EvalResult(fi.DirectoryName);
             else if (name == "basefname")

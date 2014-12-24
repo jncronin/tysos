@@ -162,6 +162,9 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     ass.MemCpy(state, il.stack_vars_before, fld_address, val_addr, new libasm.const_location { c = size }, il.il.tybel);
                 }
             }
+
+            if(fld_is_static)
+                attrs.types_whose_static_fields_are_referenced.Add(ftc.DefinedIn);
         }
 
         public static void ldstfld(InstructionLine il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_variable,

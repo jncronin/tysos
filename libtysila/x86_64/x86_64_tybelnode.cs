@@ -211,6 +211,7 @@ namespace libtysila
                 int rel_val = 0;
                 libasm.RelocationBlock.RelocationType rel_type = null;
                 libasm.RelocationBlock disp_reloc = null;
+                bool disp_reloc_adjust_by_imm_length = false;
                 bool need_rex_40 = false;
                 libasm.hardware_location new_r = null;
                 libasm.hardware_location new_rm = null;
@@ -260,8 +261,19 @@ namespace libtysila
                                 case vara.vara_type.Label:
                                     {
                                         // TODO: decide on the exact encoding depending on PIC/non-PIC etc
-                                        rm = new libasm.hardware_contentsof { base_loc = Rbp };  // RIP
-                                        disp_reloc = new libasm.RelocationBlock { RelType = ass.GetCodeToDataRelocType(), Size = 4, Target = ops[i].LabelVal, Value = (int)ops[i].Offset };
+                                        rm = new libasm.hardware_contentsof { base_loc = Rbp };  // RIP for x86_64, absolute for i586
+
+                                        libasm.RelocationBlock.RelocationType rel_t = ass.GetCodeToDataRelocType();
+                                        int val = (int)ops[i].Offset;
+
+                                        if (ass.GetBitness() == Bitness.Bits64)
+                                        {
+                                            rel_t = x86_64_Assembler.R_X86_64_PC32;
+                                            disp_reloc_adjust_by_imm_length = true;
+                                            val -= 4;
+                                        }
+
+                                        disp_reloc = new libasm.RelocationBlock { RelType = rel_t, Size = 4, Target = ops[i].LabelVal, Value = val };
                                     }
                                     break;
 
@@ -288,6 +300,7 @@ namespace libtysila
                                 case vara.vara_type.Label:
                                     rel = ops[i].LabelVal;
                                     rel_len = 4;
+                                    rel_val = (int)ops[i].Offset;
                                     break;
                                 case vara.vara_type.Const:
                                     imm = ops[i].ConstVal;
@@ -305,6 +318,7 @@ namespace libtysila
                                 case vara.vara_type.Label:
                                     rel = ops[i].LabelVal;
                                     rel_len = 8;
+                                    rel_val = (int)ops[i].Offset;
                                     break;
                                 case vara.vara_type.Const:
                                     imm = ops[i].ConstVal;
@@ -318,24 +332,26 @@ namespace libtysila
                         case x86_64.x86_64_asm.optype.Rel8:
                             rel = ops[i].LabelVal;
                             rel_len = 1;
+                            rel_val = -1 + (int)ops[i].Offset;
                             break;
 
                         case x86_64.x86_64_asm.optype.Rel16:
                             rel = ops[i].LabelVal;
                             rel_len = 2;
+                            rel_val = -2 + (int)ops[i].Offset;
                             break;
 
                         case x86_64.x86_64_asm.optype.Rel32:
                             rel = ops[i].LabelVal;
                             rel_len = 4;
                             rel_type = ass.GetCodeToCodeRelocType();
-                            rel_val = -4;
+                            rel_val = -4 + (int)ops[i].Offset;
                             break;
 
                         case x86_64.x86_64_asm.optype.Rel64:
                             rel = ops[i].LabelVal;
                             rel_len = 8;
-                            rel_val = -8;
+                            rel_val = -8 + (int)ops[i].Offset;
                             break;
                     }
                 }
@@ -528,6 +544,9 @@ namespace libtysila
                         a.AddRange(disp);
                     if (disp_reloc != null)
                     {
+                        if (disp_reloc_adjust_by_imm_length)
+                            disp_reloc.Value -= imm_len;
+
                         ret.Add(new libasm.CodeBlock(a));
                         ret.Add(disp_reloc);
                         a = new List<byte>();

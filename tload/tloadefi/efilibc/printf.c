@@ -453,6 +453,26 @@ sprintf(char *buffer, const char *fmt, ...)
 	return ret;
 }
 
+int snprintf(char *buffer, size_t size, const char *fmt, ...)
+{
+	va_list ap;
+
+	//TODO: ignores size
+	(void)size;
+
+	va_start(ap, fmt);
+	int ret = kvprintf(fmt, NULL, (void *)buffer, 10, ap);
+	va_end(ap);
+	return ret;
+}
+
+int vsnprintf(char *str, size_t size, const char *format, va_list ap)
+{
+	//TODO: ignores size
+	(void)size;
+	return kvprintf(format, NULL, (void *)str, 10, ap);
+}
+
 int vprintf(const char *fmt, va_list ap)
 {
 	return kvprintf(fmt, fputc, stdout, 10, ap);

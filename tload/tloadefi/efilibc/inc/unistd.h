@@ -22,6 +22,12 @@
 #ifndef UNISTD_H
 #define UNISTD_H
 
+typedef intptr_t ssize_t;
+typedef uintptr_t size_t;
+typedef ssize_t off_t;
+
+
 int isatty(int fd);
+off_t lseek(int fd, off_t offset, int whence);
 
 #endif

@@ -26,6 +26,8 @@ if (TARGET == "x86_64")
 	LDFLAGS = "-fno-use-linker-plugin -Ttext 0x40000000 -nostdlib";
 	TYSOS_CPU_OBJ = [ tycobj("x86_64/cpu.o"), tycobj("x86_64/halt.o"), tycobj("x86_64/exceptions.o"), tycobj("x86_64/switcher.o") ];
 	LIBSUPCS_CPU_OBJ = [ "../../../libsupcs/x86_64_arith.o", "../../../libsupcs/x86_64_cpu.o", "../../../libsupcs/x86_64_Invoke.o" ];
+	CFLAGS = "-ffreestanding -mno-red-zone -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-3dnow";
+	USE_UEFI = 1;
 	
 	x86_yasm();
 }
@@ -34,6 +36,7 @@ else if (TARGET == "x86")
 	CC = "i586-elf-gcc";
 	YASMFLAGS = "-felf";
 	TYSILAARCH = "i586-elf-tysos";
+	USE_GRUB = 1;
 
 	x86_yasm();
 }
@@ -77,15 +80,15 @@ rulefor "%.obj" inputs { "%.dll" } depends { TYSILA } {
 
 rulefor KERNEL inputs { TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ, LIBASMOBJ, LIBTYSILAOBJ, tycobj("undefined.o"),
 	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA } {
-	shellcmd("$CC -o $_RULE_OUTPUT $LDFLAGS $_RULE_INPUTS");
+	shellcmd("$CC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");
 }
 
 rulefor "%.o" inputs { "%.c" } depends { "test.tmk" } {
-	shellcmd("$CC -o $_RULE_OUTPUT -ffreestanding -c $_RULE_INPUT");
+	shellcmd("$CC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
 }
 
 rulefor "%.o" inputs { "%.s" } depends { "test.tmk" } {
-	shellcmd("$CC -o $_RULE_OUTPUT -ffreestanding -c $_RULE_INPUT");
+	shellcmd("$CC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
 }
 
 rulefor LIBSUPCSA inputs { LIBSUPCSOBJ, LIBSUPCS_CPU_OBJ } depends { "test.tmk" } {
@@ -95,6 +98,57 @@ rulefor LIBSUPCSA inputs { LIBSUPCSOBJ, LIBSUPCS_CPU_OBJ } depends { "test.tmk" 
 
 rulefor "%.tgc.o" inputs { "%.c" } depends { "test.tmk" } {
 	shellcmd("$CC -o $_RULE_OUTPUT -I../../../tinygc -ffreestanding -c $_RULE_INPUT");
+}
+
+EFICC = "x86_64-w64-mingw32-gcc";
+EFIAR = "x86_64-w64-mingw32-ar";
+EFILIBCDIR = ROOT + "/tload/tloadefi/efilibc";
+ZLIBDIR = ROOT + "/tload/tloadefi/zlib";
+CONFUSEDIR = ROOT + "/tload/tloadefi/confuse-2.7/src";
+EFICFLAGS = "-I" + EFILIBCDIR + "/inc -I" + EFILIBCDIR + "/efi/inc -I" + EFILIBCDIR + "/efi/inc/protocol -I" + EFILIBCDIR + "/efi/inc/x86_64 -I" 
+	+ EFILIBCDIR + " -I" + EFILIBCDIR + "/efi -I" + ZLIBDIR + " -I" + CONFUSEDIR + " -ffreestanding -std=gnu11 -Wall -Wextra -Werror";
+EFILDFLAGS = "-nostdlib -fno-use-linker-plugin -Wl,-dll -shared -Wl,--subsystem,10 -e efi_main";
+
+rulefor "%.efi.o" inputs { "%.c" } depends { "test.tmk" } {
+	shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -c $_RULE_INPUT");
+}
+rulefor "%.efi.o" inputs { "%.s" } depends { "test.tmk" } {
+	shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -c $_RULE_INPUT");
+}
+
+EFILIBC = EFILIBCDIR + "/libefilibc.a";
+rulefor EFILIBC inputs { EFILIBCDIR + "/abort.efi.o", EFILIBCDIR + "/atof.efi.o", EFILIBCDIR + "/console.efi.o", EFILIBCDIR + "/data.efi.o",
+	EFILIBCDIR + "/efilibc.efi.o", EFILIBCDIR + "/file.efi.o", EFILIBCDIR + "/malloc.efi.o", EFILIBCDIR + "/misc.efi.o", EFILIBCDIR + "/printf.efi.o",
+	EFILIBCDIR + "/scanf.efi.o", EFILIBCDIR + "/serial.efi.o", EFILIBCDIR + "/string.efi.o", EFILIBCDIR + "/strtod.efi.o", EFILIBCDIR + "/strtol.efi.o",
+	EFILIBCDIR + "/strtoll.efi.o", EFILIBCDIR + "/strtoull.efi.o" } depends { "test.tmk" } {
+	shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+}
+
+ZLIB = ZLIBDIR + "/libz.a";
+rulefor ZLIB inputs { ZLIBDIR + "/adler32.efi.o", ZLIBDIR + "/compress.efi.o", ZLIBDIR + "/crc32.efi.o",
+	ZLIBDIR + "/deflate.efi.o", ZLIBDIR + "/gzclose.efi.o", ZLIBDIR + "/gzlib.efi.o", ZLIBDIR + "/gzread.efi.o",
+	ZLIBDIR + "/gzwrite.efi.o", ZLIBDIR + "/infback.efi.o", ZLIBDIR + "/inffast.efi.o", ZLIBDIR + "/inflate.efi.o",
+	ZLIBDIR + "/inftrees.efi.o", ZLIBDIR + "/trees.efi.o", ZLIBDIR + "/uncompr.efi.o", ZLIBDIR + "/zutil.efi.o" } depends { "test.tmk" }
+{
+	shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+}
+
+CONFUSE = CONFUSEDIR + "/libconfuse.a";
+rulefor CONFUSE inputs { CONFUSEDIR + "/confuse.efi.o", CONFUSEDIR + "/lexer.efi.o" } depends { "test.tmk" }
+{
+	shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+}
+
+EFILOADER = ROOT + "/efiloader/efiloader.bin";
+rulefor EFILOADER inputs { ROOT + "/efiloader/main.efi.o", ROOT + "/efiloader/tloadkif.efi.o", ROOT + "/efiloader/load.efi.o",
+	ROOT + "/efiloader/elf.efi.o", ROOT + "/efiloader/vmem.efi.o", ROOT + "/efiloader/modules.efi.o",
+	ROOT + "/efiloader/kif.efi.o", ROOT + "/efiloader/cfg.efi.o", ROOT + "/efiloader/tramp.efi.o" } depends { EFILIBC, ZLIB, CONFUSE } {
+	shellcmd("$EFICC -o $_RULE_OUTPUT $EFILDFLAGS -L$EFILIBCDIR -L$ZLIBDIR -L$CONFUSEDIR $_RULE_INPUTS -lz -lconfuse -lefilibc -lgcc");
+}
+
+rulefor ROOT + "/efiloader/tloadkif.c" inputs { TYSOS } depends { TYSILA, MSCORLIB }
+{
+	shellcmd("$TYSILA --arch $TYSILAARCH -q -L$MSCORLIBDIR --output-header $ROOT/efiloader/tloadkif.h --output-cinit $ROOT/efiloader/tloadkif.c $TYSOS");
 }
 
 SETJMP = "../../../tinygc/setjmp." + TARGET + ".o";
@@ -126,39 +180,71 @@ CDBOOT = "f:/cygwin64/usr/local/lib/grub/i386-pc/cdboot.img";
 GRUBPREFIX_CFG = OUTDIR + "/grub_prefix.cfg";
 ELTORITO = GRUBDIR + "/eltorito.img";
 
-rulefor ISOIMAGE inputs { KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG } depends { ISODIR, BOOTDIR, GRUBDIR, CDBOOT }
+if(defined(USE_GRUB))
 {
-	cp(KERNEL, ISODIR);
-	cp(GRUBCFG, GRUBDIR);
-	cp(LIBSUPCS, ISODIR);
-	cp(MSCORLIB, ISODIR);
-
-	foreach(proc in PROCESSES)
+	rulefor ISOIMAGE inputs { KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG } depends { ISODIR, BOOTDIR, GRUBDIR, CDBOOT }
 	{
-		cp(proc, ISODIR);
-	}
+		cp(KERNEL, ISODIR);
+		cp(GRUBCFG, GRUBDIR);
+		cp(LIBSUPCS, ISODIR);
+		cp(MSCORLIB, ISODIR);
 
-	shellcmd("$GRUB_MKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -O i386-pc biosdisk multiboot configfile normal iso9660");
+		foreach(proc in PROCESSES)
+		{
+			cp(proc, ISODIR);
+		}
+
+		shellcmd("$GRUB_MKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -O i386-pc biosdisk multiboot configfile normal iso9660");
 	
-	fcdboot = fopen(CDBOOT);
-	fcoreimg = fopen(COREIMG);
+		fcdboot = fopen(CDBOOT);
+		fcoreimg = fopen(COREIMG);
 
-	bcdboot = [];
-	fcdboot.Read(bcdboot, 0, fcdboot.Length);
+		bcdboot = [];
+		fcdboot.Read(bcdboot, 0, fcdboot.Length);
 
-	bcoreimg = [];
-	fcoreimg.Read(bcoreimg, 0, fcoreimg.Length);
+		bcoreimg = [];
+		fcoreimg.Read(bcoreimg, 0, fcoreimg.Length);
 
-	if(exists(ELTORITO))
-	{
-		rm(ELTORITO);
+		if(exists(ELTORITO))
+		{
+			rm(ELTORITO);
+		}
+
+		feltorito = fopen(ELTORITO);
+		feltorito.Write(bcdboot, 0, fcdboot.Length);
+		feltorito.Write(bcoreimg, 0, fcoreimg.Length);
+
+		shellcmd("$XORRISO -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
 	}
+}
+else if(defined(USE_UEFI))
+{
+	IMGDIR = OUTDIR + "/img";
+	autodir(IMGDIR + "/EFI/BOOT");
+	autodir(IMGDIR + "/boot");
 
-	feltorito = fopen(ELTORITO);
-	feltorito.Write(bcdboot, 0, fcdboot.Length);
-	feltorito.Write(bcoreimg, 0, fcoreimg.Length);
+	BOOT_MNU = OUTDIR + "/boot.mnu";
 
-	shellcmd("$XORRISO -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
+	rulefor ISOIMAGE inputs { KERNEL, LIBSUPCS, MSCORLIB, PROCESSES, EFILOADER, BOOT_MNU } depends { IMGDIR, IMGDIR + "/EFI/BOOT", IMGDIR + "/boot", ISODIR }
+	{
+		cp(KERNEL, IMGDIR);
+		cp(LIBSUPCS, IMGDIR);
+		cp(MSCORLIB, IMGDIR);
+		cp(BOOT_MNU, IMGDIR + "/boot");
+
+		foreach(proc in PROCESSES)
+		{
+			cp(proc, IMGDIR);
+		}
+
+		// Compress kernel
+		shellcmd("gzip -f $IMGDIR/tysos.bin");
+
+		cp(EFILOADER, IMGDIR + "/EFI/BOOT/BOOTX64.EFI");
+
+		shellcmd("mkfat -o $ISODIR/efi.img $IMGDIR");
+		shellcmd("$XORRISO -as mkisofs -R -f --efi-boot efi.img -no-emul-boot -o $ISOIMAGE $ISODIR");
+	}
 }
 
 build(ISOIMAGE);

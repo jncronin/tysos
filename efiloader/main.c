@@ -24,15 +24,18 @@
 #include <efilibc.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
 #include "tloadkif.h"
 #include "zlib.h"
 #include "elf.h"
 
-EFI_STATUS load_kernel(const char *fname);
+EFI_STATUS load_kernel(const char *fname, void **fobj, size_t (**fread_func)(void *, void *, size_t),
+					   int (**fclose_func)(void *), off_t (**fseek_func)(void *, off_t offset, int whence));
 EFI_STATUS allocate_fixed(UINTPTR base, UINTPTR length, EFI_PHYSICAL_ADDRESS src);
 EFI_STATUS allocate_any(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS src);
 EFI_STATUS allocate(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS *paddr_out);
-EFI_STATUS elf64_map_kernel(Elf64_Ehdr *ehdr);
+EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(void *, void *, size_t), off_t (*fseek_func)(void *, off_t, int));
 EFI_STATUS load_module(const char *fname, UINTPTR *addr, size_t *length);
 EFI_STATUS build_page_tables(EFI_PHYSICAL_ADDRESS *pml4t_out);
 EFI_STATUS kif_init(EFI_PHYSICAL_ADDRESS p_kif, EFI_PHYSICAL_ADDRESS len, struct Multiboot_Header **mbheader);
@@ -192,7 +195,12 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	parse_cfg_file();
 
 	/* Load up the kernel */
-	Status = load_kernel(cfg_get_kpath());
+	void *fobj;
+	size_t (*fread_func)(void *, void *, size_t);
+	int (*fclose_func)(void *);
+	off_t (*fseek_func)(void *, off_t offset, int whence);
+
+	Status = load_kernel(cfg_get_kpath(), &fobj, &fread_func, &fclose_func, &fseek_func);
 	if(Status != EFI_SUCCESS)
 	{
 		press_key();
@@ -200,8 +208,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 	/* Load the elf headers and map kernel */
-	Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf_kernel;
-	Status = elf64_map_kernel(ehdr);
+	Elf64_Ehdr *ehdr;
+	Status = elf64_map_kernel(&ehdr, fobj, fread_func, fseek_func);
 	if(Status != EFI_SUCCESS)
 	{
 		press_key();
@@ -211,20 +219,26 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	/* Initialize the symbol + string tables */
 	sym_tab_paddr = 0;
 	str_tab_paddr = 0;
+	void *shdrs = malloc(ehdr->e_shnum * ehdr->e_shentsize);
+	fseek_func(fobj, ehdr->e_shoff, SEEK_SET);
+	fread_func(fobj, shdrs, ehdr->e_shnum * ehdr->e_shentsize);
+
 	for(int i = 0; i < ehdr->e_shnum; i++)
 	{
-		Elf64_Shdr *shdr = (Elf64_Shdr *)((EFI_PHYSICAL_ADDRESS)ehdr + (EFI_PHYSICAL_ADDRESS)ehdr->e_shoff +
-			i * (EFI_PHYSICAL_ADDRESS)ehdr->e_shentsize);
+		Elf64_Shdr *shdr = (Elf64_Shdr *)((EFI_PHYSICAL_ADDRESS)shdrs + i * ehdr->e_shentsize);
 		if(shdr->sh_type == SHT_SYMTAB)
 		{
-			sym_tab_paddr = (EFI_PHYSICAL_ADDRESS)ehdr + (EFI_PHYSICAL_ADDRESS)shdr->sh_offset;
+			sym_tab_paddr = (EFI_PHYSICAL_ADDRESS)malloc(shdr->sh_size);
 			sym_tab_size = (EFI_PHYSICAL_ADDRESS)shdr->sh_size;
 			sym_tab_entsize = (EFI_PHYSICAL_ADDRESS)shdr->sh_entsize;
+			fseek_func(fobj, shdr->sh_offset, SEEK_SET);
+			fread_func(fobj, (void *)sym_tab_paddr, shdr->sh_size);
 
-			Elf64_Shdr *strtab = (Elf64_Shdr *)((EFI_PHYSICAL_ADDRESS)ehdr + (EFI_PHYSICAL_ADDRESS)ehdr->e_shoff +
-				shdr->sh_link * (EFI_PHYSICAL_ADDRESS)ehdr->e_shentsize);
-			str_tab_paddr = (EFI_PHYSICAL_ADDRESS)ehdr + (EFI_PHYSICAL_ADDRESS)strtab->sh_offset;
+			Elf64_Shdr *strtab = (Elf64_Shdr *)((EFI_PHYSICAL_ADDRESS)shdrs + shdr->sh_link * ehdr->e_shentsize);
+			str_tab_paddr = (EFI_PHYSICAL_ADDRESS)malloc(strtab->sh_size);
 			str_tab_size = (EFI_PHYSICAL_ADDRESS)strtab->sh_size;
+			fseek_func(fobj, strtab->sh_offset, SEEK_SET);
+			fread_func(fobj, (void *)str_tab_paddr, strtab->sh_size);
 			break;
 		}
 	}
@@ -234,6 +248,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		press_key();
 		return EFI_ABORTED;
 	}
+
+	fclose_func(fobj);
 
 	/* Allocate identity-mapped space at 0x2000 for the KIF, and an extra page for the new gdt/idt */
 	UINTPTR v_kif = 0x2000;

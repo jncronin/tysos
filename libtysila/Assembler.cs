@@ -106,6 +106,9 @@ namespace libtysila
         internal abstract void BrIf(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location br_target, libasm.hardware_location a, libasm.hardware_location b, ThreeAddressCode.OpName op, CliType dt, List<tybel.Node> ret);
         internal abstract void Save(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location loc, List<tybel.Node> ret);
         internal abstract void Restore(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location loc, List<tybel.Node> ret);
+        internal abstract void LocAlloc(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location dest_loc, int size, List<tybel.Node> ret);
+        internal abstract void LocDeAlloc(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, int size, List<tybel.Node> ret);
+        internal abstract void RunOnce(libtysila.frontend.cil.Encoder.EncoderState state, Stack regs_in_use, libasm.hardware_location flags, List<tybel.Node> ret);
 
         internal virtual Stack GetStack(libasm.hardware_stackloc.StackType stack_type) { return new DefaultStack(stack_type); }
         internal virtual Stack GetStack() { return GetStack(hardware_stackloc.StackType.Var); }

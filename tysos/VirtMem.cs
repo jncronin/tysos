@@ -50,13 +50,14 @@ namespace tysos
             temp_page_va = _temp_page_va;
 
             /* Ensure that the last entry of the table points back on itself and is enabled */
-            pml4t = new tysos.Collections.StaticULongArray(temp_page_va, 512);
-            ulong cr3 = libsupcs.x86_64.Cpu.Cr3;
+            // This is now done by efiloader
+            pml4t = new tysos.Collections.StaticULongArray(page_mask, 512);
+            /*ulong cr3 = libsupcs.x86_64.Cpu.Cr3;
             ulong last_paddr = cr3 & paddr_mask;
             last_paddr |= 0x3;
             pml4t[511] = last_paddr;
 
-            libsupcs.x86_64.Cpu.Cr3 = cr3;
+            libsupcs.x86_64.Cpu.Cr3 = cr3;*/
 
             /* The paging structures now occupy the last 512 GiB (0x8000000000) of virtual memory
              *  which starts at 0xffffff8000000000 

@@ -61,6 +61,8 @@ namespace libtysila
 
             public Assembler ass;
 
+            public util.Set<Assembler.TypeToCompile> types_whose_static_fields_are_referenced = new util.Set<TypeToCompile>();
+
             public MethodAttributes(Assembler _ass) { ass = _ass; }
         }
 

@@ -88,11 +88,21 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location loc_obj = il.stack_vars_after.GetAddressFor(type_pushes, ass);
             libasm.hardware_location t2 = ass.GetTemporary2(state);
             libasm.hardware_location str_length = null;
+            int temp_mem_loc_size = 0;
 
             if (type.type.IsValueType(ass) && !(type.tsig.Type is Signature.BoxedType))
             {
                 // Value types created with newobj are created on the stack
-                ass.LoadAddress(state, il.stack_vars_before, t1, loc_obj, il.il.tybel);
+
+                // Sometimes, however, the stack location is a gpr - in that case we need to use
+                //  some temporary stack space to store it
+                if (loc_obj is libasm.register)
+                {
+                    ass.LocAlloc(state, il.stack_vars_before, t1, ass.GetSizeOfIntPtr(), il.il.tybel);
+                    temp_mem_loc_size = ass.GetSizeOfIntPtr();
+                }
+                else
+                    ass.LoadAddress(state, il.stack_vars_before, t1, loc_obj, il.il.tybel);
             }
             else
             {
@@ -109,7 +119,6 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("gcmalloc", false), t1,
                     new libasm.hardware_location[] { obj_size }, ass.callconv_gcmalloc, il.il.tybel);
             }
-            ass.Assign(state, il.stack_vars_before, loc_obj, t1, Assembler.CliType.O, il.il.tybel);
 
             // Fill in the various runtime initialized fields
             if (l.has_vtbl)
@@ -210,6 +219,28 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
                 ass.Requestor.RequestMethod(constructor.Value);
             }
+
+            if (temp_mem_loc_size > 0)
+            {
+                Stack temp_stack = il.stack_vars_before.Clone();
+                temp_stack.MarkUsed(t1);
+                Assembler.CliType dt = Assembler.CliType.native_int;
+                switch(temp_mem_loc_size)
+                {
+                    case 4:
+                        dt = Assembler.CliType.int32;
+                        break;
+                    case 8:
+                        dt = Assembler.CliType.int64;
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+                ass.Assign(state, temp_stack, loc_obj, new libasm.hardware_contentsof { base_loc = t1, size = temp_mem_loc_size }, dt, il.il.tybel);
+                ass.LocDeAlloc(state, il.stack_vars_before, temp_mem_loc_size, il.il.tybel);
+            }
+            else
+                ass.Assign(state, il.stack_vars_before, loc_obj, t1, Assembler.CliType.O, il.il.tybel);
 
             il.stack_after.Push(type_pushes);
         }

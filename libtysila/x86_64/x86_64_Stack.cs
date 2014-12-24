@@ -184,7 +184,7 @@ namespace libtysila
             {
                 if (cur_locs == null)
                     cur_locs = new util.Stack<libasm.hardware_location>();
-                if (cur_locs.Contains(loc))
+                if (!cur_locs.Contains(loc))
                     cur_locs.Add(loc);
             }
 
