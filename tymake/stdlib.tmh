@@ -28,9 +28,16 @@ if(!defined(STDLIB_TMH))
 			_depends.add(typroject(dep, config, tools_ver, unsafe));
 		}
 
+		_depends.add(dir(_p.OutputFile));
+
 		export rulefor _p.OutputFile inputs { _p.Sources } depends { _depends }
 		{
 			_p.Build();
+		}
+
+		export rulefor dir(_p.OutputFile)
+		{
+			mkdir(_RULE_OUTPUT);
 		}
 
 		return _p.OutputFile;

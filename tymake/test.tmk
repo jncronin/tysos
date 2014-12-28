@@ -77,6 +77,39 @@ rulefor "%.obj" inputs { "%.dll" } depends { TYSILA } {
 	shellcmd("$TYSILA -o $_RULE_OUTPUT --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
 }
 
+/* Rules for char-conversions */
+CC_DIR = ROOT + "/unicode_support/char-conversions";
+CHAR_CONVERSIONS_PROG = typroject(CC_DIR + "/char-conversions.csproj");
+CC_INTERMEDIATE = CC_DIR + "/category-dump";
+CC_OUTPUT = CC_DIR + "/char-conversions.cs";
+
+rulefor CC_INTERMEDIATE depends { CHAR_CONVERSIONS_PROG } {
+	shellcmd("$CHAR_CONVERSIONS_PROG --dump $CC_INTERMEDIATE");
+}
+
+rulefor CC_OUTPUT inputs { CC_INTERMEDIATE } depends { CHAR_CONVERSIONS_PROG } {
+	shellcmd("$CHAR_CONVERSIONS_PROG --encode $CC_INTERMEDIATE CategoryData $CC_OUTPUT");
+}
+
+rulefor ROOT + "/tysos/lib/char-conversions.cs" inputs { CC_OUTPUT } {
+	cp(_RULE_INPUT, _RULE_OUTPUT);
+}
+
+/* Rules for UnicodeData */
+US_DIR = ROOT + "/unicode_support";
+US_PROG = typroject(US_DIR + "/unicode_support.csproj");
+US_INPUT = US_DIR + "/UnicodeData.txt";
+US_OUTPUT = US_DIR + "/UnicodeData.cs";
+
+rulefor US_OUTPUT inputs { US_INPUT } depends { US_PROG } {
+	shellcmd("$US_PROG -o $US_OUTPUT $US_INPUT");
+}
+
+rulefor ROOT + "/tysos/lib/UnicodeData.cs" inputs { US_OUTPUT } {
+	cp(_RULE_INPUT, _RULE_OUTPUT);
+}
+
+
 
 rulefor KERNEL inputs { TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ, LIBASMOBJ, LIBTYSILAOBJ, tycobj("undefined.o"),
 	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA } {

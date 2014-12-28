@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2011 by John Cronin
+﻿/* Copyright (C) 2011,2014 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,12 +34,12 @@ namespace unicode_support
             string input = "UnicodeData.txt";
             string output = "UnicodeData.cs";
 
-            if (args.Length >= 1)
+            for (int i = 0; i < args.Length; i++)
             {
-                input = args[0];
-
-                if (args.Length >= 2)
-                    output = args[1];
+                if (args[i] == "-o")
+                    output = args[++i];
+                else
+                    input = args[i];
             }
 
             StreamReader r = new StreamReader(input);
