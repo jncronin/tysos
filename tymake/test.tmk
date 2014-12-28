@@ -70,13 +70,6 @@ TINYGCOBJ = "../../../tinygc/gc.o";
 
 KERNEL = "../../../tysos.bin";
 
-rulefor "%.obj" inputs { "%.exe" } depends { TYSILA } {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
-}
-rulefor "%.obj" inputs { "%.dll" } depends { TYSILA } {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
-}
-
 /* Rules for char-conversions */
 CC_DIR = ROOT + "/unicode_support/char-conversions";
 CHAR_CONVERSIONS_PROG = typroject(CC_DIR + "/char-conversions.csproj");
@@ -109,7 +102,42 @@ rulefor ROOT + "/tysos/lib/UnicodeData.cs" inputs { US_OUTPUT } {
 	cp(_RULE_INPUT, _RULE_OUTPUT);
 }
 
+/* Rules for mscorlib sources */
+CORLIB_DIR = ROOT + "/mono/corlib";
+CORLIB_SRC = CORLIB_DIR + "/corlib.dll.sources";
+CORLIB_OPTS = CORLIB_DIR + "/corlib.dll.sources.options";
+CORLIB_TY_SRCS = CORLIB_DIR + "/corlib.dll.ty.sources";
+CORLIB_DLL = CORLIB_DIR + "/mscorlib.dll";
 
+rulefor CORLIB_TY_SRCS inputs { CORLIB_SRC, CORLIB_OPTS } {
+	f_a = fopen(CORLIB_OPTS);
+	b_a = [];
+	f_a.Read(b_a, 0, f_a.Length);
+
+	f_b = fopen(CORLIB_SRC);
+	b_b = [];
+	f_b.Read(b_b, 0, f_b.Length);
+
+	b_o = [];
+	b_o.addrange(b_a);
+	b_o.addrange(strtoarr("#assemblyname mscorlib.dll\n\n"));
+	b_o.addrange(b_b);
+
+	f_o = fopen(CORLIB_TY_SRCS);
+	f_o.Write(b_o, 0, b_o.length);
+	f_o.Close();
+}
+
+build(CORLIB_TY_SRCS);
+typroject(CORLIB_TY_SRCS);
+
+/* Rules for assembling CLR binaries */
+rulefor "%.obj" inputs { "%.exe" } depends { TYSILA, CORLIB_DLL } {
+	shellcmd("$TYSILA -o $_RULE_OUTPUT --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
+}
+rulefor "%.obj" inputs { "%.dll" } depends { TYSILA, CORLIB_DLL } {
+	shellcmd("$TYSILA -o $_RULE_OUTPUT --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
+}
 
 rulefor KERNEL inputs { TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ, LIBASMOBJ, LIBTYSILAOBJ, tycobj("undefined.o"),
 	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA } {

@@ -325,6 +325,9 @@ namespace tymake
             WriteFunction wf = new WriteFunction(fs);
             ret[wf.Mangle()] = new Expression.EvalResult(wf);
 
+            CloseFunction cf = new CloseFunction(fs);
+            ret[cf.Mangle()] = new Expression.EvalResult(cf);
+
             return new Expression.EvalResult(ret);
         }
 
@@ -408,6 +411,24 @@ namespace tymake
                 return new Expression.EvalResult(0);
             }
         }
+
+        internal class CloseFunction : FunctionStatement
+        {
+            System.IO.FileStream fs;
+
+            public CloseFunction(System.IO.FileStream fstream)
+            {
+                fs = fstream;
+                name = "Close";
+                args = new List<FunctionArg> { new FunctionArg { name = "this", argtype = Expression.EvalResult.ResultType.Object } };
+            }
+
+            public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
+            {
+                fs.Close();
+                return new Expression.EvalResult(0);
+            }
+        }
     }
 
     class TyProject : FunctionStatement
@@ -435,7 +456,11 @@ namespace tymake
                 throw new Exception("_typroject: " + fname + " does not exist");
             }
 
-            typroject.Project p = typroject.Project.xml_read(fi.OpenRead(), config, fi.DirectoryName, cur_dir);
+            typroject.Project p = null;
+            if (fname.ToLower().EndsWith(".csproj"))
+                p = typroject.Project.xml_read(fi.OpenRead(), config, fi.DirectoryName, cur_dir);
+            else if (fname.ToLower().EndsWith(".sources"))
+                p = typroject.Project.sources_read(fi.OpenRead(), config, fi.DirectoryName, cur_dir);
 
             Dictionary<string, Expression.EvalResult> ret = new Dictionary<string, Expression.EvalResult>();
             ret["OutputFile"] = new Expression.EvalResult(p.OutputFile);

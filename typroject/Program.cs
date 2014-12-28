@@ -327,6 +327,86 @@ namespace typroject
             return xml_read(ret, file, config, basedir, curdir);
         }
 
+        public static Project sources_read(Stream file, string config, string basedir, string curdir)
+        {
+            Project ret = new Project();
+            StreamReader sr = new StreamReader(file);
+            ret.sources_read(sr, config, basedir, curdir);
+            return ret;
+        }
+
+        internal void sources_read(StreamReader file, string config, string basedir, string curdir)
+        {
+            basedir = add_dir_split(basedir);
+            curdir = add_dir_split(curdir);
+            Uri uri_basedir = new Uri(basedir);
+            Uri uri_curdir = new Uri(curdir);
+
+            while (!file.EndOfStream)
+            {
+                string line = file.ReadLine();
+
+                if (line.StartsWith("#define "))
+                    defines += line.Substring("#define ".Length) + " ";
+                else if (line.StartsWith("#outdir "))
+                    output_path = rel_path(line.Substring("#outdir ".Length), uri_basedir, uri_curdir);
+                else if (line.StartsWith("#assemblyname "))
+                    assembly_name = line.Substring("#assemblyname ".Length);
+                else if (line.StartsWith("#target "))
+                {
+                    string ot = line.Substring("#target ".Length).ToLower();
+                    if (ot == "library")
+                        output_type = OutputType.Library;
+                    else if (ot == "exe")
+                        output_type = OutputType.Exe;
+                }
+                else if (line.StartsWith("#ref "))
+                    References.Add(line.Substring("#ref ".Length));
+                else if (line.StartsWith("#extra "))
+                    extra_add += line.Substring("#extra ".Length) + " ";
+                else if (line.StartsWith("#tools "))
+                    tools_ver = line.Substring("#tools ".Length);
+                else if (line.StartsWith("#")) continue; // ignore
+                else
+                {
+                    if (line.Length > 0)
+                        Sources.Add(rel_path(line.Trim(), uri_basedir, uri_curdir));
+                }
+            }
+
+            if (output_path == null)
+                output_path = ".";
+            if (OutputFile == null)
+            {
+                if (assembly_name == null)
+                {
+                    string bname = null;
+                    if (Sources.Count > 0)
+                    {
+                        FileInfo s0_fi = new FileInfo(Sources[0]);
+                        int ext_len = 0;
+                        if (s0_fi.Extension.Length > 0)
+                            ext_len = s0_fi.Extension.Length + 1;
+                        bname = s0_fi.Name.Substring(0, s0_fi.Name.Length - ext_len);
+                    }
+                    else
+                        bname = "out";
+
+                    switch (output_type)
+                    {
+                        case OutputType.Exe:
+                            assembly_name += ".exe";
+                            break;
+                        case OutputType.Library:
+                            assembly_name += ".dll";
+                            break;
+                    }
+                }
+
+                OutputFile = rel_path(assembly_name, uri_basedir, uri_curdir);
+            }
+        }
+
         internal static Project src_read(List<string> sources, string curdir, OutputType otype)
         {
             Project ret = new Project();
