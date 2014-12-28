@@ -577,6 +577,13 @@ namespace typroject
             sb.Append(Program.replace_dir_split(OutputFile));
             sb.Append("\" ");
 
+            if (defines != null && defines.Length > 0)
+            {
+                sb.Append("/define:");
+                sb.Append(defines);
+                sb.Append(" ");
+            }
+
             sb.Append("/target:");
             switch (output_type)
             {
@@ -595,7 +602,7 @@ namespace typroject
             foreach (string def in extra_defines)
             {
                 sb.Append("/define:");
-                sb.Append(Program.replace_dir_split(def));
+                sb.Append(def);
                 sb.Append(" ");
             }
 
@@ -644,6 +651,19 @@ namespace typroject
             }
 
             string cmd_args = sb.ToString();
+            string cmd_file = null;
+            System.IO.FileInfo cmd_fi = null;
+
+            if (csc_cmd.Length + cmd_args.Length > 2080)
+            {
+                System.DateTime now = System.DateTime.Now;
+                cmd_file = "tymake-" + now.Ticks.ToString() + ".tmp";
+                cmd_fi = new FileInfo(cmd_file);
+                System.IO.StreamWriter sw = new StreamWriter(cmd_fi.Create());
+                sw.WriteLine(cmd_args);
+                sw.Close();
+                cmd_args = "/nologo /noconfig @" + cmd_file;
+            }
 
             System.Diagnostics.Process c_proc = new System.Diagnostics.Process();
             c_proc.EnableRaisingEvents = false;
@@ -658,6 +678,9 @@ namespace typroject
                 throw new Exception();
             output.WriteLine(c_proc.StandardOutput.ReadToEnd());
             c_proc.WaitForExit();
+
+            if (cmd_fi != null)
+                cmd_fi.Delete();
 
             if (c_proc.ExitCode != 0)
             {
