@@ -2,6 +2,10 @@
 TARGET ?= "x86_64";
 YASM ?= "yasm";
 
+/* Use debug serial port output */
+DEBUG = 1;
+TYSILAFLAGS = "-fprofile";
+
 ROOT = "../../..";
 
 function x86_yasm()
@@ -13,7 +17,7 @@ function x86_yasm()
 
 function tycobj(string name)
 {
-	return "../../../tysos/" + name;
+	return ROOT + "/tysos/" + name;
 }
 
 if (TARGET == "x86_64")
@@ -25,7 +29,7 @@ if (TARGET == "x86_64")
 	TYSILAARCH = "x86_64s-elf64-tysos";
 	LDFLAGS = "-fno-use-linker-plugin -Ttext 0x40000000 -nostdlib";
 	TYSOS_CPU_OBJ = [ tycobj("x86_64/cpu.o"), tycobj("x86_64/halt.o"), tycobj("x86_64/exceptions.o"), tycobj("x86_64/switcher.o") ];
-	LIBSUPCS_CPU_OBJ = [ "../../../libsupcs/x86_64_arith.o", "../../../libsupcs/x86_64_cpu.o", "../../../libsupcs/x86_64_Invoke.o" ];
+	LIBSUPCS_CPU_OBJ = [ ROOT + "/libsupcs/x86_64_arith.o", ROOT + "/libsupcs/x86_64_cpu.o", ROOT + "/libsupcs/x86_64_Invoke.o" ];
 	CFLAGS = "-ffreestanding -mno-red-zone -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-3dnow";
 	USE_UEFI = 1;
 	
@@ -52,23 +56,23 @@ function objfromexe(string exe)
 	return dir(exe) + "/" + basefname(exe) + ".obj";
 }
 
-TYSILAPROJ = "../../../tysila2/tysila2.csproj";
+TYSILAPROJ = ROOT + "/tysila2/tysila2.csproj";
 TYSILA = typroject(TYSILAPROJ, "Release", "3.5", 1);
-TYSOS = typroject("../../../tysos/tysos.csproj", "Release", "3.5", 1);
+TYSOS = typroject(ROOT + "/tysos/tysos.csproj", "Release", "3.5", 1);
 TYSOSOBJ = objfromexe(TYSOS);
-MSCORLIB = "../../../mono/corlib/mscorlib.dll";
+MSCORLIB = ROOT + "/mono/corlib/mscorlib.dll";
 MSCORLIBOBJ = objfromexe(MSCORLIB);
-LIBSUPCS = typroject("../../../libsupcs/libsupcs.csproj", "Release", "3.5", 1);
+LIBSUPCS = typroject(ROOT + "/libsupcs/libsupcs.csproj", "Release", "3.5", 1);
 LIBSUPCSOBJ = objfromexe(LIBSUPCS);
 LIBSUPCSA = dir(LIBSUPCS) + "/" + basefname(LIBSUPCS) + ".a";
-LIBSTDCS = typroject("../../../libstdcs/libstdcs.csproj", "Release", "3.5", 1);
+LIBSTDCS = typroject(ROOT + "/libstdcs/libstdcs.csproj", "Release", "3.5", 1);
 LIBSTDCSOBJ = objfromexe(LIBSTDCS);
-LIBASMOBJ = objfromexe(typroject("../../../libasm/libasm.csproj", "Release", "3.5", 1));
-LIBTYSILAOBJ = objfromexe(typroject("../../../libtysila/libtysila.csproj", "Release", "3.5", 1));
+LIBASMOBJ = objfromexe(typroject(ROOT + "/libasm/libasm.csproj", "Release", "3.5", 1));
+LIBTYSILAOBJ = objfromexe(typroject(ROOT + "/libtysila/libtysila.csproj", "Release", "3.5", 1));
 MSCORLIBDIR = dir(MSCORLIB);
-TINYGCOBJ = "../../../tinygc/gc.o";
+TINYGCOBJ = ROOT + "/tinygc/gc.o";
 
-KERNEL = "../../../tysos.bin";
+KERNEL = ROOT + "/tysos.bin";
 
 /* Rules for char-conversions */
 CC_DIR = ROOT + "/unicode_support/char-conversions";
@@ -132,11 +136,11 @@ build(CORLIB_TY_SRCS);
 typroject(CORLIB_TY_SRCS);
 
 /* Rules for assembling CLR binaries */
-rulefor "%.obj" inputs { "%.exe" } depends { TYSILA, CORLIB_DLL } {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
+rulefor "%.obj" inputs { "%.exe" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
 }
-rulefor "%.obj" inputs { "%.dll" } depends { TYSILA, CORLIB_DLL } {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
+rulefor "%.obj" inputs { "%.dll" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
 }
 
 rulefor KERNEL inputs { TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ, LIBASMOBJ, LIBTYSILAOBJ, tycobj("undefined.o"),
@@ -158,8 +162,10 @@ rulefor LIBSUPCSA inputs { LIBSUPCSOBJ, LIBSUPCS_CPU_OBJ } depends { "test.tmk" 
 }
 
 rulefor "%.tgc.o" inputs { "%.c" } depends { "test.tmk" } {
-	shellcmd("$CC -o $_RULE_OUTPUT -I../../../tinygc -ffreestanding -c $_RULE_INPUT");
+	shellcmd("$CC -o $_RULE_OUTPUT -I$ROOT/tinygc $CFLAGS -c $_RULE_INPUT");
 }
+
+/* Rules for EFI applications */
 
 EFICC = "x86_64-w64-mingw32-gcc";
 EFIAR = "x86_64-w64-mingw32-ar";
@@ -212,9 +218,15 @@ rulefor ROOT + "/efiloader/tloadkif.c" inputs { TYSOS } depends { TYSILA, MSCORL
 	shellcmd("$TYSILA --arch $TYSILAARCH -q -L$MSCORLIBDIR --output-header $ROOT/efiloader/tloadkif.h --output-cinit $ROOT/efiloader/tloadkif.c $TYSOS");
 }
 
+/* TinyGC garbage collection library and associated support files */
 SETJMP = "../../../tinygc/setjmp." + TARGET + ".o";
-rulefor TINYGCOBJ inputs { "../../../tinygc/dlmalloc.tgc.o", "../../../tinygc/printf.tgc.o", "../../../tinygc/sbrk.tgc.o",
-	"../../../tinygc/stdlib.tgc.o", "../../../tinygc/tinygc.tgc.o", SETJMP } depends { "test.tmk" } {
+TINYGC_SRCS = [ ROOT + "/tinygc/dlmalloc.tgc.o", ROOT + "/tinygc/printf.tgc.o", ROOT + "/tinygc/sbrk.tgc.o",
+	ROOT + "/tinygc/stdlib.tgc.o", ROOT + "/tinygc/tinygc.tgc.o", SETJMP ];
+if(DEBUG) {
+	TINYGC_SRCS.add(ROOT + "/tinygc/serport.tgc.o");
+}
+
+rulefor TINYGCOBJ inputs { TINYGC_SRCS } depends { "test.tmk" } {
 	shellcmd("$CC -Wl,-r $LDFLAGS -o $_RULE_OUTPUT $_RULE_INPUTS");
 }
 

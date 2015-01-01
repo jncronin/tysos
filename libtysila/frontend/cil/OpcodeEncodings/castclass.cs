@@ -103,7 +103,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             /* Else do a runtime dynamic cast */
             Layout dest_l = Layout.GetTypeInfoLayout(dest_ttc, ass, false);
             ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("castclassex", false), loc_dest,
-                new libasm.hardware_location[] { loc_obj, new libasm.hardware_addressoflabel(Mangler2.MangleTypeInfo(dest_ttc, ass), true) },
+                new libasm.hardware_location[] { loc_obj, new libasm.hardware_addressoflabel(Mangler2.MangleTypeInfo(dest_ttc, ass), dest_l.FixedLayout[Layout.ID_VTableStructure].Offset, true) },
                 ass.callconv_castclassex, il.il.tybel);
 
             il.stack_after.Pop();

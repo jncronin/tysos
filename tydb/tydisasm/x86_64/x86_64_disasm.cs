@@ -435,6 +435,8 @@ namespace tydisasm.x86_64
                                                 base_reg = reg_nos["rdi"];
                                                 break;
                                         }
+                                        if ((rex & 0x1) == 0x1)
+                                            base_reg = base_reg - reg_nos["rax"] + reg_nos["r8"];
 
                                         location loc = new location { type = location.location_type.ContentsOf, args = new location[] { new location { type = location.location_type.Register, reg_no = base_reg } } };
                                         if ((mod == 1) || (mod == 2))

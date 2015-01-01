@@ -48,7 +48,7 @@ namespace libtysila.x86_64.cil
                 case Opcode.SingleOpcodes.brtrue:
                 case Opcode.SingleOpcodes.brtrue_s:
                     a_loc = il.stack_vars_after.Pop(ass);
-                    b_loc = new libasm.const_location { c = 1 };
+                    b_loc = new libasm.const_location { c = 0 };
                     a_p = il.stack_after.Pop();
                     b_p = a_p;
                     break;
@@ -111,8 +111,6 @@ namespace libtysila.x86_64.cil
                 default:
                     switch (il.il.opcode.opcode1)
                     {
-                        case Opcode.SingleOpcodes.brtrue:
-                        case Opcode.SingleOpcodes.brtrue_s:
                         case Opcode.SingleOpcodes.brfalse:
                         case Opcode.SingleOpcodes.brfalse_s:
                         case Opcode.SingleOpcodes.beq:
@@ -151,6 +149,8 @@ namespace libtysila.x86_64.cil
                         case Opcode.SingleOpcodes.blt_un_s:
                             op = ThreeAddressCode.OpName.bl_un;
                             break;
+                        case Opcode.SingleOpcodes.brtrue:
+                        case Opcode.SingleOpcodes.brtrue_s:
                         case Opcode.SingleOpcodes.bne_un:
                         case Opcode.SingleOpcodes.bne_un_s:
                             op = ThreeAddressCode.OpName.bne;

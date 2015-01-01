@@ -231,7 +231,7 @@ namespace libtysila
         {
             get
             {
-                return MakeStaticCall("default", new Signature.Param(BaseType_Type.Void), new List<Signature.Param> { new Signature.Param(BaseType_Type.String) }, ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call));
+                return MakeStaticCall("default", new Signature.Param(BaseType_Type.Void), new List<Signature.Param> { new Signature.Param(BaseType_Type.String), new Signature.Param(BaseType_Type.I), new Signature.Param(BaseType_Type.I4), new Signature.Param(BaseType_Type.I4) }, ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call));
             }
         }
 

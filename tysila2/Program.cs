@@ -891,6 +891,14 @@ namespace tysila
                     enable_depends = new string[] { },
                     disable_depends = new string[] { "no-exceptions" }
                 });
+                options.Add("profile", new Option
+                {
+                    cmd_line_name = "profile",
+                    ao_name = "Profile",
+                    description = "calls to external profile interface",
+                    enable_depends = new string[] { },
+                    disable_depends = new string[] { }
+                });
                 options.Add("coalesce", new Option
                 {
                     cmd_line_name = "coalesce",

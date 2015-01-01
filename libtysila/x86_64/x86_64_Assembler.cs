@@ -1602,7 +1602,15 @@ namespace libtysila
 
                 // Restore saved args
                 for (int i = save_regs.Count - 1; i >= 0; i--)
-                    Restore(state, regs_in_use, save_regs[i], ret);
+                {
+                    if (save_regs[i].Equals(retval))
+                    {
+                        /* don't trash the return value */
+                        ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.ADDL : x86_64.x86_64_asm.opcode.ADDQ, ret, vara.MachineReg(Rsp), vara.Const(GetSizeOfIntPtr()));
+                    }
+                    else
+                        Restore(state, regs_in_use, save_regs[i], ret);
+                }
             }
         }
 

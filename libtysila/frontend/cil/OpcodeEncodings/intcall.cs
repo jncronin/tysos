@@ -44,6 +44,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             int_calls["_Zu1SM_0_10get_Length_Ri_P1u1t"] = string_getLength;
 
             int_calls["_Zu1OM_0_7GetType_RW6System4Type_P1u1t"] = object_GetType;
+            int_calls["_Zu1OM_0_15MemberwiseClone_Ru1O_P1u1t"] = object_MemberwiseClone;
 
             int_calls["_ZX15ArrayOperationsM_0_17GetArrayClassSize_Ri_P0"] = get_array_class_size;
             int_calls["_ZX15ArrayOperationsM_0_19GetInnerArrayOffset_Ri_P0"] = get_array_inner_array_offset;
@@ -86,6 +87,11 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             int_calls["_ZX16MemoryOperationsM_0_6PeekU4_Rj_P1u1U"] = peek_U4;
             int_calls["_ZX16MemoryOperationsM_0_6PeekU2_Rt_P1u1U"] = peek_U2;
             int_calls["_ZX16MemoryOperationsM_0_6PeekU1_Rh_P1u1U"] = peek_U1;
+
+            int_calls["_ZW18System#2EThreading7MonitorM_0_17Monitor_try_enter_Rb_P2u1Oi"] = Monitor_try_enter;
+            int_calls["_ZW18System#2EThreading7MonitorM_0_12Monitor_exit_Rv_P1u1O"] = Monitor_try_exit;
+
+            int_calls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpersM_0_15InitializeArray_Rv_P2U6System5Arrayu1I"] = RuntimeHelpers_InitializeArray;
 
             int_calls["_ZX15OtherOperationsM_0_16GetUsedStackSize_Ri_P0"] = get_used_stack_size;
 
@@ -658,6 +664,234 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 new libasm.hardware_location[] { Assembler.throw_NotImplementedException }, ass.callconv_sthrow, il.il.tybel);
 
             il.stack_after.Push(p_dest);
+        }
+
+        static void Monitor_try_enter(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* static bool Monitor_try_enter(object obj, int ms)
+             * 
+             * Try and acquire the mutex lock on object obj, waiting a maximum of ms milliseconds
+             * if ms == System.Threading.Timeout.Infinite then wait forever
+             */
+
+            /* Currently we do not honour the ms argument
+             * If it is 0 then just try one and return success/failure
+             * Otherwise try infinitely
+             * 
+             * return true if we were successful, else false
+             * 
+             * code is:
+             * 
+             * mutex_lock_addr = obj + offset(mutex_lock)
+             * ret = false
+             * thread_id = call(__get_cur_thread_id)
+             * L1:
+             * ret = try_acquire(mutex_lock_addr, thread_id)
+             * cmp(ret, 0)
+             * bne L2
+             * cmp(ms, 0)
+             * bne L1
+             * L2:
+             * 
+             */
+
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+
+            libasm.hardware_location loc_ms = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_obj = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_mla = ass.GetTemporary(state, Assembler.CliType.native_int);
+            libasm.hardware_location loc_ms2 = ass.GetTemporary2(state, Assembler.CliType.int32);
+            libasm.hardware_location loc_tid = ass.GetTemporary3(state, Assembler.CliType.native_int);
+            libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.I4), ass);
+
+            int l1 = next_block++;
+            string s_l1 = "L" + l1.ToString();
+
+            int l2 = next_block++;
+            string s_l2 = "L" + l2.ToString();
+
+            Stack in_use = il.stack_vars_before.Clone();
+
+            ass.Add(state, in_use, loc_mla, loc_obj, new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.mutex_lock) },
+                Assembler.CliType.native_int, il.il.tybel);
+            in_use.MarkUsed(loc_mla);
+
+            ass.Assign(state, in_use, loc_ms2, loc_ms, Assembler.CliType.int32, il.il.tybel);
+            in_use.MarkUsed(loc_ms2);
+
+            ass.Assign(state, in_use, loc_ret, new libasm.const_location { c = 0 }, Assembler.CliType.int32, il.il.tybel);
+
+            ass.Call(state, in_use, new libasm.hardware_addressoflabel("__get_cur_thread_id", false),
+                loc_tid, new libasm.hardware_location[] { }, ass.callconv_getcurthreadid, il.il.tybel);
+            in_use.MarkUsed(loc_tid);
+
+            il.il.tybel.Add(new tybel.LabelNode(s_l1, true));
+
+            ass.Call(state, in_use, new libasm.hardware_addressoflabel("__try_acquire", false),
+                loc_ret, new libasm.hardware_location[] { loc_mla, loc_tid }, ass.callconv_try_acquire,
+                il.il.tybel);
+
+            ass.BrIf(state, in_use, new libasm.hardware_addressoflabel(s_l2, false), loc_ret,
+                new libasm.const_location { c = 0 }, ThreeAddressCode.OpName.bne, Assembler.CliType.int32,
+                il.il.tybel);
+
+            ass.BrIf(state, in_use, new libasm.hardware_addressoflabel(s_l1, false), loc_ms2,
+                new libasm.const_location { c = 0 }, ThreeAddressCode.OpName.bne, Assembler.CliType.int32,
+                il.il.tybel);
+
+            il.il.tybel.Add(new tybel.LabelNode(s_l2, true));
+
+            il.stack_after.Push(new Signature.Param(BaseType_Type.Boolean));
+        }
+
+        static void Monitor_try_exit(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* static void Monitor_exit(object obj)
+             * 
+             * Release the mutex lock on obj, if we own it
+             */
+
+            /* code is:
+             * 
+             * mutex_lock_addr = obj + offset(mutex_lock)
+             * thread_id = call(__get_cur_thread_id)
+             * release(mutex_lock_addr, thread_id)
+             * 
+             */
+
+            il.stack_after.Pop();
+
+            libasm.hardware_location loc_obj = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_mla = ass.GetTemporary(state, Assembler.CliType.native_int);
+            libasm.hardware_location loc_tid = ass.GetTemporary2(state, Assembler.CliType.native_int);
+
+            Stack in_use = il.stack_vars_before.Clone();
+
+            ass.Add(state, in_use, loc_mla, loc_obj, new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.mutex_lock) },
+                Assembler.CliType.native_int, il.il.tybel);
+            in_use.MarkUsed(loc_mla);
+
+            ass.Call(state, in_use, new libasm.hardware_addressoflabel("__get_cur_thread_id", false),
+                loc_tid, new libasm.hardware_location[] { }, ass.callconv_getcurthreadid, il.il.tybel);
+            in_use.MarkUsed(loc_tid);
+
+            ass.Call(state, in_use, new libasm.hardware_addressoflabel("__release", false), null,
+                new libasm.hardware_location[] { loc_mla, loc_tid }, ass.callconv_release, il.il.tybel);
+        }
+
+        static void RuntimeHelpers_InitializeArray(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* static void InitializeArray(System.Array array, native int FieldInfo)
+             * 
+             * memcpy(array->inner_array, FieldInfo->Literal_data, array->bytesize)
+             */
+
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+
+            libasm.hardware_location loc_fi = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_arr = il.stack_vars_after.Pop(ass);
+
+            libasm.hardware_location loc_ia = ass.GetTemporary(state);
+            libasm.hardware_location loc_ld = ass.GetTemporary2(state);
+            libasm.hardware_location loc_bs = ass.GetTemporary3(state, Assembler.CliType.int32);
+
+            Stack in_use = il.stack_vars_before.Clone();
+
+            /* Calculate the byte length of the inner array */
+            ass.Mul(state, in_use, loc_bs, new libasm.hardware_contentsof { base_loc = loc_arr, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.elem_size), size = 4 },
+                new libasm.hardware_contentsof { base_loc = loc_arr, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length), size = 4 }, Assembler.CliType.int32,
+                il.il.tybel);
+            in_use.MarkUsed(loc_bs);
+
+            /* Get the inner array address */
+            ass.Assign(state, in_use, loc_ia, new libasm.hardware_contentsof { base_loc = loc_arr, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfPointer() },
+                Assembler.CliType.native_int, il.il.tybel);
+            in_use.MarkUsed(loc_ia);
+
+            /* Get the literal data */
+            ass.GetTysosFieldLayout();
+            ass.Assign(state, in_use, loc_ld, new libasm.hardware_contentsof { base_loc = loc_fi, const_offset = ass.tysos_field_offsets["IntPtr Literal_data"], size = ass.GetSizeOfPointer() },
+                Assembler.CliType.native_int, il.il.tybel);
+            in_use.MarkUsed(loc_ld);
+
+            ass.MemCpy(state, in_use, loc_ia, loc_ld, loc_bs, il.il.tybel);
+        }
+
+        static void object_MemberwiseClone(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* Returns a direct copy of the current object
+             * 
+             * First allocate a new memory block of the correct size
+             * If the object is not a string type, then get the class size from the TypeInfo structure
+             * If it is a string type: load its length, multiply by sizeof(char), add String.data_offset
+             * 
+             * Then set the object_id to something new
+             */
+
+            il.stack_after.Pop();
+            libasm.hardware_location loc_src = il.stack_vars_after.Pop(ass);
+
+            Assembler.TypeToCompile str_ttc = Metadata.GetTTC(new Signature.Param(BaseType_Type.String), new Assembler.TypeToCompile { _ass = ass, tsig = mtc.tsigp, type = mtc.type }, null, ass);
+            ass.Requestor.RequestTypeInfo(str_ttc);
+
+            Stack in_use = il.stack_vars_before.Clone();
+
+            int l_notstring = next_block++;
+            int l_docopy = next_block++;
+            string s_notstring = "L" + l_notstring.ToString();
+            string s_docopy = "L" + l_docopy.ToString();
+
+            libasm.hardware_location loc_t1 = ass.GetTemporary(state);
+            libasm.hardware_location loc_t2 = ass.GetTemporary2(state);
+
+            /* Dereference the object to get its typeinfo */
+            ass.Assign(state, in_use, loc_t1, new libasm.hardware_contentsof { base_loc = loc_src, size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+            ass.Assign(state, in_use, loc_t1, new libasm.hardware_contentsof { base_loc = loc_t1, size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+            in_use.MarkUsed(loc_t1);
+
+            /* Decide if its a string or not */
+            ass.BrIf(state, in_use, new libasm.hardware_addressoflabel(s_notstring, false), loc_t1,
+                new libasm.hardware_addressoflabel(Mangler2.MangleTypeInfo(str_ttc, ass), true),
+                ThreeAddressCode.OpName.bne, Assembler.CliType.native_int, il.il.tybel);
+
+            /* It is a string - get its length */
+            ass.Assign(state, in_use, loc_t1, new libasm.hardware_contentsof { base_loc = loc_t1, const_offset = ass.GetStringFieldOffset(Assembler.StringFields.length), size = 4 },
+                Assembler.CliType.int32, il.il.tybel);
+            ass.Mul(state, in_use, loc_t1, loc_t1, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
+            ass.Add(state, in_use, loc_t1, loc_t1, new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.data_offset) },
+                Assembler.CliType.int32, il.il.tybel);
+            ass.Br(state, in_use, new libasm.hardware_addressoflabel(s_docopy, false), il.il.tybel);
+
+            /* Not a string - get length from typeinfo */
+            il.il.tybel.Add(new tybel.LabelNode(s_notstring, true));
+            ass.GetTysosTypeLayout();
+            ass.Assign(state, in_use, loc_t1, new libasm.hardware_contentsof { base_loc = loc_t1, const_offset = ass.tysos_type_offsets["Int32 ClassSize"], size = 4 },
+                Assembler.CliType.int32, il.il.tybel);
+            
+            /* Get memory of the appropriate size */
+            il.il.tybel.Add(new tybel.LabelNode(s_docopy, true));
+            ass.Call(state, in_use, new libasm.hardware_addressoflabel("gcmalloc", false), loc_t2, new libasm.hardware_location[] { loc_t1 }, ass.callconv_gcmalloc,
+                il.il.tybel);
+            in_use.MarkUsed(loc_t2);
+
+            /* Do the memcopy */
+            ass.MemCpy(state, in_use, loc_t2, loc_src, loc_t1, il.il.tybel);
+
+            /* Get a new object id */
+            ass.Call(state, in_use, new libasm.hardware_addressoflabel("__get_new_obj_id", false), loc_t1, new libasm.hardware_location[] { }, ass.callconv_getobjid, il.il.tybel);
+            ass.Assign(state, in_use, new libasm.hardware_contentsof { base_loc = loc_t2, const_offset = ass.GetStringFieldOffset(Assembler.StringFields.objid), size = 4 }, loc_t1,
+                Assembler.CliType.int32, il.il.tybel);
+
+            /* Return the new object */
+            libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(new Signature.Param(BaseType_Type.Object), ass);
+            ass.Assign(state, in_use, loc_ret, loc_t2, Assembler.CliType.native_int, il.il.tybel);
+            il.stack_after.Push(new Signature.Param(BaseType_Type.Object));
         }
     }
 }

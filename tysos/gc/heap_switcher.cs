@@ -45,23 +45,38 @@ namespace tysos.gc
         [MethodAlias("gcmalloc")]
         internal static ulong Alloc(ulong size)
         {
+            ulong ret = 0;
             switch (Heap)
             {
                 case HeapType.Startup:
-                    return simple_heap.Alloc(size);
+                    ret = simple_heap.Alloc(size);
+                    break;
 
                 case HeapType.BoehmGC:
-                    return boehm.Alloc(size);
+                    ret = boehm.Alloc(size);
+                    break;
 
                 case HeapType.TysosGC:
-                    return tysos_gc.Alloc(size);
+                    ret = tysos_gc.Alloc(size);
+                    break;
 
                 case HeapType.PerCPU:
-                    return Program.cur_cpu_data.CpuAlloc(size);
+                    ret = Program.cur_cpu_data.CpuAlloc(size);
+                    break;
 
                 default:
                     throw new Exception("gc.Alloc(): heap type not set");
             }
+
+            if (ret == 0)
+                throw new Exception("gc.Alloc(): returned 0");
+
+            unsafe
+            {
+                libsupcs.MemoryOperations.MemSet((void*)ret, 0, (int)size);
+            }
+
+            return ret;
         }
 
         internal static void RegisterObject(ulong addr)

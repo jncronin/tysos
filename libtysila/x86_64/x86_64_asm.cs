@@ -105,7 +105,7 @@ namespace libtysila.x86_64
             FCOMPP, FSUBRP, FSUBP, FDIVRP, FDIVP, FFREEP, FXCH7, FSTP8,
             FSTP9, FBLD, FUCOMIP, FBSTP, FCOMIP, LOOPNZ, LOOPZ, LOOP,
             JCXZ, JECXZ, IN, OUT, CALL, JMP, JMPF, LOCK,
-            INT1, REPNZ, REP, REPZ, HLT, CMC, NOTL, NOTQ, NEGL, NEGQ,
+            INT1, INT3, REPNZ, REP, REPZ, HLT, CMC, NOTL, NOTQ, NEGL, NEGQ,
             MUL, DIVL, DIVQ, IDIV, CLC, STC, CLI, STI, CLD,
             STD, SLDT, STR, LLDT, LTR, VERR, VERW, JMPE,
             SGDT, VMCALL, VMLAUNCH, VMRESUME, VMXOFF, SIDT, MONITOR, MWAIT,
@@ -322,6 +322,8 @@ namespace libtysila.x86_64
             Opcodes[opcode.INW].Add(new x86_64_asm { int_name = "in_ax_dx", pri_opcode = 0xed, op_size_prefix = true, ops = new optype[] { optype.rax, optype.rdx }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
             Opcodes[opcode.INL].Add(new x86_64_asm { int_name = "in_eax_imm32", pri_opcode = 0xe5, ops = new optype[] { optype.rax, optype.Imm8 }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
             Opcodes[opcode.INL].Add(new x86_64_asm { int_name = "in_eax_dx", pri_opcode = 0xed, ops = new optype[] { optype.rax, optype.rdx }, inputs = new libasm.hardware_location[] { new op_loc(1) }, outputs = new libasm.hardware_location[] { new op_loc(0) } });
+
+            Opcodes[opcode.INT3].Add(new x86_64_asm { int_name = "int3", pri_opcode = 0xcc, ops = new optype[] { }, inputs = new libasm.hardware_location[] { }, outputs = new libasm.hardware_location[] { } });
 
             Opcodes[opcode.JMP].Add(new x86_64_asm { int_name = "jmp_rel8", pri_opcode = 0xeb, is_uncond_jmp = true, ops = new optype[] { optype.Rel8 }, inputs = new libasm.hardware_location[] { }, outputs = new libasm.hardware_location[] { } });
             Opcodes[opcode.JMP].Add(new x86_64_asm { int_name = "jmp_rel32", pri_opcode = 0xe9, is_uncond_jmp = true, ops = new optype[] { optype.Rel32 }, inputs = new libasm.hardware_location[] { }, outputs = new libasm.hardware_location[] { } });

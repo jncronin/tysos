@@ -251,6 +251,7 @@ namespace libtysila
             public bool AllowTysilaOpcodes = false;
             public bool VerifiableCIL = false;
             public bool WarningsAsErrors = false;
+            public bool Profile = false;
         }
 
         public class AssemblerState

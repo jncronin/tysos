@@ -15,6 +15,7 @@ long atol(const char *str)
 
 void *memcpy(void *dest, const void *src, size_t n)
 {
+	printf("memcpy(%llX, %llX, %X)\n", dest, src, n);
 	char *d = (char *)dest;
 	char *s = (char *)src;
 	while(n--)

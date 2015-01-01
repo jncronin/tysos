@@ -39,6 +39,8 @@ namespace tysos
 
         internal static Arch arch;
 
+        internal static System.Threading.Thread StartupThread;
+
         internal static string[] kernel_cmd_line;
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
@@ -62,6 +64,11 @@ namespace tysos
             gc.simple_heap.Init(heap_start, mboot.heap_end);
 
             arch = new tysos.x86_64.Arch();
+
+            /* Set up the default startup thread */
+            StartupThread = new System.Threading.Thread(null_func);
+            StartupThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+            
 
             UIntPtr chunk_vaddr = new UIntPtr(mboot.heap_start);
             UIntPtr chunk_length = new UIntPtr(tysos.x86_64.Arch.GetRecommendedChunkLength());
@@ -229,6 +236,11 @@ namespace tysos
             Formatter.WriteLine("Going multitasking...", arch.BootInfoOutput);
             arch.EnableMultitasking();
             while (true) ;
+        }
+
+        private static void null_func(object obj)
+        {
+            throw new NotImplementedException();
         }
 
         private static void TestAssemblerThread()
@@ -606,9 +618,11 @@ namespace tysos
             libsupcs.OtherOperations.Halt();
         }
 
+        /* The following may be overwritten in native code somewhere */
         [libsupcs.MethodAlias("putchar_debug")]
         [libsupcs.AlwaysCompile]
         [libsupcs.CallingConvention("gnu")]
+        [libsupcs.WeakLinkage]
         static byte putchar(byte c)
         {
             Program.arch.DebugOutput.Write((char)c);
@@ -625,6 +639,14 @@ namespace tysos
                 return 1;
             else
                 return cur_cpu_data.CurrentThread.thread_id;
+        }
+
+        [libsupcs.MethodAlias("_ZW18System#2EThreading6ThreadM_0_22CurrentThread_internal_RV6Thread_P0")]
+        [libsupcs.AlwaysCompile]
+        static System.Threading.Thread GetCurThread()
+        {
+            //TODO
+            return StartupThread;
         }
 
         [libsupcs.MethodAlias("_ZX15OtherOperationsM_0_18GetFunctionAddress_Ru1I_P1u1S")]

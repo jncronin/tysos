@@ -30,6 +30,21 @@ namespace libtysila.x86_64.cil
         public static void tybel_ret(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
+            /* Emit profiling code */
+            if (ass.Options.Profile)
+            {
+                string s_mangled = Mangler2.MangleMethod(mtc, ass);
+                vara v_mangled = mtc.meth.m.StringTable.GetStringAddress(s_mangled, ass);
+                ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("profile", false),
+                    null, new libasm.hardware_location[] {
+                        new libasm.hardware_addressoflabel(v_mangled.LabelVal, v_mangled.Offset, true),
+                        new libasm.hardware_addressoflabel(v_mangled.LabelVal, v_mangled.Offset + ass.GetStringFieldOffset(Assembler.StringFields.data_offset), true),
+                        new libasm.const_location { c = s_mangled.Length },
+                        new libasm.const_location { c = 1 }
+                    },
+                    ass.callconv_profile, il.il.tybel);
+            } 
+            
             if (state.cc.ReturnValue != null)
             {
                 libasm.hardware_location retval = il.stack_vars_after.Pop(ass);

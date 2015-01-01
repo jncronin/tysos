@@ -30,7 +30,7 @@ namespace libtysila
         TypeToCompile? tysos_type_ttc = null;
         Layout tysos_type_l = null;
         string tysos_type_ti = null;
-        Dictionary<string, int> tysos_type_offsets = null;
+        internal Dictionary<string, int> tysos_type_offsets = null;
 
         public Layout GetTysosTypeLayout()
         {

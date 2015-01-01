@@ -30,7 +30,7 @@ namespace libtysila
         TypeToCompile? tysos_field_ttc = null;
         Layout tysos_field_l = null;
         string tysos_field_ti = null;
-        Dictionary<string, int> tysos_field_offsets = null;
+        internal Dictionary<string, int> tysos_field_offsets = null;
 
         TypeToCompile? tysos_method_ttc = null;
         Layout tysos_method_l = null;

@@ -41,6 +41,7 @@ namespace tysos
 
         public Event()
         {
+            //libsupcs.x86_64.Cpu.Break();
             lock (next_event_id_lock)
             {
                 event_id = next_event_id++;
