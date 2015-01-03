@@ -347,7 +347,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             }
 
             ass.Assign(state, il.stack_vars_before, loc_dest, 
-                new libasm.hardware_contentsof { base_loc = loc_array, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.array_type_size), 
+                new libasm.hardware_contentsof { base_loc = loc_array, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), 
                     size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
 
             il.stack_after.Push(p_dest);

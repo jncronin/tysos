@@ -59,7 +59,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 is_ldftn = true;
 
             // If calling an internal call, then emit it as an inline instead if possible
-            if (is_call)
+            if (is_call || (is_callvirt && !call_mtc.meth.IsVirtual))
             {
                 if (enc_intcall(il, ass, mtc, ref next_block, state, attrs))
                     return;

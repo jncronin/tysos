@@ -49,7 +49,8 @@ namespace libtysila
             libasm.hardware_stackloc.StackType stype = libasm.hardware_stackloc.StackType.Var;
             Assembler a;
 
-            static libasm.hardware_location[] usuable_64_int_locs = new libasm.hardware_location[] { Rdi, Rsi, R8, R9, R10, R11, R12, R13, R14, R15 };
+            //static libasm.hardware_location[] usuable_64_int_locs = new libasm.hardware_location[] { Rdi, Rsi, R8, R9, R10, R11, R12, R13, R14, R15 };
+            static libasm.hardware_location[] usuable_64_int_locs = new libasm.hardware_location[] { R10, R11, R12, R13, R14, R15 };
             static libasm.hardware_location[] usuable_32_int_locs = new libasm.hardware_location[] { Rdi, Rsi };
             static libasm.hardware_location[] usuable_64_float_locs = new libasm.hardware_location[] { Xmm4, Xmm5, Xmm6, Xmm7, Xmm8, Xmm9, Xmm10, Xmm11, Xmm12, Xmm13, Xmm14, Xmm15 };
             static libasm.hardware_location[] usuable_32_float_locs = new libasm.hardware_location[] { Xmm4, Xmm5, Xmm6, Xmm7 };

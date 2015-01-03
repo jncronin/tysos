@@ -251,6 +251,7 @@ namespace System
 
 		public static bool IsDigit (char c)
 		{
+            System.Diagnostics.Debugger.Break();
 			unsafe {
 				return (category_data [c] == (byte)UnicodeCategory.DecimalDigitNumber);
 			}

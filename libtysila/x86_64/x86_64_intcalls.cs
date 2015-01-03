@@ -40,6 +40,7 @@ namespace libtysila
             int_calls["_ZX12IoOperationsM_0_7PortOut_Rv_P2tt"] = PortOutw;
             int_calls["_ZX12IoOperationsM_0_7PortOut_Rv_P2th"] = PortOutb;
             int_calls["_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5Break_Rv_P0"] = Break;
+            int_calls["_ZW20System#2EDiagnostics8DebuggerM_0_5Break_Rv_P0"] = Break;
         }
 
         static void set_Rsp_v_y(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,

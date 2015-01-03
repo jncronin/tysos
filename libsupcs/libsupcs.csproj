@@ -57,6 +57,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="abi.cs" />
+    <Compile Include="Buffer.cs" />
     <Compile Include="clib.cs" />
     <Compile Include="TysosArrayType.cs" />
     <Compile Include="ConstructorInfo.cs" />

@@ -73,6 +73,28 @@ namespace libsupcs
             return d;
         }
 
+        [libsupcs.MethodAlias("memmove")]
+        [libsupcs.WeakLinkage]
+        unsafe internal static byte* memmove(byte* dest, byte* src, int n)
+        {
+            byte* d = dest;
+            byte* s = src;
+
+            if (d > s)
+            {
+                /* Perform a backwards copy */
+                while (n-- > 0)
+                    *--d = *--s;
+            }
+            else
+            {
+                /* Normal memcpy-like copy */
+                while (n-- > 0)
+                    *d++ = *s++;
+            }
+            return dest;
+        }
+
         [libsupcs.MethodAlias("mbstowcs")]
         [libsupcs.WeakLinkage]
         unsafe static void MbsToWcs(char* dest, sbyte* src, int length)

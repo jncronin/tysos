@@ -1568,16 +1568,17 @@ namespace libtysila
             if (p.Length != cc.Arguments.Count)
                 throw new Exception("Supplied arguments do not match those in the calling convention");
 
-            // Is fptr also a argument location?  If so, use rax instead
+            // Is fptr also a argument location?  If so, use rbx instead
             for (int i = 0; i < p.Length; i++)
             {
                 if (dest.Equals(cc.Arguments[i].ValueLocation))
                 {
-                    Assign(state, regs_in_use, Rax, dest, CliType.native_int, ret);
+                    Assign(state, regs_in_use, Rbx, dest, CliType.native_int, ret);
                     Stack temp_stack = regs_in_use.Clone();
-                    temp_stack.MarkUsed(Rax);
-                    dest = Rax;
+                    temp_stack.MarkUsed(Rbx);
+                    dest = Rbx;
                     regs_in_use = temp_stack;
+                    state.used_locs.Add(Rbx);
                     break;
                 }
             }
@@ -1813,10 +1814,12 @@ namespace libtysila
                 {
                     case 1:
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.ANDL, ret, vara.MachineReg(act_dest), vara.Const(0xffUL, CliType.int32));
                         break;
 
                     case 2:
                         ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, vara.MachineReg(act_dest), vara.MachineReg(new libasm.hardware_contentsof { base_loc = src_addr, size = size }));
+                        ChooseInstruction(x86_64.x86_64_asm.opcode.ANDL, ret, vara.MachineReg(act_dest), vara.Const(0xffffUL, CliType.int32));
                         break;
 
                     case 4:

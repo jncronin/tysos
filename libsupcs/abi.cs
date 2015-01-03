@@ -200,12 +200,16 @@ namespace libsupcs
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static unsafe extern void* MemCpy(void* dest, void* src, int size);
 
+        [MethodReferenceAlias("memmove")]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static unsafe extern void* MemMove(void* dest, void* src, int size);
+
         [MethodImpl(MethodImplOptions.InternalCall)]
         public unsafe static extern void * GetInternalArray(System.Array array);
 
         [MethodReferenceAlias("gcmalloc")]
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal static extern object GcMalloc(System.IntPtr size);
+        public static extern object GcMalloc(System.IntPtr size);
     }
 
     public class IoOperations
@@ -274,19 +278,19 @@ namespace libsupcs
     public class ClassOperations
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal static extern System.UIntPtr GetVtblFieldOffset();
+        public static extern System.UIntPtr GetVtblFieldOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal static extern System.UIntPtr GetObjectIdFieldOffset();
+        public static extern System.UIntPtr GetObjectIdFieldOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal static extern System.UIntPtr GetVtblTypeInfoPtrOffset();
+        public static extern System.UIntPtr GetVtblTypeInfoPtrOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal static extern System.UIntPtr GetVtblInterfacesPtrOffset();
+        public static extern System.UIntPtr GetVtblInterfacesPtrOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal static extern System.UIntPtr GetVtblExtendsVtblPtrOffset();
+        public static extern System.UIntPtr GetVtblExtendsVtblPtrOffset();
     }
 
     public class JitOperations

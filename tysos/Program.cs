@@ -67,7 +67,6 @@ namespace tysos
 
             /* Set up the default startup thread */
             StartupThread = new System.Threading.Thread(null_func);
-            StartupThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
             
 
             UIntPtr chunk_vaddr = new UIntPtr(mboot.heap_start);
@@ -643,10 +642,18 @@ namespace tysos
 
         [libsupcs.MethodAlias("_ZW18System#2EThreading6ThreadM_0_22CurrentThread_internal_RV6Thread_P0")]
         [libsupcs.AlwaysCompile]
-        static System.Threading.Thread GetCurThread()
+        static unsafe System.Threading.Thread GetCurThread()
         {
-            //TODO
             return StartupThread;
+            /* Create a new System.Threading.Thread object */
+            /*libsupcs.TysosType thread_type = libsupcs.TysosType.ReinterpretAsType(typeof(System.Threading.Thread));
+            object t = libsupcs.MemoryOperations.GcMalloc(new IntPtr(thread_type.GetClassSize()));
+            UIntPtr addr = libsupcs.CastOperations.ReinterpretAsUIntPtr(t);
+            *(IntPtr*)(libsupcs.OtherOperations.Add(addr, libsupcs.ClassOperations.GetVtblFieldOffset())) = thread_type.VTable;
+            *(int *)(libsupcs.OtherOperations.Add(addr, libsupcs.ClassOperations.GetObjectIdFieldOffset())) = GetNewObjId();
+            libsupcs.TysosField tid_fld = libsupcs.TysosType.ReinterpretAsFieldInfo(thread_type.GetField("thread_id"));
+            *(Int64*)(libsupcs.OtherOperations.Add(addr, new UIntPtr((uint)tid_fld.Offset))) = GetCurThreadId();
+            return (System.Threading.Thread)t;*/
         }
 
         [libsupcs.MethodAlias("_ZX15OtherOperationsM_0_18GetFunctionAddress_Ru1I_P1u1S")]

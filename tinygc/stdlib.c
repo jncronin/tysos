@@ -23,6 +23,29 @@ void *memcpy(void *dest, const void *src, size_t n)
 	return dest;
 }
 
+void *memmove(void *dest, const void *src, size_t n)
+{
+	char *d = (char *)dest;
+	char *s = (char *)src;
+
+	if(dest > src)
+	{
+		/* Perform a backwards copy */
+		d = &d[n];
+		s = &s[n];
+
+		while(n--)
+			*--d = *--s;
+	}
+	else
+	{
+		/* Normal memcpy like copy */
+		while(n--)
+			*d++ = *s++;
+	}
+	return dest;
+}
+
 void *memset(void *dest, int c, size_t n)
 {
 	char *d = (char *)dest;

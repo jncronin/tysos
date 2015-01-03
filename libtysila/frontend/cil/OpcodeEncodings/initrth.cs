@@ -80,7 +80,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             ass.Assign(state, il.stack_vars_before,
                 new libasm.hardware_contentsof { base_loc = t1, const_offset = fld_offset, size = ass.GetSizeOfIntPtr() },
-                new libasm.hardware_addressoflabel(ti_name, true), Assembler.CliType.native_int, il.il.tybel);
+                new libasm.hardware_addressoflabel(ti_name, offset, true), Assembler.CliType.native_int, il.il.tybel);
 
             //i.tacs.Add(new ThreeAddressCode(ThreeAddressCode.Op.assign_i,
             //    var.ContentsOf(i.stack_before[i.stack_before.Count - 1].contains_variable, fld_offset),

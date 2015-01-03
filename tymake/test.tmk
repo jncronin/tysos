@@ -4,7 +4,8 @@ YASM ?= "yasm";
 
 /* Use debug serial port output */
 DEBUG = 1;
-TYSILAFLAGS = "-fprofile";
+//TYSILAFLAGS = "-fprofile";
+TYSILAFLAGS = "";
 
 ROOT = "../../..";
 
