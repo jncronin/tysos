@@ -93,7 +93,6 @@ namespace Multiboot
     [libsupcs.OutputCHeader]
     public enum MemoryMapType
     {
-        Available = 1,
         TLoad = 1002,
         Tysos = 1003,
         PagingStructure = 1004,

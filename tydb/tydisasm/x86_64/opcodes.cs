@@ -184,6 +184,7 @@ namespace tydisasm.x86_64
             opcodes.Add(0xcc, new opcode { name = "int3", has_rm = false, operand_sources = new List<opcode.operand_source> { } });
             opcodes.Add(0xcd, new opcode { name = "int", has_rm = false, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.Imm } }, immediate_extends_on_rexw = false, immediate_length = 1 });
             opcodes.Add(0xce, new opcode { name = "into", has_rm = false, operand_sources = new List<opcode.operand_source> { } });
+            opcodes.Add(0xcf, new opcode { name = "iret", has_rm = false, operand_sources = new List<opcode.operand_source> { } });
 
             // 0xd0
             opcodes.Add(0xd0, new opcode { name = "invalid", has_rm = true, reinterpret_after_r = true });
@@ -248,6 +249,7 @@ namespace tydisasm.x86_64
             // 0f 60
 
             // 0f 70
+            opcodes.Add(0x0f7e, new opcode { name = "movq", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm } } });
 
             // 0f 80
             opcodes.Add(0x0f80, new opcode { name = "jo", has_rm = false, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.Imm, is_pc_relative = true } }, immediate_length = 4 });
@@ -298,6 +300,7 @@ namespace tydisasm.x86_64
             // 0f c0
 
             // 0f d0
+            opcodes.Add(0x0fd6, new opcode { name = "movq", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm } } });
 
             // 0f e0
 

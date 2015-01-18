@@ -123,7 +123,6 @@ enum Multiboot_PixelFormat {
 };
 
 enum Multiboot_MemoryMapType {
-    Available = 1,
     TLoad = 1002,
     Tysos = 1003,
     PagingStructure = 1004,

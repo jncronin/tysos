@@ -33,7 +33,7 @@ namespace tysos
         ISREC default_isrec;
         ISR default_isr_lapic;
 
-        public Interrupts(ulong idt_start)
+        public unsafe Interrupts(ulong idt_start)
         {
             idt = new tysos.Collections.StaticULongArray(idt_start, 256 * 16 / 8);
             idt.Clear(0);
@@ -51,13 +51,23 @@ namespace tysos
         public void InstallHandler(int interrupt_no, Delegate handler) { InstallHandler(interrupt_no, handler, 0); }
         public void InstallHandler(int interrupt_no, Delegate handler, int ist)
         {
-            InstallHandler(interrupt_no, (ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(handler), ist);
+            if (handler == null)
+                InstallHandler(interrupt_no, 0, ist);
+            else
+                InstallHandler(interrupt_no, (ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(handler), ist);
         }
 
         public void InstallHandler(int interrupt_no, ulong handler_addr) { InstallHandler(interrupt_no, handler_addr, 0); }
         public void InstallHandler(int interrupt_no, ulong handler_addr, int ist)
         {
             // See Intel 3a:6.14.1
+
+            if (handler_addr == 0)
+            {
+                idt[interrupt_no * 2] = 0;
+                idt[interrupt_no * 2 + 1] = 0;
+                return;
+            }
 
             ulong low_qword, high_qword;
 
@@ -96,19 +106,23 @@ namespace tysos
 
         }
 
-        public delegate void ISREC(ulong ec);
-        public delegate void ISR();
+        public unsafe delegate void ISREC(ulong error_code, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs);
+        public unsafe delegate void ISR(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs);
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void DefaultHandler()
+        public static unsafe void DefaultHandler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("A default handler was called", Program.arch.DebugOutput);
         }
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void DefaultHandlerLapic()
+        public static unsafe void DefaultHandlerLapic(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("A default handler which acknowledged the LAPIC was called", Program.arch.DebugOutput);
             ((x86_64.x86_64_cpu)Program.cur_cpu_data).CurrentLApic.SendEOI();
@@ -116,7 +130,8 @@ namespace tysos
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void DefaultHandlerErrorCode(ulong ec)
+        public static unsafe void DefaultHandlerErrorCode(ulong error_code, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("A default handler with error code was called", Program.arch.DebugOutput);
         }

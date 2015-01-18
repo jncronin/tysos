@@ -162,10 +162,6 @@ rulefor LIBSUPCSA inputs { LIBSUPCSOBJ, LIBSUPCS_CPU_OBJ } depends { "test.tmk" 
 	shellcmd("$RANLIB $_RULE_OUTPUT");
 }
 
-rulefor "%.tgc.o" inputs { "%.c" } depends { "test.tmk" } {
-	shellcmd("$CC -o $_RULE_OUTPUT -I$ROOT/tinygc $CFLAGS -c $_RULE_INPUT");
-}
-
 /* Rules for EFI applications */
 
 EFICC = "x86_64-w64-mingw32-gcc";
@@ -225,6 +221,10 @@ TINYGC_SRCS = [ ROOT + "/tinygc/dlmalloc.tgc.o", ROOT + "/tinygc/printf.tgc.o", 
 	ROOT + "/tinygc/stdlib.tgc.o", ROOT + "/tinygc/tinygc.tgc.o", SETJMP ];
 if(DEBUG) {
 	TINYGC_SRCS.add(ROOT + "/tinygc/serport.tgc.o");
+}
+
+rulefor "%.tgc.o" inputs { "%.c" } depends { "test.tmk" } {
+	shellcmd("$CC -o $_RULE_OUTPUT -I$ROOT/tinygc $CFLAGS -c $_RULE_INPUT");
 }
 
 rulefor TINYGCOBJ inputs { TINYGC_SRCS } depends { "test.tmk" } {

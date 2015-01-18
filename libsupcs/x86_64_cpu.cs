@@ -29,6 +29,10 @@ namespace libsupcs.x86_64
     [ArchDependent("x86_64")]
     public class Cpu
     {
+        [global::System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+        public sealed class ISRErrorCodeAttribute : System.Attribute
+        { }
+
         [Bits64Only]
         public unsafe static void Lidt(ulong addr, ushort limit)
         {
@@ -37,7 +41,7 @@ namespace libsupcs.x86_64
              * least significant 16 bits = limit
              * next 64 bits = address
              */
-
+            
             ulong *idt_ptr = stackalloc ulong[2];
             idt_ptr[1] = (addr >> 48) & 0xffffUL;
             idt_ptr[0] = (addr << 16) | ((ulong)limit & 0xffffUL);
@@ -57,6 +61,60 @@ namespace libsupcs.x86_64
             idt_ptr[1] = (addr >> 16) & 0xffffU;
             idt_ptr[0] = (addr << 16) | ((uint)limit & 0xffffU);
             Lidt((UIntPtr)idt_ptr);
+        }
+
+        [InterruptRegisterStructure]
+        public struct InterruptRegisters64
+        {
+            public ulong xmm15;
+            public ulong xmm14;
+            public ulong xmm13;
+            public ulong xmm12;
+            public ulong xmm11;
+            public ulong xmm10;
+            public ulong xmm9;
+            public ulong xmm8;
+            public ulong xmm7;
+            public ulong xmm6;
+            public ulong xmm5;
+            public ulong xmm4;
+            public ulong xmm3;
+            public ulong xmm2;
+            public ulong xmm1;
+            public ulong xmm0;
+            public ulong r15;
+            public ulong r14;
+            public ulong r13;
+            public ulong r12;
+            public ulong r11;
+            public ulong r10;
+            public ulong r9;
+            public ulong r8;
+            public ulong rdi;
+            public ulong rsi;
+            public ulong rdx;
+            public ulong rcx;
+            public ulong rbx;
+            public ulong rax;
+        }
+
+        [InterruptRegisterStructure]
+        public struct InterruptRegisters32
+        {
+            public uint xmm7;
+            public uint xmm6;
+            public uint xmm5;
+            public uint xmm4;
+            public uint xmm3;
+            public uint xmm2;
+            public uint xmm1;
+            public uint xmm0;
+            public uint rdi;
+            public uint rsi;
+            public uint rdx;
+            public uint rcx;
+            public uint rbx;
+            public uint rax;
         }
 
         [MethodImpl(MethodImplOptions.InternalCall)]

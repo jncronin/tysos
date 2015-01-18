@@ -64,7 +64,7 @@ namespace libtysila
                 loc_src = x86_64_Assembler.Rax;
             }
 
-            ((x86_64_Assembler)ass).ChooseInstruction(x86_64.x86_64_asm.opcode.LIDT, il.il.tybel, loc_src);
+            ((x86_64_Assembler)ass).ChooseInstruction(x86_64.x86_64_asm.opcode.LIDT, il.il.tybel, new libasm.hardware_contentsof { base_loc = loc_src });
         }
 
         static void PortInb(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,

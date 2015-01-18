@@ -86,6 +86,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                             new libasm.hardware_contentsof { base_loc = t1, const_offset = val_offset, size = ass.GetSizeOf(p_T) },
                             loc_val, p_T.CliType(ass), il.il.tybel);
                     }
+
+                    ass.Assign(state, il.stack_vars_before, loc_dest, t1, Assembler.CliType.native_int, il.il.tybel);
                     il.stack_after.Push(p_dest);
                 }
                 else

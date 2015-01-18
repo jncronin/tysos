@@ -1947,37 +1947,46 @@ namespace libtysila
         internal override void Enter(frontend.cil.Encoder.EncoderState state, MethodAttributes attrs, List<tybel.Node> ret)
         {
             bool is_isr = false;
+
             if (attrs.attrs.ContainsKey("libsupcs.ISR"))
                 is_isr = true;
 
-            /* if (is_isr)
-                throw new NotImplementedException();
-            else */
+            /* Set up frame pointer */
+            ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(Rbp));
+            ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.MOVL : x86_64.x86_64_asm.opcode.MOVQ, ret,
+                vara.MachineReg(Rbp), vara.MachineReg(Rsp));
+
+            /* Reserve stack space for args, vars and temporaries */
+            int stack_reserve = state.la_stack.ByteSize + state.lv_stack.ByteSize + state.largest_var_stack + 8;
+            if (stack_reserve > 0)
             {
-                /* Set up frame pointer */
-                ChooseInstruction(x86_64.x86_64_asm.opcode.PUSH, ret, vara.MachineReg(Rbp));
-                ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.MOVL : x86_64.x86_64_asm.opcode.MOVQ, ret,
-                    vara.MachineReg(Rbp), vara.MachineReg(Rsp));
+                ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.SUBL : x86_64.x86_64_asm.opcode.SUBQ,
+                    ret, vara.MachineReg(Rsp), vara.Const(stack_reserve));
+            }
 
-                /* Reserve stack space for args, vars and temporaries */
-                int stack_reserve = state.la_stack.ByteSize + state.lv_stack.ByteSize + state.largest_var_stack + 8;
-                if (stack_reserve > 0)
+            /* Store callee-saved registers */
+            ret.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.SaveCalleeSaved, Val = state.used_locs });
+
+            /* Copy arguments to stack arg space */
+            for (int i = 0; i < state.cc.Arguments.Count; i++)
+            {
+                /* See if this is an ISRs interrupt register structure */
+                if (is_isr && (state.cc.Arguments[i].Type.Type is Signature.UnmanagedPointer) &&
+                    Metadata.GetTypeDef(state.cc.Arguments[i].Type.Type, this).CustomAttributes.ContainsKey("libsupcs.InterruptRegisterStructure"))
                 {
-                    ChooseInstruction(ia == IA.i586 ? x86_64.x86_64_asm.opcode.SUBL : x86_64.x86_64_asm.opcode.SUBQ,
-                        ret, vara.MachineReg(Rsp), vara.Const(stack_reserve));
-                }
+                    /* At this point, the registers have been pushed with the last one at [rsp],
+                        * therefore just load rsp to the argument address */
 
-                /* Copy arguments to stack arg space */
-                for (int i = 0; i < state.cc.Arguments.Count; i++)
+                    Assign(state, null, state.la_stack.GetAddressOf(i, this), Rsp, CliType.native_int, ret);
+                }
+                else
                 {
                     Assign(state, null, state.la_stack.GetAddressOf(i, this), state.cc.Arguments[i].ValueLocation,
                         state.cc.Arguments[i].Type.CliType(this), ret);
-                    //EncMov(this, state, state.la_stack.GetAddressOf(i, this), state.cc.Arguments[i].ValueLocation,
-                    //    state.cc.Arguments[i].Type.CliType(this), ret);
                 }
-                if (state.cc.HiddenRetValArgument != null)
-                    EncMov(this, state, state.la_stack.GetAddressOf(state.cc.Arguments.Count, this), state.cc.HiddenRetValArgument, ret);
             }
+            if (state.cc.HiddenRetValArgument != null)
+                EncMov(this, state, state.la_stack.GetAddressOf(state.cc.Arguments.Count, this), state.cc.HiddenRetValArgument, ret);
         }
 
         internal override void NumOp(frontend.cil.Encoder.EncoderState state, Stack regs_in_use, hardware_location dest, hardware_location a, hardware_location b, ThreeAddressCode.Op op, List<tybel.Node> ret)

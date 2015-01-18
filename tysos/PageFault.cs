@@ -38,12 +38,13 @@ namespace tysos
         internal static libsupcs.Unwinder pf_unwinder;
 
         [libsupcs.ISR]
+        [libsupcs.x86_64.Cpu.ISRErrorCode]
         [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("__pfault")]
-        public static void PFHandler(ulong error_code)
+        public unsafe static void PFHandler(ulong error_code, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64 *regs)
         {
             ulong fault_address = libsupcs.x86_64.Cpu.Cr2;
-
 
             // Adjust the tss segment's ist1 pointer
             if (ist_stack != null)
@@ -191,6 +192,9 @@ namespace tysos
                     Formatter.Write("RIP: ", Program.arch.DebugOutput);
                     Formatter.Write(rip, "X", Program.arch.DebugOutput);
                     Formatter.WriteLine(Program.arch.DebugOutput);
+
+                    tysos.x86_64.Exceptions.DumpExceptionData(error_code, return_rip, return_cs, rflags,
+                        return_rsp, return_ss, regs);
 
 
                     //Program.arch.VirtualRegions.Dump(Program.arch.DebugOutput);

@@ -50,6 +50,7 @@ namespace libtysila
 
         //public hardware_location[] CalleePreservesLocations = new hardware_location[] { };
         public List<hardware_location> CalleePreservesLocations = new List<hardware_location>();
+        public List<hardware_location> CalleeAlwaysSavesLocations = new List<hardware_location>();
         public List<hardware_location> CallerPreservesLocations = new List<hardware_location>();
 
         public bool ArgsInRegisters = false;

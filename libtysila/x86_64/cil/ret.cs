@@ -63,7 +63,18 @@ namespace libtysila.x86_64.cil
 
             il.il.tybel.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.RestoreCalleeSaved, Val = state.used_locs });
             ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.LEAVE, il.il.tybel);
-            ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.RETN, il.il.tybel);
+
+            if (attrs.attrs.ContainsKey("libsupcs.ISR"))
+            {
+                if (attrs.attrs.ContainsKey("libsupcs.x86_64.Cpu+ISRErrorCode"))
+                {
+                    // Pop the error code from the stack
+                    ((x86_64_Assembler)ass).ChooseInstruction(((x86_64_Assembler)ass).ia == x86_64_Assembler.IA.i586 ? x86_64_asm.opcode.ADDL : x86_64_asm.opcode.ADDQ, il.il.tybel, vara.MachineReg(x86_64_Assembler.Rsp), vara.Const(ass.GetSizeOfPointer(), Assembler.CliType.native_int));
+                }
+                ((x86_64_Assembler)ass).ChooseInstruction(((x86_64_Assembler)ass).ia == x86_64_Assembler.IA.i586 ? x86_64_asm.opcode.IRET : x86_64_asm.opcode.IRETQ, il.il.tybel);
+            }
+            else
+                ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.RETN, il.il.tybel);
         }
     }
 }

@@ -275,6 +275,7 @@ namespace libtysila.tybel
                 case SpecialNodeType.SaveCalleeSaved:
                     {
                         util.Set<libasm.hardware_location> used_locs = Val as util.Set<libasm.hardware_location>;
+                        used_locs = used_locs.Union(attrs.cc.CalleeAlwaysSavesLocations);
                         List<libasm.hardware_location> save_order = new List<libasm.hardware_location>(util.Intersect<libasm.hardware_location>(used_locs, attrs.cc.CalleePreservesLocations));
                         List<tybel.Node> save_instrs = new List<Node>();
                         foreach(libasm.hardware_location save_loc in save_order)
@@ -288,6 +289,7 @@ namespace libtysila.tybel
                 case SpecialNodeType.RestoreCalleeSaved:
                     {
                         util.Set<libasm.hardware_location> used_locs = Val as util.Set<libasm.hardware_location>;
+                        used_locs = used_locs.Union(attrs.cc.CalleeAlwaysSavesLocations);
                         List<libasm.hardware_location> restore_order = new List<libasm.hardware_location>(util.Intersect<libasm.hardware_location>(used_locs, attrs.cc.CalleePreservesLocations));
                         restore_order.Reverse();
                         List<tybel.Node> restore_instrs = new List<Node>();

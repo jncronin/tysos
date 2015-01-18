@@ -62,6 +62,13 @@ namespace libsupcs
         public Bits32OnlyAttribute() { }
     }
 
+    /** <summary>This marks a structure that is used to pass register contents to an interrupt handler</summary> */
+    [global::System.AttributeUsage(System.AttributeTargets.Struct)]
+    public sealed class InterruptRegisterStructureAttribute : System.Attribute
+    {
+        public InterruptRegisterStructureAttribute() { }
+    }
+
     [global::System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public sealed class MethodReferenceAliasAttribute : System.Attribute
     {
@@ -366,6 +373,7 @@ namespace libsupcs
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static unsafe extern int GetElemSizeOffset();
 
+        /** <summary>Get the number of items in the inner array (multiply by elemsize to get the byte length) */
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static unsafe extern int GetInnerArrayLengthOffset();
 

@@ -196,7 +196,7 @@ namespace libtysila
             return l;
         }
 
-        enum TypeInfoType { NonGeneric, GenericType, GenericTypeDefinition };
+        enum TypeInfoType { NonGeneric, GenericType, GenericTypeDefinition, Array };
 
         StructureLayout CreateVTableLayout(Assembler.TypeToCompile ttc, Assembler ass, ref int itablemap_ptr, bool is_instantiable,
             bool vtable_only)
@@ -402,6 +402,12 @@ namespace libtysila
                 ti_l = ass.GetTysosGenericTypeDefinitionLayout();
                 ti_layout.PredefinedLength = ti_l.ClassSize;
             }
+            else if (ttc.tsig.Type is Signature.BaseArray)
+            {
+                ti_type = TypeInfoType.Array;
+                ti_l = ass.GetTysosArrayTypeLayout();
+                ti_layout.PredefinedLength = ti_l.ClassSize;
+            }
 
             //bool is_instantiable = IsInstantiable(ttc.tsig.Type, ass, true, false);
             if ((implflags & libsupcs.TysosType.IF_TYPE_MASK) == libsupcs.TysosType.IF_MPTR)
@@ -422,6 +428,9 @@ namespace libtysila
                 vtbl_name = "__tysos_gt_vt";
             else if (ti_type == TypeInfoType.GenericTypeDefinition)
                 vtbl_name = "__tysos_gtd_vt";
+            else if (ti_type == TypeInfoType.Array)
+                vtbl_name = "__tysos_arraytype_vt";
+
             if (ass.Options.EnableRTTI)
                 ti_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = ti_l.InstanceFieldOffsets["IntPtr __vtbl"], Relocation = new LayoutEntry.RelocationType { name = vtbl_name, rel_type = ass.DataToDataRelocType(), value = 0 } });
             else
@@ -535,6 +544,13 @@ namespace libtysila
 
                     // IntPtr NestedTypes
                     ti_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.InternalReference, OffsetWithinStructure = ti_l.InstanceFieldOffsets["IntPtr NestedTypes"], InternalReference = new LayoutEntry.InternalReferenceType { Id = ID_NestedTypesList } });
+                }
+
+                if (ti_type == TypeInfoType.Array)
+                {
+                    Signature.BaseArray ba = ttc.tsig.Type as Signature.BaseArray;
+                    string et_name = Mangler2.MangleTypeInfo(Metadata.GetTTC(new Signature.Param(ba.ElemType, ass), ttc, null, ass), ass);
+                    ti_layout.Entries.Add(new LayoutEntry { _layout = this, Type = LayoutEntry.LayoutEntryType.Relocation, OffsetWithinStructure = ti_l.InstanceFieldOffsets["libsupcs.TysosType elemtype"], Relocation = new LayoutEntry.RelocationType { name = et_name, rel_type = ass.DataToDataRelocType(), value = 0 } });
                 }
             }
             

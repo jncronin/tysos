@@ -36,10 +36,16 @@ EFI_STATUS allocate_any(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS
 EFI_STATUS allocate(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS *paddr_out);
 EFI_PHYSICAL_ADDRESS get_pmem_for_vmem(UINTPTR vaddr);
 
+extern UINTPTR kernel_low;
+extern UINTPTR kernel_high;
+
 EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(void *fobj, void *buf, size_t len),
 							off_t (*fseek_func)(void *fobj, off_t offset, int whence))
 {
 	EFI_STATUS Status;
+
+	kernel_low = ~(UINTPTR)0;
+	kernel_high = 0;
 
 	/* Load up the elf header */
 	*ehdr = (Elf64_Ehdr *)malloc(sizeof(Elf64_Ehdr));
@@ -67,6 +73,13 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 			UINTPTR v_length = phdr->p_vaddr + phdr->p_memsz - vpage_start;
 			if(v_length & 0xfff)
 				v_length = (v_length + 0x1000) & ~0xfffULL;
+
+			UINTPTR seg_low = phdr->p_vaddr;
+			UINTPTR seg_high = phdr->p_vaddr + phdr->p_memsz;
+			if(seg_low < kernel_low)
+				kernel_low = seg_low;
+			if(seg_high > kernel_high)
+				kernel_high = seg_high;
 
 			fseek_func(fobj, phdr->p_offset, SEEK_SET);
 

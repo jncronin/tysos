@@ -105,6 +105,32 @@ namespace libtysila
             return tysos_gtd_l;
         }
 
+        TypeToCompile? tysos_at_ttc = null;
+        Layout tysos_at_l = null;
+        string tysos_at_ti = null;
+        Dictionary<string, int> tysos_at_offsets = null;
+
+        public Layout GetTysosArrayTypeLayout()
+        {
+            if (tysos_at_l == null)
+            {
+                tysos_at_ttc = Metadata.GetTTC("libsupcs", "libsupcs", "TysosArrayType", this);
+                tysos_at_l = Layout.GetLayout(tysos_at_ttc.Value, this, false);
+                tysos_at_ti = Mangler2.MangleTypeInfo(tysos_at_ttc.Value, this);
+
+                tysos_at_offsets = new Dictionary<string, int>();
+                {
+                    foreach (Layout.Field f in tysos_at_l.InstanceFields)
+                    {
+                        if (!tysos_at_offsets.ContainsKey(f.name))
+                            tysos_at_offsets.Add(f.name, f.offset);
+                    }
+                }
+            }
+
+            return tysos_at_l;
+        }
+
 #if MT
         public void AssembleType(object ttcr) { AssembleType(ttcr as TTCRequest); }
         public void AssembleType(TTCRequest ttcr) { AssembleType(ttcr.ttc, ttcr.of); }

@@ -93,6 +93,22 @@ namespace tysos.x86_64
             get { return 8; }
         }
 
+        private bool IsUefiFreeMemory(Multiboot.MemoryMapType mtype)
+        {
+            switch (mtype)
+            {
+                case Multiboot.MemoryMapType.UEfiConventionalMemory:
+                case Multiboot.MemoryMapType.UEfiBootServicesCode:
+                case Multiboot.MemoryMapType.UEfiBootServicesData:
+                case Multiboot.MemoryMapType.UEfiRuntimeServicesCode:
+                case Multiboot.MemoryMapType.UEfiRuntimeServicesData:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
         internal override void Init(UIntPtr chunk_vaddr, UIntPtr chunk_length, Multiboot.Header mboot)
         {
             /* Set up an x86_64 environment */
@@ -167,7 +183,7 @@ namespace tysos.x86_64
             for (int i = 0; i < mboot.mmap.Length; i++)
             {
                 Multiboot.MemoryMap cur_mmap = mboot.mmap[i];
-                if (cur_mmap.type == Multiboot.MemoryMapType.Available)
+                if (IsUefiFreeMemory(cur_mmap.type))
                 {
                     for (ulong cur_page = cur_mmap.base_addr; (cur_page + 0x1000) <= (cur_mmap.base_addr + cur_mmap.length); cur_page += 0x1000)
                         PhysMem.ReleasePage(cur_page);
@@ -176,7 +192,7 @@ namespace tysos.x86_64
             for (int i = 0; i < mboot.mmap.Length; i++)
             {
                 Multiboot.MemoryMap cur_mmap = mboot.mmap[i];
-                if (cur_mmap.type != Multiboot.MemoryMapType.Available)
+                if (!IsUefiFreeMemory(cur_mmap.type))
                 {
                     for (ulong cur_page = cur_mmap.base_addr; cur_page < (cur_mmap.base_addr + cur_mmap.length); cur_page += 0x1000)
                         PhysMem.MarkUsed(cur_page);
@@ -191,8 +207,20 @@ namespace tysos.x86_64
             Formatter.WriteLine(" 4 kiB pages", DebugOutput);
             VirtMem.SetPmem(PhysMem);
 
+            Formatter.Write("x86_64: mboot.max_tysos: ", DebugOutput);
+            Formatter.Write(mboot.max_tysos, "X", DebugOutput);
+            Formatter.Write(", tysos_virtaddr: ", DebugOutput);
+            Formatter.Write(mboot.tysos_virtaddr, "X", DebugOutput);
+            Formatter.Write(", tysos_size: ", DebugOutput);
+            Formatter.Write(mboot.tysos_size, "X", DebugOutput);
+            Formatter.WriteLine(DebugOutput);
+
             /* Set up the virtual region allocator */
-            VirtualRegions = new Virtual_Regions(mboot.max_tysos);
+            if (mboot.max_tysos != 0)
+                VirtualRegions = new Virtual_Regions(0, mboot.max_tysos);
+            else
+                VirtualRegions = new Virtual_Regions(mboot.tysos_virtaddr, mboot.tysos_size);
+
             Formatter.WriteLine("x86_64: Virtual region allocator started", DebugOutput);
             VirtualRegions.Dump(DebugOutput);
 
@@ -202,27 +230,30 @@ namespace tysos.x86_64
             Interrupts = new Interrupts(idt_start);
             Formatter.WriteLine("x86_64: IDT allocated", DebugOutput);
 
-            // Install the page fault handler
-            Interrupts.InstallHandler(14, new Interrupts.ISREC(PageFault.PFHandler));
+            unsafe
+            {
+                // Install the page fault handler
+                Interrupts.InstallHandler(14, new Interrupts.ISREC(PageFault.PFHandler));
 
-            // Install some default handlers
-            Interrupts.InstallHandler(0, new Interrupts.ISR(Exceptions.DivideError_0_Handler));
-            Interrupts.InstallHandler(1, new Interrupts.ISR(Exceptions.DebugError_1_Handler));
-            Interrupts.InstallHandler(2, new Interrupts.ISR(Exceptions.NMIError_2_Handler));
-            Interrupts.InstallHandler(3, new Interrupts.ISR(Exceptions.BreakPoint_3_Handler));
-            Interrupts.InstallHandler(4, new Interrupts.ISR(Exceptions.OverflowError_4_Handler));
-            Interrupts.InstallHandler(5, new Interrupts.ISR(Exceptions.BoundCheckError_5_Handler));
-            Interrupts.InstallHandler(6, new Interrupts.ISR(Exceptions.InvalidOpcode_6_Handler));
-            Interrupts.InstallHandler(7, new Interrupts.ISR(Exceptions.DeviceNotPresentError_7_Handler));
-            Interrupts.InstallHandler(8, new Interrupts.ISREC(Exceptions.DoubleFault_8_Handler));
-            Interrupts.InstallHandler(10, new Interrupts.ISREC(Exceptions.TSSError_10_Handler));
-            Interrupts.InstallHandler(11, new Interrupts.ISREC(Exceptions.SegmentNotPresentError_11_Handler));
-            Interrupts.InstallHandler(12, new Interrupts.ISREC(Exceptions.StackeFaultError_12_Handler));
-            Interrupts.InstallHandler(13, new Interrupts.ISREC(Exceptions.GeneralProtection_13_Handler));
-            Interrupts.InstallHandler(16, new Interrupts.ISR(Exceptions.FPUError_16_Handler));
-            Interrupts.InstallHandler(17, new Interrupts.ISREC(Exceptions.AlignmentCheck_17_Handler));
-            Interrupts.InstallHandler(18, new Interrupts.ISR(Exceptions.MachineCheckError_18_Handler));
-            Interrupts.InstallHandler(19, new Interrupts.ISR(Exceptions.SIMD_19_Handler));
+                // Install some default handlers
+                Interrupts.InstallHandler(0, new Interrupts.ISR(Exceptions.DivideError_0_Handler));
+                Interrupts.InstallHandler(1, new Interrupts.ISR(Exceptions.DebugError_1_Handler));
+                Interrupts.InstallHandler(2, new Interrupts.ISR(Exceptions.NMIError_2_Handler));
+                Interrupts.InstallHandler(3, new Interrupts.ISR(Exceptions.BreakPoint_3_Handler));
+                Interrupts.InstallHandler(4, new Interrupts.ISR(Exceptions.OverflowError_4_Handler));
+                Interrupts.InstallHandler(5, new Interrupts.ISR(Exceptions.BoundCheckError_5_Handler));
+                Interrupts.InstallHandler(6, new Interrupts.ISR(Exceptions.InvalidOpcode_6_Handler));
+                Interrupts.InstallHandler(7, new Interrupts.ISR(Exceptions.DeviceNotPresentError_7_Handler));
+                Interrupts.InstallHandler(8, new Interrupts.ISREC(Exceptions.DoubleFault_8_Handler));
+                Interrupts.InstallHandler(10, new Interrupts.ISREC(Exceptions.TSSError_10_Handler));
+                Interrupts.InstallHandler(11, new Interrupts.ISREC(Exceptions.SegmentNotPresentError_11_Handler));
+                Interrupts.InstallHandler(12, new Interrupts.ISREC(Exceptions.StackeFaultError_12_Handler));
+                Interrupts.InstallHandler(13, new Interrupts.ISREC(Exceptions.GeneralProtection_13_Handler));
+                Interrupts.InstallHandler(16, new Interrupts.ISR(Exceptions.FPUError_16_Handler));
+                Interrupts.InstallHandler(17, new Interrupts.ISREC(Exceptions.AlignmentCheck_17_Handler));
+                Interrupts.InstallHandler(18, new Interrupts.ISR(Exceptions.MachineCheckError_18_Handler));
+                Interrupts.InstallHandler(19, new Interrupts.ISR(Exceptions.SIMD_19_Handler));
+            }
             Formatter.WriteLine("x86_64: Default exception handlers installed", DebugOutput);
 
             /* Set up the tss and kernel stack */
@@ -244,8 +275,11 @@ namespace tysos.x86_64
             Formatter.WriteLine("x86_64: TSS installed", DebugOutput);
 
             // Now inform the page fault and double fault handlers to use their own stack
-            Interrupts.InstallHandler(14, new Interrupts.ISREC(PageFault.PFHandler), 1);
-            Interrupts.InstallHandler(8, new Interrupts.ISREC(Exceptions.DoubleFault_8_Handler), 2);
+            unsafe
+            {
+                Interrupts.InstallHandler(14, new Interrupts.ISREC(PageFault.PFHandler), 0);
+                Interrupts.InstallHandler(8, new Interrupts.ISREC(Exceptions.DoubleFault_8_Handler), 2);
+            }
             Formatter.WriteLine("x86_64: Page fault and double fault handlers installed", DebugOutput);
 
             // Set up the page fault handler's stack switching mechanism
@@ -310,11 +344,17 @@ namespace tysos.x86_64
             }
 
             bsp_lapic.SetSpuriousVector(0x60);
-            Interrupts.InstallHandler(0x60, new Interrupts.ISR(tysos.x86_64.LApic.SpuriousApicInterrupt));
+            unsafe
+            {
+                Interrupts.InstallHandler(0x60, new Interrupts.ISR(tysos.x86_64.LApic.SpuriousApicInterrupt));
+            }
 
             bsp_lapic.SetTimer(true, 100.0, 0x40);      // 10 ms timer
             //bsp_lapic.SetTimer(true, 0x144b50, 0x40);   // 10ms timer with 133 Mhz bus and divisor 1, interrupt vector 0x40
-            Interrupts.InstallHandler(0x40, new Interrupts.ISR(tysos.x86_64.LApic.TimerInterrupt));
+            unsafe
+            {
+                Interrupts.InstallHandler(0x40, new Interrupts.ISR(tysos.x86_64.LApic.TimerInterrupt));
+            }
             SchedulerTimer = bsp_lapic;
 
             /* Set up the current cpu */
@@ -345,7 +385,7 @@ namespace tysos.x86_64
 
             foreach (Multiboot.MemoryMap mmap in mboot.mmap)
             {
-                if (mmap.type == Multiboot.MemoryMapType.Available)
+                if (IsUefiFreeMemory(mmap.type))
                 {
                     Pmem.FreeRegion fr = new Pmem.FreeRegion();
                     fr.start = mmap.base_addr;
@@ -362,7 +402,7 @@ namespace tysos.x86_64
             /* Exclude space above this */
             foreach (Multiboot.MemoryMap mmap in mboot.mmap)
             {
-                if (mmap.type != Multiboot.MemoryMapType.Available)
+                if (!IsUefiFreeMemory(mmap.type))
                 {
                     exclude_region(mmap.base_addr, mmap.length, free_regions);
                     Formatter.WriteLine("x86_64: USED:  start: " + mmap.base_addr.ToString("X16") + "  length: " + mmap.length.ToString("X16"), Program.arch.DebugOutput);

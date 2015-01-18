@@ -53,7 +53,7 @@ namespace libtysila.frontend.cil
             state.mtc = mtc;
 
             if (attrs.attrs.ContainsKey("libsupcs.ISR"))
-                state.cc = ass.call_convs["isr"](mtc, CallConv.StackPOV.Callee, ass);
+                attrs.cc = state.cc = ass.call_convs["isr"](mtc, CallConv.StackPOV.Callee, ass);
 
             /* For now, have all local args and vars be on the stack */
             Stack arg_stack = ass.GetStack(libasm.hardware_stackloc.StackType.Arg);
@@ -129,9 +129,6 @@ namespace libtysila.frontend.cil
 
             /* Add the method prefix */
             ass.Enter(state, attrs, ret);
-
-            /* Store callee-saved registers */
-            ret.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.SaveCalleeSaved, Val = state.used_locs });
 
             /* Emit profiling code */
             if (ass.Options.Profile)

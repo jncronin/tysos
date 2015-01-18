@@ -464,7 +464,8 @@ namespace tysos.x86_64
 
         [libsupcs.AlwaysCompile]
         [libsupcs.ISR]
-        public static void SpuriousApicInterrupt()
+        public static unsafe void SpuriousApicInterrupt(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Spurious LAPIC interrupt", Program.arch.DebugOutput);
 
@@ -473,7 +474,8 @@ namespace tysos.x86_64
 
         [libsupcs.AlwaysCompile]
         [libsupcs.ISR]
-        internal static void TimerInterrupt()
+        internal static unsafe void TimerInterrupt(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             LApic cur_lapic = ((x86_64.x86_64_cpu)Program.cur_cpu_data).CurrentLApic;
 

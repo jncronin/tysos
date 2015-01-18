@@ -193,7 +193,7 @@ namespace libtysila
 
         public static CallConv isr(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
         {
-            CallConv ret = sysv_i386(mtc, pov, ass);
+            CallConv ret = sysv_i386(mtc, pov, ass, true);
             ret.Name = "isr";
 
             bool i586 = false;
@@ -201,9 +201,10 @@ namespace libtysila
                 i586 = true;
 
             ret.CalleePreservesLocations = i586 ? isr_i386_preserves : isr_x86_64_preserves;
+            ret.CalleeAlwaysSavesLocations = i586 ? isr_i386_preserves : isr_x86_64_preserves;
 
-            if (mtc.msig.Method.Params.Count > 1)
-                throw new Exception("ISRs can only have zero or one arguments");
+            //if (mtc.msig.Method.Params.Count > 1)
+            //    throw new Exception("ISRs can only have zero or one arguments");
             if (mtc.msig.Method.RetType != null && !((mtc.msig.Method.RetType.Type is Signature.BaseType) && 
                 (((Signature.BaseType)mtc.msig.Method.RetType.Type).Type == BaseType_Type.Void)))
                 throw new Exception("ISRs cannot return a value");
@@ -322,6 +323,9 @@ namespace libtysila
         }
 
         public static CallConv sysv_i386(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass)
+        { return sysv_i386(mtc, pov, ass, false); }
+
+        public static CallConv sysv_i386(Assembler.MethodToCompile mtc, StackPOV pov, Assembler ass, bool is_isr)
         {
             CallConv ret = new CallConv();
 
@@ -359,6 +363,10 @@ namespace libtysila
                 stack_pos = 16;
                 if (i586)
                     stack_pos = 8;
+
+                if (is_isr)
+                    stack_pos -= pointer_size;
+                
                 base_reg = x86_64_Assembler.Rbp;
             }
 

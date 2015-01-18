@@ -25,6 +25,8 @@ using System.Text;
 
 namespace libsupcs
 {
+    [VTableAlias("__tysos_arraytype_vt")]
+    [SpecialType]
     class TysosArrayType : TysosType
     {
         internal TysosType elemtype;
@@ -172,6 +174,50 @@ namespace libsupcs
         {
             int* lobounds = (int*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetLoboundsOffset()));
             return idx - *lobounds;            
+        }
+
+        [MethodAlias("_ZW6System5ArrayM_0_8FastCopy_Rb_P5V5ArrayiV5Arrayii")]
+        private unsafe static bool FastCopy(byte* srcArr, int sourceIndex, byte* destArr,
+            int destIndex, int length)
+        {
+            /* Check if the arrays can be copied quickly (i.e. if their element types match)
+             * If so, copy them and return true, else return false */
+            void* srcET = *(void**)(srcArr + ArrayOperations.GetElemTypeOffset());
+            void* destET = *(void**)(destArr + ArrayOperations.GetElemTypeOffset());
+
+            // TODO: make this a more rigourous comparison, looking for dynamic type equality too
+            if (srcET != destET)
+                return false;
+
+            /* Calculate start offsets and byte length */
+            int srcIAItems = *(int*)(srcArr + ArrayOperations.GetInnerArrayLengthOffset());
+            int destIAItems = *(int*)(destArr + ArrayOperations.GetInnerArrayLengthOffset());
+            int srcLB = **(int**)(srcArr + ArrayOperations.GetLoboundsOffset());
+            int destLB = **(int**)(destArr + ArrayOperations.GetLoboundsOffset());
+            int etSize = *(int*)(srcArr + ArrayOperations.GetElemSizeOffset());
+
+            int srcOffset = (sourceIndex - srcLB) * etSize;
+            int destOffset = (destIndex - destLB) * etSize;
+
+            int byteLength = length * etSize;
+
+            if ((srcOffset + byteLength) > (srcIAItems * etSize))
+            {
+                return false;
+            }
+            if ((destOffset + byteLength) > (destIAItems * etSize))
+            {
+                return false;
+            }
+
+            /* Get the inner array pointers */
+            byte* srcIA = *(byte**)(srcArr + ArrayOperations.GetInnerArrayOffset());
+            byte* destIA = *(byte**)(destArr + ArrayOperations.GetInnerArrayOffset());
+
+            /* Perform the memmove */
+            MemoryOperations.MemMove((void*)(destIA + destOffset), (void*)(srcIA + srcOffset), byteLength);
+
+            return true;
         }
 
         [MethodAlias("__array_address")]

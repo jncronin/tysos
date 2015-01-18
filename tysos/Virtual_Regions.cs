@@ -151,13 +151,14 @@ namespace tysos
             }
         }
 
-        public Virtual_Regions(ulong tysos_length)
+        public Virtual_Regions(ulong tysos_base, ulong tysos_length)
         {
             // Set up the virtual region allocator
 
             /* Virtual memory looks like:
              * 
-             * Tysos:           0 - tysos_end
+             * NullPage:        0x00000000 00000000 - 0x00000000 00000fff
+             * Tysos:           tysos_base - (tysos_base + tysos_length - 1)
              * Free:            tysos_end - 0x00007ffff 00000000
              * NonCanonical     0x00008000 00000000 - 0xffff7fff ffffffff
              * Heap:            0xffff8000 00000000 - 0xffffff7f 00000000
@@ -169,10 +170,22 @@ namespace tysos
 
             list_start = list_end = null;
 
+            if (tysos_base != 0)
+            {
+                Region null_page = new Region();
+                null_page.type = Region.RegionType.NonCanonical;
+                null_page.name = "NullPage";
+                null_page.start = 0;
+                null_page.length = 0x1000;
+                if (tysos_base < null_page.length)
+                    null_page.length = tysos_base;
+                Add(null_page);
+            }
+
             tysos = new Region();
             tysos.type = Region.RegionType.Tysos;
             tysos.name = "Tysos";
-            tysos.start = 0x0;
+            tysos.start = tysos_base;
             tysos.length = tysos_length;
             Add(tysos);
 

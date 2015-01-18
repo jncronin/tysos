@@ -93,7 +93,7 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_4Lidt_Rv_P2yt:
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Ltr_Rv_P1y:
-	ltr dx
+	ltr di
 	ret
 
 _ZX16MemoryOperationsM_0_19QuickClearAligned16_Rv_P2yy:

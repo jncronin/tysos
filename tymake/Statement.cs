@@ -376,6 +376,7 @@ namespace tymake
 
             /* Now ensure all the dependencies are available */
             DateTime most_recent_dependency = new DateTime(0);
+            System.IO.FileInfo mrd_fi = null;   // store the most recent dependency for debugging purposes
             foreach (string depend in all_deps)
             {
                 BuildCommandStatement bc = new BuildCommandStatement { fname = new StringExpression { val = depend } };
@@ -395,8 +396,14 @@ namespace tymake
                 if (!Statement.FileDirExists(depend))
                     throw new Exception("error building " + depend);
 
-                if (dep_fi.LastWriteTime.CompareTo(most_recent_dependency) > 0)
-                    most_recent_dependency = dep_fi.LastWriteTime;
+                if ((dep_fi.Attributes & System.IO.FileAttributes.Directory) != System.IO.FileAttributes.Directory)
+                {
+                    if (dep_fi.LastWriteTime.CompareTo(most_recent_dependency) > 0)
+                    {
+                        most_recent_dependency = dep_fi.LastWriteTime;
+                        mrd_fi = dep_fi;
+                    }
+                }
             }
 
             /* See if we need to build this file */

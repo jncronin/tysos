@@ -24,9 +24,7 @@ void initheap(uintptr_t start, uintptr_t end)
 
 void *sbrk(intptr_t increment)
 {
-#ifdef DEBUG
 	printf("SBRK: sbrk(0x%zx) called\n", increment);
-#endif
 
 	if(increment == 0)
 		return (void*)cur_brk;
@@ -36,6 +34,7 @@ void *sbrk(intptr_t increment)
 		{
 			uintptr_t ret = cur_brk;
 			cur_brk += (uintptr_t)increment;
+			printf("SBRK: returning 0x%zx\n", ret);
 			return (void*)ret;
 		}
 		else

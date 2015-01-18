@@ -29,7 +29,8 @@ namespace tysos.x86_64
     {
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void DivideError_0_Handler()
+        public static unsafe void DivideError_0_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Divide error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
@@ -37,7 +38,8 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void DebugError_1_Handler()
+        public static unsafe void DebugError_1_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Debug error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
@@ -45,7 +47,8 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void NMIError_2_Handler()
+        public static unsafe void NMIError_2_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regsa)
         {
             Arch.GDB_Registers regs = Arch.get_registers((long)(-libsupcs.OtherOperations.GetUsedStackSize()));
             Formatter.WriteLine("NMI", Program.arch.BootInfoOutput);
@@ -61,7 +64,8 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void BreakPoint_3_Handler()
+        public static unsafe void BreakPoint_3_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Breakpoint", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
@@ -69,7 +73,8 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void OverflowError_4_Handler()
+        public static unsafe void OverflowError_4_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Overflow error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
@@ -77,7 +82,8 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void BoundCheckError_5_Handler()
+        public static unsafe void BoundCheckError_5_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Bound check error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
@@ -85,7 +91,8 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void InvalidOpcode_6_Handler()
+        public static unsafe void InvalidOpcode_6_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Invalid opcode", Program.arch.BootInfoOutput);
 
@@ -103,15 +110,18 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void DeviceNotPresentError_7_Handler()
+        public static unsafe void DeviceNotPresentError_7_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Device not present error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
         }
 
         [libsupcs.ISR]
+        [libsupcs.x86_64.Cpu.ISRErrorCode]
         [libsupcs.AlwaysCompile]
-        public static void DoubleFault_8_Handler(ulong ec)
+        public static unsafe void DoubleFault_8_Handler(ulong ec, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Double fault", Program.arch.BootInfoOutput);
 
@@ -125,32 +135,40 @@ namespace tysos.x86_64
         }
 
         [libsupcs.ISR]
+        [libsupcs.x86_64.Cpu.ISRErrorCode]
         [libsupcs.AlwaysCompile]
-        public static void TSSError_10_Handler(ulong ec)
+        public static unsafe void TSSError_10_Handler(ulong ec, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("TSS error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
         }
 
         [libsupcs.ISR]
+        [libsupcs.x86_64.Cpu.ISRErrorCode]
         [libsupcs.AlwaysCompile]
-        public static void SegmentNotPresentError_11_Handler(ulong ec)
+        public static unsafe void SegmentNotPresentError_11_Handler(ulong ec, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Segment not present error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
         }
 
         [libsupcs.ISR]
+        [libsupcs.x86_64.Cpu.ISRErrorCode]
         [libsupcs.AlwaysCompile]
-        public static void StackeFaultError_12_Handler(ulong ec)
+        public static unsafe void StackeFaultError_12_Handler(ulong ec, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Stack Fault", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
         }
 
         [libsupcs.ISR]
+        [libsupcs.x86_64.Cpu.ISRErrorCode]
         [libsupcs.AlwaysCompile]
-        public static void GeneralProtection_13_Handler(ulong ec)
+        public static unsafe void GeneralProtection_13_Handler(ulong ec, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             if (PageFault.unwinding)
             {
@@ -160,6 +178,24 @@ namespace tysos.x86_64
 
             Formatter.WriteLine("General protection error", Program.arch.BootInfoOutput);
             Formatter.WriteLine("General protection error", Program.arch.DebugOutput);
+
+            ulong rbp = libsupcs.x86_64.Cpu.RBP;
+            ulong ecode, rip;
+            unsafe
+            {
+                ecode = *(ulong*)(rbp + 8);
+                rip = *(ulong*)(rbp + 16);
+            }
+            Formatter.Write("Error code: ", Program.arch.DebugOutput);
+            Formatter.Write(ecode, Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
+            Formatter.Write("RIP: ", Program.arch.DebugOutput);
+            Formatter.Write(rip, "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
+
+            DumpExceptionData(ec, return_rip, return_cs, rflags, return_rsp, return_ss, regs);
+
+            libsupcs.x86_64.Cpu.Break();
 
             Formatter.WriteLine("Stack trace:", Program.arch.DebugOutput);
 
@@ -174,15 +210,18 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void FPUError_16_Handler()
+        public static unsafe void FPUError_16_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("FPU error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
         }
 
         [libsupcs.ISR]
+        [libsupcs.x86_64.Cpu.ISRErrorCode]
         [libsupcs.AlwaysCompile]
-        public static void AlignmentCheck_17_Handler(ulong ec)
+        public static unsafe void AlignmentCheck_17_Handler(ulong ec, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Alignment check error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
@@ -190,7 +229,8 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void MachineCheckError_18_Handler()
+        public static unsafe void MachineCheckError_18_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Machine check error", Program.arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
@@ -198,11 +238,12 @@ namespace tysos.x86_64
 
         [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
-        public static void SIMD_19_Handler()
+        public static unsafe void SIMD_19_Handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             if (PageFault.unwinding)
                 libsupcs.OtherOperations.Halt();
-
+            
             Formatter.WriteLine("SIMD error", Program.arch.BootInfoOutput);
             Formatter.Write("SIMD error, MXCSR: ", Program.arch.DebugOutput);
             Formatter.Write((ulong)libsupcs.x86_64.Cpu.Mxcsr, "X", Program.arch.DebugOutput);
@@ -213,6 +254,57 @@ namespace tysos.x86_64
                 Program.cur_cpu_data.UseCpuAlloc = true;
             Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
             libsupcs.OtherOperations.Halt();
+        }
+
+        public static unsafe void DumpExceptionData(ulong ec, ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
+        {
+            Formatter.WriteLine("Exception information:", Program.arch.DebugOutput);
+
+            DumpRegister("EC    ", ec);
+            DumpRegister("RIP   ", return_rip);
+            DumpRegister("CS    ", return_cs);
+            DumpRegister("RFLAGS", rflags);
+            DumpRegister("RSP   ", return_rsp);
+            DumpRegister("SS    ", return_ss);
+            DumpRegister("RAX   ", regs->rax);
+            DumpRegister("RBX   ", regs->rbx);
+            DumpRegister("RCX   ", regs->rcx);
+            DumpRegister("RDX   ", regs->rdx);
+            DumpRegister("RSI   ", regs->rsi);
+            DumpRegister("RDI   ", regs->rdi);
+            DumpRegister("R8    ", regs->r8);
+            DumpRegister("R9    ", regs->r9);
+            DumpRegister("R10   ", regs->r10);
+            DumpRegister("R11   ", regs->r11);
+            DumpRegister("R12   ", regs->r12);
+            DumpRegister("R13   ", regs->r13);
+            DumpRegister("R14   ", regs->r14);
+            DumpRegister("R15   ", regs->r15);
+            DumpRegister("XMM0  ", regs->xmm0);
+            DumpRegister("XMM1  ", regs->xmm1);
+            DumpRegister("XMM2  ", regs->xmm2);
+            DumpRegister("XMM3  ", regs->xmm3);
+            DumpRegister("XMM4  ", regs->xmm4);
+            DumpRegister("XMM5  ", regs->xmm5);
+            DumpRegister("XMM6  ", regs->xmm6);
+            DumpRegister("XMM7  ", regs->xmm7);
+            DumpRegister("XMM8  ", regs->xmm8);
+            DumpRegister("XMM9  ", regs->xmm9);
+            DumpRegister("XMM10 ", regs->xmm10);
+            DumpRegister("XMM11 ", regs->xmm11);
+            DumpRegister("XMM12 ", regs->xmm12);
+            DumpRegister("XMM13 ", regs->xmm13);
+            DumpRegister("XMM14 ", regs->xmm14);
+            DumpRegister("XMM15 ", regs->xmm15);
+        }
+
+        static void DumpRegister(string reg, ulong val)
+        {
+            Formatter.Write(reg, Program.arch.DebugOutput);
+            Formatter.Write(": ", Program.arch.DebugOutput);
+            Formatter.Write(val, "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
         }
     }
 }

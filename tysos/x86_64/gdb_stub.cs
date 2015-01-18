@@ -55,21 +55,26 @@ namespace tysos.x86_64
             libsupcs.IoOperations.PortOut((ushort)(com2 + 4), (byte)0x0b);   // Enable IRQs, set RTS/DSR
 
             /* Register interrupt handlers */
-            Interrupts.InstallHandler(1, new Interrupts.ISR(GDB_DB_handler));
-            Interrupts.InstallHandler(3, new Interrupts.ISR(GDB_BP_handler));
+            unsafe
+            {
+                Interrupts.InstallHandler(1, new Interrupts.ISR(GDB_DB_handler));
+                Interrupts.InstallHandler(3, new Interrupts.ISR(GDB_BP_handler));
+            }
 
             return true;
         }
 
         [libsupcs.ISR]
-        private static void GDB_DB_handler()
+        private static unsafe void GDB_DB_handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regsa)
         {
             GDB_Registers regs = get_registers((long)(-libsupcs.OtherOperations.GetUsedStackSize()));
             gdb_loop(regs, 5);      // signal 5 is SIGTRAP
         }
 
         [libsupcs.ISR]
-        private static void GDB_BP_handler()
+        private static unsafe void GDB_BP_handler(ulong return_rip, ulong return_cs,
+            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regsa)
         {
             GDB_Registers regs = get_registers((long)(-libsupcs.OtherOperations.GetUsedStackSize()));
             gdb_loop(regs, 5);      // signal 5 is SIGTRAP

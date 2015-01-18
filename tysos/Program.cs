@@ -67,7 +67,6 @@ namespace tysos
 
             /* Set up the default startup thread */
             StartupThread = new System.Threading.Thread(null_func);
-            
 
             UIntPtr chunk_vaddr = new UIntPtr(mboot.heap_start);
             UIntPtr chunk_length = new UIntPtr(tysos.x86_64.Arch.GetRecommendedChunkLength());

@@ -511,23 +511,43 @@ namespace tydisasm.x86_64
         {
             public override string ToDisassembledString(tydisasm disasm)
             {
+                StringBuilder sb = new StringBuilder();
                 if (o == null)
                 {
                     ulong reg = opcode >> 24;
                     opcode = opcode & 0xffffff;
 
+                    sb.Append("Unknown opcode: ");
+
+                    foreach (ulong prefix in prefixes)
+                    {
+                        sb.Append(prefix.ToString("X2"));
+                        sb.Append(" ");
+                    }
+
+                    if ((opcode & 0xff0000) != 0)
+                    {
+                        sb.Append(((opcode >> 16) & 0xff).ToString("X2"));
+                        sb.Append(" ");
+                    }
+                    if ((opcode & 0xff00) != 0)
+                    {
+                        sb.Append(((opcode >> 8) & 0xff).ToString("X2"));
+                        sb.Append(" ");
+                    }
+                    sb.Append((opcode & 0xff).ToString("X2"));
+
                     if ((reg & 0x10) == 0x10)
                     {
-                        reg = reg & 0xf;
-                        return "Unknown opcode: " + opcode.ToString("X") + " /" + reg.ToString("X");
+                        sb.Append(" /");
+                        sb.Append(reg.ToString("X"));
                     }
-                    else
-                        return "Unknown opcode: " + opcode.ToString("X");
+
+                    return sb.ToString();
                 }
 
                 string name = o.name;
 
-                StringBuilder sb = new StringBuilder();
                 foreach (ulong p in prefixes)
                 {
                     if (p == 0xf0)

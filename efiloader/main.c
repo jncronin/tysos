@@ -54,6 +54,9 @@ EFI_SYSTEM_TABLE *ST;
 EFI_BOOT_SERVICES *BS;
 EFI_PHYSICAL_ADDRESS sym_tab_paddr, sym_tab_size, sym_tab_entsize, str_tab_paddr, str_tab_size;
 
+UINTPTR kernel_low;
+UINTPTR kernel_high;
+
 void (*trampoline_func)(uint64_t target, uint64_t cr3, uint64_t _mbheader, uint64_t halt_func);
 extern char trampoline, trampoline_end;
 uint64_t __halt_func;
@@ -289,6 +292,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		5-127	null
 	*/
 	uint64_t *gdt_entry = (uint64_t *)0x6800;
+	mbheader->gdt = (uint64_t)(EFI_PHYSICAL_ADDRESS)gdt_entry;
 	*gdt_entry++ = 0x0;
 	*gdt_entry++ = 0x00af9a000000ffffULL;
 	*gdt_entry++ = 0x00cf92000000ffffULL;
@@ -382,8 +386,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	mbheader->tysos_sym_tab_entsize = sym_tab_entsize;
 	mbheader->tysos_sym_tab_paddr = sym_tab_paddr;
 	mbheader->tysos_sym_tab_size = sym_tab_size;
+	mbheader->tysos_virtaddr = kernel_low;
+	mbheader->tysos_size = kernel_high - kernel_low;
 
-	press_key();
+	//press_key();
 
 	/* Get the efi memory map */
 	UINTN map_size = 0;
