@@ -54,9 +54,9 @@ namespace tysos.gc
 
                 case HeapType.BoehmGC:
                     ret = boehm.Alloc(size);
-                    Formatter.Write("BoehmGC returned: ", Program.arch.DebugOutput);
-                    Formatter.Write(ret, "X", Program.arch.DebugOutput);
-                    Formatter.WriteLine(Program.arch.DebugOutput);
+                    //Formatter.Write("BoehmGC returned: ", Program.arch.DebugOutput);
+                    //Formatter.Write(ret, "X", Program.arch.DebugOutput);
+                    //Formatter.WriteLine(Program.arch.DebugOutput);
                     break;
 
                 case HeapType.TysosGC:

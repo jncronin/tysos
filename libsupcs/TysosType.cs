@@ -133,6 +133,10 @@ namespace libsupcs
         [ReinterpretAsMethod]
         public static extern TysosType ReinterpretAsType(object obj);
 
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static unsafe extern TysosType ReinterpretAsType(void* obj);
+
         public virtual int GetClassSize() { return ClassSize; }
         
         public override System.Reflection.Assembly Assembly
@@ -237,6 +241,9 @@ namespace libsupcs
 
         public override System.Reflection.FieldInfo[] GetFields(System.Reflection.BindingFlags bindingAttr)
         {
+            if (IsBoxed || IsManagedPointer || IsUnmanagedPointer)
+                return GetUnboxedType().GetFields(bindingAttr);
+
             unsafe
             {
                 IntPtr* cur_field = (IntPtr *)Fields;
@@ -647,6 +654,34 @@ namespace libsupcs
 
         static int obj_id = 0;
 
+        [MethodAlias("_Zu1OM_0_7GetType_RW6System4Type_P1u1t")]
+        [AlwaysCompile]
+        static unsafe TysosType Object_GetType(void ***obj)
+        {
+            void** vtbl = *obj;
+            void* ti = *vtbl;
+
+            TysosType ret = ReinterpretAsType(ti);
+            if (ret.IsBoxed)
+                return ret.GetUnboxedType();
+            else
+                return ret;
+        }
+
+        [MethodAlias("_ZW6System4TypeM_0_14EqualsInternal_Rb_P2u1tV4Type")]
+        [AlwaysCompile]
+        static bool EqualsInternal(TysosType a, TysosType b)
+        {
+            return a.CompareTypes(b);
+        }
+
+        protected internal virtual bool CompareTypes(TysosType other)
+        {
+            if (this.IsDynamic || other.IsDynamic)
+                throw new NotImplementedException("CompareTypes not implemented for dynamic types");
+            return this == other;
+        }
+
         /* NB CastClassEx is implemented twice, once for 32 bit architectures and once for 64 bit architectures.
          * Be sure to update both when changing! */
         [AlwaysCompile]
@@ -827,6 +862,36 @@ namespace libsupcs
             }
             else
                 return OtherOperations.GetPointerSize();
+        }
+
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System9ValueTypeM_0_14InternalEquals_Rb_P3u1Ou1ORu1Zu1O")]
+        private static unsafe bool ValueType_InternalEquals(void ***o1, void ***o2, out void* fields)
+        {
+            fields = null;
+
+            void** vtbl_o1 = *o1;
+            void** vtbl_o2 = *o2;
+
+            void* ti_o1 = *vtbl_o1;
+            void* ti_o2 = *vtbl_o2;
+
+            TysosType type_o1 = ReinterpretAsType(ti_o1);
+            TysosType type_o2 = ReinterpretAsType(ti_o2);
+
+            if (type_o1.ClassSize != type_o2.ClassSize)
+                return false;
+
+            int header_size = libsupcs.ClassOperations.GetBoxedTypeDataOffset();
+            int compare_size = type_o1.ClassSize - header_size;
+
+            byte *o1_ptr = (byte*)o1 + header_size;
+            byte *o2_ptr = (byte*)o2 + header_size;
+
+            if (MemoryOperations.MemCmp(o1_ptr, o2_ptr, compare_size) == 0)
+                return true;
+            else
+                return false;
         }
     }
 }

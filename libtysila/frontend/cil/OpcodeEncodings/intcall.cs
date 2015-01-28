@@ -44,7 +44,6 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             int_calls["_Zu1SM_0_10get_Length_Ri_P1u1t"] = string_getLength;
             int_calls["_Zu1SM_0_19InternalAllocateStr_Ru1S_P1i"] = string_InternalAllocateStr;
 
-            int_calls["_Zu1OM_0_7GetType_RW6System4Type_P1u1t"] = object_GetType;
             int_calls["_Zu1OM_0_15MemberwiseClone_Ru1O_P1u1t"] = object_MemberwiseClone;
 
             int_calls["_ZX15ArrayOperationsM_0_17GetArrayClassSize_Ri_P0"] = get_array_class_size;
@@ -56,6 +55,9 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             int_calls["_ZX15ArrayOperationsM_0_17GetElemSizeOffset_Ri_P0"] = get_array_elem_size_offset;
             int_calls["_ZX15ArrayOperationsM_0_13GetRankOffset_Ri_P0"] = get_array_rank_offset;
             int_calls["_ZX16MemoryOperationsM_0_16GetInternalArray_RPv_P1W6System5Array"] = get_array_internal_array_Pv_u1A;
+
+            int_calls["_ZX16StringOperationsM_0_15GetLengthOffset_Ri_P0"] = StringOperations_GetLengthOffset;
+            int_calls["_ZX16StringOperationsM_0_13GetDataOffset_Ri_P0"] = StringOperations_GetDataOffset;
 
             int_calls["_ZW6System5ArrayM_0_7GetRank_Ri_P1u1t"] = Array_GetRank;
             int_calls["_ZW6System5ArrayM_0_13GetLowerBound_Ri_P2u1ti"] = Array_GetLowerBound;
@@ -84,6 +86,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             int_calls["_ZX15ClassOperationsM_0_24GetVtblTypeInfoPtrOffset_Ru1U_P0"] = get_vtbl_typeinfoptr_offset;
             int_calls["_ZX15ClassOperationsM_0_22GetObjectIdFieldOffset_Ru1U_P0"] = get_ti_objid_offset;
             int_calls["_ZX15ClassOperationsM_0_18GetVtblFieldOffset_Ru1U_P0"] = get_ti_vtbl_offset;
+            int_calls["_ZX15ClassOperationsM_0_22GetBoxedTypeDataOffset_Ri_P0"] = get_boxed_type_data_offset;
 
             int_calls["_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Uy"] = poke_U8;
             int_calls["_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Uj"] = poke_U4;
@@ -98,6 +101,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             int_calls["_ZW18System#2EThreading7MonitorM_0_12Monitor_exit_Rv_P1u1O"] = Monitor_try_exit;
 
             int_calls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpersM_0_15InitializeArray_Rv_P2U6System5Arrayu1I"] = RuntimeHelpers_InitializeArray;
+            int_calls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpersM_0_22get_OffsetToStringData_Ri_P0"] = RuntimeHelpers_get_OffsetToStringData;
 
             int_calls["_ZW34System#2ERuntime#2EInteropServices7MarshalM_0_37GetFunctionPointerForDelegateInternal_Ru1I_P1U6System8Delegate"] = Marshal_GetFunctionPointerForDelegateInternal;
 
@@ -226,7 +230,59 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location loc_len = il.stack_vars_after.Pop(ass);
             il.stack_after.Pop();
 
-            throw new NotImplementedException();
+            /* length -> t2
+             * build size of object in t1
+             * get object into t1
+             * store length in object
+             * store vtbl in object
+             * get objid to t2
+             * store objid in object
+             * put object in return location */
+
+            libasm.hardware_location t2 = ass.GetTemporary2(state, Assembler.CliType.int32);
+            libasm.hardware_location t1 = ass.GetTemporary(state, Assembler.CliType.native_int);
+
+            Stack in_use = il.stack_vars_before.Clone();
+
+            ass.Assign(state, in_use, t2, loc_len, Assembler.CliType.int32, il.il.tybel);
+            in_use.MarkUsed(t2);
+
+            ass.Conv(state, in_use, t1, t2, new Signature.BaseType(BaseType_Type.I),
+                new Signature.BaseType(BaseType_Type.I4), true, il.il.tybel);
+            in_use.MarkUsed(t1);
+
+            ass.Mul(state, in_use, t1, t1, new libasm.const_location { c = 2 }, Assembler.CliType.native_int,
+                il.il.tybel);
+            ass.Add(state, in_use, t1, t1,
+                new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.data_offset) },
+                Assembler.CliType.native_int, il.il.tybel);
+
+            ass.Call(state, in_use, new libasm.hardware_addressoflabel("gcmalloc", false), t1,
+                new libasm.hardware_location[] { t1 }, ass.callconv_gcmalloc, il.il.tybel);
+
+            ass.Assign(state, in_use,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetStringFieldOffset(Assembler.StringFields.length), size = 4 },
+                t2, Assembler.CliType.int32, il.il.tybel);
+
+            Assembler.TypeToCompile ttc_string = Metadata.GetTTC("mscorlib", "System", "String", ass);
+            Layout l = Layout.GetTypeInfoLayout(ttc_string, ass, false);
+
+            ass.Assign(state, in_use,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetStringFieldOffset(Assembler.StringFields.vtbl), size = 8 },
+                new libasm.hardware_addressoflabel(l.typeinfo_object_name, l.FixedLayout[Layout.ID_VTableStructure].Offset, true),
+                Assembler.CliType.native_int, il.il.tybel);
+
+            ass.Call(state, in_use, new libasm.hardware_addressoflabel("getobjid", false), t2,
+                new libasm.hardware_location[] { }, ass.callconv_getobjid, il.il.tybel);
+            ass.Assign(state, in_use,
+                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetStringFieldOffset(Assembler.StringFields.objid), size = 4 },
+                t2, Assembler.CliType.int32, il.il.tybel);
+
+            Signature.Param p_ret = new Signature.Param(BaseType_Type.String);
+            libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_ret, ass);
+            ass.Assign(state, in_use, loc_ret, t1, Assembler.CliType.native_int, il.il.tybel);
+
+            il.stack_after.Push(p_ret);
         }
 
         static void string_getChars(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
@@ -368,6 +424,30 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             ass.Assign(state, il.stack_vars_before, loc_dest, 
                 new libasm.hardware_contentsof { base_loc = loc_array, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), 
                     size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void StringOperations_GetLengthOffset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetStringFieldOffset(Assembler.StringFields.length),
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
+        static void StringOperations_GetDataOffset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_dest, ass.GetStringFieldOffset(Assembler.StringFields.data_offset),
+                Assembler.CliType.int32, il.il.tybel);
 
             il.stack_after.Push(p_dest);
         }
@@ -710,6 +790,26 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after.Push(p_dest);
         }
 
+        static void get_boxed_type_data_offset(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
+
+            /* Build a {boxed}Int32 object to get the offset of the m_value member */
+            Signature.Param p_boxed = new Signature.Param(new Signature.BoxedType(new Signature.BaseType(BaseType_Type.I4)), ass);
+            Assembler.TypeToCompile ttc_boxed = new Assembler.TypeToCompile(p_boxed, ass);
+            Layout l_boxed = Layout.GetTypeInfoLayout(ttc_boxed, ass, false);
+
+            int m_value_offset = l_boxed.GetField("m_value", false).offset;
+
+            ass.Assign(state, il.stack_vars_before, loc_dest,
+                new libasm.const_location { c = m_value_offset }, Assembler.CliType.int32,
+                il.il.tybel);
+
+            il.stack_after.Push(p_dest);
+        }
+
         static void peek_U1(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
@@ -816,8 +916,10 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             Signature.Param p_dest = new Signature.Param(BaseType_Type.I4);
             libasm.hardware_location loc_dest = il.stack_vars_after.GetAddressFor(p_dest, ass);
 
+            libasm.hardware_location loc_methinfo = new libasm.const_location { c = 0 };
+
             ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("sthrow", false), null,
-                new libasm.hardware_location[] { Assembler.throw_NotImplementedException }, ass.callconv_sthrow, il.il.tybel);
+                new libasm.hardware_location[] { Assembler.throw_NotImplementedException, loc_methinfo }, ass.callconv_sthrow, il.il.tybel);
 
             il.stack_after.Push(p_dest);
         }
@@ -977,6 +1079,19 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             ass.MemCpy(state, in_use, loc_ia, loc_ld, loc_bs, il.il.tybel);
         }
+
+        static void RuntimeHelpers_get_OffsetToStringData(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_ret = new Signature.Param(BaseType_Type.I4);
+            libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_ret, ass);
+
+            ass.Assign(state, il.stack_vars_before, loc_ret,
+                new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.data_offset) },
+                Assembler.CliType.int32, il.il.tybel);
+
+            il.stack_after.Push(p_ret);
+        }        
 
         static void object_MemberwiseClone(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)

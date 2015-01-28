@@ -40,7 +40,22 @@ namespace tysos
 
             System.Reflection.FieldInfo value_field = enum_type.GetField("value__");
             if (value_field == null)
+            {
+                Formatter.WriteLine("GetUnderlyingEnumType failed:", Program.arch.DebugOutput);
+                System.Reflection.FieldInfo[] fis = enum_type.GetFields();
+                if (fis == null)
+                    Formatter.WriteLine("GetFields() failed", Program.arch.DebugOutput);
+                else
+                {
+                    Formatter.WriteLine("Fields:", Program.arch.DebugOutput);
+                    foreach (System.Reflection.FieldInfo fi in fis)
+                    {
+                        Formatter.WriteLine(fi.Name, Program.arch.DebugOutput);
+                    }
+                }
+
                 throw new Exception("value__ not found within " + enum_type.ToString());
+            }
 
             return value_field.FieldType as libsupcs.TysosType;
         }
@@ -50,14 +65,14 @@ namespace tysos
         static object System_Enum_get_value(System.Enum enum_type)
         {
             /* Return a boxed implementation of the value of the enum */
-
             libsupcs.TysosType field_type = GetUnderlyingEnumType(enum_type.GetType());
 
             /* Now we calculate the offset of the value__ field
              * It is at the offset of m_value + the offset of value__ */
 
-            // For now, just set it to 16 (the current offset of m_value)
-            ulong field_offset = 16;
+            /* For now, just set it to m_value (assume the enum value type has a single
+             *  member value__ at offset 0) */
+            ulong field_offset = (ulong)libsupcs.ClassOperations.GetBoxedTypeDataOffset();
 
             unsafe
             {
@@ -72,7 +87,9 @@ namespace tysos
                 else if (field_type == typeof(uint))
                     return *(uint*)(libsupcs.CastOperations.ReinterpretAsUlong(enum_type) + field_offset);
                 else if (field_type == typeof(int))
+                {
                     return *(int*)(libsupcs.CastOperations.ReinterpretAsUlong(enum_type) + field_offset);
+                }
                 else if (field_type == typeof(ulong))
                     return *(ulong*)(libsupcs.CastOperations.ReinterpretAsUlong(enum_type) + field_offset);
                 else if (field_type == typeof(long))
@@ -133,23 +150,24 @@ namespace tysos
                 object new_obj = lib.Type.CreateObject(enum_type);
                 ulong obj_addr = libsupcs.CastOperations.ReinterpretAsUlong(new_obj);
 
-                // The following is specific for x86_64
+                ulong data_offset = (ulong)libsupcs.ClassOperations.GetBoxedTypeDataOffset();
+
                 if (value.GetType() == typeof(byte))
-                    *(byte*)(obj_addr + 16) = (byte)value;
+                    *(byte*)(obj_addr + data_offset) = (byte)value;
                 else if (value.GetType() == typeof(sbyte))
-                    *(sbyte*)(obj_addr + 16) = (sbyte)value;
+                    *(sbyte*)(obj_addr + data_offset) = (sbyte)value;
                 else if (value.GetType() == typeof(ushort))
-                    *(ushort*)(obj_addr + 16) = (ushort)value;
+                    *(ushort*)(obj_addr + data_offset) = (ushort)value;
                 else if (value.GetType() == typeof(short))
-                    *(short*)(obj_addr + 16) = (short)value;
+                    *(short*)(obj_addr + data_offset) = (short)value;
                 else if (value.GetType() == typeof(uint))
-                    *(uint*)(obj_addr + 16) = (uint)value;
+                    *(uint*)(obj_addr + data_offset) = (uint)value;
                 else if (value.GetType() == typeof(int))
-                    *(int*)(obj_addr + 16) = (int)value;
+                    *(int*)(obj_addr + data_offset) = (int)value;
                 else if (value.GetType() == typeof(ulong))
-                    *(ulong*)(obj_addr + 16) = (ulong)value;
+                    *(ulong*)(obj_addr + data_offset) = (ulong)value;
                 else if (value.GetType() == typeof(long))
-                    *(long*)(obj_addr + 16) = (long)value;
+                    *(long*)(obj_addr + data_offset) = (long)value;
                 else
                     throw new Exception("Enum.to_object: invalid type of 'value': " + value.GetType().ToString());
 

@@ -149,9 +149,13 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             /* Load up the address of the inner_array member */
             ass.Assign(state, il.stack_vars_before, t1, loc_arr, Assembler.CliType.native_int, il.il.tybel);
-            ass.Assign(state, il.stack_vars_before, t1,
-                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfIntPtr() },
-                Assembler.CliType.native_int, il.il.tybel);
+
+            if (il.il.int_array == false)
+            {
+                ass.Assign(state, il.stack_vars_before, t1,
+                    new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfIntPtr() },
+                    Assembler.CliType.native_int, il.il.tybel);
+            }
 
             /* Load up the element offset */
             if(Signature.ParamCompare(p_index, new Signature.Param(BaseType_Type.I4), ass))
@@ -252,9 +256,13 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             /* Load up the address of the inner_array member */
             ass.Assign(state, il.stack_vars_before, t1, loc_arr, Assembler.CliType.native_int, il.il.tybel);
-            ass.Assign(state, il.stack_vars_before, t1,
-                new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfIntPtr() },
-                Assembler.CliType.native_int, il.il.tybel);
+
+            if (il.il.int_array == false)
+            {
+                ass.Assign(state, il.stack_vars_before, t1,
+                    new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfIntPtr() },
+                    Assembler.CliType.native_int, il.il.tybel);
+            }
 
             /* Load up the element offset */
             if (Signature.ParamCompare(p_index, new Signature.Param(BaseType_Type.I4), ass))

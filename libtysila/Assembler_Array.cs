@@ -772,7 +772,7 @@ namespace libtysila
                 array_inner_array_length_offset = l.GetFirstInstanceField("__inner_array_length").offset;
                 array_type_size = l.ClassSize;
 
-                //array_getvalueimpl_vtbl_offset = l.GetVirtualMethod("GetValueImpl").offset;
+                array_getvalueimpl_vtbl_offset = l.GetVirtualMethod("GetValueImpl").offset;
 
                 array_fields_calculated = true;
             }

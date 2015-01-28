@@ -138,8 +138,10 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location loc_except_obj = il.stack_vars_after.Pop(ass);
             il.stack_after.Pop();
 
+            libasm.hardware_location loc_methinfo = new libasm.const_location { c = 0 };
+
             ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("throw", false), null,
-                new libasm.hardware_location[] { loc_except_obj }, ass.callconv_throw, il.il.tybel);
+                new libasm.hardware_location[] { loc_except_obj, loc_methinfo }, ass.callconv_throw, il.il.tybel);
         }
 
         public static void tybel_sthrow(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
@@ -147,16 +149,21 @@ namespace libtysila.frontend.cil.OpcodeEncodings
         {
             libasm.hardware_location loc_except_obj = new libasm.const_location { c = il.il.inline_int };
 
+            libasm.hardware_location loc_methinfo = new libasm.const_location { c = 0 };
+
             ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("sthrow", false), null,
-                new libasm.hardware_location[] { loc_except_obj }, ass.callconv_sthrow, il.il.tybel);
+                new libasm.hardware_location[] { loc_except_obj, loc_methinfo }, ass.callconv_sthrow, il.il.tybel);
         }
 
         public static void tybel_rethrow(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
             ass.EmitWarning(new Assembler.AssemblerException("rethrow: currently not implemented", il.il, mtc));
+
+            libasm.hardware_location loc_methinfo = new libasm.const_location { c = 0 };
+
             ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("sthrow", false), null,
-                new libasm.hardware_location[] { Assembler.throw_NotImplementedException }, ass.callconv_sthrow, il.il.tybel);
+                new libasm.hardware_location[] { Assembler.throw_NotImplementedException, loc_methinfo }, ass.callconv_sthrow, il.il.tybel);
         }
 
         public static void tybel_throwfalse(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,

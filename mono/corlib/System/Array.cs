@@ -1292,8 +1292,9 @@ namespace System
 			if (keys == null)
 				throw new ArgumentNullException ("keys");
 
-			if (keys.Rank > 1 || (items != null && items.Rank > 1))
-				throw new RankException ();
+            if (keys.Rank > 1 || (items != null && items.Rank > 1))
+                throw new RankException("keys.Rank: " + keys.Rank.ToString() + ", items.Rank: " +
+                    ((items == null) ? "{null}" : items.Rank.ToString()));
 
 			if (items != null && keys.GetLowerBound (0) != items.GetLowerBound (0))
 				throw new ArgumentException ();

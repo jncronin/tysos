@@ -670,6 +670,7 @@ namespace System
 						" passed in was {0}; the enum type was {1}.",
 						vType.FullName, enumType.FullName));
 			} else if (vType != underlyingType) {
+                System.Diagnostics.Debugger.Break();
 				throw new ArgumentException (string.Format (CultureInfo.InvariantCulture,
 					"Enum underlying type and the object must be the same type" +
 					" or object. Type passed in was {0}; the enum underlying" +

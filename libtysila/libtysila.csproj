@@ -107,6 +107,7 @@
     <Compile Include="frontend\cil\OpcodeEncodings\stack.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\str.cs" />
     <Compile Include="frontend\cil\OpcodeEncodings\switch.cs" />
+    <Compile Include="frontend\cil\OpcodeEncodings\unbox_any.cs" />
     <Compile Include="frontend\cil\OpcodeList.cs" />
     <Compile Include="InstructionHeader.cs" />
     <Compile Include="CallConv.cs" />

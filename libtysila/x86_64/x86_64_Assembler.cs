@@ -2612,7 +2612,9 @@ namespace libtysila
             int success_block = state.next_blk++;
             ChooseInstruction(jmp_op, ret, vara.Label("L" + success_block.ToString(), false));
 
-            Call(state, regs_in_use, throw_dest, null, new hardware_location[] { throw_obj }, callconv_throw, ret);
+            libasm.hardware_location loc_methinfo = new libasm.const_location { c = 0 };
+
+            Call(state, regs_in_use, throw_dest, null, new hardware_location[] { throw_obj, loc_methinfo }, callconv_throw, ret);
 
             ret.Add(new tybel.LabelNode("L" + success_block.ToString(), true));
         }

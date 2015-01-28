@@ -159,10 +159,12 @@ namespace tysos
         {
             Formatter.WriteLine("Exception thrown!", Program.arch.BootInfoOutput);
             Formatter.WriteLine(exception.ToString(), Program.arch.BootInfoOutput);
-            Formatter.WriteLine(" in method " + methinfo.DeclaringType.FullName + "." + methinfo.Name, Program.arch.BootInfoOutput);
+            if(methinfo != null)
+                Formatter.WriteLine(" in method " + methinfo.DeclaringType.FullName + "." + methinfo.Name, Program.arch.BootInfoOutput);
             Formatter.WriteLine("Exception thrown!", Program.arch.DebugOutput);
             Formatter.WriteLine(exception.ToString(), Program.arch.DebugOutput);
-            Formatter.WriteLine(" in method " + methinfo.DeclaringType.FullName + "." + methinfo.Name, Program.arch.DebugOutput);
+            if(methinfo != null)
+                Formatter.WriteLine(" in method " + methinfo.DeclaringType.FullName + "." + methinfo.Name, Program.arch.DebugOutput);
 
             /* Unwind the stack */
             PageFault.unwinding = true;

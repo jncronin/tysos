@@ -24,7 +24,9 @@ void initheap(uintptr_t start, uintptr_t end)
 
 void *sbrk(intptr_t increment)
 {
+#ifdef DEBUG_SBRK
 	printf("SBRK: sbrk(0x%zx) called\n", increment);
+#endif
 
 	if(increment == 0)
 		return (void*)cur_brk;
@@ -34,12 +36,16 @@ void *sbrk(intptr_t increment)
 		{
 			uintptr_t ret = cur_brk;
 			cur_brk += (uintptr_t)increment;
+#ifdef DEBUG_SBRK
 			printf("SBRK: returning 0x%zx\n", ret);
+#endif
 			return (void*)ret;
 		}
 		else
 		{
+#ifdef DEBUG_SBRK
 			printf("SBRK: failed on request for 0x%zx bytes\n", increment);
+#endif
 			errno = ENOMEM;
 			return (void*)-1;
 		}
@@ -54,8 +60,10 @@ void *sbrk(intptr_t increment)
 		}
 		else
 		{
+#ifdef DEBUG_SBRK
 			printf("SBRK: failed on request to release 0x%zx bytes\n",
 					-increment);
+#endif
 			errno = ENOMEM;
 			return (void*)-1;
 		}

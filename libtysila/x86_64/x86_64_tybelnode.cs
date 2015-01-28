@@ -511,10 +511,19 @@ namespace libtysila
                     else if (rm is libasm.hardware_contentsof)
                     {
                         libasm.hardware_contentsof hco = rm as libasm.hardware_contentsof;
-
-                        modrm_rm = ((libasm.x86_64_gpr)hco.base_loc).base_val;
+                        libasm.x86_64_gpr base_reg = ((libasm.x86_64_gpr)hco.base_loc);
+                        modrm_rm = base_reg.base_val;
                         if (hco.const_offset == 0)
-                            modrm_mod = 0;
+                        {
+                            if (base_reg.Equals(R13))
+                            {
+                                // [R13] cannot be encoded directly - use [R13] instead
+                                modrm_mod = 1;
+                                disp = ass.ToByteArraySignExtend(0, 1);
+                            }
+                            else
+                                modrm_mod = 0;
+                        }
                         else if (ass.FitsSByte(hco.const_offset))
                         {
                             modrm_mod = 1;

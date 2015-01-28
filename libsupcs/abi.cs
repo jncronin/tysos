@@ -69,6 +69,8 @@ namespace libsupcs
         public InterruptRegisterStructureAttribute() { }
     }
 
+    /** <summary>Any calls to this method (declared as extern without a body in C#) will instead call the following label</summary>
+     */
     [global::System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public sealed class MethodReferenceAliasAttribute : System.Attribute
     {
@@ -82,6 +84,7 @@ namespace libsupcs
         public ReinterpretAsMethodAttribute() { }
     }
 
+    /** <summary>Generate another symbol name for the given method</summary> */
     [global::System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
     public sealed class MethodAliasAttribute : System.Attribute
     {
@@ -207,6 +210,10 @@ namespace libsupcs
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static unsafe extern void* MemCpy(void* dest, void* src, int size);
 
+        [MethodReferenceAlias("memcmp")]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static unsafe extern int MemCmp(void* s1, void* s2, int size);
+
         [MethodReferenceAlias("memmove")]
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static unsafe extern void* MemMove(void* dest, void* src, int size);
@@ -298,6 +305,9 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern System.UIntPtr GetVtblExtendsVtblPtrOffset();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern int GetBoxedTypeDataOffset();
     }
 
     public class JitOperations
@@ -391,5 +401,14 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern int GetArrayClassSize();
+    }
+
+    public class StringOperations
+    {
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static unsafe extern int GetLengthOffset();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static unsafe extern int GetDataOffset();
     }
 }

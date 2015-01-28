@@ -76,7 +76,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             libasm.hardware_location t1 = ass.GetTemporary(state, Assembler.CliType.native_int);
 
-            ass.Assign(state, il.stack_vars_before, t1, loc_obj, Assembler.CliType.native_int, il.il.tybel);
+            ass.LoadAddress(state, il.stack_vars_before, t1, loc_obj, il.il.tybel);
 
             ass.Assign(state, il.stack_vars_before,
                 new libasm.hardware_contentsof { base_loc = t1, const_offset = fld_offset, size = ass.GetSizeOfIntPtr() },

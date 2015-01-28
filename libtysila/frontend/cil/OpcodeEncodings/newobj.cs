@@ -72,6 +72,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location t1 = ass.GetTemporary(state);
             libasm.hardware_location[] loc_params = new libasm.hardware_location[arg_count];
             Signature.Param[] p_params = new Signature.Param[arg_count];
+            Stack in_use = il.stack_vars_before.Clone();
 
             for(int i = arg_count - 1; i >= (arg_count - stack_arg_count); i--)
             {
@@ -89,20 +90,33 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location t2 = ass.GetTemporary2(state);
             libasm.hardware_location str_length = null;
             int temp_mem_loc_size = 0;
+            bool loc_needs_storing = true;
 
             if (type.type.IsValueType(ass) && !(type.tsig.Type is Signature.BoxedType))
             {
                 // Value types created with newobj are created on the stack
 
-                // Sometimes, however, the stack location is a gpr - in that case we need to use
-                //  some temporary stack space to store it
-                if (loc_obj is libasm.register)
+                /* If we initialize fields (e.g. objid/vtbl - unlikely for value types) or run
+                 *  constructors, we need to get the address of the value type first */
+                if (l.has_vtbl || l.has_obj_id || constructor != null)
                 {
-                    ass.LocAlloc(state, il.stack_vars_before, t1, ass.GetSizeOfIntPtr(), il.il.tybel);
-                    temp_mem_loc_size = ass.GetSizeOfIntPtr();
+                    // Sometimes, however, the stack location is a gpr - in that case we need to use
+                    //  some temporary stack space to store it for use in constructors etc
+                    if (loc_obj is libasm.register)
+                    {
+                        ass.LocAlloc(state, in_use, t1, ass.GetSizeOfIntPtr(), il.il.tybel);
+                        temp_mem_loc_size = ass.GetSizeOfIntPtr();
+                        in_use.MarkUsed(t1);
+                    }
+                    else
+                    {
+                        ass.LoadAddress(state, in_use, t1, loc_obj, il.il.tybel);
+                        loc_needs_storing = false;  // the location is already allocated - we don't need to write to it
+                        in_use.MarkUsed(t1);
+                    }
                 }
-                else
-                    ass.LoadAddress(state, il.stack_vars_before, t1, loc_obj, il.il.tybel);
+                else if (!(loc_obj is libasm.register))
+                    loc_needs_storing = false;      // the location is already allocated - we don't need to write to it
             }
             else
             {
@@ -114,9 +128,11 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     str_length = ass.GetTemporary3(state, Assembler.CliType.int32);
                     str_ctor_idx = get_string_size(il, ass, mtc, ref next_block, state, attrs, constructor.Value, loc_params, t2,
                         ref str_length);
+                    in_use.MarkUsed(t2);
+                    in_use.MarkUsed(str_length);
                 }
 
-                ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("gcmalloc", false), t1,
+                ass.Call(state, in_use, new libasm.hardware_addressoflabel("gcmalloc", false), t1,
                     new libasm.hardware_location[] { obj_size }, ass.callconv_gcmalloc, il.il.tybel);
             }
 
@@ -124,18 +140,17 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             if (l.has_vtbl)
             {
                 l = Layout.GetTypeInfoLayout(type, ass, false);
-                ass.Assign(state, il.stack_vars_before,
+                ass.Assign(state, in_use,
                     new libasm.hardware_contentsof { base_loc = t1, const_offset = l.vtbl_offset, size = ass.GetSizeOfPointer() },
                     new libasm.hardware_addressoflabel(l.typeinfo_object_name, l.FixedLayout[Layout.ID_VTableStructure].Offset, true),
                     Assembler.CliType.native_int, il.il.tybel);
             }
             if (l.has_obj_id)
             {
-                Stack temp_stack = il.stack_vars_before.Clone();
-                temp_stack.MarkUsed(t1);
-                ass.Call(state, temp_stack, new libasm.hardware_addressoflabel("getobjid", false), t2, new libasm.hardware_location[] { },
+                in_use.MarkUsed(t1);
+                ass.Call(state, in_use, new libasm.hardware_addressoflabel("getobjid", false), t2, new libasm.hardware_location[] { },
                     ass.callconv_getobjid, il.il.tybel);
-                ass.Assign(state, temp_stack,
+                ass.Assign(state, in_use,
                     new libasm.hardware_contentsof { base_loc = t1, const_offset = l.obj_id_offset, size = 4 },
                     t2, Assembler.CliType.int32, il.il.tybel);
             }
@@ -207,9 +222,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                         callconv = constructor.Value.meth.CallConvOverride;
 
                     CallConv cc = ass.call_convs[callconv](constructor.Value, CallConv.StackPOV.Caller, ass);
-                    Stack temp_stack = il.stack_vars_before.Clone();
-                    temp_stack.MarkUsed(t1);
-                    ass.Call(state, temp_stack, new libasm.hardware_addressoflabel(Mangler2.MangleMethod(constructor.Value, ass), false),
+                    ass.Call(state, in_use, new libasm.hardware_addressoflabel(Mangler2.MangleMethod(constructor.Value, ass), false),
                         null, loc_params, cc, il.il.tybel);
                 }
                 else
@@ -222,8 +235,6 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             if (temp_mem_loc_size > 0)
             {
-                Stack temp_stack = il.stack_vars_before.Clone();
-                temp_stack.MarkUsed(t1);
                 Assembler.CliType dt = Assembler.CliType.native_int;
                 switch(temp_mem_loc_size)
                 {
@@ -236,11 +247,11 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     default:
                         throw new NotImplementedException();
                 }
-                ass.Assign(state, temp_stack, loc_obj, new libasm.hardware_contentsof { base_loc = t1, size = temp_mem_loc_size }, dt, il.il.tybel);
+                ass.Assign(state, in_use, loc_obj, new libasm.hardware_contentsof { base_loc = t1, size = temp_mem_loc_size }, dt, il.il.tybel);
                 ass.LocDeAlloc(state, il.stack_vars_before, temp_mem_loc_size, il.il.tybel);
             }
-            else
-                ass.Assign(state, il.stack_vars_before, loc_obj, t1, Assembler.CliType.O, il.il.tybel);
+            else if(loc_needs_storing)
+                ass.Assign(state, in_use, loc_obj, t1, Assembler.CliType.O, il.il.tybel);
 
             il.stack_after.Push(type_pushes);
         }

@@ -63,6 +63,19 @@ namespace libsupcs
             return s;
         }
 
+        [libsupcs.MethodAlias("memcmp")]
+        [libsupcs.WeakLinkage]
+        unsafe internal static int memcmp(byte *s1, byte *s2, int n)
+        {
+            for(int i = 0; i < n; i++)
+            {
+                int v = s1[i] - s2[i];
+                if (v != 0)
+                    return v;
+            }
+            return 0;
+        }
+
         [libsupcs.MethodAlias("memcpy")]
         [libsupcs.WeakLinkage]
         unsafe internal static byte* memcpy(byte* dest, byte* src, int n)

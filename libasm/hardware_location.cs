@@ -286,6 +286,8 @@ namespace libasm
                 return false;
             if (container != ((hardware_stackloc)other).container)
                 return false;
+            if (stack_type != ((hardware_stackloc)other).stack_type)
+                return false;
             return true;
         }
 

@@ -3266,7 +3266,9 @@ void unlock(volatile int *l)
 
 GC_API void *GC_CALL GC_malloc(size_t size)
 {
+#ifdef DEBUG_GC_MALLOC
 	printf("GC_malloc called\n");
+#endif
 	void *ret;
 
 	lock(&gc_global_lock);
