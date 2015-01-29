@@ -203,6 +203,12 @@ namespace tysos.x86_64
             /* Get the lapic id: CPUID EAX=1 sets bits 31-24 of EBX */
             ulong lapic_id = (ulong)(cpuid_1[1] >> 24);
 
+            Formatter.Write("LAPIC: ID: ", Program.arch.DebugOutput);
+            Formatter.Write(lapic_id, "X", Program.arch.DebugOutput);
+            Formatter.Write(", paddr: ", Program.arch.DebugOutput);
+            Formatter.Write(lapic_base_paddr, "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
+
             /* Map in the lapic register space
              * 
              * Intel 3A:10.4.1:
@@ -212,7 +218,7 @@ namespace tysos.x86_64
              * Intel 3A:11.5.2.1, table 11-6:
              * Setting PCD and PWT bits on a page table entry ensures UC state regardless of MTRRs             * 
              */
-            lapic_base_vaddr = vreg.Alloc(0x1000, 0x1000, "LAPIC: " + lapic_id.ToString() + " registers");
+            lapic_base_vaddr = vreg.Alloc(0x1000, 0x1000, "LAPIC " + lapic_id.ToString() + " registers");
             vmem.map_page(lapic_base_vaddr, lapic_base_paddr, true, true, true);
 
             /* Intel 3A:10.4.7.1:
@@ -338,9 +344,9 @@ namespace tysos.x86_64
 
             double required_ticks = lapic_base_freq / freq_in_hz / Convert.ToDouble((long)LApicTimerDivisor);
             if (required_ticks < 1.0)
-                throw new Exception("Frequency too high");
+                throw new Exception("Frequency too high (" + required_ticks.ToString() + ")");
             if (required_ticks > Convert.ToDouble((long)uint.MaxValue))
-                throw new Exception("Frequency too low");
+                throw new Exception("Frequency too low (" + required_ticks.ToString() + ")");
             Formatter.WriteLine("LAPIC: SetTimer: freq_in_hz: " + freq_in_hz.ToString() + "  lapic_base_freq: " + lapic_base_freq.ToString() + "  divisor: " + Convert.ToDouble((long)LApicTimerDivisor).ToString(), Program.arch.DebugOutput);
             Formatter.WriteLine("LAPIC: SetTimer: Requested tick count: " + required_ticks.ToString(), Program.arch.DebugOutput);
             uint req_ticks = (uint)Convert.ToInt64(required_ticks);

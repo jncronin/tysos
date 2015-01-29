@@ -151,7 +151,7 @@ namespace libtysila
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXW, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
                             break;
                         case BaseType_Type.I4:
-                            ChooseInstruction(x86_64.x86_64_asm.opcode.MOVSXD, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
+                            ChooseInstruction(signed ? x86_64.x86_64_asm.opcode.MOVSXD : x86_64.x86_64_asm.opcode.MOVL, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));
                             break;
                         case BaseType_Type.I8:
                             ChooseInstruction(x86_64.x86_64_asm.opcode.MOVQ, ret, vara.MachineReg(act_dest_loc), vara.MachineReg(src));

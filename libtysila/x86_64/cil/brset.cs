@@ -400,6 +400,19 @@ namespace libtysila
                     throw new NotImplementedException();
             }
 
+            bool is_float = false;
+            bool is_unsigned = false;
+            switch (op)
+            {
+                case ThreeAddressCode.OpName.bge_un:
+                case ThreeAddressCode.OpName.bg_un:
+                case ThreeAddressCode.OpName.ble_un:
+                case ThreeAddressCode.OpName.bl_un:
+                    is_unsigned = true;
+                    break;
+            }
+
+
             x86_64_asm.opcode cmp_op;
             dt = ResolveNativeInt(dt);
             switch (dt)
@@ -414,10 +427,18 @@ namespace libtysila
                         cmp_op = x86_64_asm.opcode.CMPQ;
                     break;
                 case CliType.F32:
-                    cmp_op = x86_64_asm.opcode.COMISS;
+                    if (is_unsigned)
+                        cmp_op = x86_64_asm.opcode.UCOMISS;
+                    else
+                        cmp_op = x86_64_asm.opcode.COMISS;
+                    is_float = true;
                     break;
                 case CliType.F64:
-                    cmp_op = x86_64_asm.opcode.COMISD;
+                    if (is_unsigned)
+                        cmp_op = x86_64_asm.opcode.UCOMISD;
+                    else
+                        cmp_op = x86_64_asm.opcode.COMISD;
+                    is_float = true;
                     break;
                 default:
                     throw new NotImplementedException();
@@ -427,60 +448,107 @@ namespace libtysila
 
             x86_64_asm.opcode setbr_op;
             bool is_set = false;
-            switch (op)
+            if (is_float)
             {
-                case ThreeAddressCode.OpName.seteq:
-                    setbr_op = x86_64_asm.opcode.SETZ;
-                    is_set = true;
-                    break;
-                case ThreeAddressCode.OpName.setg:
-                    setbr_op = x86_64_asm.opcode.SETNLE;
-                    is_set = true;
-                    break;
-                case ThreeAddressCode.OpName.seta:
-                    setbr_op = x86_64_asm.opcode.SETNBE;
-                    is_set = true;
-                    break;
-                case ThreeAddressCode.OpName.setl:
-                    setbr_op = x86_64_asm.opcode.SETL;
-                    is_set = true;
-                    break;
-                case ThreeAddressCode.OpName.setb:
-                    setbr_op = x86_64_asm.opcode.SETB;
-                    is_set = true;
-                    break;
-                case ThreeAddressCode.OpName.beq:
-                    setbr_op = x86_64_asm.opcode.JZ;
-                    break;
-                case ThreeAddressCode.OpName.bge:
-                    setbr_op = x86_64_asm.opcode.JNL;
-                    break;
-                case ThreeAddressCode.OpName.bge_un:
-                    setbr_op = x86_64_asm.opcode.JNB;
-                    break;
-                case ThreeAddressCode.OpName.bg:
-                    setbr_op = x86_64_asm.opcode.JNLE;
-                    break;
-                case ThreeAddressCode.OpName.bg_un:
-                    setbr_op = x86_64_asm.opcode.JNBE;
-                    break;
-                case ThreeAddressCode.OpName.ble:
-                    setbr_op = x86_64_asm.opcode.JLE;
-                    break;
-                case ThreeAddressCode.OpName.ble_un:
-                    setbr_op = x86_64_asm.opcode.JBE;
-                    break;
-                case ThreeAddressCode.OpName.bl:
-                    setbr_op = x86_64_asm.opcode.JL;
-                    break;
-                case ThreeAddressCode.OpName.bl_un:
-                    setbr_op = x86_64_asm.opcode.JB;
-                    break;
-                case ThreeAddressCode.OpName.bne:
-                    setbr_op = x86_64_asm.opcode.JNZ;
-                    break;
-                default:
-                    throw new NotSupportedException();
+                switch(op)
+                {
+                    case ThreeAddressCode.OpName.seteq:
+                        setbr_op = x86_64_asm.opcode.SETZ;
+                        is_set = true;
+                        break;
+                    case ThreeAddressCode.OpName.setg:
+                    case ThreeAddressCode.OpName.seta:
+                        setbr_op = x86_64_asm.opcode.SETNBE;
+                        is_set = true;
+                        break;
+                    case ThreeAddressCode.OpName.setl:
+                    case ThreeAddressCode.OpName.setb:
+                        setbr_op = x86_64_asm.opcode.SETB;
+                        is_set = true;
+                        break;
+                    case ThreeAddressCode.OpName.beq:
+                        setbr_op = x86_64_asm.opcode.JZ;
+                        break;
+                    case ThreeAddressCode.OpName.bge:
+                    case ThreeAddressCode.OpName.bge_un:
+                        setbr_op = x86_64_asm.opcode.JNB;
+                        break;
+                    case ThreeAddressCode.OpName.bg:
+                    case ThreeAddressCode.OpName.bg_un:
+                        setbr_op = x86_64_asm.opcode.JNBE;
+                        break;
+                    case ThreeAddressCode.OpName.ble:
+                    case ThreeAddressCode.OpName.ble_un:
+                        setbr_op = x86_64_asm.opcode.JBE;
+                        break;
+                    case ThreeAddressCode.OpName.bl:
+                    case ThreeAddressCode.OpName.bl_un:
+                        setbr_op = x86_64_asm.opcode.JB;
+                        break;
+                    case ThreeAddressCode.OpName.bne:
+                        setbr_op = x86_64_asm.opcode.JNZ;
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else
+            {
+                switch (op)
+                {
+                    case ThreeAddressCode.OpName.seteq:
+                        setbr_op = x86_64_asm.opcode.SETZ;
+                        is_set = true;
+                        break;
+                    case ThreeAddressCode.OpName.setg:
+                        setbr_op = x86_64_asm.opcode.SETNLE;
+                        is_set = true;
+                        break;
+                    case ThreeAddressCode.OpName.seta:
+                        setbr_op = x86_64_asm.opcode.SETNBE;
+                        is_set = true;
+                        break;
+                    case ThreeAddressCode.OpName.setl:
+                        setbr_op = x86_64_asm.opcode.SETL;
+                        is_set = true;
+                        break;
+                    case ThreeAddressCode.OpName.setb:
+                        setbr_op = x86_64_asm.opcode.SETB;
+                        is_set = true;
+                        break;
+                    case ThreeAddressCode.OpName.beq:
+                        setbr_op = x86_64_asm.opcode.JZ;
+                        break;
+                    case ThreeAddressCode.OpName.bge:
+                        setbr_op = x86_64_asm.opcode.JNL;
+                        break;
+                    case ThreeAddressCode.OpName.bge_un:
+                        setbr_op = x86_64_asm.opcode.JNB;
+                        break;
+                    case ThreeAddressCode.OpName.bg:
+                        setbr_op = x86_64_asm.opcode.JNLE;
+                        break;
+                    case ThreeAddressCode.OpName.bg_un:
+                        setbr_op = x86_64_asm.opcode.JNBE;
+                        break;
+                    case ThreeAddressCode.OpName.ble:
+                        setbr_op = x86_64_asm.opcode.JLE;
+                        break;
+                    case ThreeAddressCode.OpName.ble_un:
+                        setbr_op = x86_64_asm.opcode.JBE;
+                        break;
+                    case ThreeAddressCode.OpName.bl:
+                        setbr_op = x86_64_asm.opcode.JL;
+                        break;
+                    case ThreeAddressCode.OpName.bl_un:
+                        setbr_op = x86_64_asm.opcode.JB;
+                        break;
+                    case ThreeAddressCode.OpName.bne:
+                        setbr_op = x86_64_asm.opcode.JNZ;
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
             }
 
             if (is_set)

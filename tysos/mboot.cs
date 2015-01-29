@@ -128,4 +128,11 @@ namespace Multiboot
     {
         bcm2708 = 3138
     }
+
+    [libsupcs.OutputCHeader]
+    public enum MachineMinorType_x86
+    {
+        BIOS = 0,
+        UEFI = 1
+    }
 }

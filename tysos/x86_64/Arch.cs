@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2011 by John Cronin
+﻿/* Copyright (C) 2011 - 2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,15 @@ namespace tysos.x86_64
         const ulong heap_small_cutoff = 512;
 
         bool multitasking = false;
+
+        FirmwareConfiguration fwconf = null;
+
+        internal abstract unsafe class FirmwareConfiguration
+        {
+            internal abstract void* ACPI_20_table { get; }
+            internal abstract void* ACPI_10_table { get; }
+            internal abstract void* SMBIOS_table { get; }
+        }
 
         internal override bool Multitasking
         {
@@ -165,13 +174,15 @@ namespace tysos.x86_64
             VirtMem = new VirtMem(null, vmem_temppage_va);
             PhysMem = new Pmem(pmem_bitmap_va, 0x2000);
 
-            /* Map the bda */
-            VirtMem.map_page(bda_va, 0x0);
+            Multiboot.MachineMinorType_x86 bios = (Multiboot.MachineMinorType_x86)mboot.machine_minor_type;
 
             /* Set up the debug outputs */
             DebugOutput = new SerialDebug();
-            if (mboot.has_vga)
+            if (mboot.has_vga && bios == Multiboot.MachineMinorType_x86.BIOS)
+            {
+                VirtMem.map_page(bda_va, 0x0);
                 BootInfoOutput = new Vga(bda_va, vga_fb_va, VirtMem);
+            }
             else
                 BootInfoOutput = DebugOutput;
 
@@ -323,8 +334,21 @@ namespace tysos.x86_64
             Formatter.Write("x86_64: new heap of type ", Program.arch.DebugOutput);
             Formatter.WriteLine(gc.gc.Heap.ToString(), Program.arch.DebugOutput);
 
+            /* Initialize firmware */
+            switch(bios)
+            {
+                case Multiboot.MachineMinorType_x86.UEFI:
+                    fwconf = new UEFI(VirtualRegions, VirtMem, mboot.virt_bda);
+                    break;
+                default:
+                    throw new Exception("Unsupported firmware: " + bios.ToString());
+            }
+
             /* Load ACPI tables */
-            tysos.x86_64.Acpi acpi = new tysos.x86_64.Acpi(VirtualRegions, VirtMem, bda_va);
+            Acpi acpi = new Acpi(VirtualRegions, VirtMem, fwconf);
+            //tysos.x86_64.Acpi acpi = new tysos.x86_64.Acpi(VirtualRegions, VirtMem,
+            //    (bios == Multiboot.MachineMinorType_x86.BIOS) ? bda_va : mboot.virt_bda,
+            //    bios);
 
             /* Disable the PIC if we have one */
             if ((acpi.Apic != null) && (acpi.Apic.Has8259))

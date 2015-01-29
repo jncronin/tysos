@@ -176,6 +176,7 @@
     <Compile Include="x86_64\Tss.cs" />
     <Compile Include="Unwind.cs" />
     <Compile Include="util.cs" />
+    <Compile Include="x86_64\UEFI.cs" />
     <Compile Include="x86_64\Vga.cs" />
     <Compile Include="VirtMem.cs" />
     <Compile Include="Virtual_Regions.cs" />

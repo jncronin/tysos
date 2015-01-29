@@ -956,7 +956,7 @@ namespace System {
 		}
 	
 		public static double ToDouble (long value) 
-		{ 
+		{
 			return (double)value; 
 		}
 
@@ -1347,8 +1347,8 @@ namespace System {
 		}
 
 		public static long ToInt64 (double value) 
-		{ 
-			if (value > Int64.MaxValue || value < Int64.MinValue) 
+		{
+            if (value > Int64.MaxValue || value < Int64.MinValue)
 				throw new OverflowException (Locale.GetText (
 					"Value is greater than Int64.MaxValue or less than Int64.MinValue"));
 	  

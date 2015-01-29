@@ -155,3 +155,8 @@ enum Multiboot_MachineMinorType_ARM {
     bcm2708 = 3138
 };
 
+enum Multiboot_MachineMinorType_x86 {
+    BIOS = 0,
+    UEFI = 1
+};
+

@@ -62,6 +62,8 @@ namespace tydisasm.x86_64
 
             byte rex = 0x0;
             bool has_prefix_66 = false;
+            bool has_prefix_f2 = false;
+            bool has_prefix_f3 = false;
             byte b = bp.GetNextByte();
             os.Add(b);
             
@@ -72,23 +74,32 @@ namespace tydisasm.x86_64
             {
                 switch (b)
                 {
-                    case 0xf0:
                     case 0xf2:
+                    case 0x66:
                     case 0xf3:
+                        if (b == 0xf2)
+                            has_prefix_f2 = true;
+                        if (b == 0xf3)
+                            has_prefix_f3 = true;
+                        if (b == 0x66)
+                            has_prefix_66 = true;
+                        b = bp.GetNextByte();
+                        os.Add(b);
+                        break;
+
+                    case 0xf0:
                     case 0x2e:
                     case 0x36:
                     case 0x3e:
                     case 0x26:
                     case 0x64:
                     case 0x65:
-                    case 0x66:
                     case 0x67:
                         prefixes.Add(b);
-                        if (b == 0x66)
-                            has_prefix_66 = true;
                         b = bp.GetNextByte();
                         os.Add(b);
                         break;
+
                     default:
                         reading_prefixes = false;
                         break;
@@ -131,10 +142,25 @@ namespace tydisasm.x86_64
                     os.Add(b3);
                     l.opcode = (ulong)((b << 16) + (b2 << 8) + b3);
                 }
+                else if (has_prefix_f2)
+                    l.opcode = (ulong)((0xf2 << 16) + (b << 8) + b2);
+                else if (has_prefix_f3)
+                    l.opcode = (ulong)((0xf3 << 16) + (b << 8) + b2);
+                else if (has_prefix_66)
+                    l.opcode = (ulong)((0x66 << 16) + (b << 8) + b2);
                 else
                     l.opcode = (ulong)((b << 8) + b2);
             }
-            else l.opcode = (ulong)b;
+            else
+            {
+                if (has_prefix_f2)
+                    prefixes.Add(0xf2);
+                if (has_prefix_f3)
+                    prefixes.Add(0xf3);
+                if (has_prefix_66)
+                    prefixes.Add(0x66);
+                l.opcode = (ulong)b;
+            }
 
             opcode o = null;
             if (opcodes.ContainsKey(l.opcode))
@@ -553,17 +579,12 @@ namespace tydisasm.x86_64
                     if (p == 0xf0)
                         sb.Append("lock ");
                     else if (p == 0xf2)
-                    {
-                        if (o.f2_rename == null)
-                            sb.Append("repne ");
-                        else
-                            name = o.f2_rename;
-                    }
+                        sb.Append("repne ");
                     else if (p == 0xf3)
                         sb.Append("rep ");
                 }
 
-                sb.Append(o.name);
+                sb.Append(name);
 
                 for (int i = 0; i < arguments.Length; i++)
                 {
@@ -599,7 +620,6 @@ namespace tydisasm.x86_64
             public List<operand_source> operand_sources;
             public bool reinterpret_after_r = false;
             public bool has_rm = false;
-            public string f2_rename = null;
             public int immediate_length = 0;
             public bool immediate_extends_on_rexw = false;
         }

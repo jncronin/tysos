@@ -388,6 +388,18 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	mbheader->tysos_sym_tab_size = sym_tab_size;
 	mbheader->tysos_virtaddr = kernel_low;
 	mbheader->tysos_size = kernel_high - kernel_low;
+	
+#ifdef __x86_64
+	mbheader->machine_major_type = x86_64;
+#else
+#ifdef __i386
+	mbheader->machine_major_type = x86;
+#else
+#error Unknown machine type
+#endif
+#endif
+	mbheader->machine_minor_type = UEFI;
+	mbheader->virt_bda = (uint64_t)(uintptr_t)ST;
 
 	//press_key();
 

@@ -494,6 +494,8 @@ namespace libtysila
                     a.Add((byte)(inst.pri_opcode + ((libasm.x86_64_reg)r).base_val));
                 else
                     a.Add(inst.pri_opcode);
+                if (inst.extra_opcode != 0)
+                    a.Add(inst.extra_opcode);
 
                 /* Mod R/M */
                 if (inst.has_rm)

@@ -220,7 +220,7 @@ namespace libtysila
              * floats in xmm0 - xmm7
              * then stack space used
              * 
-             * callee preserves rbx, rbp, r12-r15
+             * callee preserves rbx, rbp, r12-r15, xmm0-15
              * 
              * We currently don't support other types (i.e. structs)
              */
@@ -252,6 +252,23 @@ namespace libtysila
             ret.CallerPreservesLocations.Add(x86_64_Assembler.R9);
             ret.CallerPreservesLocations.Add(x86_64_Assembler.R10);
             ret.CallerPreservesLocations.Add(x86_64_Assembler.R11);
+
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm0);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm1);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm2);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm3);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm4);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm5);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm6);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm7);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm8);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm9);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm10);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm11);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm12);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm13);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm14);
+            ret.CallerPreservesLocations.Add(x86_64_Assembler.Xmm15);
 
             int stack_pos = 0;
             int pointer_size = 8;

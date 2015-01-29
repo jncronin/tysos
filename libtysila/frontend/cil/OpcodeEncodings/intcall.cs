@@ -109,6 +109,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             int_calls["_ZX15OtherOperationsM_0_16GetUsedStackSize_Ri_P0"] = get_used_stack_size;
 
+            int_calls["_ZW6System4MathM_0_5Round_Rd_P1d"] = Math_Round;
+
             ass.InitArchIntCalls(int_calls);
         }
 
@@ -1217,6 +1219,24 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after.Push(p_ret);
 
             ass.Assign(state, il.stack_vars_before, loc_ret, loc_handle, Assembler.CliType.native_int, il.il.tybel);
+        }
+
+        static void Math_Round(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* Emit a call to double __roundsd(double) */
+
+            libasm.hardware_location loc_arg = il.stack_vars_after.Pop(ass);
+            il.stack_after.Pop();
+
+            Signature.Param p_ret = new Signature.Param(BaseType_Type.R8);
+            libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_ret, ass);
+
+            ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("__roundsd", false),
+                loc_ret, new libasm.hardware_location[] { loc_arg }, ass.callconv_numop_d_d,
+                il.il.tybel);
+
+            il.stack_after.Push(p_ret);
         }
     }
 }

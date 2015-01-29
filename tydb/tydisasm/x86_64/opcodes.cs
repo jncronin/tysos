@@ -233,8 +233,8 @@ namespace tydisasm.x86_64
             opcodes.Add(0x13000f01, new opcode { name = "lidt", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.r64 } } });
 
             // 0f 10
-            opcodes.Add(0x0f10, new opcode { name = "movups", f2_rename = "movsd", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm } } });
-            opcodes.Add(0x0f11, new opcode { name = "movups", f2_rename = "movsd", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm } } });
+            opcodes.Add(0x0f10, new opcode { name = "movups", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm } } });
+            opcodes.Add(0x0f11, new opcode { name = "movups", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm } } });
 
             // 0f 20
             opcodes.Add(0x0f20, new opcode { name = "mov", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.r64 }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.cr } } });
@@ -245,7 +245,7 @@ namespace tydisasm.x86_64
             // 0f 40
             
             // 0f 50
-            
+                        
             // 0f 60
 
             // 0f 70
@@ -305,6 +305,113 @@ namespace tydisasm.x86_64
             // 0f e0
 
             // 0f f0
+
+
+            // three opcodes
+
+            // f2 0f 00
+
+            // f2 0f 10
+            opcodes.Add(0xf20f10, new opcode { name = "movsd", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm } } });
+            opcodes.Add(0xf20f11, new opcode { name = "movsd", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm } } });
+
+            // f2 0f 20
+
+            // f2 0f 30
+
+            // f2 0f 40
+
+            // f2 0f 50
+            opcodes.Add(0xf20f5e, new opcode { name = "divsd", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm } } });
+
+            // f2 0f 60
+
+            // f2 0f 70
+
+            // f2 0f 80
+
+            // f2 0f 90
+
+            // f2 0f a0
+
+            // f2 0f b0
+
+            // f2 0f c0
+
+            // f2 0f d0
+
+            // f2 0f e0
+
+
+            // f3 0f 00
+
+            // f3 0f 10
+
+            // f3 0f 20
+
+            // f3 0f 30
+
+            // f3 0f 40
+
+            // f3 0f 50
+
+            // f3 0f 60
+
+            // f3 0f 70
+            opcodes.Add(0xf30f7e, new opcode { name = "movq", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm } } });
+
+            // f3 0f 80
+
+            // f3 0f 90
+
+            // f3 0f a0
+
+            // f3 0f b0
+
+            // f3 0f c0
+
+            // f3 0f d0
+
+            // f3 0f e0
+
+
+            // 66 0f 00
+
+            // 66 0f 10
+
+            // 66 0f 20
+            opcodes.Add(0x660f2f, new opcode { name = "comisd", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm } } });
+            opcodes.Add(0x660f2e, new opcode { name = "ucomisd", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm } } });
+
+            // 66 0f 30
+
+            // 66 0f 40
+
+            // 66 0f 50
+
+            // 66 0f 60
+            opcodes.Add(0x660f6e, new opcode { name = "movdq", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.r32 } } });
+
+            // 66 0f 70
+
+            // 66 0f 80
+
+            // 66 0f 90
+
+            // 66 0f a0
+
+            // 66 0f b0
+
+            // 66 0f c0
+
+            // 66 0f d0
+            opcodes.Add(0x660fd6, new opcode { name = "movq", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm } } });
+
+            // 66 0f e0
+
+
+            // 0f 3a 00
+            opcodes.Add(0x0f3a0b, new opcode { name = "roundsd", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.xmm }, new opcode.operand_source { type = opcode.operand_source.src_type.Imm, length = opcode.operand_source.reg_length.r8 } }, immediate_length = 1 });
         }
     }
 }

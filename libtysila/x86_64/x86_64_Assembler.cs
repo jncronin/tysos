@@ -38,6 +38,8 @@ namespace libtysila
         internal IA ia;
         internal CModel cm;
 
+        bool has_sse41 = true;
+
         const int HIGH_REG_START = 8;
 
         public static x86_64_gpr Rax { get { return new x86_64_gpr { reg = x86_64_gpr.RegId.rax }; } }
