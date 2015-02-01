@@ -50,10 +50,8 @@ namespace tysos.x86_64
         public static unsafe void NMIError_2_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regsa)
         {
-            Arch.GDB_Registers regs = Arch.get_registers((long)(-libsupcs.OtherOperations.GetUsedStackSize()));
             Formatter.WriteLine("NMI", Program.arch.BootInfoOutput);
             Formatter.WriteLine("NMI received", Program.arch.DebugOutput);
-            Arch.dump_registers(regs);
 
             // Switch to protected heap and unwind stack
             if (Program.cur_cpu_data != null)

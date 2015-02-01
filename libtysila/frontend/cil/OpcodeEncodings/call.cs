@@ -45,6 +45,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             bool is_calli = false;
             bool is_call = false;
             bool is_virt = false;
+            bool box_this = false;
+            bool dereference_this = false;
             if (il.il.opcode.opcode == 0x6f)
                 is_callvirt = true;
             if (il.il.opcode.opcode == 0xfe07)
@@ -80,6 +82,62 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             vara v_thisadjust = vara.Const(new IntPtr(0), Assembler.CliType.native_int);
             vara v_this_pointer = vara.Void();
 
+            Assembler.TypeToCompile thisType_ttc = new Assembler.TypeToCompile();
+            libasm.hardware_location boxed_this_loc = null;
+            if (il.il.Prefixes.constrained)
+            {
+                thisType_ttc = Metadata.GetTTC(il.il.Prefixes.constrained_tok,
+                    mtc.GetTTC(ass), mtc.msig, ass);
+                Signature.Param p_ptr = il.stack_before.Peek(arg_count - 1);
+
+                /* Ensure ptr is a managed pointer to thisType_ttc */
+                if(ass.Options.VerifiableCIL)
+                {
+                    if (!(p_ptr.Type is Signature.ManagedPointer))
+                        throw new Assembler.AssemblerException("constrained: ptr(" +
+                            p_ptr.ToString() + ") is not a managed pointer to thisType(" +
+                            thisType_ttc.ToString() + ")", il.il, mtc);
+
+                    Signature.ManagedPointer mp_ptr = p_ptr.Type as Signature.ManagedPointer;
+                    if(Signature.BCTCompare(mp_ptr.ElemType, thisType_ttc.tsig.Type, ass) == false)
+                    {
+                        throw new Assembler.AssemblerException("constrained: ptr(" +
+                            p_ptr.ToString() + ") is not a managed pointer to thisType(" +
+                            thisType_ttc.ToString() + ")", il.il, mtc);
+                    }
+                }
+
+                if(thisType_ttc.type.IsValueType(ass))
+                {
+                    /* Does thisType implement method? 
+                     */
+
+                    Metadata.MethodDefRow tt_mdr = Metadata.GetMethodDef(call_mtc.meth.Name,
+                        thisType_ttc.type, call_mtc.msig, mtc.tsig, mtc.msig, ass);
+                    
+                    if(tt_mdr != null)
+                    {
+                        /* Make it be a non-virtual call to the method defined on thisType */
+                        call_mtc.type = thisType_ttc.type;
+                        call_mtc.tsigp = thisType_ttc.tsig;
+                        call_mtc.meth = tt_mdr;
+
+                        ass.Requestor.RequestMethod(call_mtc);
+                        is_virt = false;
+                    }
+                    else
+                    {
+                        /* Make a note that we need to box the this pointer later */
+                        box_this = true;
+                    }
+                }
+                else
+                {
+                    /* Make a note we need to dereference the this pointer later */
+                    dereference_this = true;
+                }
+            }
+
             if (is_virt && call_mtc.meth.IsVirtual)
             {
                 // Identify the type on the stack
@@ -96,6 +154,61 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 this_pointer = il.stack_vars_before.GetAddressOf(il.stack_before.Count - arg_count, ass);
                 ass.Assign(state, il.stack_vars_before, ass.GetTemporary(state), this_pointer, Assembler.CliType.native_int, il.il.tybel);
                 this_pointer = ass.GetTemporary(state);
+
+                if(box_this == true)
+                {
+                    /* Get the length of the unboxed value type */
+                    int unboxed_len = Layout.GetTypeInfoLayout(thisType_ttc, ass, false).ClassSize;
+
+                    /* Get the length of the boxed value type */
+                    Signature.Param p_boxed = new Signature.Param(new Signature.BoxedType(thisType_ttc.tsig.Type), ass);
+                    Assembler.TypeToCompile ttc_boxed = new Assembler.TypeToCompile(p_boxed, ass);
+                    Layout l_boxed = Layout.GetTypeInfoLayout(ttc_boxed, ass, false);
+                    int boxed_len = l_boxed.ClassSize;
+
+                    /* Build the boxed type */
+                    Stack in_use = il.stack_vars_before.Clone();
+                    in_use.MarkUsed(this_pointer);
+                    libasm.hardware_location t2 = ass.GetTemporary2(state);
+
+                    ass.Call(state, in_use, new libasm.hardware_addressoflabel("gcmalloc", false),
+                        t2, new libasm.hardware_location[] { new libasm.const_location { c = boxed_len } },
+                        ass.callconv_gcmalloc, il.il.tybel);
+                    in_use.MarkUsed(t2);
+
+                    int boxed_offset = l_boxed.GetField("m_value", false).offset;
+                    ass.Add(state, in_use, t2, t2, new libasm.const_location { c = boxed_offset }, Assembler.CliType.native_int, il.il.tybel);
+                        
+                    ass.MemCpy(state, in_use, t2, this_pointer,
+                        new libasm.const_location { c = unboxed_len }, il.il.tybel);
+
+                    ass.Add(state, in_use, t2, t2, new libasm.const_location { c = -boxed_offset }, Assembler.CliType.native_int, il.il.tybel);
+
+                    ass.Assign(state, in_use, new libasm.hardware_contentsof { base_loc = t2, const_offset = l_boxed.GetField("__vtbl", false).offset, size = ass.GetSizeOfPointer() },
+                        new libasm.hardware_addressoflabel(l_boxed.typeinfo_object_name, l_boxed.FixedLayout[Layout.ID_VTableStructure].Offset, true),
+                        Assembler.CliType.native_int, il.il.tybel);
+
+                    ass.Call(state, in_use, new libasm.hardware_addressoflabel("getobjid", false), this_pointer,
+                        new libasm.hardware_location[] { }, ass.callconv_getobjid, il.il.tybel);
+                    ass.Assign(state, in_use, new libasm.hardware_contentsof { base_loc = t2, const_offset = l_boxed.GetField("__object_id", false).offset, size = 4 },
+                        this_pointer, Assembler.CliType.int32, il.il.tybel);
+
+                    ass.Assign(state, in_use, this_pointer, t2, Assembler.CliType.native_int, il.il.tybel);
+                    boxed_this_loc = ass.GetTemporary3(state);
+                    ass.Assign(state, in_use, boxed_this_loc, t2, Assembler.CliType.native_int, il.il.tybel);
+                }
+                else if(dereference_this)
+                {
+                    /* The 'this' pointer is a managed pointer to a reference type - we need to
+                     * dereference it */
+                    ass.Assign(state, il.stack_vars_before, this_pointer,
+                        new libasm.hardware_contentsof { base_loc = this_pointer, size = ass.GetSizeOfPointer() },
+                        Assembler.CliType.native_int, il.il.tybel);
+
+                    boxed_this_loc = ass.GetTemporary3(state);
+                    ass.Assign(state, il.stack_vars_before, boxed_this_loc, this_pointer,
+                        Assembler.CliType.native_int, il.il.tybel);
+                }
 
                 // get the vtable for the this_pointer object - v_vtable = [v_this_pointer]
                 libasm.hardware_location vtbl = ass.GetTemporary2(state);
@@ -235,7 +348,12 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             CallConv cc;
             libasm.hardware_location[] var_args = new libasm.hardware_location[arg_count];
             for (int j = 0; j < arg_count; j++)
-                var_args[j] = il.stack_vars_before.GetAddressOf(il.stack_before.Count - (arg_count - j) + (is_calli ? -1 : 0), ass);
+            {
+                if (j == 0 && boxed_this_loc != null)
+                    var_args[j] = boxed_this_loc;
+                else
+                    var_args[j] = il.stack_vars_before.GetAddressOf(il.stack_before.Count - (arg_count - j) + (is_calli ? -1 : 0), ass);
+            }
 
             // Get the calling convention
             if (msigm.RetType != null && msigm.RetType.CliType(ass) == Assembler.CliType.vt)

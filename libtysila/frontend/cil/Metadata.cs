@@ -1597,7 +1597,7 @@ namespace libtysila
                     return mdr;
                 }
             }
-            throw new Exception("Method not found");
+            return null;
         }
 
         private static void AddCustomParameters(ref Signature.BaseMethod test_sig, MethodDefRow mdr, Assembler ass)

@@ -1536,10 +1536,43 @@ namespace libtysila
                 }
                 for (int cur_ptr = 0; cur_ptr < size; cur_ptr += ptr_size)
                 {
-                    Assign(state, regs_in_use, Rdx, new libasm.hardware_contentsof { base_loc = src, const_offset = cur_ptr, size = ptr_size },
-                        CliType.native_int, ret);
-                    Assign(state, regs_in_use, new libasm.hardware_contentsof { base_loc = dest, const_offset = cur_ptr, size = ptr_size }, Rdx,
-                        CliType.native_int, ret);
+                    if (size - cur_ptr >= 8)
+                    {
+                        Assign(state, regs_in_use, Rdx, new libasm.hardware_contentsof { base_loc = src, const_offset = cur_ptr, size = ptr_size },
+                            CliType.native_int, ret);
+                        Assign(state, regs_in_use, new libasm.hardware_contentsof { base_loc = dest, const_offset = cur_ptr, size = ptr_size }, Rdx,
+                            CliType.native_int, ret);
+                    }
+                    else
+                    {
+                        while (cur_ptr != size)
+                        {
+                            switch (size - cur_ptr)
+                            {
+                                case 1:
+                                case 3:
+                                case 5:
+                                case 7:
+                                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, Rdx, new libasm.hardware_contentsof { base_loc = src, const_offset = cur_ptr, size = 1 });
+                                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVB, ret, new libasm.hardware_contentsof { base_loc = dest, const_offset = cur_ptr, size = 1 }, Rdx);
+                                    cur_ptr += 1;
+                                    break;
+
+                                case 2:
+                                case 6:
+                                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, Rdx, new libasm.hardware_contentsof { base_loc = src, const_offset = cur_ptr, size = 2 });
+                                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVW, ret, new libasm.hardware_contentsof { base_loc = dest, const_offset = cur_ptr, size = 2 }, Rdx);
+                                    cur_ptr += 2;
+                                    break;
+
+                                case 4:
+                                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, Rdx, new libasm.hardware_contentsof { base_loc = src, const_offset = cur_ptr, size = 4 });
+                                    ChooseInstruction(x86_64.x86_64_asm.opcode.MOVL, ret, new libasm.hardware_contentsof { base_loc = dest, const_offset = cur_ptr, size = 4 }, Rdx);
+                                    cur_ptr += 4;
+                                    break;
+                            }
+                        }
+                    }
                 }
             }
             else

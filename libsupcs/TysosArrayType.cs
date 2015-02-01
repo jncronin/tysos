@@ -176,6 +176,16 @@ namespace libsupcs
             return idx - *lobounds;            
         }
 
+        [MethodAlias("_ZW6System5ArrayM_0_13ClearInternal_Rv_P3V5Arrayii")]
+        private unsafe static void ClearInternal(byte *arr, int index, int length)
+        {
+            int etSize = *(int*)(arr + ArrayOperations.GetElemSizeOffset());
+            byte* innerArray = *(byte**)(arr + ArrayOperations.GetInnerArrayOffset());
+
+            MemoryOperations.MemSet(innerArray + index * etSize, 0,
+                length * etSize);
+        }
+
         [MethodAlias("_ZW6System5ArrayM_0_8FastCopy_Rb_P5V5ArrayiV5Arrayii")]
         private unsafe static bool FastCopy(byte* srcArr, int sourceIndex, byte* destArr,
             int destIndex, int length)

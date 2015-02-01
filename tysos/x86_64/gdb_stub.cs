@@ -19,7 +19,7 @@
  * THE SOFTWARE.
  */
 
-//#define GDB_DEBUG
+#define GDB_DEBUG
 
 using System;
 using System.Collections.Generic;
@@ -68,28 +68,41 @@ namespace tysos.x86_64
         private static unsafe void GDB_DB_handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regsa)
         {
-            GDB_Registers regs = get_registers((long)(-libsupcs.OtherOperations.GetUsedStackSize()));
-            gdb_loop(regs, 5);      // signal 5 is SIGTRAP
+            ulong rbp = libsupcs.x86_64.Cpu.RBP;
+
+            ulong *ret_rbp = (ulong*)rbp;
+            ulong* ret_rip = (ulong*)(rbp + 8);
+            uint* ret_rflags = (uint*)(rbp + 24);
+            ulong* ret_rsp = (ulong*)(rbp + 32);
+
+            gdb_loop(regsa, ret_rbp, ret_rip, ret_rflags, ret_rsp, 5);      // signal 5 is SIGTRAP
         }
 
         [libsupcs.ISR]
         private static unsafe void GDB_BP_handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regsa)
         {
-            GDB_Registers regs = get_registers((long)(-libsupcs.OtherOperations.GetUsedStackSize()));
-            gdb_loop(regs, 5);      // signal 5 is SIGTRAP
+            ulong rbp = libsupcs.x86_64.Cpu.RBP;
+
+            ulong* ret_rbp = (ulong*)rbp;
+            ulong* ret_rip = (ulong*)(rbp + 8);
+            uint* ret_rflags = (uint*)(rbp + 24);
+            ulong* ret_rsp = (ulong*)(rbp + 32);
+
+            gdb_loop(regsa, ret_rbp, ret_rip, ret_rflags, ret_rsp, 5);      // signal 5 is SIGTRAP
         }
 
         static ulong bp_to_reset = 0;
 
-        static unsafe void gdb_loop(GDB_Registers regs, int sig_no)
+        static unsafe void gdb_loop(libsupcs.x86_64.Cpu.InterruptRegisters64* regs, 
+            ulong *rbp, ulong *rip, uint *rflags, ulong *rsp, int sig_no)
         {
             if (saved_bps == null)
                 saved_bps = new Dictionary<ulong, byte[]>(new Program.MyGenericEqualityComparer<ulong>());
 
 #if GDB_DEBUG
             Formatter.Write("gdb_stub: entering main loop, RIP: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rip, "x", Program.arch.DebugOutput);
+            Formatter.Write(*rip, "x", Program.arch.DebugOutput);
             Formatter.WriteLine(Program.arch.DebugOutput);
 #endif
             bool cont = true;
@@ -104,20 +117,21 @@ namespace tysos.x86_64
                 set_bp(bp_to_reset, 1);
                 bp_to_reset = 0;
             }
-            if (saved_bps.ContainsKey((*regs.rip) - 1))
+            if (saved_bps.ContainsKey(*rip - 1))
             {
-                bp_to_reset = (*regs.rip) - 1;
+                bp_to_reset = *rip - 1;
 #if GDB_DEBUG
                 Formatter.Write("gdb_stub: hit breakpoint at ", Program.arch.DebugOutput);
                 Formatter.Write(bp_to_reset, "x", Program.arch.DebugOutput);
                 Formatter.WriteLine(", temporarily unsetting", Program.arch.DebugOutput);
 #endif
                 unset_bp(bp_to_reset, 1);
-                *regs.rip = bp_to_reset;
+
+                *rip = bp_to_reset;
             }
 
             if(in_stop_command)
-                gdb_send_message("T" + sig_no.ToString("x2") + gdb_reg_string(regs, true));
+                gdb_send_message("T" + sig_no.ToString("x2") + gdb_reg_string(regs, rbp, rip, rflags, rsp, true));
 
             while (cont)
             {
@@ -128,7 +142,7 @@ namespace tysos.x86_64
 #endif
                 if (message == "?")
                 {
-                    gdb_send_message("T" + sig_no.ToString("x2") + gdb_reg_string(regs, true));
+                    gdb_send_message("T" + sig_no.ToString("x2") + gdb_reg_string(regs, rbp, rip, rflags, rsp, true));
                 }
                 else if (message.StartsWith("m"))
                 {
@@ -150,7 +164,7 @@ namespace tysos.x86_64
                     gdb_send_message(ret.ToString());
                 }
                 else if (message == "g")
-                    gdb_send_message(gdb_reg_string(regs, false));
+                    gdb_send_message(gdb_reg_string(regs, rbp, rip, rflags, rsp, false));
                 else if (message.StartsWith("G"))
                 {
                     int idx = 1;
@@ -170,10 +184,7 @@ namespace tysos.x86_64
                             idx += 2;
                         }
 
-                        unsafe
-                        {
-                            *gdb_get_reg_address(regs, reg_no) = val;
-                        }
+                        *gdb_get_reg_address(regs, rbp, rip, rflags, rsp, reg_no) = val;
 
                         reg_no++;
                     }
@@ -185,22 +196,17 @@ namespace tysos.x86_64
                     if (message.Length > 1)
                     {
                         ulong cont_addr = ulong.Parse(message.Substring(1), System.Globalization.NumberStyles.HexNumber);
-                        unsafe
-                        {
-                            *(regs.rip) = cont_addr;
-                        }
+                        *rip = cont_addr;
                     }
                     cont = false;
                     in_stop_command = true;
                     previous_was_step = false;
 
-                    unsafe
+                    // TODO: have rflags also be a pointer
+                    *rflags &= 0xfffffeff;   // clear trap flag
+                    if (interrupts_were_enabled)
                     {
-                        *(regs.rflags) &= 0xfffffeff;   // clear trap flag
-                        if (interrupts_were_enabled)
-                        {
-                            *(regs.rflags) |= 0x200;    // restore IF if it was on previously
-                        }
+                        *rflags |= 0x200;    // restore IF if it was on previously
                     }
                 }
                 else if (message.StartsWith("Z"))
@@ -268,27 +274,24 @@ namespace tysos.x86_64
                     if (message.Length > 1)
                     {
                         ulong cont_addr = ulong.Parse(message.Substring(1), System.Globalization.NumberStyles.HexNumber);
-                        unsafe
-                        {
-                            *(regs.rip) = cont_addr;
-                        }
+                        *rip = cont_addr;
                     }
                     cont = false;
                     in_stop_command = true;
 
                     unsafe
                     {
-                        *(regs.rflags) |= 0x100;        // set trap flag
+                        *rflags |= 0x100;        // set trap flag
 
                         if (!previous_was_step)
                         {
-                            if ((*(regs.rflags) & 0x200) == 0x200)
+                            if ((*rflags & 0x200) == 0x200)
                                 interrupts_were_enabled = true;
                             else
                                 interrupts_were_enabled = false;
                         }
 
-                        *(regs.rflags) &= 0xfffffdff;   // clear interrupt flag
+                        *rflags &= 0xfffffdff;   // clear interrupt flag
                     }
 
                     previous_was_step = true;
@@ -354,69 +357,72 @@ namespace tysos.x86_64
             saved_bps.Remove(addr);
         }
 
-        private static unsafe string gdb_reg_string(GDB_Registers regs, bool stop_response)
+        private static unsafe string gdb_reg_string(libsupcs.x86_64.Cpu.InterruptRegisters64* regs,
+            ulong* rbp, ulong* rip, uint* rflags, ulong* rsp, bool stop_response)
         {
             StringBuilder sb = new StringBuilder();
 
-            gdb_append_reg_string(sb, regs, 0, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 0, stop_response);
             if(stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 1, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 1, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 2, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 2, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 3, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 3, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 4, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 4, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 5, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 5, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 6, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 6, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 7, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 7, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 8, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 8, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 9, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 9, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 10, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 10, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 11, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 11, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 12, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 12, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 13, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 13, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 14, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 14, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 15, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 15, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 16, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 16, stop_response);
             if (stop_response)
                 sb.Append(";");
-            gdb_append_reg_string(sb, regs, 17, stop_response);
+            gdb_append_reg_string(sb, regs, rbp, rip, rflags, rsp, 17, stop_response);
             if (stop_response)
                 sb.Append(";");
 
             return sb.ToString();
         }
 
-        private static unsafe void gdb_append_reg_string(StringBuilder sb, GDB_Registers regs, int reg_no, bool stop_response)
+        private static unsafe void gdb_append_reg_string(StringBuilder sb,
+            libsupcs.x86_64.Cpu.InterruptRegisters64* regs,
+            ulong* rbp, ulong* rip, uint* rflags, ulong* rsp, int reg_no, bool stop_response)
         {
             if (stop_response)
             {
@@ -426,9 +432,9 @@ namespace tysos.x86_64
 
             // RFLAGS is passed as a 32 bit value
             if (reg_no == 17)
-                gdb_append_uint_lsb_value(sb, (uint)*gdb_get_reg_address(regs, reg_no));
+                gdb_append_uint_lsb_value(sb, (uint)*gdb_get_reg_address(regs, rbp, rip, rflags, rsp, reg_no));
             else
-                gdb_append_ulong_lsb_value(sb, *gdb_get_reg_address(regs, reg_no));
+                gdb_append_ulong_lsb_value(sb, *gdb_get_reg_address(regs, rbp, rip, rflags, rsp, reg_no));
         }
 
         private static void gdb_append_uint_lsb_value(StringBuilder sb, uint val)
@@ -449,46 +455,47 @@ namespace tysos.x86_64
             }
         }
 
-        private static unsafe ulong* gdb_get_reg_address(GDB_Registers regs, int reg_no)
+        private static unsafe ulong* gdb_get_reg_address(libsupcs.x86_64.Cpu.InterruptRegisters64* regs,
+            ulong* rbp, ulong* rip, uint* rflags, ulong* rsp, int reg_no)
         {
             switch (reg_no)
             {
                 case 0:
-                    return regs.rax;
+                    return &regs->rax;
                 case 1:
-                    return regs.rbx;
+                    return &regs->rbx;
                 case 2:
-                    return regs.rcx;
+                    return &regs->rcx;
                 case 3:
-                    return regs.rdx;
+                    return &regs->rdx;
                 case 4:
-                    return regs.rsi;
+                    return &regs->rsi;
                 case 5:
-                    return regs.rdi;
+                    return &regs->rdi;
                 case 6:
-                    return regs.rbp;
+                    return rbp;
                 case 7:
-                    return regs.rsp;
+                    return rsp;
                 case 8:
-                    return regs.r8;
+                    return &regs->r8;
                 case 9:
-                    return regs.r9;
+                    return &regs->r9;
                 case 10:
-                    return regs.r10;
+                    return &regs->r10;
                 case 11:
-                    return regs.r11;
+                    return &regs->r11;
                 case 12:
-                    return regs.r12;
+                    return &regs->r12;
                 case 13:
-                    return regs.r13;
+                    return &regs->r13;
                 case 14:
-                    return regs.r14;
+                    return &regs->r14;
                 case 15:
-                    return regs.r15;
+                    return &regs->r15;
                 case 16:
-                    return regs.rip;
+                    return rip;
                 case 17:
-                    return regs.rflags;
+                    return (ulong*)rflags;
                 default:
                     throw new Exception("gdb_stub: gdb_get_reg_address: unsupported register number: " + reg_no.ToString());
             }
@@ -743,81 +750,6 @@ namespace tysos.x86_64
         internal override void Breakpoint()
         {
             libsupcs.x86_64.Cpu.Break();
-        }
-
-        internal static unsafe void dump_registers(GDB_Registers regs)
-        {
-            Formatter.Write("RAX: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rax, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("RBX: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rbx, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("RCX: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rcx, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("RDX: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rdx, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("RSI: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rsi, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("RDI: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rdi, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("RSP: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rsp, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("RBP: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rbp, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("R8: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.r8, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("R8: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.r8, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("R9: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.r9, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("R10: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.r10, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("R11: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.r11, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("R12: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.r12, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("R13: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.r13, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("R14: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.r14, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("R15: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.r15, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
-            Formatter.Write("RIP: ", Program.arch.DebugOutput);
-            Formatter.Write(*regs.rip, Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
         }
     }
 }

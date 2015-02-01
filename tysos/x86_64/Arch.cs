@@ -398,6 +398,8 @@ namespace tysos.x86_64
 
             /* Now we have a working heap we can set up the rest of the physical memory */
             SetUpHighMemory(PhysMem, mboot);
+
+            Formatter.WriteLine("x86_64: Arch initialized", Program.arch.DebugOutput);
         }
 
         private void SetUpHighMemory(Pmem PhysMem, Multiboot.Header mboot)
