@@ -57,7 +57,8 @@ EFI_PHYSICAL_ADDRESS sym_tab_paddr, sym_tab_size, sym_tab_entsize, str_tab_paddr
 UINTPTR kernel_low;
 UINTPTR kernel_high;
 
-void (*trampoline_func)(uint64_t target, uint64_t cr3, uint64_t _mbheader, uint64_t halt_func);
+void (*trampoline_func)(uint64_t target, uint64_t cr3, uint64_t _mbheader, uint64_t halt_func,
+	uint64_t kernel_stack);
 extern char trampoline, trampoline_end;
 uint64_t __halt_func;
 
@@ -339,6 +340,17 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	mbheader->heap_end = tysos_heap + tysos_heap_len;
 	printf("tysos heap: %x - %x\n", tysos_heap, tysos_heap + tysos_heap_len);
 
+	/* Allocate space for the stack */
+	UINTPTR kernel_stack;
+	UINTPTR kernel_stack_len = 0x8000;
+	Status = allocate(kernel_stack_len, &kernel_stack, NULL);
+	if (Status != EFI_SUCCESS)
+	{
+		printf("error: couldn't allocate kernel stack\n");
+		return Status;
+	}
+	printf("kernel stack at %x\n", kernel_stack);
+
 	/* Allocate space at address 0x1000 for the identity-mapped trampoline code */
 	EFI_PHYSICAL_ADDRESS p_tramp = 0x1000;
 	Status = BS->AllocatePages(AllocateAddress, EfiLoaderCode, 1, &p_tramp);
@@ -359,7 +371,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_PHYSICAL_ADDRESS tramp_end = (EFI_PHYSICAL_ADDRESS)&trampoline_end;
 	printf("trampoline from %x to %x\n", tramp_start, tramp_end);
 	memcpy((void *)p_tramp, (void *)tramp_start, tramp_end - tramp_start);
-	trampoline_func = (void (*)(uint64_t, uint64_t, uint64_t, uint64_t))0x1000;
+	trampoline_func = (void (*)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t))0x1000;
 	__halt_func = Get_Symbol_Addr("__halt");
 
 	/* Build the kernel page tables */
@@ -376,10 +388,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	/* Build the kif */
 	kCreateString((struct System_String **)&mbheader->loader_name, "efiloader");
 	mbheader->loader_name += mb_adjust;
-	kCreateString((struct System_String **)&mbheader->cmdline, "cmdline");
+	kCreateString((struct System_String **)&mbheader->cmdline, cfg_get_kcmdline());
 	mbheader->cmdline += mb_adjust;
 	mbheader->has_vga = 0;
-	mbheader->debug = 0;
 	mbheader->tysos_paddr = (uint64_t)elf_kernel;
 	mbheader->tysos_str_tab_paddr = str_tab_paddr;
 	mbheader->tysos_str_tab_size = str_tab_size;
@@ -472,7 +483,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	mmap_array->inner_array += mb_adjust;
 
 	printf("Success - running trampoline function\n");
-	trampoline_func((uint64_t)ehdr->e_entry, (uint64_t)pml4t, (uint64_t)mbheader + mb_adjust, (uint64_t)__halt_func);
+	trampoline_func((uint64_t)ehdr->e_entry, (uint64_t)pml4t, (uint64_t)mbheader + mb_adjust, (uint64_t)__halt_func,
+		(uint64_t)(kernel_stack + kernel_stack_len));
 	while(1);
 
 	return EFI_SUCCESS;

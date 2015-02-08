@@ -56,36 +56,57 @@ namespace tysos
             // Get the multiboot header
             mboot_header = mboot;
 
-            /* Create a temporary heap, then initialize the architecture (default to x86_64 for now)
+            /* Create a temporary heap, then initialize the architecture
              * which will set up the permanent heap.  Then initialize the garbage collector */
-            ulong heap_start = mboot.heap_start + tysos.x86_64.Arch.GetRecommendedChunkLength();
+            ulong arch_data_length = 0;
+            switch(mboot.machine_major_type)
+            {
+                case (uint)Multiboot.MachineMajorType.x86_64:
+                    arch_data_length = tysos.x86_64.Arch.GetRecommendedChunkLength();
+                    break;
+                default:
+                    return;
+            }
+
+            ulong heap_start = mboot.heap_start + arch_data_length;
             //ulong heap_len = mboot.heap_end - heap_start;
             gc.gc.Heap = gc.gc.HeapType.Startup;
             gc.simple_heap.Init(heap_start, mboot.heap_end);
 
-            arch = new tysos.x86_64.Arch();
 
             /* Set up the default startup thread */
             StartupThread = new System.Threading.Thread(null_func);
 
+            /* Initialize the architecture */
             UIntPtr chunk_vaddr = new UIntPtr(mboot.heap_start);
-            UIntPtr chunk_length = new UIntPtr(tysos.x86_64.Arch.GetRecommendedChunkLength());
+            UIntPtr chunk_length = new UIntPtr(arch_data_length);
+
+            switch(mboot.machine_major_type)
+            {
+                case (uint)Multiboot.MachineMajorType.x86_64:
+                    arch = new tysos.x86_64.Arch();
+                    break;
+            }
             arch.Init(chunk_vaddr, chunk_length, mboot);
 
-            while (true) ;
+            /* Parse the kernel command line */
+            kernel_cmd_line = mboot.cmdline.Split(' ');
+
+            //while (true) ;
 
             // test dynamic types
-            if (test_dynamic() == null)
-                throw new Exception("test_dynamic failed");
-            if (test_dynamic2() == null)
-                throw new Exception("test_dynamic2 failed");
+            //if (test_dynamic() == null)
+            //    throw new Exception("test_dynamic failed");
+            //if (test_dynamic2() == null)
+            //    throw new Exception("test_dynamic2 failed");
 
             // Say hi
             Formatter.WriteLine("Tysos v0.2.0", arch.BootInfoOutput);
             Formatter.WriteLine("Tysos v0.2.0", arch.DebugOutput);
             Formatter.Write("Command line: ", arch.DebugOutput);
             Formatter.WriteLine(mboot.cmdline, arch.DebugOutput);
-            if (mboot.debug)
+            bool do_debug = false;
+            if (GetCmdLine("debug"))
             {
                 Formatter.Write("Kernel debug: ", arch.BootInfoOutput);
                 Formatter.WriteLine("Kernel debug requested", arch.DebugOutput);
@@ -94,14 +115,15 @@ namespace tysos
                 {
                     Formatter.WriteLine("enabled", arch.BootInfoOutput);
                     Formatter.WriteLine("Kernel debug started", arch.DebugOutput);
+                    do_debug = true;
                 }
                 else
                 {
                     Formatter.WriteLine("not supported by current architecture", arch.BootInfoOutput);
                     Formatter.WriteLine("Kernel debug not supported by current architecture", arch.DebugOutput);
-                    mboot.debug = false;
                 }
             }
+
          
             /* Map in the ELF image of the kernel, so we can load its symbols */
             ulong tysos_vaddr = map_in(mboot.tysos_paddr, mboot.tysos_size, "tysos binary");
@@ -118,14 +140,13 @@ namespace tysos
 
 
             /* Trigger a breakpoint to synchronize with gdb */
-            if (mboot.debug)
+            if (do_debug)
             {
                 Formatter.WriteLine("Synchronizing with debugger...", arch.BootInfoOutput);
                 System.Diagnostics.Debugger.Break();
             }
 
-            /* Parse the kernel command line */
-            kernel_cmd_line = mboot.cmdline.Split(' ');
+            while (true) ;
 
             /* Load up the symbol table for tysos */
             if (GetCmdLine("skip_kernel_syms") == false)

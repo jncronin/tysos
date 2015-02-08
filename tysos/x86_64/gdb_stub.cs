@@ -503,6 +503,10 @@ namespace tysos.x86_64
 
         private static void gdb_send_message(string s)
         {
+#if GDB_DEBUG
+            Formatter.Write("gdb_stub: sending message: ", Program.arch.DebugOutput);
+            Formatter.WriteLine(s, Program.arch.DebugOutput);
+#endif
             gdb_send_message(gdb_encode(s));
         }
 

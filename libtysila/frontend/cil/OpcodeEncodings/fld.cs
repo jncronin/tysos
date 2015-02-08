@@ -35,6 +35,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             bool request_is_static = false;
             bool request_is_load = false;
             bool request_is_address = false;
+            bool request_is_alias_address = false;
             switch (il.il.opcode.opcode1)
             {
                 case Opcode.SingleOpcodes.ldsfld:
@@ -86,6 +87,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 throw new Exception("Request for non-static field at " + il.ToString());
             else
                 do_static = false;
+            if (ftc.field.ReferenceAliasAddress != null)
+                request_is_alias_address = true;
 
             libasm.hardware_location val;
             Signature.Param val_type;
@@ -116,18 +119,28 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             /* Load field address */
             libasm.hardware_location fld_address = ass.GetTemporary(state);
-            if (do_static)
-                ass.Assign(state, il.stack_vars_before, fld_address, new libasm.hardware_addressoflabel(obj_l.static_object_name, fld_offset, true), Assembler.CliType.native_int, il.il.tybel);
-            else
+            if (!request_is_alias_address)
             {
-                if (fld_offset != 0)
-                    ass.Add(state, il.stack_vars_before, fld_address, obj, new libasm.const_location { c = fld_offset }, Assembler.CliType.native_int, il.il.tybel);
+                if (do_static)
+                {
+                    if (ftc.field.ReferenceAlias != null)
+                        ass.Assign(state, il.stack_vars_before, fld_address, new libasm.hardware_addressoflabel(ftc.field.ReferenceAlias, true), Assembler.CliType.native_int, il.il.tybel);
+                    else
+                        ass.Assign(state, il.stack_vars_before, fld_address, new libasm.hardware_addressoflabel(obj_l.static_object_name, fld_offset, true), Assembler.CliType.native_int, il.il.tybel);
+                }
                 else
-                    fld_address = obj;
+                {
+                    if (fld_offset != 0)
+                        ass.Add(state, il.stack_vars_before, fld_address, obj, new libasm.const_location { c = fld_offset }, Assembler.CliType.native_int, il.il.tybel);
+                    else
+                        fld_address = obj;
+                }
             }
 
             if (request_is_address)
             {
+                if (request_is_alias_address)
+                    throw new Exception("ldflda with reference alias address field");
                 il.stack_after.Push(new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = ftc.fsig.Type }, ass));
 
                 libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(new Signature.Param(Assembler.CliType.native_int), ass);
@@ -140,19 +153,32 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             int size = ass.GetSizeOf(ftc.fsig);
             if (request_is_load)
             {
-                libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(ftc.fsig, ass);
-                if (size <= ass.GetSizeOfPointer() || dt == Assembler.CliType.F32 || dt == Assembler.CliType.F64)
-                    ass.Peek(state, il.stack_vars_before, dest, fld_address, size, il.il.tybel);
+                if (request_is_alias_address)
+                {
+                    libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(ftc.fsig, ass);
+                    ass.Assign(state, il.stack_vars_before, dest, new libasm.hardware_addressoflabel(ftc.field.ReferenceAliasAddress, true),
+                        Assembler.CliType.native_int, il.il.tybel);
+                    il.stack_after.Push(ftc.fsig);
+                    return;
+                }
                 else
                 {
-                    libasm.hardware_location dest_addr = ass.GetTemporary2(state);
-                    ass.LoadAddress(state, il.stack_vars_before, dest_addr, dest, il.il.tybel);
-                    ass.MemCpy(state, il.stack_vars_before, dest_addr, fld_address, new libasm.const_location { c = ass.GetSizeOf(ftc.fsig) }, il.il.tybel);
+                    libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(ftc.fsig, ass);
+                    if (size <= ass.GetSizeOfPointer() || dt == Assembler.CliType.F32 || dt == Assembler.CliType.F64)
+                        ass.Peek(state, il.stack_vars_before, dest, fld_address, size, il.il.tybel);
+                    else
+                    {
+                        libasm.hardware_location dest_addr = ass.GetTemporary2(state);
+                        ass.LoadAddress(state, il.stack_vars_before, dest_addr, dest, il.il.tybel);
+                        ass.MemCpy(state, il.stack_vars_before, dest_addr, fld_address, new libasm.const_location { c = ass.GetSizeOf(ftc.fsig) }, il.il.tybel);
+                    }
+                    il.stack_after.Push(ftc.fsig);
                 }
-                il.stack_after.Push(ftc.fsig);
             }
             else
             {
+                if(request_is_alias_address)
+                    throw new Exception("stfld: request to store to reference alias address");
                 if (size <= ass.GetSizeOfPointer() || dt == Assembler.CliType.F32 || dt == Assembler.CliType.F64)
                     ass.Poke(state, il.stack_vars_before, fld_address, val, size, il.il.tybel);
                 else

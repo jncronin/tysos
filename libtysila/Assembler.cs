@@ -889,6 +889,36 @@ namespace libtysila
                 m.File.GetDataAtRVA(fr.LiteralData, new UIntPtr(rvar.RVA), new UIntPtr((uint)fsize));
             }
 
+            /* Load up field aliases */
+            foreach (Metadata.FieldRow fr in m.Tables[(int)Metadata.TableId.Field])
+            {
+                foreach (Metadata.CustomAttributeRow car in fr.CustomAttrs)
+                {
+                    string caname = Mangler2.MangleMethod(Metadata.GetMTC(car.Type, new TypeToCompile(), null, this), this);
+
+                    if (caname == "_ZX28FieldReferenceAliasAttributeM_0_7#2Ector_Rv_P2u1tu1S")
+                    {
+                        if (car.Value[0] != 0x01)
+                            throw new NotSupportedException();
+                        if (car.Value[1] != 0x00)
+                            throw new NotSupportedException();
+                        int offset = 2;
+                        int len = Metadata.ReadCompressedInteger(car.Value, ref offset);
+                        fr.ReferenceAlias = new UTF8Encoding().GetString(car.Value, offset, len);
+                    }
+                    if (caname == "_ZX35FieldReferenceAliasAddressAttributeM_0_7#2Ector_Rv_P2u1tu1S")
+                    {
+                        if (car.Value[0] != 0x01)
+                            throw new NotSupportedException();
+                        if (car.Value[1] != 0x00)
+                            throw new NotSupportedException();
+                        int offset = 2;
+                        int len = Metadata.ReadCompressedInteger(car.Value, ref offset);
+                        fr.ReferenceAliasAddress = new UTF8Encoding().GetString(car.Value, offset, len);
+                    }
+                }
+            }
+
             m.File.CloseFile();
 
             return m;

@@ -50,7 +50,6 @@ namespace Multiboot
         public ulong tysos_str_tab_size;
 
         public string cmdline;
-        public bool debug;
         public string loader_name;
 
         public uint machine_major_type;

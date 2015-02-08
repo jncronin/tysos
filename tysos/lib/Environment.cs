@@ -43,6 +43,8 @@ namespace tysos
         [libsupcs.AlwaysCompile]
         static string GetEnvVar(string var_name)
         {
+            if (Program.env == null || Program.env.env_vars == null)
+                return "";
             if (Program.env.env_vars.ContainsKey(var_name))
                 return Program.env.env_vars[var_name];
             return "";

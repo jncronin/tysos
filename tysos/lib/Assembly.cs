@@ -19,14 +19,23 @@
  * THE SOFTWARE.
  */
 
+using libsupcs;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace tysos.lib
 {
     class Assembly
     {
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        static extern System.Reflection.Assembly ReinterpretAsAssembly(IntPtr addr);
+
+        [FieldReferenceAliasAddress("_A8mscorlib")]
+        static IntPtr mscorlib_assembly;
+
         [libsupcs.MethodAlias("_ZW19System#2EReflection8AssemblyM_0_20GetExecutingAssembly_RV8Assembly_P0")]
         static System.Reflection.Assembly GetExecutingAssembly()
         {
@@ -36,10 +45,12 @@ namespace tysos.lib
             u.UnwindOne();
             libsupcs.TysosMethod prev_method = u.GetMethodInfo();
 
-            if (prev_method == null)
-                throw new Exception("Unable to determine assembly due to methodinfo being null");
-            if (prev_method.DeclaringType == null)
-                throw new Exception("Unable to determine assembly due to methodinfo.DeclaringType being null");
+            if (prev_method == null || prev_method.DeclaringType == null)
+            {
+                /* We don't have enough information to determine the currently executing 
+                 *  method (and therefore assembly), so return mscorlib instead */
+                return ReinterpretAsAssembly(mscorlib_assembly);
+            }
             return prev_method.DeclaringType.Assembly;
         }
 

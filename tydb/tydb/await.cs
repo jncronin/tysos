@@ -65,7 +65,7 @@ namespace tydb
                         if (disasm != null)
                         {
                             sb.Append(": ");
-                            sb.Append(disasm.ToString());
+                            sb.Append(disasm.ToDisassembledString(Program.arch.disasm));
                         }
                     }
                 }
@@ -154,71 +154,6 @@ namespace tydb
             offset = offset - ret.TextOffset;
             symbol_name = ret.MangledName;
             return ret;
-        }
-
-        internal static void await_halt()
-        {
-            bool cont = true;
-            s = new state();
-
-            while (cont)
-            {
-                string msg = comm.gdb_read_message();
-
-                if (msg.StartsWith("T"))
-                {
-                    interpret_t_message(msg, s);
-                    cont = false;
-                }
-                else if (msg.StartsWith("S"))
-                {
-                    interpret_s_message(msg, s);
-                    cont = false;
-                }
-                else
-                    System.Diagnostics.Debug.WriteLine("Invalid message: " + msg);
-            }
-
-            ulong? pc = get_register(s, Program.arch.PC_id);
-            if (pc.HasValue)
-            {
-                Console.WriteLine("Next at " + pc.Value.ToString("X16"));
-
-                string symbol_name;
-                ulong offset;
-                symbol_name = mem.get_symbol(pc.Value, out offset);
-
-                libtysila.tydb.Function t_f = GetFunction(ref symbol_name, pc.Value, ref offset);
-
-                Console.Write(symbol_name + " + " + offset.ToString("X"));
-
-                // provide a dissassembly
-                if (Program.arch.disasm != null)
-                {
-                    Console.Write(": ");
-                    tydisasm.line disasm = Program.arch.disasm.GetNextLine(new RemoteByteProvider(pc.Value));
-                    Console.WriteLine(disasm.ToString());
-                }
-                else
-                    Console.WriteLine();
-
-                // display the source
-                if (t_f != null)
-                {
-                    string metadata = t_f.MetadataFileName;
-                    int il_offset = t_f.GetILOffsetFromCompiledOffset((int)offset);
-                    uint m_tok = t_f.MetadataToken;
-
-                    if (Program.cci_int != null)
-                    {
-                        string src = Program.cci_int.GetSourceLineFromToken(m_tok, (uint)il_offset);
-                        if (src != null)
-                            Console.WriteLine(src);
-                    }
-                 } 
-            }
-            else
-                Console.WriteLine("Next at unknown address");
         }
 
         internal static ulong? get_register(state s, int p)
@@ -356,6 +291,11 @@ namespace tydb
                 byte ret = byte.Parse(s, System.Globalization.NumberStyles.HexNumber);
                 pc++;
                 return ret;
+            }
+
+            public override ulong Offset
+            {
+                get { return pc; }
             }
         }
     }

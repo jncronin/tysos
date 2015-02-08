@@ -542,6 +542,9 @@ namespace libtysila
             internal byte[] LiteralData;
             public ConstantRow Constant = null;
 
+            public string ReferenceAlias = null;
+            public string ReferenceAliasAddress = null;
+
             internal bool RuntimeInternal;
 
             public Signature.Field fsig;

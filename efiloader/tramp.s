@@ -1,10 +1,13 @@
 .globl trampoline
 .globl trampoline_end
 trampoline:
+	movq	0x28(%rsp), %rbx	/* stack is return address, 32 bytes of shadow space, 5th param */
+
 	movl	$0x6c00, %eax
 	lidt	(%rax)
 	movl	$0x6d00, %eax
 	lgdt	(%rax)
+
 
 	movl	$0x10, %eax
 	mov		%ax, %ds
@@ -25,6 +28,7 @@ trampoline:
 	rex.w iret
 clear_pipe:
 	movq	%rdx, %cr3
+	movq	%rbx, %rsp
 	movq	%r8, %rdi
 	pushq	%r9
 	callq	*%rcx

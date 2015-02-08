@@ -77,6 +77,22 @@ namespace libsupcs
         public MethodReferenceAliasAttribute(string alias) { }
     }
 
+    /** <summary>Any references to this field (declared as a static field) will instead reference the following label</summary>
+     */
+    [global::System.AttributeUsage(System.AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
+    public sealed class FieldReferenceAliasAttribute : System.Attribute
+    {
+        public FieldReferenceAliasAttribute(string alias) { }
+    }
+
+    /** <summary>Any references to this field (declared as a static field) will instead reference the address of following label (don't try to write to it)</summary>
+     */
+    [global::System.AttributeUsage(System.AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
+    public sealed class FieldReferenceAliasAddressAttribute : System.Attribute
+    {
+        public FieldReferenceAliasAddressAttribute(string alias) { }
+    }
+
     /** <summary>Mark the method as a 'ReinterpretAs' method that performs a cast without type checking</summary> */
     [global::System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public sealed class ReinterpretAsMethodAttribute : System.Attribute

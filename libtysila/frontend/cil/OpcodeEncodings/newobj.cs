@@ -130,6 +130,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                         ref str_length);
                     in_use.MarkUsed(t2);
                     in_use.MarkUsed(str_length);
+                    ass.Add(state, in_use, obj_size, obj_size, new libasm.const_location { c = ass.GetStringFieldOffset(Assembler.StringFields.data_offset) },
+                        Assembler.CliType.int32, il.il.tybel);
                 }
 
                 ass.Call(state, in_use, new libasm.hardware_addressoflabel("gcmalloc", false), t1,
