@@ -323,6 +323,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		mod_ia[cur_mod_idx]->length = mod_len;
 
 		kCreateString((struct System_String **)&(mod_ia[cur_mod_idx]->name), mod->name);
+
+		printf("module: %s at %x\n", mod->name, mod_addr);
+		cur_mod_idx++;
 	}
 	mod_array->inner_array += mb_adjust;
 	mbheader->modules = (uint64_t)mod_array + mb_adjust;

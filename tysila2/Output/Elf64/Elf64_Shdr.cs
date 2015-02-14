@@ -181,7 +181,7 @@ namespace Elf64
 
     class Elf64_Symbol_Shdr : Elf64_Shdr
     {
-        public class Elf64_Sym : IEquatable<Elf64_Sym>
+        public class Elf64_Sym : IEquatable<Elf64_Sym>, libtysila.ISymbol
         {
             public class BindingFlags
             {
@@ -237,6 +237,30 @@ namespace Elf64
                 Elf64Writer.Write(s, st_shndx);
                 Elf64Writer.Write(s, st_value);
                 Elf64Writer.Write(s, st_size);
+            }
+
+            public bool Weak
+            {
+                get { return IsWeak; }
+                set { throw new NotImplementedException(); }
+            }
+
+            public string Name
+            {
+                get { return name; }
+                set { throw new NotImplementedException(); }
+            }
+
+            public int Offset
+            {
+                get { return (int)st_value; }
+                set { throw new NotImplementedException(); }
+            }
+
+            public int Length
+            {
+                get { return (int)st_size; }
+                set { st_size = (ulong)value; }
             }
         }
 

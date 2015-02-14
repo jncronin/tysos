@@ -486,6 +486,65 @@ namespace tysos
             return loaded_size;
         }
 
+        public static unsafe void LoadSymbols(SymbolTable stab, Multiboot.Header header)
+        {
+            ulong sym_vaddr = Program.map_in(header.tysos_sym_tab_paddr, header.tysos_sym_tab_size,
+                "tysos_sym_tab");
+            ulong str_vaddr = Program.map_in(header.tysos_str_tab_paddr, header.tysos_str_tab_size,
+                "tysos_str_tab");
+
+            ulong sym_count = header.tysos_sym_tab_size / header.tysos_sym_tab_entsize;
+
+            for(ulong i = 0; i < sym_count; i++)
+            {
+                Elf64_Sym* sym = (Elf64_Sym*)(sym_vaddr + i * header.tysos_sym_tab_entsize);
+
+                ulong name_addr = str_vaddr + sym->st_name;
+                string name = new string((sbyte*)name_addr);
+                ulong st_info = (ulong)(sym->st_info_other_shndx & 0xff);
+                ulong st_shndx = (ulong)(sym->st_info_other_shndx >> 16);
+                ulong sym_addr = sym->st_value;
+
+                /* we only load symbols with STB_GLOBAL (=1) binding and
+                 * of type STT_OBJECT (=1) or STT_FUNC (=2)
+                 * 
+                 * In st_info, binding is the high 4 bits, symbol type is low 4
+                 * 
+                 * Therefore we are looking for 00010001b or 00010010b
+                 * which is 0x11 or 0x12
+                 */
+
+                if ((st_info != 0x11) && (st_info != 0x12))
+                    continue;
+
+                /* We do not want symbols with st_shndx == SHN_UNDEF (=0)
+                 * We ignore symbols with st_shndx == SHN_COMMON (=0xfff2) 
+                 */
+
+                if ((st_shndx == 0x0) || (st_shndx == 0xfff2))
+                    continue;
+
+                if (name.StartsWith("_static_fields"))
+                {
+                    /* Load up a list of static objects */
+                    ulong* cur_so = (ulong*)sym_addr;
+
+                    while (*cur_so != 0)
+                    {
+                        ulong static_obj_addr = *(cur_so);
+                        ulong typeinfo_addr = *(ulong*)(sym_addr + 8);
+
+                        gc.gc.RegisterObject(static_obj_addr);
+
+                        sym_addr += 16;
+                        cur_so = (ulong*)sym_addr;
+                    }
+                }
+                else
+                    stab.Add(name, sym_addr, sym->st_size);
+            }
+        }
+
         public static unsafe void LoadSymbols(SymbolTable stab, ulong binary, ulong symbol_adjust)
         { LoadSymbols(stab, binary, symbol_adjust, 0); }
         public static unsafe void LoadSymbols(SymbolTable stab, ulong binary, ulong symbol_adjust, ulong tyhash_addr)

@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using libtysila;
 
 namespace Elf32
 {
@@ -251,7 +252,7 @@ namespace Elf32
             return ehdr.rodata.data;
         }
 
-        public void AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak)
+        public ISymbol AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak)
         {
             uint st_size = 4;
             byte st_info = 0;
@@ -270,7 +271,7 @@ namespace Elf32
             else
                 st_info |= Elf32_Symbol_Shdr.Elf32_Sym.BindingFlags.STB_GLOBAL;
 
-            ehdr.e_syms.defined_syms.Add(new Elf32_Symbol_Shdr.Elf32_Sym
+            Elf32_Symbol_Shdr.Elf32_Sym ret = new Elf32_Symbol_Shdr.Elf32_Sym
             {
                 name = name,
                 st_name = ehdr.e_symstr.GetOffset(name),
@@ -279,12 +280,14 @@ namespace Elf32
                 st_value = Convert.ToUInt32(offset),
                 st_size = st_size,
                 st_other = 0
-            });
+            };
+            ehdr.e_syms.defined_syms.Add(ret);
             if(!local_only)
                 ehdr.e_syms.name_to_sym.Add(name, ehdr.e_syms.defined_syms.Count - 1);
+            return ret;
         }
 
-        public void AddDataSymbol(int offset, string name, bool is_weak)
+        public ISymbol AddDataSymbol(int offset, string name, bool is_weak)
         {
             byte st_info = 0;
             if (is_weak)
@@ -292,7 +295,7 @@ namespace Elf32
             else
                 st_info |= Elf32_Symbol_Shdr.Elf32_Sym.BindingFlags.STB_GLOBAL;
 
-            ehdr.e_syms.defined_syms.Add(new Elf32_Symbol_Shdr.Elf32_Sym
+            Elf32_Symbol_Shdr.Elf32_Sym ret = new Elf32_Symbol_Shdr.Elf32_Sym
             {
                 name = name,
                 st_name = ehdr.e_symstr.GetOffset(name),
@@ -301,11 +304,13 @@ namespace Elf32
                 st_value = Convert.ToUInt32(offset),
                 st_size = 4,
                 st_other = 0
-            });
+            };
+            ehdr.e_syms.defined_syms.Add(ret);
             ehdr.e_syms.name_to_sym.Add(name, ehdr.e_syms.defined_syms.Count - 1);
+            return ret;
         }
 
-        public void AddRodataSymbol(int offset, string name, bool is_weak)
+        public ISymbol AddRodataSymbol(int offset, string name, bool is_weak)
         {
             byte st_info = 0;
             if (is_weak)
@@ -313,7 +318,7 @@ namespace Elf32
             else
                 st_info |= Elf32_Symbol_Shdr.Elf32_Sym.BindingFlags.STB_GLOBAL;
 
-            ehdr.e_syms.defined_syms.Add(new Elf32_Symbol_Shdr.Elf32_Sym
+            Elf32_Symbol_Shdr.Elf32_Sym ret = new Elf32_Symbol_Shdr.Elf32_Sym
             {
                 name = name,
                 st_name = ehdr.e_symstr.GetOffset(name),
@@ -322,8 +327,10 @@ namespace Elf32
                 st_value = Convert.ToUInt32(offset),
                 st_size = 4,
                 st_other = 0
-            });
+            };
+            ehdr.e_syms.defined_syms.Add(ret);
             ehdr.e_syms.name_to_sym.Add(name, ehdr.e_syms.defined_syms.Count - 1);
+            return ret;
         }
 
         public void AddTextRelocation(int offset, string name, uint rel_type, long value)

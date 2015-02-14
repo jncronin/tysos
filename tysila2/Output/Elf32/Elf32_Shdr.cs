@@ -176,7 +176,7 @@ namespace Elf32
 
     class Elf32_Symbol_Shdr : Elf32_Shdr
     {
-        public class Elf32_Sym : IEquatable<Elf32_Sym>
+        public class Elf32_Sym : IEquatable<Elf32_Sym>, libtysila.ISymbol
         {
             public class BindingFlags
             {
@@ -232,6 +232,30 @@ namespace Elf32
                 ElfWriter.Write(s, st_info);
                 ElfWriter.Write(s, st_other);
                 ElfWriter.Write(s, st_shndx);
+            }
+
+            public string Name
+            {
+                get { return name; }
+                set { throw new NotImplementedException(); }
+            }
+
+            public int Offset
+            {
+                get { return (int)st_value; }
+                set { throw new NotImplementedException(); }
+            }
+
+            public int Length
+            {
+                get { return (int)st_size; }
+                set { st_size = (uint)value; }
+            }
+
+            public bool Weak
+            {
+                get { return IsWeak; }
+                set { throw new NotImplementedException(); }
             }
         }
 

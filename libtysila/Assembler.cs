@@ -118,7 +118,7 @@ namespace libtysila
         public abstract libasm.hardware_location GetTemporary2(libtysila.frontend.cil.Encoder.EncoderState state, Assembler.CliType ct);
         public virtual libasm.hardware_location GetTemporary2(libtysila.frontend.cil.Encoder.EncoderState state) { return GetTemporary2(state, CliType.native_int); }
         public abstract libasm.hardware_location GetTemporary3(libtysila.frontend.cil.Encoder.EncoderState state, Assembler.CliType ct);
-        public virtual libasm.hardware_location GetTemporary3(libtysila.frontend.cil.Encoder.EncoderState state) { return GetTemporary2(state, CliType.native_int); }
+        public virtual libasm.hardware_location GetTemporary3(libtysila.frontend.cil.Encoder.EncoderState state) { return GetTemporary3(state, CliType.native_int); }
 
         public virtual void ReleaseTemporary() { }
         public virtual void ReleaseTemporary2() { }

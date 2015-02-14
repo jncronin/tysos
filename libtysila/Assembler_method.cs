@@ -251,14 +251,18 @@ namespace libtysila
                 is_weak = true;
             if (mtc.msig is Signature.GenericMethod)
                 is_weak = true;
+            List<ISymbol> isyms = new List<ISymbol>();
             foreach (string alias in attrs.method_aliases)
-                output.AddTextSymbol(text_base, alias, false, true, is_weak);
+                isyms.Add(output.AddTextSymbol(text_base, alias, false, true, is_weak));
 
             foreach (byte b in code)
                 output.GetText().Add(b);
 
             foreach (libasm.RelocationBlock reloc in relocs)
                 output.AddTextRelocation(text_base + reloc.Offset, reloc.Target, reloc.RelType, reloc.Value);
+
+            foreach (ISymbol isym in isyms)
+                isym.Length = output.GetText().Count - text_base;
 
             return new AssembleBlockOutput { code = code, compiled_code_length = code.Count, relocs = relocs, debug = debug };
         }

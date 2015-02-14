@@ -35,9 +35,9 @@ namespace libtysila
         void AlignData(int a);
         void AlignRodata(int a);
 
-        void AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak);
-        void AddDataSymbol(int offset, string name, bool is_weak);
-        void AddRodataSymbol(int offset, string name, bool is_weak);
+        ISymbol AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak);
+        ISymbol AddDataSymbol(int offset, string name, bool is_weak);
+        ISymbol AddRodataSymbol(int offset, string name, bool is_weak);
 
         void AddTextRelocation(int offset, string name, uint rel_type, long value);
         void AddDataRelocation(int offset, string name, uint rel_type, long value);
@@ -49,5 +49,13 @@ namespace libtysila
 
         void Write(System.IO.Stream output);
         void DumpText(System.IO.TextWriter output);
+    }
+
+    public interface ISymbol
+    {
+        string Name { get; set; }
+        int Offset { get; set; }
+        int Length { get; set; }
+        bool Weak { get; set; }
     }
 }

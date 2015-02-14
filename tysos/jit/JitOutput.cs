@@ -97,19 +97,22 @@ namespace tysos.jit
         {
         }
 
-        public void AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak)
+        public libtysila.ISymbol AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak)
         {
             text_sym.Add(name, offset);
+            return new JitSym { Name = name, Offset = offset };
         }
 
-        public void AddDataSymbol(int offset, string name, bool is_weak)
+        public libtysila.ISymbol AddDataSymbol(int offset, string name, bool is_weak)
         {
             data_sym.Add(name, offset);
+            return new JitSym { Name = name, Offset = offset };
         }
 
-        public void AddRodataSymbol(int offset, string name, bool is_weak)
+        public libtysila.ISymbol AddRodataSymbol(int offset, string name, bool is_weak)
         {
             rodata_sym.Add(name, offset);
+            return new JitSym { Name = name, Offset = offset };
         }
 
         public void AddTextRelocation(int offset, string name, uint rel_type, long value)
@@ -145,6 +148,61 @@ namespace tysos.jit
         public void DumpText(System.IO.TextWriter output)
         {
             //throw new NotImplementedException();
+        }
+
+        class JitSym : libtysila.ISymbol
+        {
+            string name;
+            int offset;
+            int length;
+
+            public string Name
+            {
+                get
+                {
+                    return name;
+                }
+                set
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            public int Offset
+            {
+                get
+                {
+                    return offset;
+                }
+                set
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            public int Length
+            {
+                get
+                {
+                    return length;
+                }
+                set
+                {
+                    length = value;
+                }
+            }
+
+            public bool Weak
+            {
+                get
+                {
+                    return false;
+                }
+                set
+                {
+                    throw new NotImplementedException();
+                }
+            }
         }
     }
 }

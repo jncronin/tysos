@@ -127,7 +127,8 @@ namespace tysos.x86_64
 #endif
                 unset_bp(bp_to_reset, 1);
 
-                *rip = bp_to_reset;
+                if(!previous_was_step)
+                    *rip = bp_to_reset;
             }
 
             if(in_stop_command)
@@ -334,9 +335,27 @@ namespace tysos.x86_64
             saved_bps[addr] = saved;
 
             if (kind >= 1)
+            {
+#if GDB_DEBUG
+                Formatter.Write("gdb_stub: set_bp: write ", Program.arch.DebugOutput);
+                Formatter.Write(0xcc, "X", Program.arch.DebugOutput);
+                Formatter.Write(" to ", Program.arch.DebugOutput);
+                Formatter.Write(addr, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);
+#endif
                 libsupcs.MemoryOperations.Poke((UIntPtr)addr, (byte)0xcc);        // write int3
+            }
             for (int i = 1; i < kind; i++)
+            {
+#if GDB_DEBUG
+                Formatter.Write("gdb_stub: set_bp: write ", Program.arch.DebugOutput);
+                Formatter.Write(0x90, "X", Program.arch.DebugOutput);
+                Formatter.Write(" to ", Program.arch.DebugOutput);
+                Formatter.Write(addr + (ulong)i, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);
+#endif
                 libsupcs.MemoryOperations.Poke((UIntPtr)(addr + (ulong)i), (byte)0x90);    // pad with nop
+            }
         }
 
         private static void unset_bp(ulong addr, int kind)
@@ -350,9 +369,18 @@ namespace tysos.x86_64
 #endif
                 return;
             }
-            
+
             for (int i = 0; i < kind; i++)
+            {
+#if GDB_DEBUG
+                Formatter.Write("gdb_stub: unset_bp: write ", Program.arch.DebugOutput);
+                Formatter.Write(saved_bps[addr][i], "X", Program.arch.DebugOutput);
+                Formatter.Write(" to ", Program.arch.DebugOutput);
+                Formatter.Write(addr + (ulong)i, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);
+#endif
                 libsupcs.MemoryOperations.Poke((UIntPtr)(addr + (ulong)i), saved_bps[addr][i]);
+            }
 
             saved_bps.Remove(addr);
         }

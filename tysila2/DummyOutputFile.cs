@@ -60,14 +60,14 @@ namespace tysila
         public void AlignRodata(int a)
         { }
 
-        public void AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak)
-        { }
+        public ISymbol AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak)
+        { return new DummySym(); }
 
-        public void AddDataSymbol(int offset, string name, bool is_weak)
-        { }
+        public ISymbol AddDataSymbol(int offset, string name, bool is_weak)
+        { return new DummySym(); }
 
-        public void AddRodataSymbol(int offset, string name, bool is_weak)
-        { }
+        public ISymbol AddRodataSymbol(int offset, string name, bool is_weak)
+        { return new DummySym(); }
 
         public void AddTextRelocation(int offset, string name, uint rel_type, long value)
         { }
@@ -133,5 +133,53 @@ namespace tysila
         }
 
         public override ulong Offset { get { return (ulong)offset; } }
+
+        class DummySym : ISymbol
+        {
+
+            public string Name
+            {
+                get
+                {
+                    return "";
+                }
+                set
+                {
+                }
+            }
+
+            public int Offset
+            {
+                get
+                {
+                    return 0;
+                }
+                set
+                {
+                }
+            }
+
+            public int Length
+            {
+                get
+                {
+                    return 0;
+                }
+                set
+                {
+                }
+            }
+
+            public bool Weak
+            {
+                get
+                {
+                    return false;
+                }
+                set
+                {
+                }
+            }
+        }
     }
 }

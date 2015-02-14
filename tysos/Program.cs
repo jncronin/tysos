@@ -128,6 +128,13 @@ namespace tysos
             /* Map in the ELF image of the kernel, so we can load its symbols */
             ulong tysos_vaddr = map_in(mboot.tysos_paddr, mboot.tysos_size, "tysos binary");
 
+            /* Trigger a breakpoint to synchronize with gdb */
+            if (do_debug)
+            {
+                Formatter.WriteLine("Synchronizing with debugger...", arch.BootInfoOutput);
+                System.Diagnostics.Debugger.Break();
+            }
+            
             /* Set up a default environment */
             env = new Environment();
             env.env_vars.Add("OS", "tysos");
@@ -139,14 +146,7 @@ namespace tysos
 #endif  // NO_BOEHM
 
 
-            /* Trigger a breakpoint to synchronize with gdb */
-            if (do_debug)
-            {
-                Formatter.WriteLine("Synchronizing with debugger...", arch.BootInfoOutput);
-                System.Diagnostics.Debugger.Break();
-            }
 
-            while (true) ;
 
             /* Load up the symbol table for tysos */
             if (GetCmdLine("skip_kernel_syms") == false)
@@ -154,7 +154,7 @@ namespace tysos
                 stab = new SymbolTable();
                 Formatter.Write("Loading kernel symbols... ", arch.BootInfoOutput);
                 Formatter.Write("Loading kernel symbols.  Tysos base: ", arch.DebugOutput);
-                Formatter.Write(mboot.tysos_virtaddr, "X", arch.DebugOutput);
+                Formatter.Write(tysos_vaddr, "X", arch.DebugOutput);
                 Formatter.WriteLine(arch.DebugOutput);
 
                 /* Look for a hash file */
@@ -166,9 +166,11 @@ namespace tysos
                     Formatter.Write("Kernel hash table found, mapped to address: ", arch.DebugOutput);
                     Formatter.Write(khash_addr, "X", arch.DebugOutput);
                     Formatter.WriteLine(arch.DebugOutput);
+                    throw new NotImplementedException();
                 }
 
-                ElfReader.LoadSymbols(stab, tysos_vaddr, mboot.tysos_virtaddr, khash_addr);
+                ElfReader.LoadSymbols(stab, mboot);
+                //ElfReader.LoadSymbols(stab, tysos_vaddr, mboot.tysos_virtaddr, khash_addr);
                 Formatter.WriteLine("done", arch.BootInfoOutput);
 
                 /* Test symbol table */
@@ -480,6 +482,8 @@ namespace tysos
 
         internal static Multiboot.Module find_module(Multiboot.Module[] modules, string name)
         {
+            if (modules == null)
+                throw new Exception("find_module: 'modules' is null");
             foreach (Multiboot.Module module in modules)
             {
                 if (module.name == name)

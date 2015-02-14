@@ -36,6 +36,7 @@ namespace tysos
 
         internal Dictionary<string, ulong> sym_to_offset;
         internal tysos.Collections.SortedList<ulong, string> offset_to_sym;
+        internal Dictionary<string, ulong> sym_to_length;
 
         internal List<ulong> static_fields_addresses = new List<ulong>();
         internal List<ulong> static_fields_lengths = new List<ulong>();
@@ -45,6 +46,7 @@ namespace tysos
         {
             sym_to_offset = new Dictionary<string, ulong>(0x20000, new Program.MyGenericEqualityComparer<string>());
             offset_to_sym = new Collections.SortedList<ulong, string>(0x20000, new Program.MyComparer<ulong>());
+            sym_to_length = new Dictionary<string, ulong>(0x20000, new Program.MyGenericEqualityComparer<string>());
         }
 
         public void Add(string sym, ulong address)
@@ -57,6 +59,23 @@ namespace tysos
             else
                 sym_to_offset.Add(sym, address);
             if(!offset_to_sym.ContainsKey(address))
+                offset_to_sym.Add(address, sym);
+        }
+
+        public void Add(string sym, ulong address, ulong length)
+        {
+            if (sym_to_offset.ContainsKey(sym))
+            {
+                Formatter.Write("Warning: duplicate symbol: ", Program.arch.DebugOutput);
+                Formatter.WriteLine(sym, Program.arch.DebugOutput);
+            }
+            else
+            {
+                sym_to_offset.Add(sym, address);
+                sym_to_length.Add(sym, length);
+            }
+            
+            if (!offset_to_sym.ContainsKey(address))
                 offset_to_sym.Add(address, sym);
         }
 
