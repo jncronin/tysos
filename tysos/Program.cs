@@ -178,6 +178,16 @@ namespace tysos
                 Formatter.Write("Testing symbol table, address of gcmalloc: ", arch.DebugOutput);
                 Formatter.Write(gcmalloc_addr, "X", arch.DebugOutput);
                 Formatter.WriteLine(arch.DebugOutput);
+
+                /* Test current method getting */
+                libsupcs.TysosMethod cur_meth = GetCurrentMethod();
+                if (cur_meth == null)
+                    Formatter.WriteLine("GetCurrentMethod() returned null", arch.DebugOutput);
+                else
+                {
+                    Formatter.Write("GetCurrentMethod(): ", arch.DebugOutput);
+                    Formatter.WriteLine(cur_meth.Name, arch.DebugOutput);
+                }
             }
 
             /* Test the garbage collector */
@@ -319,6 +329,27 @@ namespace tysos
             kernel_gc.startup_thread.priority = 10;
             cur_cpu_data.CurrentScheduler.Reschedule(kernel_gc.startup_thread);
             kernel_gc.started = true;*/
+        }
+
+        static unsafe libsupcs.TysosMethod GetCurrentMethod()
+        {
+            ulong ret_address = (ulong)libsupcs.OtherOperations.GetReturnAddress();
+            if (Program.stab == null)
+                return null;
+
+            ulong offset;
+            string sym = Program.stab.GetSymbolAndOffset(ret_address, out offset);
+            ulong len = Program.stab.GetLength(sym);
+            if(len != 0)
+            {
+                if (offset >= len)
+                    return null;
+            }
+
+            ulong meth_addr = Program.stab.GetAddress(sym);
+            ulong mi_addr = meth_addr - (ulong)sizeof(void*);
+
+            return libsupcs.TysosType.ReinterpretAsMethodInfo(*(void**)mi_addr);
         }
 
         private static libtysila.Metadata.TypeDefRow[] test_dynamic()

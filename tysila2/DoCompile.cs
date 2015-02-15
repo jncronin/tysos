@@ -156,7 +156,7 @@ namespace tysila
                         if (dcf != null)
                             dcf.AssembleMethodInfoFeedback(mtc.Value);
 
-                        ass.AssembleMethodInfo(mtc.Value, w, false);
+                        ass.AssembleMethodInfo(mtc.Value, w, true);
                     }
                 }
             }

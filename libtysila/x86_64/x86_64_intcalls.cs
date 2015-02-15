@@ -41,6 +41,7 @@ namespace libtysila
             int_calls["_ZX12IoOperationsM_0_7PortOut_Rv_P2th"] = PortOutb;
             int_calls["_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5Break_Rv_P0"] = Break;
             int_calls["_ZW20System#2EDiagnostics8DebuggerM_0_5Break_Rv_P0"] = Break;
+            int_calls["_ZX15OtherOperationsM_0_16GetReturnAddress_RPv_P0"] = GetReturnAddress;
 
             if(has_sse41)
                 int_calls["_ZW6System4MathM_0_5Round_Rd_P1d"] = Math_Round;
@@ -211,6 +212,20 @@ namespace libtysila
             libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_ret, ass);
 
             ((x86_64_Assembler)ass).ChooseInstruction(x86_64.x86_64_asm.opcode.ROUNDSD, il.il.tybel, loc_ret, loc_arg, new libasm.const_location { c = 0 });
+
+            il.stack_after.Push(p_ret);
+        }
+
+        static void GetReturnAddress(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            Signature.Param p_ret = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = new Signature.BaseType(BaseType_Type.Void)}, ass);
+            libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_ret, ass);
+
+            int ptr_size = ass.GetSizeOfPointer();
+            ass.Assign(state, il.stack_vars_before, loc_ret,
+                new libasm.hardware_contentsof { base_loc = x86_64_Assembler.Rbp, const_offset = ptr_size, size = ptr_size },
+                CliType.native_int, il.il.tybel);
 
             il.stack_after.Push(p_ret);
         }

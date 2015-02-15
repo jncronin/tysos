@@ -32,6 +32,10 @@ namespace libtysila.tybel
             public int Offset;
         }
 
+        public class CilBlock : DebugNode
+        {
+        }
+
         public static void Assemble(List<Node> instrs, List<byte> code, List<libasm.ExportedSymbol> syms, List<libasm.RelocationBlock> relocs,
             Assembler ass, Assembler.MethodAttributes attrs, List<DebugNode> debug)
         {

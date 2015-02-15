@@ -914,7 +914,7 @@ namespace libtysila
             StructureLayout eh_list_layout, ref int eh_list_offset, Assembler ass, Layout l, bool do_eh_clauses, bool do_meth_address)
         {
             bool is_instantiable = false;
-            if(do_eh_clauses)
+            if(do_eh_clauses || do_meth_address)
                 is_instantiable = IsInstantiable(mtc, ass);
             Layout mi_l = ass.GetTysosMethodLayout();
             Layout eh_l = ass.GetEHClausesLayout();

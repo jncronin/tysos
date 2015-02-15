@@ -331,7 +331,7 @@ namespace libtysila.tybel
 
         public override IEnumerable<libasm.OutputBlock> Assemble(Assembler ass, Assembler.MethodAttributes attrs)
         {
-            return new libasm.OutputBlock[] { new tybel.Tybel.DebugNode { Code = Node } };
+            return new libasm.OutputBlock[] { new tybel.Tybel.CilBlock { Code = Node } };
         }
 
         public override string ToString()

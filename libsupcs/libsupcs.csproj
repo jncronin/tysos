@@ -70,10 +70,14 @@
     <Compile Include="TysosType.cs" />
     <Compile Include="Unwinder.cs" />
     <Compile Include="x86_64_cpu.cs" />
+    <Compile Include="x86_64_invoke.cs" />
     <Compile Include="x86_64_Unwinder.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="x86_64_Invoke.asm" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

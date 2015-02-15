@@ -71,7 +71,7 @@ namespace tydb
                 libtysila.Layout fi_l = Program.arch.ass.GetTysosFieldLayout();
                 string full_name = get_type_fullname(ti_address);
 
-                string extends_name = get_type_fullname(mem.get_mem(ti_address + (ulong)ti_l.InstanceFieldOffsets["tysos.TysosType Extends"]));
+                string extends_name = get_type_fullname(mem.get_mem(ti_address + (ulong)ti_l.InstanceFieldOffsets["libsupcs.TysosType Extends"]));
                 if (((extends_name == "[mscorlib]System.ValueType") && (full_name != "[mscorlib]System.Enum")) ||
                     (extends_name == "[mscorlib]System.EnumType"))
                     obj.is_vt = true;

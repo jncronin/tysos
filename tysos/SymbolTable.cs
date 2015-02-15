@@ -100,6 +100,21 @@ namespace tysos
                 return 0;
         }
 
+        public ulong GetLength(string sym)
+        {
+            /*foreach (SymbolProvider sp in symbol_providers)
+            {
+                ulong ret = sp.GetAddress(sym);
+                if (ret != 0)
+                    return ret;
+            }*/
+
+            if (sym_to_length.ContainsKey(sym))
+                return sym_to_length[sym];
+            else
+                return 0;
+        }
+
         public string GetSymbol(ulong address)
         {
             foreach (SymbolProvider sp in symbol_providers)

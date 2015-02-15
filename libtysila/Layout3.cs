@@ -1016,7 +1016,16 @@ namespace libtysila
             if (mtc.meth.IsInternalCall)
                 return true;
 
-            try
+            if (mtc.meth.Body == null || mtc.meth.Body.Body == null || mtc.meth.Body.Body.Length == 0)
+                return false;
+            if (mtc.tsig is Signature.BoxedType && mtc.meth.IsStatic)
+                return false;
+
+            if (mtc.tsig.IsInstantiable == false)
+                return false;
+            return mtc.msig.IsInstantiable;
+
+            /*try
             {
                 if(assembler.AssembleMethod(mtc, true) != null)
                     return true;
@@ -1025,7 +1034,7 @@ namespace libtysila
             catch (Exception)
             {
                 return false;
-            }
+            }*/
         }
     }
 

@@ -24,6 +24,25 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
+namespace tysila
+{
+    class Program
+    {
+        public static List<string> search_dirs = new List<string> { "", ".", Path.GetDirectoryName(System.Reflection.Assembly.GetAssembly(typeof(Program)).Location), Program.DirectoryDelimiter };
+
+        public static string DirectoryDelimiter
+        {
+            get
+            {
+                if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    return "/";
+                else
+                    return "\\";
+            }
+        }
+    }
+}
+
 namespace tydb
 {
     partial class Program
@@ -46,7 +65,6 @@ namespace tydb
         static List<string> symbol_filenames = new List<string>();
         internal static Dictionary<string, ulong> sym_to_addr = new Dictionary<string, ulong>();
         internal static SortedList<ulong, string> addr_to_sym = new SortedList<ulong, string>();
-        internal static List<string> lib_dirs = new List<string>();
 
         /* The stream we use to communicate with the target */
         internal static Stream remote;
@@ -424,7 +442,7 @@ namespace tydb
                     }
                     else
                         ldir = args[i].Substring(2);
-                    lib_dirs.Add(ldir);
+                    tysila.Program.search_dirs.Add(ldir);
                 }
 
                 i++;

@@ -137,6 +137,10 @@ namespace libsupcs
         [ReinterpretAsMethod]
         public static unsafe extern TysosType ReinterpretAsType(void* obj);
 
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static unsafe extern TysosMethod ReinterpretAsMethodInfo(void* obj);
+
         public virtual int GetClassSize() { return ClassSize; }
         
         public override System.Reflection.Assembly Assembly

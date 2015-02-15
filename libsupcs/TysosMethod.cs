@@ -76,6 +76,10 @@ namespace libsupcs
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         static unsafe extern object InternalInvoke(IntPtr meth, int param_count, void* parameters);
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
+        [MethodReferenceAlias("__invoke")]
+        static extern object InternalInvoke(IntPtr meth, Object[] parameters);
+
         public override System.Reflection.CallingConventions CallingConvention
         {
             get
@@ -167,8 +171,10 @@ namespace libsupcs
 
             unsafe
             {
-                return InternalInvoke(MethodAddress, p_length, (p == null) ? null : MemoryOperations.GetInternalArray(p));
+                //return InternalInvoke(MethodAddress, p_length, (p == null) ? null : MemoryOperations.GetInternalArray(p));
             }
+
+            return InternalInvoke(MethodAddress, p);
         }
 
         public override RuntimeMethodHandle MethodHandle

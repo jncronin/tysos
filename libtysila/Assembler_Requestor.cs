@@ -133,6 +133,10 @@ namespace libtysila
 
             public override void RequestMethod(Assembler.MethodToCompile mtc)
             {
+                if(mtc.tsig is Signature.BoxedType && mtc.meth.Name == ".cctor")
+                {
+                    System.Diagnostics.Debugger.Break();
+                }
 #if DEBUG
                 if (mtc.tsig is Signature.GenericType)
                 {

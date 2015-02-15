@@ -388,7 +388,10 @@ namespace libsupcs
         public extern static System.UIntPtr Mul(System.UIntPtr a, System.UIntPtr b);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public extern static System.IntPtr Mul(System.IntPtr a, System.IntPtr b);        
+        public extern static System.IntPtr Mul(System.IntPtr a, System.IntPtr b);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern void* GetReturnAddress();
     }
 
     public class ArrayOperations

@@ -60,7 +60,7 @@ namespace tydb
             disasm = new tydisasm.x86_64.x86_64_disasm();
 
             // assembler
-            ass = libtysila.Assembler.CreateAssembler(libtysila.Assembler.ParseArchitectureString("x86_64s-elf64-tysos"), null, null, null);
+            ass = libtysila.Assembler.CreateAssembler(libtysila.Assembler.ParseArchitectureString("x86_64s-elf64-tysos"), new tysila.FileSystemFileLoader(), null, null);
 
             address_size = 8;
             data_size = 8;

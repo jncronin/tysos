@@ -40,6 +40,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="libsupcs">
+      <HintPath>..\..\libsupcs\bin\Release\libsupcs.dll</HintPath>
+    </Reference>
     <Reference Include="libtysila">
       <HintPath>..\..\libtysila\bin\Release\libtysila.dll</HintPath>
     </Reference>
@@ -55,6 +58,7 @@
     <Compile Include="CciInterface.cs" />
     <Compile Include="comm.cs" />
     <Compile Include="dbgarch.cs" />
+    <Compile Include="FileSystemFileLoader.cs" />
     <Compile Include="mem.cs" />
     <Compile Include="obj.cs" />
     <Compile Include="Program.cs" />

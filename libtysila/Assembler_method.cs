@@ -241,30 +241,62 @@ namespace libtysila
             List<tybel.Tybel.DebugNode> debug = new List<libtysila.tybel.Tybel.DebugNode>();
             tybel.Tybel.Assemble(tybel_instrs, code, syms, relocs, this, attrs, debug);
 
-            // Write code to output stream
-            int text_base = output.GetText().Count;
-            attrs.method_aliases.Add(attrs.mangled_name);
-            bool is_weak = attrs.is_weak_implementation;
-            if (attrs.attrs.ContainsKey("libsupcs.WeakLinkage"))
-                is_weak = true;
-            if (mtc.tsig.IsWeakLinkage)
-                is_weak = true;
-            if (mtc.msig is Signature.GenericMethod)
-                is_weak = true;
-            List<ISymbol> isyms = new List<ISymbol>();
-            foreach (string alias in attrs.method_aliases)
-                isyms.Add(output.AddTextSymbol(text_base, alias, false, true, is_weak));
+            // Generate IL->machine code map
+            Dictionary<int, InstructionHeader> il_map = new Dictionary<int, InstructionHeader>();
+            foreach (tybel.Tybel.DebugNode dn in debug)
+            {
+                if(dn is tybel.Tybel.CilBlock)
+                {
+                    CilNode cn = dn.Code as CilNode;
+                    InstructionHeader ih = new InstructionHeader { ass = this,
+                        il_offset = cn.il.il_offset, compiled_offset = dn.Offset };
+                    il_map[cn.il.il_offset] = ih;
+                }
+            }
 
-            foreach (byte b in code)
-                output.GetText().Add(b);
+            if (output != null)
+            {
+                // Write a pointer to the method info if applicable
+                int mi_ptr_base = output.GetText().Count;
+                for (int i = 0; i < GetSizeOfPointer(); i++)
+                    output.GetText().Add(0);
+                if (Options.EnableRTTI)
+                {
+                    Layout l = Layout.GetTypeInfoLayout(mtc.GetTTC(this), this, false);
+                    string mi_name = Mangler2.MangleMethodInfoSymbol(mtc, this);
+                    if (l.Symbols.ContainsKey(mi_name))
+                    {
+                        int mi_offset = l.Symbols[mi_name];
+                        output.AddTextRelocation(mi_ptr_base, l.typeinfo_object_name,
+                            GetDataToDataRelocType(), mi_offset);
+                    }
+                }
 
-            foreach (libasm.RelocationBlock reloc in relocs)
-                output.AddTextRelocation(text_base + reloc.Offset, reloc.Target, reloc.RelType, reloc.Value);
+                // Write code to output stream
+                int text_base = output.GetText().Count;
+                attrs.method_aliases.Add(attrs.mangled_name);
+                bool is_weak = attrs.is_weak_implementation;
+                if (attrs.attrs.ContainsKey("libsupcs.WeakLinkage"))
+                    is_weak = true;
+                if (mtc.tsig.IsWeakLinkage)
+                    is_weak = true;
+                if (mtc.msig is Signature.GenericMethod)
+                    is_weak = true;
+                List<ISymbol> isyms = new List<ISymbol>();
+                foreach (string alias in attrs.method_aliases)
+                    isyms.Add(output.AddTextSymbol(text_base, alias, false, true, is_weak));
 
-            foreach (ISymbol isym in isyms)
-                isym.Length = output.GetText().Count - text_base;
+                foreach (byte b in code)
+                    output.GetText().Add(b);
 
-            return new AssembleBlockOutput { code = code, compiled_code_length = code.Count, relocs = relocs, debug = debug };
+                foreach (libasm.RelocationBlock reloc in relocs)
+                    output.AddTextRelocation(text_base + reloc.Offset, reloc.Target, reloc.RelType, reloc.Value);
+
+                foreach (ISymbol isym in isyms)
+                    isym.Length = output.GetText().Count - text_base;
+            }
+
+            return new AssembleBlockOutput { code = code, compiled_code_length = code.Count, relocs = relocs, debug = debug, instrs = il_map };
         }
 
         private frontend.cil.CilGraph RewriteInternalCall(MethodToCompile mtc)
