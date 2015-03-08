@@ -111,6 +111,7 @@ struct Multiboot_Module {
     int64_t __vtbl;
     int32_t __object_id;
     int64_t __mutex_lock;
+    uint64_t virt_base_addr;
     uint64_t base_addr;
     uint64_t length;
     uint64_t name;

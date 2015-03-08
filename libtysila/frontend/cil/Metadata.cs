@@ -1808,7 +1808,8 @@ namespace libtysila
 
         public static Metadata LoadAssembly(string mod_name, Assembler ass, string output_name)
         {
-            ass.DebugLine("libtysila.Metadata.LoadAssembly(" + mod_name + ",,)");
+            ass.DebugLine("libtysila.Metadata.LoadAssembly(" + mod_name + "," +
+                ass.Arch.ToString() + "," + (output_name == null ? "null" : output_name));
 
             if (ass.Loader == null)
                 throw new Exception("Assembler.Loader is not defined");
@@ -1819,7 +1820,7 @@ namespace libtysila
                 throw new Exception("Unable to locate referenced assembly: " + mod_name);
 
             File f = new PEFile(flr.FullFilename);
-            f.Parse(flr.Stream);
+            f.Parse(flr.Stream, ass);
             Metadata m = f.GetMetadata(ass);
             m.File = f;
             m.ModuleName = flr.ModuleName;

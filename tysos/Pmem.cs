@@ -290,8 +290,8 @@ namespace tysos
                 Formatter.Write(GetFreeCount(), Program.arch.DebugOutput);
                 Formatter.WriteLine(" pages left", Program.arch.DebugOutput);
 #if MEM_DEBUG
-                Formatter.WriteLine("Stack trace:", Program.arch.DebugOutput);
-                Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
+                //Formatter.WriteLine("Stack trace:", Program.arch.DebugOutput);
+                //Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
 #endif
                 Formatter.WriteLine("Enforcing collection", Program.arch.DebugOutput);
                 gc.gc.ScheduleCollection();

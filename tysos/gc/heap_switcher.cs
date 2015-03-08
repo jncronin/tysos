@@ -32,13 +32,14 @@ using libsupcs;
  * BoehmGC:         The main Boehm GC heap
  * TysosGC:         The Tysos GC heap
  * PerCPU:          The per-CPU rescue heap
+ * GenGC:           The new tysos generational GC
  */
 
 namespace tysos.gc
 {
     class gc
     {
-        internal enum HeapType { Startup, BoehmGC, TysosGC, PerCPU };
+        internal enum HeapType { Startup, BoehmGC, TysosGC, PerCPU, GenGC };
         internal static HeapType Heap;
 
         [AlwaysCompile]
@@ -65,6 +66,13 @@ namespace tysos.gc
 
                 case HeapType.PerCPU:
                     ret = Program.cur_cpu_data.CpuAlloc(size);
+                    break;
+
+                case HeapType.GenGC:
+                    unsafe
+                    {
+                        ret = (ulong)gengc.heap.Alloc((int)size);
+                    }
                     break;
 
                 default:

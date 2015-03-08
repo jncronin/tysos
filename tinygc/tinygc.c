@@ -751,6 +751,7 @@ GC_STATIC void GC_FASTCALL GC_stkroot_tblresize(struct GC_gcdata_s *gcdata,
 #else /* GC_THREADS */
 
 GC_DATASTATIC int GC_allocate_ml = 0;
+GC_DATASTATIC int GC_collect_before_next_malloc = 0;
 
 #endif /* ! GC_THREADS */
 
@@ -3264,12 +3265,23 @@ void unlock(volatile int *l)
 	*l = 0;
 }
 
+GC_API void GC_CALL GC_schedule_collection()
+{
+	GC_collect_before_next_malloc = 1;
+}
+
 GC_API void *GC_CALL GC_malloc(size_t size)
 {
 #ifdef DEBUG_GC_MALLOC
 	printf("GC_malloc called\n");
 #endif
 	void *ret;
+
+	if(GC_collect_before_next_malloc)
+	{
+		GC_gcollect();
+		GC_collect_before_next_malloc = 0;
+	}
 
 	lock(&gc_global_lock);
 	ret = GC_malloc_int(size);

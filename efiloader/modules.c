@@ -30,7 +30,7 @@ EFI_STATUS allocate_any(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS
 EFI_STATUS allocate(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS *paddr_out);
 EFI_STATUS load_file(FILE *f, long flen, EFI_PHYSICAL_ADDRESS paddr);
 
-EFI_STATUS load_module(const char *fname, UINTPTR *vaddr, size_t *length)
+EFI_STATUS load_module(const char *fname, UINTPTR *vaddr, size_t *length, EFI_PHYSICAL_ADDRESS *paddr_out)
 {
 	FILE *fmod = fopen(fname, "r");
 	if(fmod == NULL)
@@ -61,6 +61,8 @@ EFI_STATUS load_module(const char *fname, UINTPTR *vaddr, size_t *length)
 
 	if(length)
 		*length = (size_t)flen;
+	if(paddr_out)
+		*paddr_out = paddr;
 
 	return EFI_SUCCESS;
 }

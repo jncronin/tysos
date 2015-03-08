@@ -1,4 +1,4 @@
-/* Copyright (C) 2008 - 2011 by John Cronin
+﻿/* Copyright (C) 2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,21 +19,26 @@
  * THE SOFTWARE.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.IO;
-
-namespace libtysila
+namespace tysos.gc
 {
-    public interface File
+    unsafe partial class gengc_collect
     {
-        void Parse(Stream file, Assembler ass);
-        Metadata GetMetadata(Assembler ass);
-        long ResolveRVA(UIntPtr RVA);
-        UInt32 GetStartToken();
-        void GetDataAtRVA(byte[] buf, UIntPtr RVA, UIntPtr length);
-        void CloseFile();
-        string GetFileName();
+        void DoCollection()
+        {
+            /* Run a collection.  Process is:
+             * 
+             * 1)       Whiten all objects (all chunks/small objects that are not root blocks)
+             * 2)       Grey those listed in a root block
+             * 3a)      Set blackened_count to 0
+             * 3b)      Iterate though all blocks.  If a grey is encountered:
+             * 3b.1)        Iterate through the object on native int boundaries
+             * 3b.2)        Grey all white objects it points to
+             * 3b.3)        Blacken the object
+             * 3b.4)        blackened_count++
+             * 3c)      If blackened_count > 0 loop to 3a
+             * 4)       Iterate through again, reclaiming white blocks to be free
+             */
+
+        }
     }
 }

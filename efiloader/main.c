@@ -36,7 +36,7 @@ EFI_STATUS allocate_fixed(UINTPTR base, UINTPTR length, EFI_PHYSICAL_ADDRESS src
 EFI_STATUS allocate_any(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS src);
 EFI_STATUS allocate(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS *paddr_out);
 EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(void *, void *, size_t), off_t (*fseek_func)(void *, off_t, int));
-EFI_STATUS load_module(const char *fname, UINTPTR *addr, size_t *length);
+EFI_STATUS load_module(const char *fname, UINTPTR *addr, size_t *length, EFI_PHYSICAL_ADDRESS *paddr);
 EFI_STATUS build_page_tables(EFI_PHYSICAL_ADDRESS *pml4t_out);
 EFI_STATUS kif_init(EFI_PHYSICAL_ADDRESS p_kif, EFI_PHYSICAL_ADDRESS len, struct Multiboot_Header **mbheader);
 void kCreateString(struct System_String **obj, const char *s);
@@ -316,10 +316,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	while((mod = cfg_iterate_modules()))
 	{
 		UINTPTR mod_addr, mod_len;
-		load_module(mod->path, &mod_addr, &mod_len);
+		load_module(mod->path, &mod_addr, &mod_len, (EFI_PHYSICAL_ADDRESS *)&mod_ia[cur_mod_idx]->base_addr);
 		mod_ia[cur_mod_idx] = (struct Multiboot_Module *)kmalloc(sizeof(struct Multiboot_Module));
 		Init_Multiboot_Module(mod_ia[cur_mod_idx]);
-		mod_ia[cur_mod_idx]->base_addr = mod_addr;
+		mod_ia[cur_mod_idx]->virt_base_addr = mod_addr;
 		mod_ia[cur_mod_idx]->length = mod_len;
 
 		kCreateString((struct System_String **)&(mod_ia[cur_mod_idx]->name), mod->name);

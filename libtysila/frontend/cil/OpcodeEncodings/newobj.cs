@@ -262,6 +262,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             Assembler.MethodAttributes attrs, int str_ctor_idx, libasm.hardware_location[] loc_params, libasm.hardware_location loc_strlength)
         {
             libasm.hardware_location t2 = ass.GetTemporary2(state);
+            libasm.hardware_location t3 = ass.GetTemporary3(state);
             Stack used_locs = il.stack_vars_before.Clone();
             used_locs.MarkUsed(ass.GetTemporary(state)); used_locs.MarkUsed(t2);
 
@@ -290,8 +291,9 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     ass.Assign(state, used_locs, t2, loc_params[1], Assembler.CliType.native_int, il.il.tybel);
                     ass.Assign(state, used_locs, loc_params[1], new libasm.hardware_contentsof { base_loc = t2, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
                     ass.Assign(state, used_locs, t2, new libasm.hardware_contentsof { base_loc = t2, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length), size = 4 }, Assembler.CliType.int32, il.il.tybel);
-                    ass.LoadAddress(state, used_locs, loc_params[0], data_ptr, il.il.tybel);
-                    ass.MemCpy(state, used_locs, loc_params[0], loc_params[1], t2, il.il.tybel);
+                    ass.LoadAddress(state, used_locs, t3, data_ptr, il.il.tybel);
+                    used_locs.MarkUsed(t3);
+                    ass.MemCpy(state, used_locs, t3, loc_params[1], t2, il.il.tybel);
                     return;
 
                 case 3:

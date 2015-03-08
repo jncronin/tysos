@@ -108,6 +108,8 @@
     <Compile Include="Event.cs" />
     <Compile Include="gc\boehm.cs" />
     <Compile Include="gc\gc.cs" />
+    <Compile Include="gc\gengc.cs" />
+    <Compile Include="gc\gengc_tree.cs" />
     <Compile Include="gc\heap.cs" />
     <Compile Include="gc\heap_small_area.cs" />
     <Compile Include="gc\heap_switcher.cs" />

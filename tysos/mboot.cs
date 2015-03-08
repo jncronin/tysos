@@ -77,6 +77,7 @@ namespace Multiboot
     [libsupcs.OutputCHeader]
     public class Module
     {
+        public ulong virt_base_addr;
         public ulong base_addr;
         public ulong length;
         public String name;

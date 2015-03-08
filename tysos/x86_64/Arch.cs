@@ -307,11 +307,35 @@ namespace tysos.x86_64
             PageFault.ist1_offset = (ulong)(((libsupcs.TysosField)typeof(tysos.x86_64.Tss.Tss_struct).GetField("ist1")).Offset);
             PageFault.ist_stack = pfault_ists;
 
+            /* Test the gengc */
+            Formatter.WriteLine("x86_64: testing gengc", Program.arch.DebugOutput);
+            gc.gengc.heap = new gc.gengc();
+            Formatter.WriteLine("gengc object created", Program.arch.DebugOutput);
+            unsafe
+            {
+                gc.gengc.heap.Init((void*)heap_small_start, (void*)heap_long_end);
+            }
+            Formatter.WriteLine("heap initialized", Program.arch.DebugOutput);
+            int[] test_array = new int[] { 8, 8, 8, 8, 8, 8, 8 };
+            Formatter.WriteLine("test array created", Program.arch.DebugOutput);
+            gc.gc.Heap = gc.gc.HeapType.GenGC;
+            Formatter.WriteLine("heap set to gengc", Program.arch.DebugOutput);
+            for (int i = 0; i < test_array.Length; i++)
+            {
+                Formatter.Write((ulong)i, Program.arch.DebugOutput);
+                Formatter.Write(": size ", Program.arch.DebugOutput);
+                Formatter.Write((ulong)test_array[i], Program.arch.DebugOutput);
+                Formatter.Write(" returns ", Program.arch.DebugOutput);
+                ulong addr = gc.gc.Alloc((ulong)test_array[i]);
+                Formatter.Write(addr, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);
+            }
+
             // Now point the heap to its proper location
             //ulong heap_start = 0xFFFF800000000000;
             //ulong heap_len = 0xFFFFFF8000000000 - heap_start;
             //gc.heap.Init(heap_start, heap_len);
-            Formatter.Write("x86_64: setting heap to final location: ", Program.arch.DebugOutput);
+            /*Formatter.Write("x86_64: setting heap to final location: ", Program.arch.DebugOutput);
             Formatter.Write(heap_small_start, "X", Program.arch.DebugOutput);
             Formatter.Write(" - ", Program.arch.DebugOutput);
             Formatter.Write(heap_long_end, "X", Program.arch.DebugOutput);
@@ -332,7 +356,7 @@ namespace tysos.x86_64
 
             Formatter.WriteLine("done", Program.arch.DebugOutput);
             Formatter.Write("x86_64: new heap of type ", Program.arch.DebugOutput);
-            Formatter.WriteLine(gc.gc.Heap.ToString(), Program.arch.DebugOutput);
+            Formatter.WriteLine(gc.gc.Heap.ToString(), Program.arch.DebugOutput); */
 
             /* Initialize firmware */
             switch(bios)

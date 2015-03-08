@@ -296,22 +296,38 @@ namespace libtysila
 
         #region File Members
 
-        static public bool IsFileType(System.IO.Stream file)
+        static public bool IsFileType(System.IO.Stream file, Assembler ass)
         {
             file.Seek(0, SeekOrigin.Begin);
             if (file.ReadByte() != 0x4d)
+            {
+                ass.DebugLine("IsFileType: first byte not 0x4d");
                 return false;
+            }
             file.Seek(0x3c, SeekOrigin.Begin);
             UInt32 lfanew = Read32(file);
             file.Seek(lfanew, SeekOrigin.Begin);
+            ass.DebugLine("IsFileType: lfanew: " + lfanew.ToString());
             if (file.ReadByte() != 'P')
+            {
+                ass.DebugLine("IsFileType: P not found");
                 return false;
+            }
             if (file.ReadByte() != 'E')
+            {
+                ass.DebugLine("IsFileType: E not found");
                 return false;
+            }
             if (file.ReadByte() != '\0')
+            {
+                ass.DebugLine("IsFileType: NUL not found");
                 return false;
+            }
             if (file.ReadByte() != '\0')
+            {
+                ass.DebugLine("IsFileType: NUL not found");
                 return false;
+            }
             
             return true;
         }
@@ -368,9 +384,9 @@ namespace libtysila
             fname = filename;
         }
 
-        public void Parse(System.IO.Stream file)
+        public void Parse(System.IO.Stream file, Assembler ass)
         {
-            if (!IsFileType(file))
+            if (!IsFileType(file, ass))
                 throw new Exception("Incorrect file type");
 
             file.Seek(0x3c, SeekOrigin.Begin);
@@ -407,10 +423,13 @@ namespace libtysila
                 file.Read(str, 0, 8);
                 str[8] = (byte)'\0';
                 char[] w_str = new char[9];
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
+                {
                     w_str[j] = (char)str[j];
+                }
                 pefh.Sections[i].Name = new String(w_str);
                 pefh.Sections[i].Name = pefh.Sections[i].Name.Remove(pefh.Sections[i].Name.IndexOf("\0"));
+                ass.DebugLine("PEFile.Parse: section name: " + pefh.Sections[i].Name);
 
                 file.Seek(s_start + 8, SeekOrigin.Begin);
                 pefh.Sections[i].VSize = Read32(file);

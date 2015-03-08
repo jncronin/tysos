@@ -229,12 +229,14 @@ namespace tysos
             //CreateKernelThreads();
 
             // Now add the test thread
-            Process test_thread = Process.Create("test_thread", stab.GetAddress("_ZN5tysos5tysos7ProgramM_0_19TestAssemblerThread_Rv_P0"), 0x8000, arch.VirtualRegions, stab, new object[] { });
-            cur_cpu_data.CurrentScheduler.Reschedule(test_thread.startup_thread);
-            test_thread.started = true;
+            //Process test_thread = Process.Create("test_thread", stab.GetAddress("_ZN5tysos5tysos7ProgramM_0_19TestAssemblerThread_Rv_P0"), 0x8000, arch.VirtualRegions, stab, new object[] { });
+            //cur_cpu_data.CurrentScheduler.Reschedule(test_thread.startup_thread);
+            //test_thread.started = true;
 
             // Enable multitasking
-            arch.EnableMultitasking();
+            //arch.EnableMultitasking();
+
+            TestAssemblerThread();
             while (true) ;
 
 
@@ -278,9 +280,9 @@ namespace tysos
         {
             /* First create the mini assembler for jit stubs etc */
             string assembler_arch = "x86_64-jit-tysos";
-            Formatter.Write("Creating mini assembler... ", Program.arch.DebugOutput);
-            libtysila.MiniAssembler mass = libtysila.MiniAssembler.GetMiniAssembler(assembler_arch);
-            Formatter.WriteLine("done", Program.arch.DebugOutput);
+            //Formatter.Write("Creating mini assembler... ", Program.arch.DebugOutput);
+            //libtysila.MiniAssembler mass = libtysila.MiniAssembler.GetMiniAssembler(assembler_arch);
+            //Formatter.WriteLine("done", Program.arch.DebugOutput);
 
             /* Create an x86_64 assembler */
             Formatter.Write("Initialising JIT assembler for " + assembler_arch + "... ", Program.arch.BootInfoOutput);
@@ -525,7 +527,12 @@ namespace tysos
         }
 
         internal static ulong map_in(Multiboot.Module mod)
-        { return map_in(mod.base_addr, mod.length, mod.name); }
+        {
+            if (mod.virt_base_addr != 0)
+                return mod.virt_base_addr;
+            mod.virt_base_addr = map_in(mod.base_addr, mod.length, mod.name);
+            return mod.virt_base_addr;
+        }
 
         internal static ulong map_in(ulong paddr, ulong size, string name)
         { return map_in(paddr, size, name, true, false, false); }

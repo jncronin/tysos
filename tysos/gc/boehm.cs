@@ -40,6 +40,12 @@ namespace tysos.gc
         [CallingConvention("gnu")]
         internal extern static ulong Alloc(ulong size);
 
+        [MethodReferenceAlias("GC_schedule_collection")]
+        internal extern static void GC_gcollect();
+
+        [MethodReferenceAlias("GC_add_roots")]
+        internal extern static unsafe void GC_add_roots(void* a, void* b);
+
         static ulong initial_brk = 0;
         static ulong cur_brk = 0;
         static ulong max_brk = 0;
@@ -110,12 +116,13 @@ namespace tysos.gc
 
         internal static void ScheduleCollection()
         {
-
+            /* TODO: add a schedule task to the scheduler */
+            DoCollection();
         }
 
         internal static void DoCollection()
         {
-
+            GC_gcollect();
         }
 
         internal static void RegisterObject(ulong addr)

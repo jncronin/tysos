@@ -81,7 +81,7 @@ __x86_64_invoke:
 
 .integer
 	; get reference parameter to r10
-	mov r10, [r12 + r11 * 4]
+	mov r10, [r12 + r11 * 8]
 
 	cmp r14, 0
 	je .integer_use_rdi
@@ -128,7 +128,7 @@ __x86_64_invoke:
 
 .integer_unbox
 	; get reference parameter to r10
-	mov r10, [r12 + r11 * 4]
+	mov r10, [r12 + r11 * 8]
 	; unbox it (hardcoded to use m_value offset of 20)
 	mov r10, [r10 + 20]
 
@@ -177,7 +177,7 @@ __x86_64_invoke:
 
 .sse
 	; get reference parameter to r10
-	mov r10, [r12 + r11 * 4]
+	mov r10, [r12 + r11 * 8]
 	; unbox it (hardcoded to use m_value offset of 20)
 	mov r10, [r10 + 20]
 	
@@ -256,7 +256,7 @@ __x86_64_invoke:
 	mov rdx, r10
 
 	; get reference parameter to r10
-	mov r10, [r12 + r11 * 4]
+	mov r10, [r12 + r11 * 8]
 	; load address of unboxed value to rsi (source address)
 	lea rsi, [r10 + 20]
 
@@ -278,7 +278,7 @@ __x86_64_invoke:
 	inc r11
 .looptest
 	cmp r11, [rbp - 8]
-	jl .looptest
+	jl .startloop
 
 	; make the call
 	call rax
