@@ -40,6 +40,7 @@ int CalculateCrc32 (uint8_t *Data, size_t DataSize, uint32_t *CrcOut);
 
 size_t sect_size = 512;
 long image_sects = 0;
+long min_image_sects = 2048;
 PART *first_part = NULL;
 PART *last_part = NULL;
 FILE *output = NULL;
@@ -146,6 +147,25 @@ int parse_opts(int argc, char **argv)
 					"a multiple of 512", sect_size);
 				return -1;
 			}
+			i++;
+		}
+		else if(!strcmp(argv[i], "--minimum-image-size") || !strcmp(argv[i], "-s"))
+		{
+			i++;
+			if(i == argc || argv[i][0] == '-')
+			{
+				fprintf(stderr, "minimum image size not specified\n");
+				return -1;
+			}
+		
+			min_image_sects = atoi(argv[i]);
+
+			if(min_image_sects < 2048)
+			{
+				fprintf(stderr, "minimum image size must be at least 2048 sectors\n");
+				return -1;
+			}
+
 			i++;
 		}
 		else if(!strcmp(argv[i], "--image-size"))
@@ -313,9 +333,10 @@ int parse_opts(int argc, char **argv)
 
 void dump_help(char *fname)
 {
-	printf("Usage: %s -o <output_file> [-h] [--sector-size sect_size] [partition def 0] [part def 1] ... [part def n]\n",
+	printf("Usage: %s -o <output_file> [-h] [--sector-size sect_size] [-s min_image_size] [partition def 0] [part def 1] ... [part def n]\n"
+		"  Partition definition: --part <image_file> --type <type> [--uuid uuid] [--name name]\n"
+		"  Please see the README file for further information\n",
 		fname);
-
 }
 
 int parse_guid(char *str, GUID *guid)
@@ -380,6 +401,13 @@ int check_parts()
 	header_sectors = header_length / sect_size;
 	if(header_length % sect_size)
 		header_sectors++;
+
+	/* The GPT entry array must be a minimum of 16,384 bytes (reports wikipedia
+	 *  and testdisk, but not the UEFI spec)
+	 */
+	if(header_sectors < (int)(16384 / sect_size))
+		header_sectors = (int)(16384 / sect_size);
+
 	cur_sect += header_sectors;
 	first_usable_sector = cur_sect;
 
@@ -433,7 +461,12 @@ int check_parts()
 	needed_file_length = cur_sect + 1 + header_sectors;
 
 	if(image_sects == 0)
-		image_sects = needed_file_length;
+	{
+		if(needed_file_length > min_image_sects)
+			image_sects = needed_file_length;
+		else
+			image_sects = min_image_sects;
+	}
 	else if(image_sects < needed_file_length)
 	{
 		fprintf(stderr, "requested image size (%lu) is too small to hold the partitions\n", image_sects * sect_size);

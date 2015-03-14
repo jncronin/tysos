@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 AC_CONFIG_MACRO_DIR([m4])
 AC_PREREQ([2.68])
-AC_INIT([mkfat], [0.1b])
+AC_INIT([mkfat], [0.1c])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([mkfat.cpp])
 

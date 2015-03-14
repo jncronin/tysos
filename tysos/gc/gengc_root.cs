@@ -26,7 +26,7 @@ namespace tysos.gc
         void AddRoots(byte *start, byte *end)
         {
             if (hdr->roots == null || hdr->roots->size == hdr->roots->capacity)
-                add_root_block();
+                allocate_root_block();
 
             root_header* r = hdr->roots;
             byte** rptr = (byte**)((byte*)r + sizeof(root_header) +
@@ -37,7 +37,7 @@ namespace tysos.gc
             r->size++;
         }
 
-        private void add_root_block()
+        private void allocate_root_block()
         {
             /* Default each root block to store 1024 root definitions
              * Each definition is a start and end pointer, thus size of block
@@ -51,7 +51,8 @@ namespace tysos.gc
                     Program.arch.DebugOutput);
                 libsupcs.OtherOperations.Halt();
             }
-            chk->flags |= 1 << 5;
+            chk->flags &= ~(1 << 4);        // not large block
+            chk->flags |= 1 << 5;           // is root block
 
             root_header* r = (root_header*)((byte*)chk + sizeof(chunk_header));
             r->next = hdr->roots;

@@ -64,6 +64,13 @@ uint64_t __halt_func;
 
 uint64_t mb_adjust;
 
+static inline uint64_t rdmsr(uint32_t msr_id)
+{
+	uint64_t msr_value;
+	asm volatile ("rdmsr" : "=A" (msr_value) : "c" (msr_id));
+	return msr_value;
+}
+
 static inline void outb(uint16_t port, uint8_t val)
 {
 	asm volatile ( "outb %0, %1" : : "a"(val), "Nd"(port) );
@@ -254,6 +261,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 	fclose_func(fobj);
+
+	/* Check for mtrr support (testing rdmsr) */
+	uint64_t mtrr_cap = rdmsr(0xfe);
+	printf("mtrr_cap: %x\n", mtrr_cap);
 
 	/* Allocate identity-mapped space at 0x2000 for the KIF, and an extra page for the new gdt/idt */
 	UINTPTR v_kif = 0x2000;

@@ -33,8 +33,8 @@
  * containing 4 bits per small object denoting:
  *  bits 0-1:   00  - free
  *              01  - white (potential for deletion by GC)
- *              10  - grey (reachable but its internal pointers not scanned yet)
- *              11  - black (reachable and all internal pointers point to grey objects)
+ *              10  - black (reachable and all internal pointers point to grey objects)
+ *              11  - grey (reachable but its internal pointers not scanned yet)
  *  bit 2:      0   - young generation
  *              1   - old generation
  *  bit 3:      reserved
@@ -91,6 +91,7 @@ namespace tysos.gc
             public int total_count;
             public int free_count;
             public sma_header* next;
+            public int* global_free_count;
         }
 
         struct root_header
@@ -344,6 +345,7 @@ namespace tysos.gc
             h->free_count = obj_count;
             h->total_count = obj_count;
             h->next = old_entry;
+            h->global_free_count = get_sm_free_ptr(sm_index);
 
             /* Add our free blocks to the total free count */
             *get_sm_free_ptr(sm_index) += obj_count;
@@ -423,7 +425,8 @@ namespace tysos.gc
             chk->left = hdr->nil;
             chk->right = hdr->nil;
             chk->lock_object = 0;
-            chk->flags = 1 << 4;
+            chk->flags = 1 << 4 | 1;    // large block, white
+            
             chk->red = 0;
 
             RBTreeInsert(hdr, 1, chk);
