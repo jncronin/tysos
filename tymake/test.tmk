@@ -1,18 +1,49 @@
-﻿// Set TARGET if not already set
-TARGET ?= "x86_64";
-YASM ?= "yasm";
+﻿// Say hi
 
-/* Use debug serial port output */
-DEBUG = 1;
-//TYSILAFLAGS = "-fprofile";
-TYSILAFLAGS = "";
+print("--------------------------------\n");
+print("Building tysos\n");
+print("--------------------------------\n");
+print("\n");
+print("Configuration\n");
+print("--------------------------------\n");
 
-ROOT = "../../..";
+// Configuration
+TARGET ?= input("Architecture", [ "x86_64", "x86", "arm" ], "x86_64");
+MAKE_ISO ?= input("Build an ISO image", [ "y", "n" ], "y");
+TYSILAFLAGS ?= input("Extra tysila flags (e.g. -fprofile)", "");
+ROOT ?= input("Path to root tysos directory", "../../..");
 
 function x86_yasm()
 {
+	export YASM = find("nasm", "nasm compatible compiler", NASM);
 	export rulefor "%.o" inputs { "%.asm" } depends { "test.tmk" } {
 		shellcmd("$YASM $YASMFLAGS -o $_RULE_OUTPUT $_RULE_INPUT");
+	}
+}
+
+function find_xorriso()
+{
+	export XORRISO ?= find("xorriso", "xorriso replacement for mkisofs (http://www.gnu.org/software/xorriso)", XORRISO);
+}
+
+function uefi_finds()
+{
+	if(MAKE_ISO == "y")
+	{
+		export EFICC = find("x86_64-w64-mingw32-gcc", "cross compiler for x64 UEFI", EFICC);
+		export EFIAR = find("x86_64-w64-mingw32-ar", "cross archiver for x64 UEFI", EFIAR);
+		export MKFAT = find("mkfat", "mkfat utility (http://www.tysos.org/redmine/projects/tysos/wiki/EFI)", MKFAT);
+		export GZIP = find("gzip", "gzip", GZIP);
+		find_xorriso();
+	}
+}
+
+function grub_finds()
+{
+	if(MAKE_ISO == "y")
+	{
+		export GRUB_MKIMAGE = find("grub-mkimage", "grub mkimage tool", GRUB_MKIMAGE);
+		find_xorriso();
 	}
 }
 
@@ -23,9 +54,9 @@ function tycobj(string name)
 
 if (TARGET == "x86_64")
 {
-	CC = "f:/cygwin64/usr/local/cross/bin/x86_64-elf-gcc.exe";
-	AR = "x86_64-elf-ar";
-	RANLIB = "x86_64-elf-ranlib";
+	XCC = find("x86_64-elf-gcc", "cross compiler for x86_64-elf", XCC);
+	XAR = find("x86_64-elf-ar", "cross archiver for x86_64-elf", XAR);
+	XRANLIB = find("x86_64-elf-ranlib", "cross ranlib for x86_64-elf", XRANLIB);
 	YASMFLAGS = "-felf64";
 	TYSILAARCH = "x86_64s-elf64-tysos";
 	LDFLAGS = "-fno-use-linker-plugin -Ttext 0x40000000 -nostdlib";
@@ -38,7 +69,8 @@ if (TARGET == "x86_64")
 }
 else if (TARGET == "x86")
 {
-	CC = "i586-elf-gcc";
+	XCC = find("i586-elf-gcc", "cross compiler for i586-elf", XCC);
+	XAR = find("i586-elf-gcc", "cross archiver for i586-elf", XAR);
 	YASMFLAGS = "-felf";
 	TYSILAARCH = "i586-elf-tysos";
 	USE_GRUB = 1;
@@ -47,9 +79,27 @@ else if (TARGET == "x86")
 }
 else if (TARGET == "arm")
 {
-	CC = "arm-none-elf-gcc";
+	XCC = find("arm-none-elf-gcc", "cross compiler for arm-none-elf", XCC);
 	TYSILAARCH = "arm-elf-tysos";
 }
+else
+{
+	print("Unknown architecture: " + TARGET + "\n");
+	exit();
+}
+
+if(USE_UEFI)
+{
+	uefi_finds();
+}
+if(USE_GRUB)
+{
+	grub_finds();
+}
+
+print("--------------------------------\n");
+print("Building\n");
+print("--------------------------------\n");
 
 // Rules
 function objfromexe(string exe)
@@ -144,28 +194,29 @@ rulefor "%.obj" inputs { "%.dll" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
 	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
 }
 
+/* Rule for linking the kernel */
 rulefor KERNEL inputs { TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ, LIBASMOBJ, LIBTYSILAOBJ, tycobj("undefined.o"),
 	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA } {
-	shellcmd("$CC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");
+	shellcmd("$XCC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");
 }
 
+/* Rules for C/asm code */
 rulefor "%.o" inputs { "%.c" } depends { "test.tmk" } {
-	shellcmd("$CC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
+	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
 }
 
 rulefor "%.o" inputs { "%.s" } depends { "test.tmk" } {
-	shellcmd("$CC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
+	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
 }
 
+/* Rule for libsupcs library (contains C# and native code) */
 rulefor LIBSUPCSA inputs { LIBSUPCSOBJ, LIBSUPCS_CPU_OBJ } depends { "test.tmk" } {
-	shellcmd("$AR -cru $_RULE_OUTPUT $_RULE_INPUTS");
-	shellcmd("$RANLIB $_RULE_OUTPUT");
+	shellcmd("$XAR -cru $_RULE_OUTPUT $_RULE_INPUTS");
+	shellcmd("$XRANLIB $_RULE_OUTPUT");
 }
 
 /* Rules for EFI applications */
 
-EFICC = "x86_64-w64-mingw32-gcc";
-EFIAR = "x86_64-w64-mingw32-ar";
 EFILIBCDIR = ROOT + "/tload/tloadefi/efilibc";
 ZLIBDIR = ROOT + "/tload/tloadefi/zlib";
 CONFUSEDIR = ROOT + "/tload/tloadefi/confuse-2.7/src";
@@ -224,11 +275,11 @@ if(DEBUG) {
 }
 
 rulefor "%.tgc.o" inputs { "%.c" } depends { "test.tmk" } {
-	shellcmd("$CC -o $_RULE_OUTPUT -I$ROOT/tinygc $CFLAGS -c $_RULE_INPUT");
+	shellcmd("$XCC -o $_RULE_OUTPUT -I$ROOT/tinygc $CFLAGS -c $_RULE_INPUT");
 }
 
 rulefor TINYGCOBJ inputs { TINYGC_SRCS } depends { "test.tmk" } {
-	shellcmd("$CC -Wl,-r $LDFLAGS -o $_RULE_OUTPUT $_RULE_INPUTS");
+	shellcmd("$XCC -Wl,-r $LDFLAGS -o $_RULE_OUTPUT $_RULE_INPUTS");
 }
 
 print("Building for $TARGET\n");
@@ -247,7 +298,6 @@ GRUBCFG = OUTDIR + "/grub.cfg";
 
 PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj") ];
 
-GRUB_MKIMAGE = "grub-mkimage";
 COREIMG = OUTDIR + "/core.img";
 XORRISO = "xorriso";
 CDBOOT = "f:/cygwin64/usr/local/lib/grub/i386-pc/cdboot.img";
@@ -312,13 +362,25 @@ else if(defined(USE_UEFI))
 		}
 
 		// Compress kernel
-		shellcmd("gzip -f $IMGDIR/tysos.bin");
+		shellcmd("$GZIP -f $IMGDIR/tysos.bin");
 
 		cp(EFILOADER, IMGDIR + "/EFI/BOOT/BOOTX64.EFI");
 
-		shellcmd("mkfat -o $ISODIR/efi.img $IMGDIR");
+		shellcmd("$MKFAT -o $ISODIR/efi.img $IMGDIR");
 		shellcmd("$XORRISO -as mkisofs -R -f --efi-boot efi.img -no-emul-boot -o $ISOIMAGE $ISODIR");
 	}
 }
 
-build(ISOIMAGE);
+if(MAKE_ISO == "y")
+{
+	build(ISOIMAGE);
+}
+else
+{
+	build(KERNEL);
+	build(PROCESSES);
+}
+
+
+print("--------------------------------\n");
+print("Done\n");

@@ -115,30 +115,51 @@ namespace tymake
                         return new EvalResult(0);
 
                 case Tokens.EQUALS:
+                case Tokens.NOTEQUAL:
+                    {
+                        int _true = 1;
+                        int _false = 0;
+
+                        if (op == Tokens.NOTEQUAL)
+                        {
+                            _true = 0;
+                            _false = 1;
+                        }
+
+                        ea = a.Evaluate(s);
+                        eb = b.Evaluate(s);
+
+                        if (ea.Type == EvalResult.ResultType.String && eb.Type == EvalResult.ResultType.String)
+                        {
+                            if (ea.strval == null)
+                            {
+                                if (eb.strval == null)
+                                    return new EvalResult(_true);
+                                else
+                                    return new EvalResult(_false);
+                            }
+                            if (ea.strval.Equals(eb.strval))
+                                return new EvalResult(_true);
+                            else
+                                return new EvalResult(_false);
+                        }
+                        else
+                        {
+                            if (ea.AsInt == eb.AsInt)
+                                return new EvalResult(_true);
+                            else
+                                return new EvalResult(_false);
+                        }
+                    }
+
+                case Tokens.LT:
                     ea = a.Evaluate(s);
                     eb = b.Evaluate(s);
 
-                    if (ea.Type == EvalResult.ResultType.String && eb.Type == EvalResult.ResultType.String)
-                    {
-                        if (ea.strval == null)
-                        {
-                            if (eb.strval == null)
-                                return new EvalResult(1);
-                            else
-                                return new EvalResult(0);
-                        }
-                        if (ea.strval.Equals(eb.strval))
-                            return new EvalResult(1);
-                        else
-                            return new EvalResult(0);
-                    }
+                    if (ea.AsInt < eb.AsInt)
+                        return new EvalResult(1);
                     else
-                    {
-                        if (ea.AsInt == eb.AsInt)
-                            return new EvalResult(1);
-                        else
-                            return new EvalResult(0);
-                    }
+                        return new EvalResult(0);
 
             }
                     
@@ -242,6 +263,19 @@ namespace tymake
                         return "\"" + strval + "\"";
                     case ResultType.Void:
                         return "{void}";
+                    case ResultType.Array:
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.Append("[ ");
+                            for(int i = 0; i < arrval.Count; i++)
+                            {
+                                if (i != 0)
+                                    sb.Append(", ");
+                                sb.Append(arrval[i].ToString());
+                            }
+                            sb.Append(" ]");
+                            return sb.ToString();
+                        }
                     default:
                         throw new NotSupportedException();
                 }
@@ -314,8 +348,32 @@ namespace tymake
         public override EvalResult Evaluate(MakeState s)
         {
             if (s.IsDefined(val) == false)
-                throw new Exception("Label " + val + " is not defined");
+                return new EvalResult();
             return s.GetDefine(val);
+        }
+    }
+
+    internal class LabelIndexedExpression : Expression
+    {
+        public Expression label;
+        public Expression index;
+
+        public override EvalResult Evaluate(MakeState s)
+        {
+            EvalResult elabel = label.Evaluate(s);
+            EvalResult eindex = index.Evaluate(s);
+
+            switch(elabel.Type)
+            {
+                case EvalResult.ResultType.String:
+                    return new EvalResult(elabel.strval[eindex.AsInt]);
+                case EvalResult.ResultType.Array:
+                    return elabel.arrval[eindex.AsInt];
+                case EvalResult.ResultType.Object:
+                    return elabel.objval[eindex.strval];
+                default:
+                    throw new Exception("indexing cannot be applied to object of type: " + elabel.Type.ToString());
+            }
         }
     }
 
@@ -362,6 +420,17 @@ namespace tymake
 
                 switch (elabel.Type)
                 {
+                    case EvalResult.ResultType.String:
+                        if(m == "5splitss")
+                        {
+                            string[] split = elabel.strval.Split(new string[] { f.args[0].Evaluate(s).strval }, StringSplitOptions.None);
+                            EvalResult[] ret = new EvalResult[split.Length];
+                            for (int i = 0; i < split.Length; i++)
+                                ret[i] = new EvalResult(split[i]);
+                            return new EvalResult(ret);
+                        }
+                        break;
+
                     case EvalResult.ResultType.Array:
                         if (m == "3addai")
                         {

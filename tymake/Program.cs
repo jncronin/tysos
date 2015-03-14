@@ -29,11 +29,26 @@ namespace tymake
             new ArrToStrFunction().Execute(s);
             new ExistsFunction().Execute(s);
             new RmFunction().Execute(s);
+            new InputFunction().Execute(s);
+            new ExitFunction().Execute(s);
 
             /* Add in current environment variables */
             System.Collections.IDictionary env_vars = Environment.GetEnvironmentVariables();
             foreach (System.Collections.DictionaryEntry env_var in env_vars)
-                s.SetDefine(env_var.Key.ToString(), new Expression.EvalResult(env_var.Value.ToString()));
+                s.SetDefine(env_var.Key.ToString().ToUpper(), new Expression.EvalResult(env_var.Value.ToString()));
+
+            if(System.Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                s.SetDefine("EXEC_EXTENSIONS", new Expression.EvalResult(new Expression.EvalResult[] { new Expression.EvalResult("") }));
+                s.SetDefine("PATH_SPLIT", new Expression.EvalResult(":"));
+                s.SetDefine("DIR_SPLIT", new Expression.EvalResult("/"));
+            }
+            else
+            {
+                s.SetDefine("EXEC_EXTENSIONS", new Expression.EvalResult(new Expression.EvalResult[] { new Expression.EvalResult(".exe") }));
+                s.SetDefine("PATH_SPLIT", new Expression.EvalResult(";"));
+                s.SetDefine("DIR_SPLIT", new Expression.EvalResult("\\"));
+            }
 
             /* Include the standard library */
             System.IO.FileInfo exec_fi = new System.IO.FileInfo(typeof(Program).Module.FullyQualifiedName);
@@ -41,8 +56,14 @@ namespace tymake
             foreach(System.IO.FileInfo stdlib_fi in stdlib_fis)
                 ExecuteFile(stdlib_fi.FullName, s);
 
-            /* Execute top-level statements */
-            ExecuteFile("test.tmk", s);
+            /* Determine what to run - either interpret the arguments as files or as commands */
+            foreach(string arg in args)
+            {
+                if (Statement.FileDirExists(arg))
+                    ExecuteFile(arg, s);
+                else
+                    ExecuteString(arg, s);
+            }
         }
 
         internal static Expression.EvalResult ExecuteFile(string name, MakeState s)
@@ -53,6 +74,46 @@ namespace tymake
             if (res == false)
                 throw new Exception("Parse error");
             return p.output.Execute(s);
+        }
+
+        internal static Expression.EvalResult ExecuteString(string str, MakeState s)
+        {
+            System.IO.MemoryStream f = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(str));
+            tymakeParse.Parser p = new tymakeParse.Parser(new tymakeParse.Scanner(f));
+            bool res = p.Parse();
+            if (res == false)
+                throw new Exception("Parse error");
+            return p.output.Execute(s);
+        }
+    }
+
+    class ExitFunction : FunctionStatement
+    {
+        public ExitFunction()
+        {
+            name = "exit";
+            args = new List<FunctionArg> { new FunctionArg { name = "ec", argtype = Expression.EvalResult.ResultType.Int } };
+        }
+
+        public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
+        {
+            System.Environment.Exit(passed_args[0].AsInt);
+            return new Expression.EvalResult();
+        }
+    }
+
+    class InputFunction : FunctionStatement
+    {
+        public InputFunction()
+        {
+            name = "input";
+            args = new List<FunctionArg>();
+        }
+
+        public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
+        {
+            string ret = Console.ReadLine();
+            return new Expression.EvalResult(ret);
         }
     }
 

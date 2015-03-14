@@ -13,11 +13,29 @@ namespace tymake
 
         public static bool FileDirExists(string name)
         {
-            System.IO.FileInfo fi = new System.IO.FileInfo(name);
-            if (fi.Exists)
-                return true;
-            System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(name);
-            return di.Exists;
+            try
+            {
+                System.IO.FileInfo fi = new System.IO.FileInfo(name);
+                if (fi.Exists)
+                    return true;
+                System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(name);
+                return di.Exists;
+            } 
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        internal static void ExportDef(string tag, MakeState s)
+        {
+            Expression.EvalResult e = s.GetDefine(tag);
+            MakeState cur_s = s.parent;
+            while (cur_s != null)
+            {
+                cur_s.SetDefine(tag, e);
+                cur_s = cur_s.parent;
+            }
         }
     }
 
@@ -36,6 +54,8 @@ namespace tymake
             Expression.EvalResult e = new Expression.EvalResult(val);
 
             s.SetDefine(tok_name, e, assignop);
+            if (export)
+                ExportDef(tok_name, s);
             return new Expression.EvalResult(0);
         }
     }
@@ -50,6 +70,8 @@ namespace tymake
             LabelExpression le = new LabelExpression { val = val };
             Expression.EvalResult e = le.Evaluate(s);
             s.SetDefine(tok_name, e, assignop);
+            if (export)
+                ExportDef(tok_name, s);
             return new Expression.EvalResult(0);
         }
     }
@@ -63,6 +85,8 @@ namespace tymake
         {
             Expression.EvalResult e = val.Evaluate(s);
             s.SetDefine(tok_name, e);
+            if (export)
+                ExportDef(tok_name, s);
             return new Expression.EvalResult(0);
         }
     }
@@ -76,6 +100,8 @@ namespace tymake
         {
             Expression.EvalResult e = new Expression.EvalResult(val);
             s.SetDefine(tok_name, e, assignop);
+            if (export)
+                ExportDef(tok_name, s);
             return new Expression.EvalResult(0);
         }
     }
@@ -121,7 +147,30 @@ namespace tymake
 
         public override Expression.EvalResult Execute(MakeState s)
         {
-            throw new NotImplementedException();
+            // run initializer
+            Expression.EvalResult ret = init.Execute(s);
+            if (ret.AsInt != 0)
+                return ret;
+
+            while(true)
+            {
+                // check condition
+                if (test.Evaluate(s).AsInt == 0)
+                    break;
+
+                // exec code
+                ret = code.Execute(s);
+                if (ret.AsInt != 0)
+                    return ret;
+                if(s.returns != null)
+                {
+                    return new Expression.EvalResult(0);
+                }
+
+                // run incrementer
+                incr.Execute(s);
+            }
+            return new Expression.EvalResult(0);
         }
     }
 
@@ -143,6 +192,11 @@ namespace tymake
                 Expression.EvalResult ret = code.Execute(cur_s);
                 if (ret.AsInt != 0)
                     return ret;
+                if (cur_s.returns != null)
+                {
+                    s.returns = cur_s.returns;
+                    return new Expression.EvalResult(0);
+                }
             }
             return new Expression.EvalResult(0);
         }
@@ -518,12 +572,20 @@ namespace tymake
             cur_path += "f:/cygwin64/bin";
             p.StartInfo.EnvironmentVariables[path] = cur_path;*/
 
-            Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";f:/cygwin64/bin;F:/cygwin64/usr/local/cross/bin;f:/cygwin64/usr/local/bin");
+            Environment.SetEnvironmentVariable("PATH", s.GetDefine("PATH").strval);
 
             Console.WriteLine("shellcmd: " + p.StartInfo.FileName + " " + p.StartInfo.Arguments);
 
-            if (p.Start() == false)
-                throw new Exception("unable to execute " + fname);
+            try
+            {
+                if (p.Start() == false)
+                    throw new Exception("unable to execute " + fname);
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine("error: " + e.ToString());
+                return new Expression.EvalResult(-1);
+            }
 
             p.WaitForExit();
             return new Expression.EvalResult(p.ExitCode);
@@ -585,6 +647,8 @@ namespace tymake
                     Expression.EvalResult er = st.Execute(s);
                     if (!(st is ExpressionStatement) && er.AsInt != 0)
                         return er;
+                    if (s.returns != null)
+                        return new Expression.EvalResult(0);
                 }
             }
             return new Expression.EvalResult(0);

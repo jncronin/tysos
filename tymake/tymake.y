@@ -9,7 +9,7 @@
 %token	LBRACK RBRACK DOT LT GT SEMICOLON LOR LAND OR AND APPEND ASSIGNIF
 %token	IF ELSE INCLUDE RULEFOR INPUTS DEPENDS ALWAYS SHELLCMD TYPROJECT SOURCES MKDIR FUNCTION RETURN EXPORT
 %token	ISDIR ISFILE DEFINED BUILD
-%token	INTEGER STRING VOID
+%token	INTEGER STRING VOID ARRAY OBJECT
 %token	FOR FOREACH IN WHILE DO
 
 %left	DOT
@@ -60,6 +60,7 @@ strlabelexpr:	STRING							{ $$ = new StringExpression { val = $1 }; }
 
 labelexpr	:	labelexpr2						{ $$ = $1; }
 			|	strlabelexpr DOT labelexpr2		{ $$ = new LabelMemberExpression { label = $1, member = $3 }; }
+			|	strlabelexpr LBRACK labelexpr2 RBRACK { $$ = new LabelIndexedExpression { label = $1, index = $3 }; }
 			;
 
 labelexpr2	:	LABEL							{ $$ = new LabelExpression { val = $1 }; }
@@ -77,6 +78,7 @@ stmt		:	stmt2							{ $$ = $1; }
 			;
 
 stmt2		:	define SEMICOLON				{ $$ = $1; }
+			|	EXPORT define SEMICOLON			{ $$ = $2; $2.export = true; }
 			|	ifblock							{ $$ = $1; }
 			|	forblock						{ $$ = $1; }
 			|	foreachblock					{ $$ = $1; }
@@ -236,6 +238,8 @@ arglist		:	arglist COMMA arg				{ $$ = new List<FunctionStatement.FunctionArg>($
 
 argtype		:	INTEGER							{ $$ = Expression.EvalResult.ResultType.Int; }
 			|	STRING							{ $$ = Expression.EvalResult.ResultType.String; }
+			|	ARRAY							{ $$ = Expression.EvalResult.ResultType.Array; }
+			|	OBJECT							{ $$ = Expression.EvalResult.ResultType.Object; }
 			|	VOID							{ $$ = Expression.EvalResult.ResultType.Void; }
 			;
 

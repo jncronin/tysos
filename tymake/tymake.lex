@@ -68,6 +68,8 @@ defined			return (int)Tokens.DEFINED;
 
 int				return (int)Tokens.INTEGER;
 string			return (int)Tokens.STRING;
+array			return (int)Tokens.ARRAY;
+object			return (int)Tokens.OBJECT;
 void			return (int)Tokens.VOID;
 
 "/*"            BEGIN(comment); ++comment_nesting;
