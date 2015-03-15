@@ -55,7 +55,7 @@ namespace tymake
                     else if (ea.Type == EvalResult.ResultType.Void && eb.Type == EvalResult.ResultType.Void)
                         return new EvalResult();
                     else
-                        throw new Exception("Mismatched arguments to PLUS: " + ea.Type.ToString() + " and " + eb.Type.ToString());
+                        throw new Statement.SyntaxException("Mismatched arguments to PLUS: " + ea.Type.ToString() + " and " + eb.Type.ToString());
 
                 case Tokens.MUL:
                     ea = a.Evaluate(s);
@@ -72,7 +72,7 @@ namespace tymake
                         if (ea.Type == EvalResult.ResultType.Void)
                             return ea;
                         if (ea.Type == EvalResult.ResultType.String)
-                            throw new Exception("Cannot apply unary minus to type string");
+                            throw new Statement.SyntaxException("Cannot apply unary minus to type string");
                         return new EvalResult(0 - ea.intval);
                     }
                     else
@@ -91,7 +91,7 @@ namespace tymake
                             if (ea.strval.EndsWith(eb.strval))
                                 return new EvalResult(ea.strval.Substring(0, ea.strval.Length - eb.strval.Length));
                             else
-                                throw new Exception(ea.strval + " does not end with " + eb.strval);
+                                throw new Statement.SyntaxException(ea.strval + " does not end with " + eb.strval);
                         }
                         else if (ea.Type == EvalResult.ResultType.Void && eb.Type == EvalResult.ResultType.Void)
                         {
@@ -107,7 +107,7 @@ namespace tymake
                     ea = a.Evaluate(s);
 
                     if (ea.Type != EvalResult.ResultType.String)
-                        throw new Exception("defined requires a string/label argument");
+                        throw new Statement.SyntaxException("defined requires a string/label argument");
 
                     if (s.IsDefined(ea.strval))
                         return new EvalResult(1);
@@ -366,13 +366,13 @@ namespace tymake
             switch(elabel.Type)
             {
                 case EvalResult.ResultType.String:
-                    return new EvalResult(elabel.strval[eindex.AsInt]);
+                    return new EvalResult(new string(elabel.strval[eindex.AsInt], 1));
                 case EvalResult.ResultType.Array:
                     return elabel.arrval[eindex.AsInt];
                 case EvalResult.ResultType.Object:
                     return elabel.objval[eindex.strval];
                 default:
-                    throw new Exception("indexing cannot be applied to object of type: " + elabel.Type.ToString());
+                    throw new Statement.SyntaxException("indexing cannot be applied to object of type: " + elabel.Type.ToString());
             }
         }
     }
@@ -408,7 +408,7 @@ namespace tymake
 
                 if (m == "type")
                     return new EvalResult(elabel.Type.ToString());
-                throw new Exception("object: " + label.ToString() + " does not contain member " + m.ToString());
+                throw new Statement.SyntaxException("object: " + label.ToString() + " does not contain member " + m.ToString());
             }
             else if (member is FuncCall)
             {
@@ -500,7 +500,7 @@ namespace tymake
                         break;
                 }
 
-                throw new Exception("object: " + label.ToString() + " does not contain member " + m.ToString());
+                throw new Statement.SyntaxException("object: " + label.ToString() + " does not contain member " + m.ToString());
             }
             else
                 throw new NotSupportedException();
@@ -583,7 +583,7 @@ namespace tymake
                 return s.funcs[mangled_name].Run(s, args_to_pass);
             }
             else
-                throw new Exception("unable to find function " + mangled_name);
+                throw new Statement.SyntaxException("unable to find function " + mangled_name);
         }
     }
 

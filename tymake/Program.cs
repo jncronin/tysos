@@ -57,12 +57,37 @@ namespace tymake
                 ExecuteFile(stdlib_fi.FullName, s);
 
             /* Determine what to run - either interpret the arguments as files or as commands */
+            bool immediate = false;
             foreach(string arg in args)
             {
-                if (Statement.FileDirExists(arg))
+                if (arg == "-")
+                    immediate = true;
+                else if (Statement.FileDirExists(arg))
                     ExecuteFile(arg, s);
                 else
                     ExecuteString(arg, s);
+            }
+
+            if(immediate)
+            {
+                while(true)
+                {
+                    Console.Write("> ");
+                    try
+                    {
+                        ExecuteString(Console.ReadLine(), s);
+                    }
+                    catch (tymakeParse.ParseException e)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine(e.Message);
+                    }
+                    catch(Statement.SyntaxException e)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine(e.Message);
+                    }
+                }
             }
         }
 

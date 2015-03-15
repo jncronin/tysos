@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-JOHN
-// DateTime: 14/03/2015 21:03:01
+// DateTime: 15/03/2015 12:06:13
 // UserName: jncronin
-// Input file <tymake.y - 14/03/2015 21:02:58>
+// Input file <tymake.y - 15/03/2015 12:06:01>
 
 // options: lines gplex
 
@@ -166,7 +166,7 @@ internal partial class Parser: ShiftReduceParser<ValueType, LexLocation>
     states[77] = new State(-59);
     states[78] = new State(new int[]{7,50,16,69,25,-12,23,-12,6,-12,10,-12,11,-12,26,-12,27,-12,19,-12,20,-12,4,-12,18,-12,32,-12,31,-12,30,-12,29,-12,24,-12,13,-12});
     states[79] = new State(-98);
-    states[80] = new State(new int[]{64,49},new int[]{-17,81,-15,58});
+    states[80] = new State(new int[]{7,14,17,41,11,43,54,55,64,49,63,59,23,61,51,73},new int[]{-2,81,-3,71,-4,17,-5,20,-6,23,-7,26,-8,29,-9,32,-10,35,-11,38,-12,45,-13,46,-16,56,-17,57,-15,58,-38,60,-46,72});
     states[81] = new State(new int[]{24,82});
     states[82] = new State(-11);
     states[83] = new State(new int[]{17,41,11,43,54,55,64,49,63,59,23,61,51,73},new int[]{-9,84,-10,35,-11,38,-12,45,-13,46,-16,56,-17,57,-15,58,-38,60,-46,72});
@@ -306,7 +306,7 @@ internal partial class Parser: ShiftReduceParser<ValueType, LexLocation>
     rules[8] = new Rule(-13, new int[]{-16});
     rules[9] = new Rule(-16, new int[]{-17});
     rules[10] = new Rule(-16, new int[]{-13,25,-17});
-    rules[11] = new Rule(-16, new int[]{-13,23,-17,24});
+    rules[11] = new Rule(-16, new int[]{-13,23,-2,24});
     rules[12] = new Rule(-17, new int[]{64});
     rules[13] = new Rule(-17, new int[]{-15});
     rules[14] = new Rule(-18, new int[]{21,-19,22});
@@ -468,9 +468,9 @@ internal partial class Parser: ShiftReduceParser<ValueType, LexLocation>
                                   { CurrentSemanticValue.exprval = new LabelMemberExpression { label = ValueStack[ValueStack.Depth-3].exprval, member = ValueStack[ValueStack.Depth-1].exprval }; }
 #line default
         break;
-      case 11: // labelexpr -> strlabelexpr, LBRACK, labelexpr2, RBRACK
+      case 11: // labelexpr -> strlabelexpr, LBRACK, expr, RBRACK
 #line 63 "tymake.y"
-                                           { CurrentSemanticValue.exprval = new LabelIndexedExpression { label = ValueStack[ValueStack.Depth-4].exprval, index = ValueStack[ValueStack.Depth-2].exprval }; }
+                                     { CurrentSemanticValue.exprval = new LabelIndexedExpression { label = ValueStack[ValueStack.Depth-4].exprval, index = ValueStack[ValueStack.Depth-2].exprval }; }
 #line default
         break;
       case 12: // labelexpr2 -> LABEL

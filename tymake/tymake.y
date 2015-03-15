@@ -60,7 +60,7 @@ strlabelexpr:	STRING							{ $$ = new StringExpression { val = $1 }; }
 
 labelexpr	:	labelexpr2						{ $$ = $1; }
 			|	strlabelexpr DOT labelexpr2		{ $$ = new LabelMemberExpression { label = $1, member = $3 }; }
-			|	strlabelexpr LBRACK labelexpr2 RBRACK { $$ = new LabelIndexedExpression { label = $1, index = $3 }; }
+			|	strlabelexpr LBRACK expr RBRACK { $$ = new LabelIndexedExpression { label = $1, index = $3 }; }
 			;
 
 labelexpr2	:	LABEL							{ $$ = new LabelExpression { val = $1 }; }

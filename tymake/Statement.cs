@@ -8,6 +8,11 @@ namespace tymake
 {
     internal abstract class Statement
     {
+        public class SyntaxException : Exception
+        {
+            public SyntaxException(string msg) : base(msg) { }
+        }
+
         public abstract Expression.EvalResult Execute(MakeState s);
         public bool export = false;
 
