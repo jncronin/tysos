@@ -125,6 +125,11 @@ if(!defined(STDLIB_TMH))
 
 	export function input(string prompt, string default)
 	{
+		if(DEFAULTS == 1 && default != "")
+		{
+			return default;
+		}
+		
 		print(prompt);
 		print(" [");
 		print(default);
@@ -150,6 +155,11 @@ if(!defined(STDLIB_TMH))
 
 	export function input(string prompt, array options, string default)
 	{
+		if(DEFAULTS == 1 && default != "")
+		{
+			return default;
+		}
+
 		print(prompt);
 		print(" (");
 		comma = 0;

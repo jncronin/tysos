@@ -38,6 +38,8 @@ EFI_PHYSICAL_ADDRESS get_pmem_for_vmem(UINTPTR vaddr);
 
 extern UINTPTR kernel_low;
 extern UINTPTR kernel_high;
+extern EFI_PHYSICAL_ADDRESS static_start;
+extern EFI_PHYSICAL_ADDRESS static_end;
 
 EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(void *fobj, void *buf, size_t len),
 							off_t (*fseek_func)(void *fobj, off_t offset, int whence))
@@ -46,6 +48,9 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 
 	kernel_low = ~(UINTPTR)0;
 	kernel_high = 0;
+
+	static_start = 0;
+	static_end = 0;
 
 	/* Load up the elf header */
 	*ehdr = (Elf64_Ehdr *)malloc(sizeof(Elf64_Ehdr));
@@ -126,6 +131,18 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 			cur_paddr += rest_to_load;
 			size_t rest_to_zero = phdr->p_memsz - phdr->p_filesz;
 			memset((void *)cur_paddr, 0, rest_to_zero);
+
+			if (phdr->p_filesz != phdr->p_memsz)
+			{
+				printf("elf: bss start: %x, end: %x\n", phdr->p_vaddr + phdr->p_filesz, phdr->p_vaddr + phdr->p_memsz);
+				if (static_start != 0)
+				{
+					printf("error: more than one bss section found in file\n");
+					return EFI_ABORTED;
+				}
+				static_start = (EFI_PHYSICAL_ADDRESS)(phdr->p_vaddr + phdr->p_filesz);
+				static_end = (EFI_PHYSICAL_ADDRESS)(phdr->p_vaddr + phdr->p_memsz);
+			}
 		}
 	}
 

@@ -127,11 +127,6 @@ namespace JitTestHost
             rodata_rel.Add(offset, new Relocation { Name = name, RelType = rel_type, Value = value });
         }
 
-        public void AddStaticClassPointer(string static_object_name, string typeinfo_name)
-        {
-            //throw new NotImplementedException();
-        }
-
         public void SetEntryPoint(string name)
         {
             //throw new NotImplementedException();

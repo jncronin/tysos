@@ -47,10 +47,36 @@ namespace tysos
             sym_to_offset = new Dictionary<string, ulong>(0x20000, new Program.MyGenericEqualityComparer<string>());
             offset_to_sym = new Collections.SortedList<ulong, string>(0x20000, new Program.MyComparer<ulong>());
             sym_to_length = new Dictionary<string, ulong>(0x20000, new Program.MyGenericEqualityComparer<string>());
+
+            unsafe
+            {
+                ulong ots = libsupcs.CastOperations.ReinterpretAsUlong(offset_to_sym);
+                Formatter.Write("offset_to_sym: ", Program.arch.DebugOutput);
+                Formatter.Write(ots, "X", Program.arch.DebugOutput);
+                Formatter.Write(", vtable: ", Program.arch.DebugOutput);
+                Formatter.Write(*(ulong*)ots, "X", Program.arch.DebugOutput);
+                Formatter.Write(", ti: ", Program.arch.DebugOutput);
+                Formatter.Write(**(ulong**)ots, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);
+
+            }
+
         }
 
         public void Add(string sym, ulong address)
         {
+            unsafe
+            {
+                ulong ots = libsupcs.CastOperations.ReinterpretAsUlong(offset_to_sym);
+                Formatter.Write("offset_to_sym: ", Program.arch.DebugOutput);
+                Formatter.Write(ots, "X", Program.arch.DebugOutput);
+                Formatter.Write(", vtable: ", Program.arch.DebugOutput);
+                Formatter.Write(*(ulong*)ots, "X", Program.arch.DebugOutput);
+                Formatter.Write(", ti: ", Program.arch.DebugOutput);
+                Formatter.Write(**(ulong**)ots, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);
+
+            }
             if (sym_to_offset.ContainsKey(sym))
             {
                 Formatter.Write("Warning: duplicate symbol: ", Program.arch.DebugOutput);

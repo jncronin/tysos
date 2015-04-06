@@ -92,7 +92,8 @@ namespace tysos
             if (Program.arch.VirtualRegions.heap.contains(fault_address))
             {
                 // If the faulting address is in the heap, map a new page
-                Program.arch.VirtMem.map_page(fault_address);
+                //Program.arch.VirtMem.map_page(fault_address);
+                do_map(fault_address, error_code);
             }
             else
             {
@@ -107,7 +108,8 @@ namespace tysos
                             (cur_reg.type == Virtual_Regions.Region.RegionType.CPU_specific) ||
                             (cur_reg.type == Virtual_Regions.Region.RegionType.IPC))
                         {
-                            Program.arch.VirtMem.map_page(fault_address);
+                            //Program.arch.VirtMem.map_page(fault_address);
+                            do_map(fault_address, error_code);
                             success = true;
                         }
                         else if (cur_reg.type == Virtual_Regions.Region.RegionType.Stack)
@@ -142,7 +144,8 @@ namespace tysos
                             }
                             else
                             {
-                                Program.arch.VirtMem.map_page(fault_address);
+                                //Program.arch.VirtMem.map_page(fault_address);
+                                do_map(fault_address, error_code);
                                 success = true;
                             }
                         }
@@ -238,6 +241,23 @@ namespace tysos
                 {
                     *(ulong*)(tss_addr + ist1_offset) = ist_stack[cur_ist_idx];
                 }
+            }
+        }
+
+        static void do_map(ulong vaddr, ulong ec)
+        {
+            /* If the error was a read, we only need to map a pre-existing blank
+             * page (to save on physical memory space), otherwise map a new page */
+
+            if((ec & 0x2) == 0)
+            {
+                // was read - use the blank page
+                Program.arch.VirtMem.map_page(vaddr, VirtMem.blank_page);
+            }
+            else
+            {
+                // was write - request a new page
+                Program.arch.VirtMem.map_page(vaddr);
             }
         }
 

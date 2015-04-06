@@ -137,6 +137,9 @@ namespace tysos.gc
             if (sm_sizes.Length != sm_total_counts.Length)
                 throw new Exception("sm_sizes and sm_total_counts are not of the same length");
 
+            heap_start = start;
+            heap_end = end;
+
             /* Allocate the header structure */
             hdr = (heap_header*)start;
 
@@ -256,7 +259,7 @@ namespace tysos.gc
                 {
                     /* Each 32-bit test uint covers 8 entries of 4 bits */
                     uint* test = (uint*)((byte*)cur_hdr + sizeof(sma_header) +
-                        i * 4);
+                        i / 2);
 
                     int free = -1;
                     /* Test each bitfield in turn */
@@ -321,6 +324,8 @@ namespace tysos.gc
                             (i + free) * cur_hdr->obj_length);
                     }
                 }
+
+                cur_hdr = cur_hdr->next;
             }
             return null;
         }
@@ -555,6 +560,91 @@ namespace tysos.gc
             }
 
             return parent;
+        }
+
+        /** <summary>Dump the colour of a particular object</summary> */
+        void DumpColour(void *obj)
+        {
+            Formatter.Write("gengc: object at ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)obj, "X", Program.arch.DebugOutput);
+            Formatter.Write(" is ", Program.arch.DebugOutput);
+
+            int c = GetColour(obj);
+
+            switch(c)
+            {
+                case 0:
+                    Formatter.WriteLine("free", Program.arch.DebugOutput);
+                    break;
+                case 1:
+                    Formatter.WriteLine("white", Program.arch.DebugOutput);
+                    break;
+                case 2:
+                    Formatter.WriteLine("black", Program.arch.DebugOutput);
+                    break;
+                case 3:
+                    Formatter.WriteLine("grey", Program.arch.DebugOutput);
+                    break;
+                case -1:
+                    Formatter.WriteLine("not managed by gengc", Program.arch.DebugOutput);
+                    break;
+                default:
+                    Formatter.Write("unknown(", Program.arch.DebugOutput);
+                    Formatter.Write((ulong)c, Program.arch.DebugOutput);
+                    Formatter.WriteLine(")", Program.arch.DebugOutput);
+                    break;
+            }
+        }
+
+        /** <summary>Get the colour of a particular object</summary> */
+        int GetColour(void *obj)
+        {
+            /* This is the same algorithm as used in gery_object
+             * 
+             * First, get the chunk that contains the object */
+
+            chunk_header* chk = search(hdr, 1, 1, (byte*)obj);
+            if (chk == null)
+                return -1;
+
+            byte* chk_start = (byte*)chk + sizeof(chunk_header);
+            byte* chk_end = chk_start + (int)chk->length;
+
+            if(obj >= chk_start && obj < chk_end)
+            {
+                /* obj points into this chunk - check if its a large object,
+                 * small object or something else (e.g. root pointer) */
+                if ((chk->flags & 0x30) == 0x10)
+                {
+                    /* large object  */
+                    return chk->flags & 0x3;
+                }
+                else if((chk->flags & 0x30) == 0x0)
+                {
+                    /* small object - we need to identify its index in the array */
+                    sma_header* smhdr = (sma_header*)((byte*)chk + sizeof(chunk_header));
+                    byte* data_start = (byte*)smhdr + sizeof(sma_header) +
+                        smhdr->total_count * 4;
+
+                    if(obj >= data_start)
+                    {
+                        /* valid small object (i.e. not a pointer to within the small
+                         * object block itself)
+                         */
+
+                        int idx = (int)(((byte*)obj - data_start) / smhdr->obj_length);
+                        int uint_idx = idx / 8;
+                        int bit_idx = idx % 8;
+
+                        uint* uint_ptr = (uint*)((byte*)smhdr + sizeof(sma_header) +
+                            uint_idx * 4);
+
+                        return (int)(((*uint_ptr) >> (bit_idx * 4)) & 0x3);
+                    }
+                }
+            }
+
+            return -1;
         }
     }
 }

@@ -153,10 +153,11 @@ namespace libtysila
                 Layout l = Layout.GetLayout(ttc, this, false);
                 if (l.StaticFields.Count > 0)
                 {
-                    of.AlignData(GetSizeOfPointer());
-                    of.AddDataSymbol(of.GetData().Count, l.static_object_name, ttc.tsig.Type.IsWeakLinkage);
-                    for (int i = 0; i < l.StaticClassSize; i++)
-                        of.GetData().Add(0);
+                    of.AlignBss(GetSizeOfPointer());
+                    of.AddBssSymbol(of.GetBssOffset(), l.static_object_name, ttc.tsig.Type.IsWeakLinkage);
+                    of.AddBssBytes(l.StaticClassSize);
+                    //for (int i = 0; i < l.StaticClassSize; i++)
+                    //    of.GetData().Add(0);
                 }
 
                 if (!static_fields_only)

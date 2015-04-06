@@ -71,64 +71,6 @@ namespace libtysila
     {
         public Assembler.AssemblyInformation Information;
 
-        public static Assembler.CliType GetCliType(BaseType_Type etype)
-        {
-            switch (etype)
-            {
-                case BaseType_Type.Array:
-                    return Assembler.CliType.O;
-                case BaseType_Type.Boolean:
-                case BaseType_Type.Char:
-                case BaseType_Type.I1:
-                case BaseType_Type.I2:
-                case BaseType_Type.I4:
-                case BaseType_Type.U1:
-                case BaseType_Type.U2:
-                case BaseType_Type.U4:
-                case BaseType_Type.Void:
-                    return Assembler.CliType.int32;
-                case BaseType_Type.Class:
-                case BaseType_Type.GenericInst:
-                case BaseType_Type.String:
-                case BaseType_Type.ValueType:
-                    return Assembler.CliType.O;
-                case BaseType_Type.Byref:
-                case BaseType_Type.Ptr:
-                case BaseType_Type.TypedByRef:
-                    return Assembler.CliType.reference;
-                case BaseType_Type.R4:
-                    return Assembler.CliType.F32;
-                case BaseType_Type.R8:
-                    return Assembler.CliType.F64;
-                case BaseType_Type.I:
-                case BaseType_Type.U:
-                    return Assembler.CliType.native_int;
-                case BaseType_Type.I8:
-                case BaseType_Type.U8:
-                    return Assembler.CliType.int64;
-                default:
-                    throw new Exception("Unknown element type");
-            }   
-        }
-
-        public static int GetSize(Assembler.CliType ctype)
-        {
-            switch (ctype)
-            {
-                case Assembler.CliType.reference:
-                case Assembler.CliType.O:
-                case Assembler.CliType.native_int:
-                case Assembler.CliType.int64:
-                case Assembler.CliType.F64:
-                    return 8;
-                case Assembler.CliType.int32:
-                case Assembler.CliType.F32:
-                    return 4;
-                default:
-                    throw new Exception("CliType not recognised");
-            }
-        }
-
         public static byte[] CompressInteger(uint val)
         {
             /* compression rules are:

@@ -116,8 +116,15 @@ namespace Elf64
             sh_type = SectionType.SHT_PROGBITS,
             sh_flags = 0,
         };
+        public Elf64_Shdr bss = new Elf64_Shdr
+        {
+            Name = "bss",
+            sh_type = SectionType.SHT_NOBITS,
+            sh_flags = SectionFlags.SHF_ALLOC | SectionFlags.SHF_WRITE,
+            sh_addralign = 8
+        };
 
-        public Elf64_Rela_Shdr relatext, reladata, relarodata;
+        public Elf64_Rela_Shdr relatext, reladata, relarodata, relabss;
 
         public void Write(Stream s)
         {
@@ -144,12 +151,15 @@ namespace Elf64
             GenerateRelocationSymbols(this.relatext);
             GenerateRelocationSymbols(this.reladata);
             GenerateRelocationSymbols(this.relarodata);
+            GenerateRelocationSymbols(this.relabss);
             if (relatext.relocs.Count == 0)
                 shdrs.Remove(relatext);
             if (reladata.relocs.Count == 0)
                 shdrs.Remove(reladata);
             if (relarodata.relocs.Count == 0)
                 shdrs.Remove(relarodata);
+            if(relabss.relocs.Count == 0)
+                shdrs.Remove(relabss);
         }
 
         private void GenerateRelocationSymbols(Elf64_Rela_Shdr elf64_Rela_Shdr)
@@ -191,13 +201,15 @@ namespace Elf64
 
             // Create the default sections
             text.SetName(".text", e_shstr);
-            data.SetName(".data.rel", e_shstr);
+            data.SetName(".data", e_shstr);
             rodata.SetName(".rodata", e_shstr);
+            bss.SetName(".bss", e_shstr);
             comments.SetName(".comment", e_shstr);
 
             text.AddTo(shdrs);
             data.AddTo(shdrs);
             rodata.AddTo(shdrs);
+            bss.AddTo(shdrs);
             comments.AddTo(shdrs);
             comments.data.AddRange(Encoding.UTF8.GetBytes(comment));
 
@@ -205,11 +217,14 @@ namespace Elf64
             relatext.SetName(".rela.text", e_shstr);
             relatext.AddTo(shdrs);
             reladata = new Elf64_Rela_Shdr(this, data.index);
-            reladata.SetName(".rela.data.rel", e_shstr);
+            reladata.SetName(".rela.data", e_shstr);
             reladata.AddTo(shdrs);
             relarodata = new Elf64_Rela_Shdr(this, rodata.index);
             relarodata.SetName(".rela.rodata", e_shstr);
             relarodata.AddTo(shdrs);
+            relabss = new Elf64_Rela_Shdr(this, bss.index);
+            relabss.SetName(".rela.bss", e_shstr);
+            relabss.AddTo(shdrs);
 
             // Add in symbols for the file and each progbits section
             e_syms.defined_syms.Add(new Elf64_Symbol_Shdr.Elf64_Sym
@@ -238,8 +253,8 @@ namespace Elf64
             e_syms.name_to_sym.Add(".text", e_syms.defined_syms.Count - 1);
             e_syms.defined_syms.Add(new Elf64_Symbol_Shdr.Elf64_Sym
             {
-                name = ".data.rel",
-                st_name = e_symstr.GetOffset(".data.rel"),
+                name = ".data",
+                st_name = e_symstr.GetOffset(".data"),
                 st_value = 0,
                 st_size = 0,
                 st_info = Elf64_Symbol_Shdr.Elf64_Sym.SymbolTypes.STT_SECTION |
@@ -247,7 +262,7 @@ namespace Elf64
                 st_other = 0,
                 st_shndx = data.index
             });
-            e_syms.name_to_sym.Add(".data.rel", e_syms.defined_syms.Count - 1);
+            e_syms.name_to_sym.Add(".data", e_syms.defined_syms.Count - 1);
             e_syms.defined_syms.Add(new Elf64_Symbol_Shdr.Elf64_Sym
             {
                 name = ".rodata",
@@ -260,6 +275,18 @@ namespace Elf64
                 st_shndx = rodata.index
             });
             e_syms.name_to_sym.Add(".rodata", e_syms.defined_syms.Count - 1);
+            e_syms.defined_syms.Add(new Elf64_Symbol_Shdr.Elf64_Sym
+            {
+                name = ".bss",
+                st_name = e_symstr.GetOffset(".bss"),
+                st_value = 0,
+                st_size = 0,
+                st_info = Elf64_Symbol_Shdr.Elf64_Sym.SymbolTypes.STT_SECTION |
+                    Elf64_Symbol_Shdr.Elf64_Sym.BindingFlags.STB_LOCAL,
+                st_other = 0,
+                st_shndx = bss.index
+            });
+            e_syms.name_to_sym.Add(".bss", e_syms.defined_syms.Count - 1);
 
             // Fill in the fields in the header
             e_machine = MachineType.EM_X86_64;

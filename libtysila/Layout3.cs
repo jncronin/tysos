@@ -741,6 +741,7 @@ namespace libtysila
                 {
                     Signature.Param fsig = Signature.ResolveGenericParam(fr.GetSignature().AsParam(ass), ttc.tsig.Type, null, ass);
 
+
                     Assembler.FieldToCompile ftc = new Assembler.FieldToCompile
                     {
                         _ass = ass,
@@ -756,9 +757,13 @@ namespace libtysila
                     {
                         field = ftc,
                         is_static = false,
-                        offset = _staticclasssize,
                         size = ass.GetSizeOf(fsig)
                     };
+
+                    /* Align up to a multiple of the field size */
+                    _staticclasssize = util.align(_staticclasssize, f.size);
+                    f.offset = _staticclasssize;
+
                     f.name = Signature.GetString(f.field, ass);
                     f.mangled_name = Mangler2.MangleFieldInfoSymbol(f.field, ass);
 

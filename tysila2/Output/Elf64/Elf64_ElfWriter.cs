@@ -37,11 +37,6 @@ namespace Elf64
         class static_fields_pointer { public string static_object; public string typeinfo_name; }
         List<static_fields_pointer> static_fields = new List<static_fields_pointer>();
 
-        public void AddStaticClassPointer(string static_object_name, string typeinfo_name)
-        {
-            static_fields.Add(new static_fields_pointer { static_object = static_object_name, typeinfo_name = typeinfo_name });
-        }
-
         public void SetEntryPoint(string entry_point)
         { e_point = entry_point; }
 
@@ -108,7 +103,7 @@ namespace Elf64
 
             foreach (Elf64_Shdr shdr in ehdr.shdrs)
             {
-                if (shdr.sh_type != SectionType.SHT_NULL)
+                if (shdr.sh_type != SectionType.SHT_NULL && shdr.sh_type != SectionType.SHT_NOBITS)
                 {
                     shdr.sh_offset = Align(cur_offset, 8);
                     cur_offset = shdr.sh_offset + shdr.sh_size;
@@ -129,6 +124,8 @@ namespace Elf64
             // Write actual section data
             foreach (Elf64_Shdr shdr in ehdr.shdrs)
             {
+                if (shdr.sh_type == SectionType.SHT_NOBITS)
+                    continue;
                 output.Seek((long)shdr.sh_offset, SeekOrigin.Begin);
                 Write(output, shdr.data);
             }
@@ -147,6 +144,19 @@ namespace Elf64
         { Align(ehdr.data.data, a); }
         public void AlignRodata(int a)
         { Align(ehdr.rodata.data, a); }
+        public void AlignBss(int a)
+        { Align(ehdr.bss.data, a); }
+
+        public void AddBssBytes(int count)
+        {
+            while (count-- > 0)
+                ehdr.bss.data.Add(0);
+        }
+
+        public int GetBssOffset()
+        {
+            return ehdr.bss.data.Count;
+        }
 
         private void Align(IList<byte> iList, int a)
         {
@@ -313,6 +323,29 @@ namespace Elf64
             return ret;
         }
 
+        public ISymbol AddBssSymbol(int offset, string name, bool is_weak)
+        {
+            byte st_info = 0;
+            if (is_weak)
+                st_info |= Elf64_Symbol_Shdr.Elf64_Sym.BindingFlags.STB_WEAK;
+            else
+                st_info |= Elf64_Symbol_Shdr.Elf64_Sym.BindingFlags.STB_GLOBAL;
+
+            Elf64_Symbol_Shdr.Elf64_Sym ret = new Elf64_Symbol_Shdr.Elf64_Sym
+            {
+                name = name,
+                st_name = ehdr.e_symstr.GetOffset(name),
+                st_info = (byte)(st_info | Elf64_Symbol_Shdr.Elf64_Sym.SymbolTypes.STT_OBJECT),
+                st_shndx = ehdr.bss.index,
+                st_value = Convert.ToUInt64(offset),
+                st_size = 8,
+                st_other = 0
+            };
+            ehdr.e_syms.defined_syms.Add(ret);
+            ehdr.e_syms.name_to_sym.Add(name, ehdr.e_syms.defined_syms.Count - 1);
+            return ret;
+        }
+
         public void AddTextRelocation(int offset, string name, uint rel_type, long value)
         {
             ehdr.relatext.relocs.Add(new Elf64_Rela_Shdr.Elf64_Rela((ulong)offset, rel_type, value, name));
@@ -326,6 +359,11 @@ namespace Elf64
         public void AddRodataRelocation(int offset, string name, uint rel_type, long value)
         {
             ehdr.relarodata.relocs.Add(new Elf64_Rela_Shdr.Elf64_Rela((ulong)offset, rel_type, value, name));
+        }
+
+        public void AddBssRelocation(int offset, string name, uint rel_type, long value)
+        {
+            ehdr.relabss.relocs.Add(new Elf64_Rela_Shdr.Elf64_Rela((ulong)offset, rel_type, value, name));
         }
 
         public void Write(Stream output)

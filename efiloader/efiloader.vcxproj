@@ -39,10 +39,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\tysos\tload\tloadefi\efilibc\efi\inc\x86_64;D:\tysos\tload\tloadefi\efilibc\efi\inc\protocol;D:\tysos\tload\tloadefi\efilibc\efi\inc;D:\tysos\tload\tloadefi\efilibc\inc;D:\tysos\tload\tloadefi\efilibc\efi;D:\tysos\tload\tloadefi\zlib;F:\cygwin64\usr\local\cross\lib\gcc\x86_64-elf\4.8.2\include;D:\tysos\tload\tloadefi\confuse-2.7\src</IncludePath>
+    <IncludePath>D:\tysos\branches\tysila3\tload\tloadefi\efilibc\efi\inc\x86_64;D:\tysos\branches\tysila3\tload\tloadefi\efilibc\efi\inc\protocol;D:\tysos\branches\tysila3\tload\tloadefi\efilibc\efi\inc;D:\tysos\branches\tysila3\tload\tloadefi\efilibc\inc;D:\tysos\branches\tysila3\tload\tloadefi\efilibc\efi;D:\tysos\branches\tysila3\tload\tloadefi\zlib;D:\cygwin64\home\jncronin\opt\cross\lib\gcc\x86_64-elf\4.9.2\include;D:\tysos\branches\tysila3\tload\tloadefi\confuse-2.7\src</IncludePath>
+    <AdditionalOptions>/u</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>D:\tysos\tload\tloadefi\efilibc\efi\inc\x86_64;D:\tysos\tload\tloadefi\efilibc\efi\inc\protocol;D:\tysos\tload\tloadefi\efilibc\efi\inc;D:\tysos\tload\tloadefi\efilibc\inc;D:\tysos\tload\tloadefi\efilibc\efi;D:\tysos\tload\tloadefi\zlib;F:\cygwin64\usr\local\cross\lib\gcc\x86_64-elf\4.8.2\include;D:\tysos\tload\tloadefi\confuse-2.7\src</IncludePath>
+    <IncludePath>D:\tysos\branches\tysila3\tload\tloadefi\efilibc\efi\inc\x86_64;D:\tysos\branches\tysila3\tload\tloadefi\efilibc\efi\inc\protocol;D:\tysos\branches\tysila3\tload\tloadefi\efilibc\efi\inc;D:\tysos\branches\tysila3\tload\tloadefi\efilibc\inc;D:\tysos\branches\tysila3\tload\tloadefi\efilibc\efi;D:\tysos\branches\tysila3\tload\tloadefi\zlib;D:\cygwin64\home\jncronin\opt\cross\lib\gcc\x86_64-elf\4.9.2\include;D:\tysos\branches\tysila3\tload\tloadefi\confuse-2.7\src</IncludePath>
+    <AdditionalOptions>/u</AdditionalOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

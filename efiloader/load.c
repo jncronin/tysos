@@ -82,7 +82,9 @@ EFI_STATUS load_kernel(const char *fname, void **fobj, size_t (**fread_func)(voi
 	}
 	else
 	{
-		printf("Unknown kernel type\n");
+		printf("Unknown kernel type: length: %i, magic[0]: %x, magic[1]: %x, "
+			"magic[2]: %x, magic[3]: %x\n", flen, magic[0], magic[1], magic[2],
+			magic[3]);
 		return EFI_ABORTED;
 	}
 

@@ -33,6 +33,7 @@ namespace tysos.x86_64
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Divide error", Program.arch.BootInfoOutput);
+            DumpExceptionData(0, return_rip, return_cs, rflags, return_rsp, return_ss, regs);
             libsupcs.OtherOperations.Halt();
         }
 

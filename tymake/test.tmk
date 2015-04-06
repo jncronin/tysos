@@ -10,7 +10,7 @@ print("--------------------------------\n");
 // Configuration
 TARGET ?= input("Architecture", [ "x86_64", "x86", "arm" ], "x86_64");
 MAKE_ISO ?= input("Build an ISO image", [ "y", "n" ], "y");
-TYSILAFLAGS ?= input("Extra tysila flags (e.g. -fprofile)", "");
+TYSILAFLAGS ?= input("Extra tysila flags (e.g. -fprofile)", " ");
 ROOT ?= input("Path to root tysos directory", "../../..");
 
 function x86_yasm()

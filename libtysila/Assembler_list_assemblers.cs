@@ -100,7 +100,7 @@ namespace libtysila
 
                 if (options == null)
                     options = new AssemblerOptions();
-                
+
                 return ctorm.Invoke(new object[] { arch, fileLoader, memberRequestor, options }) as Assembler;
             }
             catch (Exception e)

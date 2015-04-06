@@ -148,6 +148,8 @@ namespace tysos.x86_64
             libsupcs.x86_64.Cpu.Cr0 = cr0;
             cr0 |= 0x2;         // set cr0.MP
             libsupcs.x86_64.Cpu.Cr0 = cr0;
+            cr0 |= (1 << 16);   // set cr0.WP
+            libsupcs.x86_64.Cpu.Cr0 = cr0;
 
             /* Set-up the MXCSR register
              * 
@@ -241,6 +243,16 @@ namespace tysos.x86_64
             Interrupts = new Interrupts(idt_start);
             Formatter.WriteLine("x86_64: IDT allocated", DebugOutput);
 
+            /* Generate a blank page to use for all read page faults */
+            ulong blank_page_vaddr = VirtualRegions.Alloc(0x1000, 0x1000, "blank page");
+            VirtMem.blank_page_paddr = VirtMem.map_page(blank_page_vaddr);
+            libsupcs.MemoryOperations.QuickClearAligned16(blank_page_vaddr, 0x1000);
+            Formatter.Write("x86_64: blank page paddr: ", DebugOutput);
+            Formatter.Write(VirtMem.blank_page_paddr, "X", DebugOutput);
+            Formatter.Write(", vaddr: ", DebugOutput);
+            Formatter.Write(blank_page_vaddr, "X", DebugOutput);
+            Formatter.WriteLine(DebugOutput);
+
             unsafe
             {
                 // Install the page fault handler
@@ -314,6 +326,11 @@ namespace tysos.x86_64
             unsafe
             {
                 gc.gengc.heap.Init((void*)heap_small_start, (void*)heap_long_end);
+
+                /* Initial roots are the current stack, all static fields and the original heap */
+                gc.gengc.heap.AddRoots((byte*)mboot.stack_low, (byte*)mboot.stack_high);
+                gc.gengc.heap.AddRoots((byte*)mboot.tysos_static_start, (byte*)mboot.tysos_static_end);
+                gc.gengc.heap.AddRoots((byte*)mboot.heap_start, (byte*)mboot.heap_end);
             }
             Formatter.WriteLine("heap initialized", Program.arch.DebugOutput);
             int[] test_array = new int[] { 8, 8, 8, 8, 8, 8, 8 };

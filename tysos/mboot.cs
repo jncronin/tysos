@@ -49,6 +49,12 @@ namespace Multiboot
         public ulong tysos_str_tab_paddr;
         public ulong tysos_str_tab_size;
 
+        public ulong tysos_static_start;
+        public ulong tysos_static_end;
+
+        public ulong stack_low;
+        public ulong stack_high;
+
         public string cmdline;
         public string loader_name;
 

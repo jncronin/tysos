@@ -35,12 +35,18 @@ namespace tysos
         tysos.Collections.StaticULongArray temp_page;
 
         public const ulong page_size = 0x1000;
-        const ulong alloc_page = 0xffffffffffffffff;
+        
+        /* Constants to pass to map_page - alloc_page means map a new page r/w,
+         * blank_page means map the blank page read-only */
+        internal const ulong alloc_page = 0xffffffffffffffff;
+        internal const ulong blank_page = 0xfffffffffffffffe;
 
         const ulong paddr_mask = 0xffffffffff000;
         const ulong page_mask = 0xfffffffffffff000;
         const ulong canonical_only = 0xffffffffffff;
         const ulong pstruct_start = 0xffffff8000000000;
+
+        public ulong blank_page_paddr = 0;
 
         static VirtMem cur_vmem;
 
@@ -134,9 +140,9 @@ namespace tysos
         private static bool IsValidPtr(ulong ptr)
         { return cur_vmem.is_valid(ptr); }
 
-        public void map_page(ulong vaddr) { map_page(vaddr, alloc_page, true, false, false); }
-        public void map_page(ulong vaddr, ulong paddr) { map_page(vaddr, paddr, true, false, false); }
-        public void map_page(ulong vaddr, ulong paddr, bool writeable, bool cache_disable, bool write_through)
+        public ulong map_page(ulong vaddr) { return map_page(vaddr, alloc_page, true, false, false); }
+        public ulong map_page(ulong vaddr, ulong paddr) { return map_page(vaddr, paddr, true, false, false); }
+        public ulong map_page(ulong vaddr, ulong paddr, bool writeable, bool cache_disable, bool write_through)
         {
             /* in the current 48 bit implementation of x86_64, only the first 48 bits of the address
              * are used, the upper 16 bits need to be a sign-extension (i.e. equal to the 48th bit)
@@ -213,7 +219,7 @@ namespace tysos
 
             /* Set the attributes of the page */
             ulong page_attrs = 0x1; // Present bit
-            if (writeable)
+            if ((paddr != blank_page) && writeable)
                 page_attrs |= 0x2;
             if (write_through)
                 page_attrs |= 0x8;
@@ -222,8 +228,10 @@ namespace tysos
 
             if (paddr == alloc_page)
             {
-                // Allocate a page if there is not one already allocated
-                if (!is_enabled(paging_structures[pt_entry_addr]))
+                // Allocate a page if there is not one already allocated, or we are requesting
+                //  a write to the blank page
+                if (!is_enabled(paging_structures[pt_entry_addr]) || 
+                    (writeable && ((paging_structures[pt_entry_addr] & page_mask) == blank_page_paddr)))
                 {
                     if (pmem == null)
                     {
@@ -241,7 +249,18 @@ namespace tysos
                     //Formatter.Write("4", Program.arch.DebugOutput);
                     libsupcs.MemoryOperations.QuickClearAligned16(vaddr & page_mask, 0x1000);
                     //Formatter.Write("5", Program.arch.DebugOutput);
+                    return paddr & paddr_mask;
                 }
+                else
+                {
+                    return paging_structures[pt_entry_addr] & paddr_mask;
+                }
+            }
+            else if(paddr == blank_page)
+            {
+                paging_structures[pt_entry_addr] = page_attrs | (blank_page_paddr & paddr_mask);
+                libsupcs.x86_64.Cpu.Invlpg(vaddr & page_mask);
+                return blank_page_paddr;
             }
             else
             {
@@ -251,6 +270,7 @@ namespace tysos
                 //Formatter.Write("1", Program.arch.DebugOutput);
                 libsupcs.x86_64.Cpu.Invlpg(vaddr & page_mask);
                 //Formatter.Write("2", Program.arch.DebugOutput);
+                return paddr & paddr_mask;
             }
         }
 

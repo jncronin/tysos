@@ -52,7 +52,7 @@ EFI_PHYSICAL_ADDRESS elf_kernel;
 int elf_kernel_len;
 EFI_SYSTEM_TABLE *ST;
 EFI_BOOT_SERVICES *BS;
-EFI_PHYSICAL_ADDRESS sym_tab_paddr, sym_tab_size, sym_tab_entsize, str_tab_paddr, str_tab_size;
+EFI_PHYSICAL_ADDRESS sym_tab_paddr, sym_tab_size, sym_tab_entsize, str_tab_paddr, str_tab_size, static_start, static_end;
 
 UINTPTR kernel_low;
 UINTPTR kernel_high;
@@ -413,6 +413,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	mbheader->tysos_sym_tab_size = sym_tab_size;
 	mbheader->tysos_virtaddr = kernel_low;
 	mbheader->tysos_size = kernel_high - kernel_low;
+	mbheader->tysos_static_start = static_start & ~0x7ULL;
+	mbheader->tysos_static_end = static_end;
+	mbheader->stack_low = kernel_stack;
+	mbheader->stack_high = kernel_stack + kernel_stack_len;
 	
 #ifdef __x86_64
 	mbheader->machine_major_type = x86_64;

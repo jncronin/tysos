@@ -290,6 +290,7 @@ namespace tysos
             libtysila.Assembler.MemberRequestor requestor = new jit.JitMemberRequestor();
             libtysila.Assembler.FileLoader loader = new jit.JitFileLoader();
             libtysila.IOutputFile output = new jit.JitOutput();
+
             libtysila.Assembler ass = libtysila.Assembler.CreateAssembler(libtysila.Assembler.ParseArchitectureString(assembler_arch), loader, requestor, null);
             requestor.Assembler = ass;
             ass.debugOutput = new DebugOutput();

@@ -294,7 +294,7 @@ namespace tysos
                 //Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
 #endif
                 Formatter.WriteLine("Enforcing collection", Program.arch.DebugOutput);
-                gc.gc.ScheduleCollection();
+                gc.gc.DoCollection();
             }
 
             return ret;

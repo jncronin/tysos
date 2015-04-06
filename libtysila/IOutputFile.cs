@@ -30,20 +30,23 @@ namespace libtysila
         IList<byte> GetText();
         IList<byte> GetData();
         IList<byte> GetRodata();
+        void AddBssBytes(int count);
+        int GetBssOffset();
 
         void AlignText(int a);
         void AlignData(int a);
         void AlignRodata(int a);
+        void AlignBss(int a);
 
         ISymbol AddTextSymbol(int offset, string name, bool local_only, bool is_func, bool is_weak);
         ISymbol AddDataSymbol(int offset, string name, bool is_weak);
         ISymbol AddRodataSymbol(int offset, string name, bool is_weak);
+        ISymbol AddBssSymbol(int offset, string name, bool is_weak);
 
         void AddTextRelocation(int offset, string name, uint rel_type, long value);
         void AddDataRelocation(int offset, string name, uint rel_type, long value);
         void AddRodataRelocation(int offset, string name, uint rel_type, long value);
-
-        void AddStaticClassPointer(string static_object_name, string typeinfo_name);
+        void AddBssRelocation(int offset, string name, uint rel_type, long value);
 
         void SetEntryPoint(string name);
 

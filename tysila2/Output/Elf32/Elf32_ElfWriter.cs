@@ -40,11 +40,6 @@ namespace Elf32
         class static_fields_pointer { public string static_object; public string typeinfo_name; }
         List<static_fields_pointer> static_fields = new List<static_fields_pointer>();
 
-        public void AddStaticClassPointer(string static_object_name, string typeinfo_name)
-        {
-            static_fields.Add(new static_fields_pointer { static_object = static_object_name, typeinfo_name = typeinfo_name });
-        }
-
         public void SetEntryPoint(string entry_point)
         { e_point = entry_point; }
 
@@ -377,5 +372,32 @@ namespace Elf32
         public void DumpText(TextWriter output) { }
 
         #endregion
+
+
+        public void AddBssBytes(int count)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AlignBss(int a)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ISymbol AddBssSymbol(int offset, string name, bool is_weak)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddBssRelocation(int offset, string name, uint rel_type, long value)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public int GetBssOffset()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

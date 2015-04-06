@@ -79,8 +79,9 @@ namespace tysos.gc
         internal static bool ScheduleCollection()
         {
             if (run_gc == null)
-                return false;
-            run_gc.Set();
+                DoCollection();
+            else
+                run_gc.Set();
             return true;
         }
 

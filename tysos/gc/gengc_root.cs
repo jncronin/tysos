@@ -23,7 +23,7 @@ namespace tysos.gc
 {
     unsafe partial class gengc
     {
-        void AddRoots(byte *start, byte *end)
+        public void AddRoots(byte *start, byte *end)
         {
             if (hdr->roots == null || hdr->roots->size == hdr->roots->capacity)
                 allocate_root_block();

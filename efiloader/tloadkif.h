@@ -84,6 +84,10 @@ struct Multiboot_Header {
     uint64_t tysos_sym_tab_entsize;
     uint64_t tysos_str_tab_paddr;
     uint64_t tysos_str_tab_size;
+    uint64_t tysos_static_start;
+    uint64_t tysos_static_end;
+    uint64_t stack_low;
+    uint64_t stack_high;
     uint64_t cmdline;
     uint64_t loader_name;
     uint32_t machine_major_type;

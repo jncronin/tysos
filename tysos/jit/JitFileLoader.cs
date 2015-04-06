@@ -34,6 +34,18 @@ namespace tysos.jit
 
         public override libtysila.Assembler.FileLoader.FileLoadResults LoadFile(string filename)
         {
+            Formatter.Write("stab at ", Program.arch.DebugOutput);
+            ulong stab = libsupcs.CastOperations.ReinterpretAsUlong(Program.stab);
+            Formatter.Write(stab, "X", Program.arch.DebugOutput);
+            Formatter.Write(", vtable: ", Program.arch.DebugOutput);
+            unsafe
+            {
+                Formatter.Write(*(ulong*)stab, "X", Program.arch.DebugOutput);
+                Formatter.Write(", ti: ", Program.arch.DebugOutput);
+                Formatter.Write(**(ulong**)stab, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);
+            }
+
             LoadedModule mod = null;
 
             if (loaded_mods.ContainsKey(filename))

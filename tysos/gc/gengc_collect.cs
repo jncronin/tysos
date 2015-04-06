@@ -23,8 +23,37 @@ namespace tysos.gc
 {
     unsafe partial class gengc
     {
-        void DoCollection()
+        bool collection_in_progress = false;
+        object collection_mutex = new object();
+
+        public void DoCollection()
         {
+            /* We only want one collection to run at once.  If we just used a lock{} section,
+             * then all threads that request a collection whilst one is already running would
+             * have to wait for the current collection to finish, then run one themselves
+             * immediately afterwards.  This is wasteful as they can just rely on the already
+             * running collection to be good enough.
+             * 
+             * Thus, we protect the entry to the function so only one thread can check if a
+             * collection is running and immediately start one if it isn't.  This is a short
+             * code block so other threads won't have to wait long, they will then see the
+             * collection_in_progress flag is true and exit.
+             * 
+             * The flag is reset at function exit atomically so no need for to reacquire the
+             * mutex.
+             */
+
+            lock(collection_mutex)
+            {
+                if (collection_in_progress)
+                {
+                    Formatter.WriteLine("gengc: attempt to run collection whilst already in progress",
+                        Program.arch.DebugOutput);
+                    return;
+                }
+                collection_in_progress = true;
+            }
+
             /* Run a collection.  Process is:
              * 
              * 1)       Whiten all objects (all chunks/small objects that are not root blocks)
@@ -41,7 +70,10 @@ namespace tysos.gc
              *              whitening black blocks (there should be no grey blocks now)
              */
 
+            Formatter.WriteLine("gengc: Starting collection", Program.arch.DebugOutput);
+
             /* grey root blocks */
+            Formatter.Write("gengc: greying roots... ", Program.arch.DebugOutput);
             root_header* cur_root_hdr = hdr->roots;
             while(cur_root_hdr != null)
             {
@@ -54,9 +86,16 @@ namespace tysos.gc
 
                     grey_object(root_start, root_end);
                 }
+                cur_root_hdr = cur_root_hdr->next;
             }
+            Formatter.WriteLine("done", Program.arch.DebugOutput);
 
+
+            /* blacken reachable blocks */
+            Formatter.Write("gengc: blackening reachable blocks... ", Program.arch.DebugOutput);
             int blackened_count;
+            int total_blackened = 0;
+            int loops = 0;
             chunk_header* chk;
 
             do
@@ -95,7 +134,7 @@ namespace tysos.gc
                         for(int i = 0; i < smhdr->total_count; i += 8)
                         {
                             uint* uint_ptr = (uint*)((byte*)smhdr + sizeof(sma_header) +
-                                i * 4);
+                                i / 2);
 
                             for (int bit_idx = 0; bit_idx < 8; bit_idx++)
                             {
@@ -127,9 +166,13 @@ namespace tysos.gc
                     chk = TreeSuccessor(hdr, 1, chk);
                 }
 
+                total_blackened += blackened_count;
+                loops++;
             } while (blackened_count > 0);
+            Formatter.WriteLine("done", Program.arch.DebugOutput);
 
             /* Iterate through again, setting white to free and black to white */
+            Formatter.Write("gengc: freeing white blocks... ", Program.arch.DebugOutput);
             // Get the first block
             chk = hdr->root_used_chunk;
             while (chk->left != hdr->nil)
@@ -194,24 +237,54 @@ namespace tysos.gc
                 // Loop to the next chunk
                 chk = TreeSuccessor(hdr, 1, chk);
             }
+            Formatter.WriteLine("done", Program.arch.DebugOutput);
 
             Formatter.Write("gengc: Collection completed: ", Program.arch.DebugOutput);
             Formatter.Write((ulong)white_large_objects, Program.arch.DebugOutput);
             Formatter.Write(" large objects and ", Program.arch.DebugOutput);
             Formatter.Write((ulong)white_small_objects, Program.arch.DebugOutput);
             Formatter.WriteLine(" small objects freed", Program.arch.DebugOutput);
+            Formatter.Write("gengc: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)total_blackened, Program.arch.DebugOutput);
+            Formatter.WriteLine(" objects remain in use", Program.arch.DebugOutput);
+            Formatter.Write("gengc: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)loops, Program.arch.DebugOutput);
+            Formatter.WriteLine(" loops required to blacken all in-use objects", Program.arch.DebugOutput);
+
+            collection_in_progress = false;
         }
 
         private unsafe void grey_object(byte* obj_start, byte* obj_end)
         {
+#if GENGC_DEBUG
+            Formatter.Write("gengc: greying object from ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)obj_start, "X", Program.arch.DebugOutput);
+            Formatter.Write(" to ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)obj_end, "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
+#endif
+
             byte** cur_ptr = (byte**)obj_start;
             while(cur_ptr < (byte**)obj_end)
             {
                 byte* obj = *cur_ptr;
 
+#if GENGC_DEBUG
+                Formatter.Write("gengc: grey_object: member at: ", Program.arch.DebugOutput);
+                Formatter.Write((ulong)cur_ptr, "X", Program.arch.DebugOutput);
+                Formatter.Write(" is: ", Program.arch.DebugOutput);
+                Formatter.Write((ulong)obj, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);
+#endif
+
                 /* First, check its at all valid (i.e. points within the heap) */
                 if(obj >= heap_start && obj < heap_end)
                 {
+#if GENGC_DEBUG
+                    Formatter.Write("gengc: grey_object: object has member ", Program.arch.DebugOutput);
+                    Formatter.Write((ulong)obj, "X", Program.arch.DebugOutput);
+                    Formatter.WriteLine(" which is potentially within the heap", Program.arch.DebugOutput);
+#endif
                     /* Now get the chunk that contains it in the used tree */
                     chunk_header* chk = search(hdr, 1, 1, obj);
 
@@ -239,19 +312,36 @@ namespace tysos.gc
                                 byte* data_start = (byte*)smhdr + sizeof(sma_header) +
                                     smhdr->total_count * 4;
 
-                                int idx = (int)((obj - data_start) / smhdr->obj_length);
-                                int uint_idx = idx / 8;
-                                int bit_idx = idx % 8;
+                                if (data_start > obj)
+                                {
+#if GENGC_DEBUG
+                                    Formatter.Write("gengc: grey_object: object reference points to within sma_header, ignoring (obj: ", Program.arch.DebugOutput);
+                                    Formatter.Write((ulong)obj, "X", Program.arch.DebugOutput);
+                                    Formatter.Write(", data_start: ", Program.arch.DebugOutput);
+                                    Formatter.Write((ulong)data_start, "X", Program.arch.DebugOutput);
+                                    Formatter.Write(", total_count: ", Program.arch.DebugOutput);
+                                    Formatter.Write((ulong)smhdr->total_count, Program.arch.DebugOutput);
+                                    Formatter.Write(", obj_length: ", Program.arch.DebugOutput);
+                                    Formatter.Write((ulong)smhdr->obj_length, Program.arch.DebugOutput);
+                                    Formatter.WriteLine(")", Program.arch.DebugOutput);
+#endif
+                                }
+                                else
+                                {
+                                    int idx = (int)((obj - data_start) / smhdr->obj_length);
+                                    int uint_idx = idx / 8;
+                                    int bit_idx = idx % 8;
 
-                                uint* uint_ptr = (uint*)((byte*)smhdr + sizeof(sma_header) +
-                                    uint_idx * 4);
+                                    uint* uint_ptr = (uint*)((byte*)smhdr + sizeof(sma_header) +
+                                        uint_idx * 4);
 
-                                uint flag_pattern = 0x3U << (bit_idx * 4);
-                                uint white_pattern = 0x1U << (bit_idx * 4);
-                                uint grey_pattern = 0x2U << (bit_idx * 4);
+                                    uint flag_pattern = 0x3U << (bit_idx * 4);
+                                    uint white_pattern = 0x1U << (bit_idx * 4);
+                                    uint grey_pattern = 0x2U << (bit_idx * 4);
 
-                                if ((*uint_ptr & flag_pattern) == white_pattern)
-                                    *uint_ptr |= grey_pattern;
+                                    if ((*uint_ptr & flag_pattern) == white_pattern)
+                                        *uint_ptr |= grey_pattern;
+                                }
                             }
                         }
                         

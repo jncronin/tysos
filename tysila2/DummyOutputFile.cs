@@ -181,5 +181,32 @@ namespace tysila
                 }
             }
         }
+
+
+        public void AddBssBytes(int count)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AlignBss(int a)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ISymbol AddBssSymbol(int offset, string name, bool is_weak)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddBssRelocation(int offset, string name, uint rel_type, long value)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public int GetBssOffset()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

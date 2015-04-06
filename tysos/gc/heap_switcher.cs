@@ -129,6 +129,10 @@ namespace tysos.gc
                 case HeapType.BoehmGC:
                     boehm.DoCollection();
                     break;
+
+                case HeapType.GenGC:
+                    gengc.heap.DoCollection();
+                    break;
             }
         }
     }
