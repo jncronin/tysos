@@ -23,27 +23,27 @@ _ZN5tysos14tysos#2Ex86_6412TaskSwitcherM_0_16do_x86_64_switch_Rv_P4yU5tysos6Thre
 	push r14
 	push r15
 
-	mov rax, [rsp + 136]		; cur_thread_pointer
-	mov rbx, [rsp + 144]		; next_thread
-	mov rcx, [rsp + 152]		; tsi_offset_within_thread
-	mov rdx, [rsp + 160]		; rsp_offset_within_tsi
+	; cur_thread_pointer			= rdx
+	; next_thread					= rsi
+	; tsi_offset_within_thread		= rdx
+	; rsp_offset_within_tsi			= rcx
 
-	mov rsi, [rax]				; cur_thread
+	mov rax, [rdi]				; cur_thread
 	
-	cmp rsi, 0					
+	cmp rax, 0					; if current thread is null, don't save the current rsp
 	je .dontsave
 
 	; if cur_thread != null
-	mov rdi, [rsi + rcx]		; cur_thread_tsi
-	mov [rdi + rdx], rsp		; store rsp to rsp within current thread
+	mov rbx, [rax + rdx]		; cur_thread_tsi
+	mov [rdx + rcx], rsp		; store rsp to rsp within current thread
 .dontsave:
 
 	; load rsp from the new thread
-	mov rdi, [rbx + rcx]		; next_thread_tsi
-	mov rsp, [rdi + rdx]		; load rsp from next thread
+	mov rbx, [rsi + rdx]		; next_thread_tsi
+	mov rsp, [rbx + rcx]		; load rsp from next thread
 
 	; change the cur_thread pointer
-	mov [rax], rbx
+	mov [rdi], rsi
 
 	; restore state
 

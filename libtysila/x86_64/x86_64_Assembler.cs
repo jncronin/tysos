@@ -185,31 +185,16 @@ namespace libtysila
 
         public override RelocationBlock.RelocationType GetCodeToDataRelocType()
         {
-            if (Options.PIC)
+            switch (cm)
             {
-                switch (cm)
-                {
-                    case CModel.kernel:
-                    case CModel.large:
-                    case CModel.small:
-                        return R_X86_64_GOTPCREL;
-                    default:
-                        throw new NotImplementedException();
-                }
-            }
-            else
-            {
-                switch (cm)
-                {
-                    case CModel.kernel:
-                        return R_X86_64_32S;
-                    case CModel.small:
-                        return R_X86_64_32;
-                    case CModel.large:
-                        return R_X86_64_64;
-                    case CModel.ia32:
-                        return R_386_32;
-                }
+                case CModel.kernel:
+                    return R_X86_64_32S;
+                case CModel.small:
+                    return R_X86_64_32;
+                case CModel.large:
+                    return R_X86_64_64;
+                case CModel.ia32:
+                    return R_386_32;
             }
             throw new NotSupportedException();
         }

@@ -65,6 +65,7 @@ namespace tysos
                 SSE_state,
                 CPU_specific,
                 IPC,
+                ModuleSection,
                 Free
             }
 

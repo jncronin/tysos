@@ -205,20 +205,6 @@ namespace tysos
             /* Store the process info */
             running_processes = new Dictionary<string, Process>(new MyGenericEqualityComparer<string>());
 
-
-            /* Load tysila */
-            Formatter.Write("libtysila version ", arch.DebugOutput);
-            Formatter.Write(libtysila.Assembler.VersionString, arch.DebugOutput);
-            Formatter.Write(", supported architectures: ", arch.DebugOutput);
-            libtysila.Assembler.Architecture[] archs = libtysila.Assembler.ListArchitectures();
-            for (int i = 0; i < archs.Length; i++)
-            {
-                if (i != 0)
-                    Formatter.Write(", ", arch.DebugOutput);
-                Formatter.Write(archs[i].ToString(), arch.DebugOutput);
-            }
-            Formatter.WriteLine(arch.DebugOutput);
-
             /* Test enum dictionaries */
             //test_hcp();
             //test_my_hcp();
@@ -236,7 +222,10 @@ namespace tysos
             // Enable multitasking
             //arch.EnableMultitasking();
 
-            TestAssemblerThread();
+            Process debugprint = LoadELFModule("debugprint", mboot, stab, running_processes, 0x8000, new object[] { "hello", "world" });
+            arch.Switcher.Switch(debugprint.startup_thread);
+            
+
             while (true) ;
 
 
@@ -274,47 +263,6 @@ namespace tysos
         private static void null_func(object obj)
         {
             throw new NotImplementedException();
-        }
-
-        private static void TestAssemblerThread()
-        {
-            /* First create the mini assembler for jit stubs etc */
-            string assembler_arch = "x86_64-jit-tysos";
-            //Formatter.Write("Creating mini assembler... ", Program.arch.DebugOutput);
-            //libtysila.MiniAssembler mass = libtysila.MiniAssembler.GetMiniAssembler(assembler_arch);
-            //Formatter.WriteLine("done", Program.arch.DebugOutput);
-
-            /* Create an x86_64 assembler */
-            Formatter.Write("Initialising JIT assembler for " + assembler_arch + "... ", Program.arch.BootInfoOutput);
-            Formatter.Write("Creating assembler... ", Program.arch.DebugOutput);
-            libtysila.Assembler.MemberRequestor requestor = new jit.JitMemberRequestor();
-            libtysila.Assembler.FileLoader loader = new jit.JitFileLoader();
-            libtysila.IOutputFile output = new jit.JitOutput();
-
-            libtysila.Assembler ass = libtysila.Assembler.CreateAssembler(libtysila.Assembler.ParseArchitectureString(assembler_arch), loader, requestor, null);
-            requestor.Assembler = ass;
-            ass.debugOutput = new DebugOutput();
-            Formatter.WriteLine("done", Program.arch.DebugOutput);
-            Formatter.WriteLine("done", Program.arch.BootInfoOutput);
-
-            /* Test the JIT compiler */
-            Formatter.WriteLine("Testing assembler: ", Program.arch.DebugOutput);
-            libtysila.Metadata module = ass.FindAssembly("test_002");
-            if (module != null)
-            {
-                Formatter.WriteLine("  Test_002 found", Program.arch.DebugOutput);
-                libtysila.Assembler.MethodToCompile? mtc = module.GetEntryPoint(ass);
-                if (mtc.HasValue)
-                {
-                    Formatter.WriteLine("  Entry point found", Program.arch.DebugOutput);
-                    ass.AssembleMethod(mtc.Value, output, null);
-                    Formatter.WriteLine("  Method assembled", Program.arch.DebugOutput);
-                }
-                else
-                    Formatter.WriteLine("  Entry point not found", Program.arch.DebugOutput);
-            }
-            else
-                Formatter.WriteLine("  Test_002 not found", Program.arch.DebugOutput);
         }
 
         private static void CreateKernelThreads()
@@ -355,18 +303,6 @@ namespace tysos
             return libsupcs.TysosType.ReinterpretAsMethodInfo(*(void**)mi_addr);
         }
 
-        private static libtysila.Metadata.TypeDefRow[] test_dynamic()
-        {
-            System.Type tdr_type = typeof(libtysila.Metadata.TypeDefRow);
-            return (libtysila.Metadata.TypeDefRow[])tdr_type.MakeArrayType().InvokeMember(null, System.Reflection.BindingFlags.CreateInstance, null, null, new object[] { 1 });
-        }
-
-        private static libtysila.Metadata.ITableRow[] test_dynamic2()
-        {
-            System.Type tdr_type = typeof(libtysila.Metadata.TypeDefRow);
-            return (libtysila.Metadata.ITableRow[])tdr_type.MakeArrayType().InvokeMember(null, System.Reflection.BindingFlags.CreateInstance, null, null, new object[] { 1 });
-        }
-
         class MyEqComparer<T>
         {
             public int GetHashCode(T obj)
@@ -383,54 +319,6 @@ namespace tysos
             }
         }
 
-
-        private static void test_my_hcp()
-        {
-            MyEqComparer<libtysila.ThreeAddressCode.OpName> hcp = new MyEqComparer<libtysila.ThreeAddressCode.OpName>();
-
-            int hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.label);
-            Formatter.WriteLine("test_my_hcp: hash code 1: " + hc.ToString(), Program.arch.DebugOutput);
-            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.ldarga);
-            Formatter.WriteLine("test_my_hcp: hash code 2: " + hc.ToString(), Program.arch.DebugOutput);
-            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.label);
-            Formatter.WriteLine("test_my_hcp: hash code 3: " + hc.ToString(), Program.arch.DebugOutput);
-
-            bool t1 = hcp.Equals(libtysila.ThreeAddressCode.OpName.label, libtysila.ThreeAddressCode.OpName.ldarga);
-            Formatter.WriteLine("test_my_hcp: should be false: " + t1.ToString(), Program.arch.DebugOutput);
-
-            bool t2 = hcp.Equals(libtysila.ThreeAddressCode.OpName.label, libtysila.ThreeAddressCode.OpName.label);
-            Formatter.WriteLine("test_my_hcp: should be true: " + t2.ToString(), Program.arch.DebugOutput);
-        }
-
-        private static void test_hcp()
-        {
-            EqualityComparer<libtysila.ThreeAddressCode.OpName> hcp = EqualityComparer<libtysila.ThreeAddressCode.OpName>.Default;
-
-            int hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.label);
-            Formatter.WriteLine("test_hcp: hash code 1: " + hc.ToString(), Program.arch.DebugOutput);
-            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.ldarga);
-            Formatter.WriteLine("test_hcp: hash code 2: " + hc.ToString(), Program.arch.DebugOutput);
-            hc = hcp.GetHashCode(libtysila.ThreeAddressCode.OpName.label);
-            Formatter.WriteLine("test_hcp: hash code 3: " + hc.ToString(), Program.arch.DebugOutput);
-
-            bool t1 = hcp.Equals(libtysila.ThreeAddressCode.OpName.label, libtysila.ThreeAddressCode.OpName.ldarga);
-            Formatter.WriteLine("test_hcp: should be false: " + t1.ToString(), Program.arch.DebugOutput);
-
-            bool t2 = hcp.Equals(libtysila.ThreeAddressCode.OpName.label, libtysila.ThreeAddressCode.OpName.label);
-            Formatter.WriteLine("test_hcp: should be true: " + t2.ToString(), Program.arch.DebugOutput);
-        }
-
-        private static void test_dict()
-        {
-            Dictionary<libtysila.ThreeAddressCode.OpName, int> d = new Dictionary<libtysila.ThreeAddressCode.OpName, int>();
-
-            // Add an item
-            d.Add(libtysila.ThreeAddressCode.OpName.label, 6);
-
-            // Check an item
-            int val = d[libtysila.ThreeAddressCode.OpName.label];
-            Formatter.WriteLine("test_dict: " + val.ToString(), Program.arch.DebugOutput);
-        }
 
         private static void test_methinfo()
         {
@@ -481,6 +369,36 @@ namespace tysos
             Formatter.Write(" library loaded, load address: ", arch.DebugOutput);
             Formatter.Write(load_vaddr, "X", arch.DebugOutput);
             Formatter.WriteLine(arch.DebugOutput);
+        }
+
+        internal static Process LoadELFModule(string name, Multiboot.Header mboot, SymbolTable stab, Dictionary<string, Process> running_processes, ulong stack_size,
+            object[] parameters)
+        {
+            Multiboot.Module mod = find_module(mboot.modules, name);
+            ulong mod_vaddr = map_in(mod);
+            return LoadELFModule(mod_vaddr, mod.length, name, mboot, stab, running_processes, stack_size, parameters);
+        }
+
+        internal static Process LoadELFModule(ulong base_addr, ulong len, string name, Multiboot.Header mboot, SymbolTable stab, Dictionary<string, Process> running_processes, ulong stack_size,
+            object[] parameters)
+        {
+            Formatter.Write("Loading module: ", arch.BootInfoOutput);
+            Formatter.Write(name, arch.BootInfoOutput);
+            Formatter.Write(" from ", arch.BootInfoOutput);
+            Formatter.Write(base_addr, "X", arch.BootInfoOutput);
+            Formatter.WriteLine(arch.BootInfoOutput);
+
+            ulong e_point = ElfReader.LoadObject(arch.VirtualRegions, arch.VirtMem, stab, base_addr, base_addr, name);
+
+            Process p = Process.Create(name, e_point, stack_size, arch.VirtualRegions, stab, parameters);
+            running_processes.Add(name, p);
+
+            Formatter.Write(name, arch.DebugOutput);
+            Formatter.Write(" process created, entry point: ", arch.DebugOutput);
+            Formatter.Write(e_point, "X", arch.DebugOutput);
+            Formatter.WriteLine(arch.DebugOutput);
+
+            return p;
         }
 
         internal static Process LoadELFProgram(string name, Multiboot.Header mboot, SymbolTable stab, Dictionary<string, Process> running_processes, ulong stack_size)
@@ -792,21 +710,22 @@ namespace tysos
             return false;
         }
 
-        class DebugOutput : libtysila.Assembler.DebugOutput
+        [libsupcs.MethodAlias("jit_tm")]
+        static IntPtr JitCompile(libsupcs.TysosMethod meth)
         {
-            const int DBG_LEVEL = libtysila.Assembler.DebugOutput.DBG_DEBUG;
+            throw new Exception("JIT compilation of dynamic methods not supported");
+        }
 
-            public override void Write(string s, int level)
-            {
-                if (level <= DBG_LEVEL)
-                    Formatter.Write(s, Program.arch.DebugOutput);
-            }
+        [libsupcs.MethodAlias("jit_addrof")]
+        static System.IntPtr GetAddressOfObject(string name)
+        {
+            throw new Exception("Request for address of " + name + ": not yet supported");
+        }
 
-            public override void WriteLine(string s, int level)
-            {
-                if (level <= DBG_LEVEL)
-                    Formatter.WriteLine(s, Program.arch.DebugOutput);
-            }
+        [libsupcs.MethodAlias("__log")]
+        static void Log(int level, string category, string message)
+        {
+            Formatter.WriteLine(message, Program.arch.DebugOutput);
         }
     }
 }

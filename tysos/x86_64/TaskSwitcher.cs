@@ -75,8 +75,6 @@ namespace tysos.x86_64
                 max_stack = stack.start + stack.length;
                 ulong* p_st = (ulong*)(max_stack);                
 
-                foreach (object o in parameters)
-                    *--p_st = libsupcs.CastOperations.ReinterpretAsUlong(o);
                 *--p_st = (ulong)exit_address;          // address of __exit()
 
                 /* The entry point to the thread */
@@ -91,7 +89,8 @@ namespace tysos.x86_64
                 *--p_st = 0;                            // RCX
                 *--p_st = 0;                            // RDX
                 *--p_st = 0;                            // RSI
-                *--p_st = 0;                            // RDI
+                *--p_st = libsupcs.CastOperations.ReinterpretAsUlong(parameters);
+                                                        // RDI  
                 *--p_st = 0;                            // RBP
                 *--p_st = 0;                            // R8
                 *--p_st = 0;                            // R9

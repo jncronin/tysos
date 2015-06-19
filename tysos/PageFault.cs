@@ -106,7 +106,8 @@ namespace tysos
                     {
                         if ((cur_reg.type == Virtual_Regions.Region.RegionType.SSE_state) ||
                             (cur_reg.type == Virtual_Regions.Region.RegionType.CPU_specific) ||
-                            (cur_reg.type == Virtual_Regions.Region.RegionType.IPC))
+                            (cur_reg.type == Virtual_Regions.Region.RegionType.IPC) ||
+                            cur_reg.type == Virtual_Regions.Region.RegionType.ModuleSection)
                         {
                             //Program.arch.VirtMem.map_page(fault_address);
                             do_map(fault_address, error_code);

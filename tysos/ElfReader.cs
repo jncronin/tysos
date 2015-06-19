@@ -238,6 +238,240 @@ namespace tysos
             }
         }
 
+        public static unsafe ulong LoadObject(Virtual_Regions vreg, VirtMem vmem, SymbolTable stab, ulong binary, ulong binary_paddr, string name)
+        {
+            Elf64_Ehdr* ehdr = VerifyElf(binary);
+
+            /* Iterate through the sections marked SHF_ALLOC, allocating space as we go */
+            ulong e_shentsize = ehdr->e_shentsize;
+            uint e_shnum = (uint)ehdr->e_shnum;
+            ulong sect_header = binary + ehdr->e_shoff;
+
+            ulong start = 0;
+           
+            for(uint i = 0; i < e_shnum; i++)
+            {
+                Elf64_Shdr* cur_shdr = (Elf64_Shdr*)sect_header;
+
+                if((cur_shdr->sh_flags & 0x2) == 0x2)
+                {
+                    /* SHF_ALLOC */
+
+                    // get its name
+                    ulong name_addr = binary +
+                        ((Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * ehdr->e_shstrndx))->sh_offset +
+                        cur_shdr->sh_name;
+                    string sect_name = new string((sbyte*)name_addr);
+
+                    // allocate space for it
+                    ulong sect_addr = vreg.AllocRegion(cur_shdr->sh_size, 0x1000, name + sect_name, 0, Virtual_Regions.Region.RegionType.ModuleSection).start;
+                    cur_shdr->sh_addr = sect_addr;
+
+                    if (sect_addr + cur_shdr->sh_size > 0x7effffffff)
+                        throw new Exception("Object section allocated beyond limit of small code model");
+
+                    // copy the section to its destination
+                    if (cur_shdr->sh_type == 0x1)
+                    {
+                        /* SHT_PROGBITS */
+                        libsupcs.MemoryOperations.MemCpy((void*)sect_addr, (void*)(binary + cur_shdr->sh_offset),
+                            (int)cur_shdr->sh_size);
+                    }
+                    else if (cur_shdr->sh_type == 0x8)
+                    {
+                        /* SHT_NOBITS */
+                        libsupcs.MemoryOperations.MemSet((void*)sect_addr, 0, (int)cur_shdr->sh_size);
+                    }
+                }
+
+                sect_header += e_shentsize;
+            }
+
+            /* Iterate through defined symbols, loading them into the symbol table */
+            sect_header = binary + ehdr->e_shoff;
+            for (uint i = 0; i < e_shnum; i++)
+            {
+                Elf64_Shdr* cur_shdr = (Elf64_Shdr*)sect_header;
+
+                if(cur_shdr->sh_type == 0x2)
+                {
+                    /* SHT_SYMTAB */
+                    ulong offset = cur_shdr->sh_info * cur_shdr->sh_entsize;
+                    while(offset < cur_shdr->sh_size)
+                    {
+                        Elf64_Sym* cur_sym = (Elf64_Sym*)(binary + cur_shdr->sh_offset + offset);
+
+                        bool is_vis = false;
+                        bool is_weak = false;
+
+                        uint st_bind = (cur_sym->st_info_other_shndx >> 4) & 0xf;
+
+                        if(st_bind == 1)
+                        {
+                            // STB_GLOBAL
+                            is_vis = true;
+                        }
+                        else if(st_bind == 2)
+                        {
+                            // STB_WEAK
+                            is_vis = true;
+                            is_weak = true;
+                        }
+
+                        if (is_vis)
+                        {
+                            ulong sym_name_addr = binary +
+                                ((Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * cur_shdr->sh_link))->sh_offset +
+                                cur_sym->st_name;
+                            string sym_name = new string((sbyte*)sym_name_addr);
+
+                            uint st_shndx = (cur_sym->st_info_other_shndx >> 16) & 0xffff;
+                            
+                            if(st_shndx != 0)
+                            {
+                                if(is_weak == false || stab.GetAddress(sym_name) == 0)
+                                {
+                                    ulong sym_addr = ((Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * st_shndx))->sh_addr +
+                                        cur_sym->st_value;
+
+                                    if (sym_name == "_start")
+                                        start = sym_addr;
+                                    else
+                                        stab.Add(sym_name, sym_addr, cur_sym->st_size);
+                                }
+                            }
+                        }
+
+
+                        offset += cur_shdr->sh_entsize;
+                    }
+                }
+
+                sect_header += e_shentsize;
+            }
+
+            /* Iterate through relocations, fixing them up as we go */
+            sect_header = binary + ehdr->e_shoff;
+            for (uint i = 0; i < e_shnum; i++)
+            {
+                Elf64_Shdr* cur_shdr = (Elf64_Shdr*)sect_header;
+
+                if (cur_shdr->sh_type == 0x9)
+                    throw new NotImplementedException("rel sections not supported");
+                if(cur_shdr->sh_type == 0x4)
+                {
+                    /* SHT_RELA */
+
+                    Elf64_Shdr* cur_symtab = (Elf64_Shdr*)(binary + ehdr->e_shoff + cur_shdr->sh_link * ehdr->e_shentsize);
+                    Elf64_Shdr* rela_sect = (Elf64_Shdr*)(binary + ehdr->e_shoff + cur_shdr->sh_info * ehdr->e_shentsize);
+
+                    ulong offset = 0;
+                    while(offset < cur_shdr->sh_size)
+                    {
+                        Elf64_Rela* cur_rela = (Elf64_Rela*)(binary + cur_shdr->sh_offset + offset);
+
+                        ulong r_offset = rela_sect->sh_addr + cur_rela->r_offset;
+                        ulong r_sym = cur_rela->r_info >> 32;
+                        ulong r_type = cur_rela->r_info & 0xffffffff;
+                        long r_addend = cur_rela->r_addend;
+
+                        Elf64_Sym* rela_sym = (Elf64_Sym*)(binary + cur_symtab->sh_offset + r_sym * cur_symtab->sh_entsize);
+                        uint st_bind = (rela_sym->st_info_other_shndx >> 4) & 0xf;
+
+
+                        ulong S = 0;
+                        if(st_bind == 0)
+                        {
+                            /* STB_LOCAL symbols have not been loaded into the symbol table
+                             * We need to use the value stored in the symbol table */
+                            uint st_shndx = (rela_sym->st_info_other_shndx >> 16) & 0xffff;
+                            S = ((Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * st_shndx))->sh_addr +
+                                rela_sym->st_value;
+                        }
+                        else
+                        {
+                            /* Get the symbol address from the symbol table */
+                            ulong sym_name_addr = binary +
+                                ((Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * cur_symtab->sh_link))->sh_offset +
+                                rela_sym->st_name;
+                            string sym_name = new string((sbyte*)sym_name_addr);
+
+                            S = stab.GetAddress(sym_name);
+                            if (S == 0)
+                                throw new Exception("undefined reference to " + sym_name);
+                        }
+
+                        /* Perform the relocation */
+                        switch(r_type)
+                        {
+                            case 1:
+                                // R_X86_64: S + A
+                                {
+                                    ulong c = S;
+                                    if (r_addend > 0)
+                                        S += (ulong)r_addend;
+                                    else
+                                        S -= (ulong)(-r_addend);
+                                    *(ulong*)r_offset = c;
+                                }
+                                break;
+
+                            case 2:
+                                // R_X86_64_PC32: S + A - P
+                                {
+                                    if (S > (ulong)long.MaxValue)
+                                        throw new Exception("S too large");
+                                    if (r_offset > (ulong)long.MaxValue)
+                                        throw new Exception("P too large");
+                                    long c = (long)S + r_addend - (long)r_offset;
+
+                                    if (c < int.MinValue || c > int.MaxValue)
+                                        throw new Exception("Relocation truncated to fit");
+                                    *(int*)r_offset = (int)c;
+                                }
+                                break;
+
+                            case 10:
+                                // R_X86_64_32: S + A
+                                {
+                                    if (S > (ulong)long.MaxValue)
+                                        throw new Exception("S too large");
+                                    long c = (long)S + r_addend;
+
+                                    if (c < 0 || c > uint.MaxValue)
+                                        throw new Exception("Relocation truncated to fit");
+                                    *(uint*)r_offset = (uint)c;
+                                }
+                                break;
+
+                            case 11:
+                                // R_X86_64_32S: S + A
+                                {
+                                    if (S > (ulong)long.MaxValue)
+                                        throw new Exception("S too large");
+                                    long c = (long)S + r_addend;
+
+                                    if (c < int.MinValue || c > int.MaxValue)
+                                        throw new Exception("Relocation truncated to fit");
+                                    *(int*)r_offset = (int)c;
+                                }
+                                break;
+
+                            default:
+                                throw new Exception("Unsupported relocation type: " +
+                                    r_type.ToString());
+                        }
+
+                        offset += cur_shdr->sh_entsize;
+                    }
+                }
+
+                sect_header += e_shentsize;
+            }
+
+            return start;
+        }
+
         public static ulong LoadModule(Virtual_Regions vreg, VirtMem vmem, SymbolTable stab, ulong binary, ulong binary_paddr, string name)
         {
             unsafe
@@ -505,16 +739,16 @@ namespace tysos
                 ulong st_shndx = (ulong)(sym->st_info_other_shndx >> 16);
                 ulong sym_addr = sym->st_value;
 
-                /* we only load symbols with STB_GLOBAL (=1) binding and
+                /* we only load symbols with STB_GLOBAL (=1) or STB_WEAK (=2) binding and
                  * of type STT_OBJECT (=1) or STT_FUNC (=2)
                  * 
                  * In st_info, binding is the high 4 bits, symbol type is low 4
                  * 
-                 * Therefore we are looking for 00010001b or 00010010b
-                 * which is 0x11 or 0x12
+                 * Therefore we are looking for 00010001b or 00010010b or 00100001b or 00100010b
+                 * which is 0x11 or 0x12 or 0x21 or 0x22
                  */
 
-                if ((st_info != 0x11) && (st_info != 0x12))
+                if ((st_info != 0x11) && (st_info != 0x12) && (st_info != 0x21) && (st_info != 0x22))
                     continue;
 
                 /* We do not want symbols with st_shndx == SHN_UNDEF (=0)

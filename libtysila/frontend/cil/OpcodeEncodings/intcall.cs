@@ -111,6 +111,8 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             int_calls["_ZW6System4MathM_0_5Round_Rd_P1d"] = Math_Round;
 
+            int_calls["_ZW20System#2EDiagnostics8DebuggerM_0_3Log_Rv_P3iu1Su1S"] = Debugger_Log;
+
             ass.InitArchIntCalls(int_calls);
         }
 
@@ -1237,6 +1239,29 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 il.il.tybel);
 
             il.stack_after.Push(p_ret);
+        }
+
+        static void Debugger_Log(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* Emit a call to void __log(int level, string category, string message) */
+
+            libasm.hardware_location loc_msg = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_category = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_level = il.stack_vars_after.Pop(ass);
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+
+            CallConv cc_log = ass.MakeStaticCall("default", new Signature.Param(BaseType_Type.Void),
+                new List<Signature.Param> { new Signature.Param(BaseType_Type.I4),
+                new Signature.Param(BaseType_Type.String),
+                new Signature.Param(BaseType_Type.String) },
+                ThreeAddressCode.Op.OpVoid(ThreeAddressCode.OpName.call));
+
+            ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("__log", false),
+                null, new libasm.hardware_location[] { loc_level, loc_category, loc_msg },
+                cc_log, il.il.tybel);
         }
     }
 }

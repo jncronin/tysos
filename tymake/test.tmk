@@ -195,7 +195,7 @@ rulefor "%.obj" inputs { "%.dll" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
 }
 
 /* Rule for linking the kernel */
-rulefor KERNEL inputs { TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ, LIBASMOBJ, LIBTYSILAOBJ, tycobj("undefined.o"),
+rulefor KERNEL inputs { TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ, tycobj("undefined.o"),
 	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA } {
 	shellcmd("$XCC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");
 }
@@ -296,7 +296,10 @@ autodir(GRUBDIR);
 ISOIMAGE = OUTDIR + "/tysos.iso";
 GRUBCFG = OUTDIR + "/grub.cfg";
 
-PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj") ];
+// Processes
+DEBUGPRINTOBJ = objfromexe(typroject(ROOT + "/testsuite/debugprint/debugprint.csproj"));
+
+PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj"), DEBUGPRINTOBJ ];
 
 COREIMG = OUTDIR + "/core.img";
 XORRISO = "xorriso";

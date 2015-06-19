@@ -454,7 +454,11 @@ namespace typroject
             else
                 ret.configuration = n.SelectSingleNode("//d:PropertyGroup/d:Configuration", nm).Value;
 
-            ret.tools_ver = n.SelectSingleNode("@ToolsVersion", nm).Value;
+            XPathNavigator tfv = n.SelectSingleNode("//d:PropertyGroup/d:TargetFrameworkVersion", nm);
+            if (tfv != null)
+                ret.tools_ver = tfv.Value.Substring(1);
+            else
+                ret.tools_ver = n.SelectSingleNode("@ToolsVersion", nm).Value;
 
             ret.Guid = new Guid(n.SelectSingleNode("//d:PropertyGroup/d:ProjectGuid", nm).Value);
             string otype = n.SelectSingleNode("//d:PropertyGroup/d:OutputType", nm).Value;

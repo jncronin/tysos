@@ -120,10 +120,6 @@
     <Compile Include="Interfaces\IFile.cs" />
     <Compile Include="Interfaces\Ivfs.cs" />
     <Compile Include="InterruptMap.cs" />
-    <Compile Include="jit\Jit.cs" />
-    <Compile Include="jit\JitFileLoader.cs" />
-    <Compile Include="jit\JitMemberRequestor.cs" />
-    <Compile Include="jit\JitOutput.cs" />
     <Compile Include="lib\Assembly.cs" />
     <Compile Include="lib\char-conversions.cs" />
     <Compile Include="lib\CompareInfo.cs" />
@@ -199,10 +195,6 @@
     <ProjectReference Include="..\libsupcs\libsupcs.csproj">
       <Project>{566AA7AB-C8B8-417C-B16E-08C7D359CBB1}</Project>
       <Name>libsupcs</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\libtysila\libtysila.csproj">
-      <Project>{2C921410-704F-4DAE-BD17-81A336C8B663}</Project>
-      <Name>libtysila</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
