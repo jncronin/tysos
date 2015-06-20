@@ -68,6 +68,11 @@ namespace libtysila
 
         public AssembleBlockOutput AssembleMethod(MethodToCompile mtc, IOutputFile output, List<string> unimplemented_internal_calls, bool cache_output, bool dry_run)
         {
+            return AssembleMethod(mtc, output, unimplemented_internal_calls, cache_output, dry_run, true);
+        }
+
+        public AssembleBlockOutput AssembleMethod(MethodToCompile mtc, IOutputFile output, List<string> unimplemented_internal_calls, bool cache_output, bool dry_run, bool do_meth_info)
+        {
             Metadata.MethodDefRow meth = mtc.meth;
             Signature.BaseMethod call_site = mtc.msig;
             Metadata.TypeDefRow tdr = mtc.type;
@@ -257,11 +262,12 @@ namespace libtysila
             if (output != null)
             {
                 // Write a pointer to the method info if applicable
-                int mi_ptr_base = output.GetText().Count;
-                for (int i = 0; i < GetSizeOfPointer(); i++)
-                    output.GetText().Add(0);
-                if (Options.EnableRTTI)
+                if (Options.EnableRTTI && do_meth_info)
                 {
+                    int mi_ptr_base = output.GetText().Count;
+                    for (int i = 0; i < GetSizeOfPointer(); i++)
+                        output.GetText().Add(0);
+
                     Layout l = Layout.GetTypeInfoLayout(mtc.GetTTC(this), this, false);
                     string mi_name = Mangler2.MangleMethodInfoSymbol(mtc, this);
                     if (l.Symbols.ContainsKey(mi_name))

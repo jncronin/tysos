@@ -302,7 +302,7 @@ namespace tysila
                         {
                             comp_method.tsigp = new Signature.Param(new Signature.ManagedPointer { _ass = ass, ElemType = cur_method.Value.tsig }, ass);
                         }
-                        Assembler.AssembleBlockOutput abo = ass.AssembleMethod(comp_method, dw, null);
+                        Assembler.AssembleBlockOutput abo = ass.AssembleMethod(comp_method, dw, null, true, false, false);
 
                         Dictionary<int, List<libtysila.tybel.Tybel.DebugNode>> debug = new Dictionary<int, List<libtysila.tybel.Tybel.DebugNode>>();
                         foreach (libtysila.tybel.Tybel.DebugNode dn in abo.debug)
@@ -349,6 +349,11 @@ namespace tysila
                                 }
 
                                 /* See if we have a timple node for the code */
+
+                                if(offset == 201)
+                                {
+                                    int asfagf = 0;
+                                }
                                 if (debug.ContainsKey((int)offset))
                                 {
                                     foreach (libtysila.tybel.Tybel.DebugNode dn in debug[(int)offset])

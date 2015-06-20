@@ -83,6 +83,8 @@ namespace libtysila.tybel
                     libasm.RelocationBlock rb = b as libasm.RelocationBlock;
                     cur_offset += rb.Size;
                 }
+                else
+                    System.Diagnostics.Debugger.Break();
             }
 
             /* Loop through again, resolving local references */

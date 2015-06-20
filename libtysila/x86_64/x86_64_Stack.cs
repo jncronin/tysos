@@ -178,7 +178,11 @@ namespace libtysila
 
             public override ICollection<libasm.hardware_location> UsedLocations
             {
-                get { return cur_locs; }
+                get {
+                    if (cur_locs == null)
+                        cur_locs = new util.Stack<libasm.hardware_location>();
+                    return cur_locs;
+                }
             }
 
             public override void MarkUsed(libasm.hardware_location loc)

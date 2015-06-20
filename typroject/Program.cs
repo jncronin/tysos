@@ -517,7 +517,15 @@ namespace typroject
             /* Load all references */
             XPathNodeIterator rit = n.Select("//d:ItemGroup/d:Reference/@Include", nm);
             while (rit.MoveNext())
-                ret.References.Add(rit.Current.Value);
+            {
+                XPathNavigator cur_n = rit.Current.Clone();
+                cur_n.MoveToParent();
+                XPathNavigator hp = cur_n.SelectSingleNode("d:HintPath", nm);
+                if (hp != null)
+                    ret.References.Add(rel_path(hp.Value, uri_basedir, uri_curdir));
+                else
+                    ret.References.Add(rit.Current.Value);
+            }
 
             /* Load project references */
             XPathNodeIterator prit = n.Select("//d:ItemGroup/d:ProjectReference", nm);
@@ -632,7 +640,10 @@ namespace typroject
             {
                 sb.Append("/reference:\"");
                 sb.Append(Program.replace_dir_split(lib));
-                sb.Append(".dll\" ");
+                if (lib.Contains(".dll") || lib.Contains(".exe"))
+                    sb.Append("\" ");
+                else
+                    sb.Append(".dll\" ");
             }
 
             foreach (Project pref in ProjectReferences)

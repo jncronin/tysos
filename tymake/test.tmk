@@ -121,6 +121,7 @@ LIBSTDCSOBJ = objfromexe(LIBSTDCS);
 LIBASMOBJ = objfromexe(typroject(ROOT + "/libasm/libasm.csproj", "Release", "3.5", 1));
 LIBTYSILAOBJ = objfromexe(typroject(ROOT + "/libtysila/libtysila.csproj", "Release", "3.5", 1));
 MSCORLIBDIR = dir(MSCORLIB);
+TYSOSDIR = dir(TYSOS);
 TINYGCOBJ = ROOT + "/tinygc/gc.o";
 
 KERNEL = ROOT + "/tysos.bin";
@@ -188,10 +189,10 @@ typroject(CORLIB_TY_SRCS);
 
 /* Rules for assembling CLR binaries */
 rulefor "%.obj" inputs { "%.exe" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR -L$TYSOSDIR $_RULE_INPUT");
 }
 rulefor "%.obj" inputs { "%.dll" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR -L$TYSOSDIR $_RULE_INPUT");
 }
 
 /* Rule for linking the kernel */

@@ -141,6 +141,7 @@
     <Compile Include="lib\UnicodeData.cs" />
     <Compile Include="NullOutput.cs" />
     <Compile Include="Pmem_Stack.cs" />
+    <Compile Include="Resource.cs" />
     <Compile Include="Syscalls.cs" />
     <Compile Include="Timer.cs" />
     <Compile Include="x86_64\Acpi.cs" />
@@ -152,6 +153,7 @@
     <Compile Include="x86_64\InterruptMap.cs" />
     <Compile Include="x86_64\PIT_8253.cs" />
     <Compile Include="Scheduler.cs" />
+    <Compile Include="x86_64\Resource.cs" />
     <Compile Include="x86_64\SmBios.cs" />
     <Compile Include="x86_64\Apic.cs" />
     <Compile Include="ElfReader.cs" />

@@ -246,11 +246,6 @@ namespace tysila
             if (ttc.type.ExcludedByArch)
                 return;
 
-            if (ttc.IsInstantiable == false)
-            {
-                int asdfgfdas = 0;
-            }
-
             /* Is this a generic type instantiation? */
             if (ttc.tsig.Type.IsWeakLinkage)
             {

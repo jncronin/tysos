@@ -222,7 +222,10 @@ namespace tysos
             // Enable multitasking
             //arch.EnableMultitasking();
 
-            Process debugprint = LoadELFModule("debugprint", mboot, stab, running_processes, 0x8000, new object[] { "hello", "world" });
+            x86_64.IOResource ior = new x86_64.IOResource(0, 0x10000);
+            VirtualMemoryResource64 vmr = new VirtualMemoryResource64(0xc0000000, 0x40000000);
+
+            Process debugprint = LoadELFModule("debugprint", mboot, stab, running_processes, 0x8000, new object[] { ior, vmr });
             arch.Switcher.Switch(debugprint.startup_thread);
             
 

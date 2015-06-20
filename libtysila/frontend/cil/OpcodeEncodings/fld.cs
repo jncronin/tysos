@@ -128,6 +128,13 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     else
                         ass.Assign(state, il.stack_vars_before, fld_address, new libasm.hardware_addressoflabel(obj_l.static_object_name, fld_offset, true), Assembler.CliType.native_int, il.il.tybel);
                 }
+                else if(obj_type.CLIType == Assembler.CliType.vt && (obj is libasm.hardware_stackloc))
+                {
+                    /* we don't want the contents of the stackloc as the address, rather its address */
+                    ass.LoadAddress(state, il.stack_vars_before, fld_address, obj, il.il.tybel);
+                    if (fld_offset != 0)
+                        ass.Add(state, il.stack_vars_before, fld_address, fld_address, new libasm.const_location { c = fld_offset }, Assembler.CliType.native_int, il.il.tybel);
+                }
                 else
                 {
                     if (fld_offset != 0)
