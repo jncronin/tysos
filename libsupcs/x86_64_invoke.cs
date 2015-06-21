@@ -44,6 +44,7 @@ namespace libsupcs.x86_64
              * 1 - INTEGER (unbox in asm)
              * 2 - SSE (unbox in asm)
              * 3 - MEMORY (upper 24 bits give length of object)
+             * 4 - INTEGER (unbox low 32 bits in asm)
              */
 
             uint[] plocs = null;
@@ -57,7 +58,7 @@ namespace libsupcs.x86_64
 
                 for (int i = 0; i < p_length; i++)
                 {
-                    TysosType p_type = TysosType.ReinterpretAsType(parameters[i].GetType());
+                    TysosType p_type = TysosType.ReinterpretAsType(**(void***)CastOperations.ReinterpretAsPointer(parameters[i]));
                     if (p_type.IsBoxed)
                     {
                         int size = p_type.GetUnboxedType().GetClassSize();
@@ -79,9 +80,13 @@ namespace libsupcs.x86_64
                             {
                                 plocs[i] = 2;
                             }
-                            else
+                            else if(size > 4)
                             {
                                 plocs[i] = 1;
+                            }
+                            else
+                            {
+                                plocs[i] = 4;
                             }
                         }
                     }

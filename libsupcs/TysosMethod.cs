@@ -74,9 +74,6 @@ namespace libsupcs
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
-        static unsafe extern object InternalInvoke(IntPtr meth, int param_count, void* parameters);
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         [MethodReferenceAlias("__invoke")]
         static extern object InternalInvoke(IntPtr meth, Object[] parameters);
 
