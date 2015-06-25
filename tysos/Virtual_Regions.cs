@@ -66,6 +66,7 @@ namespace tysos
                 CPU_specific,
                 IPC,
                 ModuleSection,
+                Devices,
                 Free
             }
 
@@ -78,7 +79,7 @@ namespace tysos
 
         public Region list_start, list_end;
 
-        public Region tysos, free, noncanonical, heap, pts;
+        public Region tysos, free, noncanonical, heap, pts, devs;
 
         void Add(Region r)
         {
@@ -160,7 +161,8 @@ namespace tysos
              * 
              * NullPage:        0x00000000 00000000 - 0x00000000 00000fff
              * Tysos:           tysos_base - (tysos_base + tysos_length - 1)
-             * Free:            tysos_end - 0x00007ffff 00000000
+             * Free:            tysos_end - 0x00006fff 00000000
+             * Devices:         0x00007000 00000000 - 0x00007fff ffffffff
              * NonCanonical     0x00008000 00000000 - 0xffff7fff ffffffff
              * Heap:            0xffff8000 00000000 - 0xffffff7f 00000000
              * PageTables:      0xffffff80 00000000 - 0xffffffff ffffffff
@@ -194,8 +196,15 @@ namespace tysos
             free.type = Region.RegionType.Free;
             free.name = "Free region";
             free.start = util.align(tysos.end, VirtMem.page_size);
-            free.length = 0x800000000000 - free.start;
+            free.length = 0x700000000000 - free.start;
             Add(free);
+
+            devs = new Region();
+            devs.type = Region.RegionType.Devices;
+            devs.name = "Devices";
+            devs.start = 0x800000000000;
+            devs.length = 0x100000000000;
+            Add(devs);
 
             noncanonical = new Region();
             noncanonical.type = Region.RegionType.NonCanonical;

@@ -405,13 +405,13 @@ namespace tysos
                         switch(r_type)
                         {
                             case 1:
-                                // R_X86_64: S + A
+                                // R_X86_64_64: S + A
                                 {
                                     ulong c = S;
                                     if (r_addend > 0)
-                                        S += (ulong)r_addend;
+                                        c += (ulong)r_addend;
                                     else
-                                        S -= (ulong)(-r_addend);
+                                        c -= (ulong)(-r_addend);
                                     *(ulong*)r_offset = c;
                                 }
                                 break;

@@ -262,6 +262,17 @@ namespace tysos.x86_64
                 InterpretApicTable(table_vaddr, length);
             else if (signature == AcpiTable.SIG_HPET)
                 InterpretHpetTable(table_vaddr, length);
+            else
+                InterpretUnknownTable(table_vaddr, length, signature);
+        }
+
+        private unsafe void InterpretUnknownTable(ulong table_vaddr, ulong table_length, uint signature)
+        {
+            AcpiTable ret = new AcpiTable();
+
+            ret.start_vaddr = table_vaddr;
+            ret.length = table_length;
+            ret.signature = signature;
         }
 
         private unsafe void InterpretHpetTable(ulong table_vaddr, ulong table_length)

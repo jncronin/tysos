@@ -440,6 +440,21 @@ namespace tysos.x86_64
             /* Now we have a working heap we can set up the rest of the physical memory */
             SetUpHighMemory(PhysMem, mboot);
 
+            /* Finally, create a list of parameters for handing to the system device enumerator */
+            if (acpi == null)
+                throw new Exception("ACPI required");
+            List<StructuredStartupParameters.Param> ps = new List<StructuredStartupParameters.Param>();
+            ps.Add(new StructuredStartupParameters.Param { Name = "driver", Value = "acpipc" });
+            foreach(Acpi.AcpiTable table in acpi.tables)
+            {
+                string tab_name = "table_" + table.signature.ToString("X8");
+                ps.Add(new StructuredStartupParameters.Param { Name = tab_name, Value = new VirtualMemoryResource64(table.start_vaddr, table.length) });
+            }
+            ps.Add(new StructuredStartupParameters.Param { Name = "vmem", Value = new VirtualMemoryResource64(VirtualRegions.devs.start, VirtualRegions.devs.length) });
+            ps.Add(new StructuredStartupParameters.Param { Name = "pmem", Value = new PhysicalMemoryResource64(0, UInt64.MaxValue) });
+            ps.Add(new StructuredStartupParameters.Param { Name = "io", Value = new x86_64.IOResource(0, 0x10000) });
+            VfsParams = new StructuredStartupParameters { Parameters = ps };
+
             Formatter.WriteLine("x86_64: Arch initialized", Program.arch.DebugOutput);
         }
 

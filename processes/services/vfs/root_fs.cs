@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2011 by John Cronin
+﻿/* Copyright (C) 2011-2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,21 +27,26 @@ namespace vfs
 {
     class root_fs : DirectoryFileSystemObject
     {
-        FileSystemObject dev_node;
+        DirectoryFileSystemObject dev_node;
         FileSystemObject sys_node;
         FileSystemObject proc_node;
         DirectoryFileSystemObject users_node;
         DirectoryFileSystemObject progs_node;
         DirectoryFileSystemObject storage_node;
+        DirectoryFileSystemObject mods_node;
 
-        public root_fs() : base("", null)
+        public root_fs(tysos.StructuredStartupParameters system_node,
+            tysos.StructuredStartupParameters mods)
+            : base("", null)
         {
-            dev_node = new dev_node(this);
+            dev_node = new DirectoryFileSystemObject("devices", this);
             sys_node = new sys_node(this);
             proc_node = new proc_node(this);
             users_node = new DirectoryFileSystemObject("users", this);
             progs_node = new DirectoryFileSystemObject("programs", this);
             storage_node = new DirectoryFileSystemObject("storage", this);
+            mods_node = new DirectoryFileSystemObject("modules", this);
+
 
             children.Add(dev_node);
             children.Add(sys_node);
@@ -49,6 +54,17 @@ namespace vfs
             children.Add(users_node);
             children.Add(progs_node);
             children.Add(storage_node);
+            children.Add(mods_node);
+
+            System.Diagnostics.Debugger.Break();
+
+            dev_node.Children.Add(new props_file("system", system_node, dev_node));
+
+            foreach(tysos.StructuredStartupParameters.Param mod in mods.Parameters)
+            {
+                mods_node.Children.Add(new vmem_file(mod.Name, (tysos.RangeResource)mod.Value,
+                    mods_node));
+            }
         }
     }
 }

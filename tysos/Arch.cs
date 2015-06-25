@@ -33,6 +33,7 @@ namespace tysos
         internal Timer SchedulerTimer;
         internal Virtual_Regions VirtualRegions;
         internal List<Cpu> Processors;
+        internal StructuredStartupParameters VfsParams;
 
         public IDebugOutput DebugOutput;
         public IDebugOutput BootInfoOutput;

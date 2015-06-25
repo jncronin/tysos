@@ -299,8 +299,9 @@ GRUBCFG = OUTDIR + "/grub.cfg";
 
 // Processes
 DEBUGPRINTOBJ = objfromexe(typroject(ROOT + "/testsuite/debugprint/debugprint.csproj"));
+VFSOBJ = objfromexe(typroject(ROOT + "/processes/services/vfs/vfs.csproj"));
 
-PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj"), DEBUGPRINTOBJ ];
+PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj"), DEBUGPRINTOBJ, VFSOBJ ];
 
 COREIMG = OUTDIR + "/core.img";
 XORRISO = "xorriso";

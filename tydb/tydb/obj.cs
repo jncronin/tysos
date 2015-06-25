@@ -173,10 +173,10 @@ namespace tydb
                 while (cur_field != 0)
                 {
                     string field_name = get_string(mem.get_mem(cur_field + (ulong)fi_l.InstanceFieldOffsets["String _Name"]));
-                    int flags = (int)mem.get_mem(cur_field + (ulong)fi_l.InstanceFieldOffsets["Int32 Flags"], 4);
+                    int flags = (int)mem.get_mem(cur_field + (ulong)fi_l.InstanceFieldOffsets["UInt32 Flags"], 4);
                     int f_offset = (int)mem.get_mem(cur_field + (ulong)fi_l.InstanceFieldOffsets["Int32 offset"], 4);
-                    string field_type = get_type_fullname(mem.get_mem(cur_field + (ulong)fi_l.InstanceFieldOffsets["tysos.TysosType _FieldType"]));
-                    ulong field_ti = mem.get_mem(cur_field + (ulong)fi_l.InstanceFieldOffsets["tysos.TysosType _FieldType"]);
+                    string field_type = get_type_fullname(mem.get_mem(cur_field + (ulong)fi_l.InstanceFieldOffsets["libsupcs.TysosType _FieldType"]));
+                    ulong field_ti = mem.get_mem(cur_field + (ulong)fi_l.InstanceFieldOffsets["libsupcs.TysosType _FieldType"]);
 
                     if ((flags & 0x10) == 0x0)
                     {
@@ -185,7 +185,7 @@ namespace tydb
                         ulong val = mem.get_mem(address + (ulong)f_offset, len);
                         bool is_vt = false;
 
-                        string field_extends_name = get_type_fullname(mem.get_mem(field_ti + (ulong)ti_l.InstanceFieldOffsets["tysos.TysosType Extends"]));
+                        string field_extends_name = get_type_fullname(mem.get_mem(field_ti + (ulong)ti_l.InstanceFieldOffsets["libsupcs.TysosType Extends"]));
                         if (((field_extends_name == "[mscorlib]System.ValueType") && (field_type != "[mscorlib]System.Enum")) ||
                             (field_extends_name == "[mscorlib]System.EnumType"))
                             is_vt = true;

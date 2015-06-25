@@ -43,8 +43,11 @@ namespace libtysila
             int_calls["_ZW20System#2EDiagnostics8DebuggerM_0_5Break_Rv_P0"] = Break;
             int_calls["_ZX15OtherOperationsM_0_16GetReturnAddress_RPv_P0"] = GetReturnAddress;
 
-            if(has_sse41)
+            if (has_sse41)
+            {
                 int_calls["_ZW6System4MathM_0_5Round_Rd_P1d"] = Math_Round;
+                int_calls["_ZW6System4MathM_0_5Floor_Rd_P1d"] = Math_Floor;
+            }
         }
 
         static void set_Rsp_v_y(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
@@ -212,6 +215,22 @@ namespace libtysila
             libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_ret, ass);
 
             ((x86_64_Assembler)ass).ChooseInstruction(x86_64.x86_64_asm.opcode.ROUNDSD, il.il.tybel, loc_ret, loc_arg, new libasm.const_location { c = 0 });
+
+            il.stack_after.Push(p_ret);
+        }
+
+        static void Math_Floor(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* Assumes we have sse4.1 - use roundsd round down */
+
+            libasm.hardware_location loc_arg = il.stack_vars_after.Pop(ass);
+            il.stack_after.Pop();
+
+            Signature.Param p_ret = new Signature.Param(BaseType_Type.R8);
+            libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_ret, ass);
+
+            ((x86_64_Assembler)ass).ChooseInstruction(x86_64.x86_64_asm.opcode.ROUNDSD, il.il.tybel, loc_ret, loc_arg, new libasm.const_location { c = 1 });
 
             il.stack_after.Push(p_ret);
         }

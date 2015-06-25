@@ -65,7 +65,7 @@
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="dev_node.cs" />
+    <Compile Include="props_file.cs" />
     <Compile Include="proc_node.cs" />
     <Compile Include="root_fs.cs" />
     <Compile Include="sys_node.cs" />
@@ -73,6 +73,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="vfs_handles.cs" />
     <Compile Include="vfs_mounts.cs" />
+    <Compile Include="vmem_file.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -86,6 +87,9 @@
       <Project>{97AD573F-2E77-4F43-9C2B-1050796471A9}</Project>
       <Name>tysos</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -222,11 +222,18 @@ namespace tysos
             // Enable multitasking
             //arch.EnableMultitasking();
 
-            x86_64.IOResource ior = new x86_64.IOResource(0, 0x10000);
-            VirtualMemoryResource64 vmr = new VirtualMemoryResource64(0xc0000000, 0x40000000);
+            /* Build a list of available modules */
+            List<StructuredStartupParameters.Param> mods = new List<StructuredStartupParameters.Param>();
+            foreach (Multiboot.Module mod in mboot.modules)
+            {
+                ulong vaddr = map_in(mod);
+                mods.Add(new StructuredStartupParameters.Param { Name = mod.name, Value = new VirtualMemoryResource64(vaddr, mod.length) });
+            }
+            StructuredStartupParameters startup_mods = new StructuredStartupParameters { Parameters = mods };
 
-            Process debugprint = LoadELFModule("debugprint", mboot, stab, running_processes, 0x8000, new object[] { ior, vmr });
-            arch.Switcher.Switch(debugprint.startup_thread);
+            /* Load the vfs */
+            Process vfs = LoadELFModule("vfs", mboot, stab, running_processes, 0x8000, new object[] { arch.VfsParams, startup_mods });
+            arch.Switcher.Switch(vfs.startup_thread);
             
 
             while (true) ;
@@ -240,10 +247,6 @@ namespace tysos
             /* Load the gui */
             Process gui = LoadELFProgram("gui", mboot, stab, running_processes, 0x8000);
             gui.startup_thread.priority++;      // Elevate the priority of the gui
-
-            /* Load the vfs */
-            Process vfs = LoadELFProgram("vfs", mboot, stab, running_processes, 0x8000);
-            vfs.startup_thread.priority++;      // Elevate the priority of the vfs
 
             /* Load the ACPI setup program */
             LoadELFProgram("ACPI_PC", mboot, stab, running_processes, 0x10000);
@@ -378,6 +381,8 @@ namespace tysos
             object[] parameters)
         {
             Multiboot.Module mod = find_module(mboot.modules, name);
+            if (mod == null)
+                throw new Exception("Module: " + name + " not found");
             ulong mod_vaddr = map_in(mod);
             return LoadELFModule(mod_vaddr, mod.length, name, mboot, stab, running_processes, stack_size, parameters);
         }

@@ -34,12 +34,18 @@ namespace vfs
         {
             vfs v = new vfs();
             tysos.Syscalls.ProcessFunctions.RegisterSpecialProcess(v, tysos.Syscalls.ProcessFunctions.SpecialProcessType.Vfs);
-            v.Init();
+
+            object[] a = args as object[];
+            tysos.StructuredStartupParameters system_node = a[0] as tysos.StructuredStartupParameters;
+            tysos.StructuredStartupParameters mods = a[1] as tysos.StructuredStartupParameters;
+
+            v.Init(system_node, mods);
         }
 
-        void Init()
+        void Init(tysos.StructuredStartupParameters system_node,
+            tysos.StructuredStartupParameters mods)
         {
-            root_fs root = new root_fs();
+            root_fs root = new root_fs(system_node, mods);
             mounts.Add("/", root);
 
             p_vfs = tysos.Syscalls.ProcessFunctions.GetCurrentProcess();
@@ -290,7 +296,7 @@ namespace vfs
         public virtual string Name { get { return name; } }
         public virtual IList<FileSystemObject> Children { get { return null; } }
         public virtual FileSystemObject Parent { get { return parent; } }
-        public virtual IList<FileSystemObjectAttribute> Attributes { get { return null; } }
+        public virtual IList<tysos.StructuredStartupParameters.Param> Attributes { get { return null; } }
 
         public abstract tysos.IFile Open(System.IO.FileAccess access, out tysos.lib.MonoIOError error);
 
@@ -351,17 +357,6 @@ namespace vfs
         }
 
         public DirectoryFileSystemObject(string _name, DirectoryFileSystemObject Parent) : base(_name, Parent) { }
-    }
-
-    public class FileSystemObjectAttribute
-    {
-        public string Name;
-        public object Value;
-
-        public override string ToString()
-        {
-            return Name + " : " + Value.ToString();
-        }
     }
 
     public class vfsMessageTypes

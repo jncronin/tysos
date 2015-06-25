@@ -104,6 +104,7 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="collections\VersionedList.cs" />
     <Compile Include="Cpu.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="gc\boehm.cs" />

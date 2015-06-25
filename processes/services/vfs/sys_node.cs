@@ -27,9 +27,11 @@ namespace vfs
 {
     public class fixed_text_file : FileSystemObject
     {
-        protected internal string contents = "";
+        string _contents = "";
+        protected internal virtual string contents { get { return _contents; } }
 
-        internal fixed_text_file(string Contents, string _name, DirectoryFileSystemObject Parent) : base(_name, Parent) { contents = Contents; }
+        internal fixed_text_file(string Contents, string _name, DirectoryFileSystemObject Parent) : base(_name, Parent) { _contents = Contents; }
+        protected fixed_text_file(string _name, DirectoryFileSystemObject Parent) : base(_name, Parent) { }
 
         public override tysos.IFile Open(System.IO.FileAccess access, out tysos.lib.MonoIOError error)
         {
