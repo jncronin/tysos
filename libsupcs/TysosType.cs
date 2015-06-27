@@ -656,7 +656,7 @@ namespace libsupcs
             return ret;
         }
 
-        static int obj_id = 0;
+        static internal int obj_id = 0;
 
         [MethodAlias("_Zu1OM_0_7GetType_RW6System4Type_P1u1t")]
         [AlwaysCompile]

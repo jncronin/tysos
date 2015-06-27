@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2011 by John Cronin
+﻿/* Copyright (C) 2011-2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@ namespace tysos
 {
     class ElfReader
     {
-        struct Elf64_Ehdr
+        internal struct Elf64_Ehdr
         {
             public UInt64 e_ident_1;
             public UInt64 e_ident_2;
@@ -49,7 +49,7 @@ namespace tysos
             public ulong e_shstrndx { get { return (ulong)((e_shnum_shstrndx >> 16) & 0xffff); } }
         }
 
-        struct Elf64_Shdr
+        internal struct Elf64_Shdr
         {
             public UInt32 sh_name;
             public UInt32 sh_type;
@@ -63,7 +63,7 @@ namespace tysos
             public UInt64 sh_entsize;
         }
 
-        struct Elf64_Sym
+        internal struct Elf64_Sym
         {
             public UInt32 st_name;
             public UInt32 st_info_other_shndx;
@@ -71,7 +71,7 @@ namespace tysos
             public UInt64 st_size;
         }
 
-        struct Elf64_Phdr
+        internal struct Elf64_Phdr
         {
             public UInt32 p_type;
             public UInt32 p_flags;
@@ -83,7 +83,7 @@ namespace tysos
             public UInt64 p_align;
         }
 
-        struct Elf64_Dyn
+        internal struct Elf64_Dyn
         {
             public Int64 d_tag;
             public UInt64 d_val;
@@ -101,7 +101,7 @@ namespace tysos
             public const Int64 DT_JMPREL = 23;
         }
 
-        struct Elf64_Rela
+        internal struct Elf64_Rela
         {
             public UInt64 r_offset;
             public UInt64 r_info;
@@ -112,7 +112,7 @@ namespace tysos
             public const UInt32 R_X86_64_JUMP_SLOT = 7;
         }
 
-        class Elf64_DynamicEntries
+        internal class Elf64_DynamicEntries
         {
             internal ulong dyn_sym_vaddr = 0;
             internal ulong dyn_str_vaddr = 0;

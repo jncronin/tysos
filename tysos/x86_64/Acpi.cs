@@ -273,6 +273,8 @@ namespace tysos.x86_64
             ret.start_vaddr = table_vaddr;
             ret.length = table_length;
             ret.signature = signature;
+
+            tables.Add(ret);
         }
 
         private unsafe void InterpretHpetTable(ulong table_vaddr, ulong table_length)

@@ -37,9 +37,15 @@ namespace vfs
         class vmem_file_handle : tysos.IFile, tysos.IInputStream, tysos.IOutputStream
         {
             int offset;
+            long wroffset;
             tysos.RangeResource vmem;
 
             internal vmem_file_handle(tysos.RangeResource vm) { vmem = vm; }
+
+            long tysos.IInputStream.Position { get { return (long)offset; } }
+            long tysos.IOutputStream.Position { get { return wroffset; } }
+            public long Length { get { return (long)vmem.Length64; } }
+            public void Seek(long position, tysos.SeekPosition whence) { throw new NotImplementedException(); }
 
             public tysos.IInputStream GetInputStream()
             {

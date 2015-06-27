@@ -86,7 +86,7 @@ namespace PS2_keyboard
             /* Register our callback function */
             tysos.Syscalls.DebugFunctions.DebugWrite("PS2K: registering irq handler\n");
             _imap = tysos.Syscalls.InterruptFunctions.GetInterruptMap();
-            _imap.RegisterIRQHandler("Keyboard", new tysos.Interrupts.ISR(KeyboardHandler));
+            //_imap.RegisterIRQHandler("Keyboard", new tysos.Interrupts.ISR(KeyboardHandler));
 
             /* Listen for shutdown messages */
             tysos.Syscalls.DebugFunctions.DebugWrite("PS2K: entering message loop\n");

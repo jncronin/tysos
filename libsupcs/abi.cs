@@ -293,6 +293,10 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [ReinterpretAsMethod]
+        public unsafe static extern object ReinterpretAsObject(void* addr);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static extern System.UIntPtr ReinterpretAsUIntPtr(object o);
 
         [MethodImpl(MethodImplOptions.InternalCall)]

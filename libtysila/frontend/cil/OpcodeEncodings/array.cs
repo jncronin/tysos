@@ -310,6 +310,12 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 loc_numelems = t2;
                 p_numelems = new Signature.Param(BaseType_Type.I4);
             }
+            //if(!(loc_numelems is libasm.register))
+            else
+            {
+                ass.Assign(state, il.stack_vars_before, t2, loc_numelems, Assembler.CliType.native_int, il.il.tybel);
+                loc_numelems = t2;
+            }
 
             /* Allocate memory for the array.  Array size =
              *     (numElems * elemSize) + sizes_array_size + lobounds_array_size + array_type_size
@@ -322,7 +328,11 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             // t1 = numElems * elemSize
             int elem_size = ass.GetPackedSizeOf(elem_type.tsig);
-            ass.Mul(state, il.stack_vars_before, t1, t2, new libasm.const_location { c = elem_size }, Assembler.CliType.native_int, il.il.tybel);
+            if (elem_size > 1)
+                ass.Mul(state, il.stack_vars_before, t1, loc_numelems, new libasm.const_location { c = elem_size }, Assembler.CliType.native_int, il.il.tybel);
+            else
+                ass.Assign(state, il.stack_vars_before, t1, loc_numelems, Assembler.CliType.native_int, il.il.tybel);
+
             // t1 = t1 + static_size
             ass.Add(state, il.stack_vars_before, t1, t1, new libasm.const_location { c = static_size }, Assembler.CliType.native_int, il.il.tybel);
             // t1 = gcmalloc(t1)

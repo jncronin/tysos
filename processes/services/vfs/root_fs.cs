@@ -56,8 +56,6 @@ namespace vfs
             children.Add(storage_node);
             children.Add(mods_node);
 
-            System.Diagnostics.Debugger.Break();
-
             dev_node.Children.Add(new props_file("system", system_node, dev_node));
 
             foreach(tysos.StructuredStartupParameters.Param mod in mods.Parameters)

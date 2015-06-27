@@ -48,6 +48,10 @@ namespace vfs
                     StringBuilder sb = new StringBuilder();
                     foreach (tysos.StructuredStartupParameters.Param p in props)
                     {
+                        tysos.Syscalls.DebugFunctions.DebugWrite("vfs: props_file: adding property: ");
+                        tysos.Syscalls.DebugFunctions.DebugWrite(p.Name);
+                        tysos.Syscalls.DebugFunctions.DebugWrite("\n");
+
                         sb.Append(p.Name);
                         sb.Append(": ");
                         sb.Append(p.Value.ToString());

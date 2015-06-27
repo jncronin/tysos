@@ -106,6 +106,7 @@
   <ItemGroup>
     <Compile Include="collections\VersionedList.cs" />
     <Compile Include="Cpu.cs" />
+    <Compile Include="elf\ElfFileReader.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="gc\boehm.cs" />
     <Compile Include="gc\gc.cs" />
@@ -157,7 +158,7 @@
     <Compile Include="x86_64\Resource.cs" />
     <Compile Include="x86_64\SmBios.cs" />
     <Compile Include="x86_64\Apic.cs" />
-    <Compile Include="ElfReader.cs" />
+    <Compile Include="elf\ElfReader.cs" />
     <Compile Include="lib\Environment.cs" />
     <Compile Include="x86_64\Exceptions.cs" />
     <Compile Include="x86_64\PIC_8259a.cs" />

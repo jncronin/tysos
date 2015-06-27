@@ -62,6 +62,10 @@ namespace vfs
                 return null;
             }
 
+            long tysos.IInputStream.Position { get { return (long)offset; } }
+            public long Length { get { return parent.contents.Length; } }
+            public void Seek(long position, tysos.SeekPosition whence) { throw new NotImplementedException(); }
+
             public int Read(byte[] dest, int dest_offset, int count)
             {
                 tysos.Syscalls.DebugFunctions.DebugWrite("fixed_text_file.handle.Read: called (dest_offset = " + dest_offset.ToString() + ", count = " + count.ToString() + "\n");

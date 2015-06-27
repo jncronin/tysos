@@ -47,6 +47,11 @@ namespace Console
             new Console().Init();
         }
 
+        long tysos.IInputStream.Position { get { return 0; } }
+        long tysos.IOutputStream.Position { get { return 0; } }
+        public long Length { get { return 0; } }
+        public void Seek(long position, tysos.SeekPosition whence) { throw new NotImplementedException(); }
+
         private void Init()
         {
             tysos.Syscalls.DebugFunctions.DebugWrite("Console: acquiring Gui process\n");

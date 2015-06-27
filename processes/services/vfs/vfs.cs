@@ -51,6 +51,24 @@ namespace vfs
             p_vfs = tysos.Syscalls.ProcessFunctions.GetCurrentProcess();
             tysos.Syscalls.DebugFunctions.DebugWrite("vfs: entering message loop\n");
             tysos.Syscalls.IPCFunctions.InitIPC();
+
+            // TEST: try and execute and load a program
+            // first, dump the /devices/system node
+            tysos.lib.MonoIOError err;
+            tysos.IFile f = _OpenFile("/devices/system", System.IO.FileMode.Open,
+                System.IO.FileAccess.Read, System.IO.FileShare.None, System.IO.FileOptions.None,
+                out err, tysos.Syscalls.ProcessFunctions.GetCurrentProcess());
+            if (f == null)
+                throw new Exception("f is null: " + err.ToString());
+            tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: found file with length " + f.Length.ToString() + "\n");
+            //byte[] buf = new byte[300];
+            System.Diagnostics.Debugger.Break();
+            byte[] buf = new byte[f.Length];
+            tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: buffer allocated, calling Read()\n");
+            f.GetInputStream().Read(buf, 0, (int)f.Length);
+            foreach(byte b in buf)
+                tysos.Syscalls.DebugFunctions.DebugWrite((char)b);
+
             bool cont = true;
             while (cont)
             {

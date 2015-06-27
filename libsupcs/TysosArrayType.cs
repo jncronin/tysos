@@ -27,7 +27,7 @@ namespace libsupcs
 {
     [VTableAlias("__tysos_arraytype_vt")]
     [SpecialType]
-    class TysosArrayType : TysosType
+    public class TysosArrayType : TysosType
     {
         internal TysosType elemtype;
 
@@ -317,6 +317,31 @@ namespace libsupcs
 
             UIntPtr inner_array = CastOperations.ReinterpretAsUIntPtr(MemoryOperations.GcMalloc(new IntPtr(size * elemtype.GetClassSize())));
             *(UIntPtr*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetInnerArrayOffset())) = inner_array;
+        }
+
+        public unsafe static byte[] CreateByteArray(byte* data, int length)
+        {
+            byte* ret = (byte*)CastOperations.ReinterpretAsPointer(MemoryOperations.GcMalloc(new IntPtr(libsupcs.ArrayOperations.GetArrayClassSize())));
+
+            /* Add in the object fields */
+            IntPtr *ti = (IntPtr *)OtherOperations.GetStaticObjectAddress("_Zu1ZhTI");
+            *(IntPtr*)(ret + (int)libsupcs.ClassOperations.GetVtblFieldOffset()) = *ti;
+            *(int*)(ret + (int)libsupcs.ClassOperations.GetObjectIdFieldOffset()) = TysosType.obj_id++;
+
+            /* Add in the array fields */
+            int* lobounds = (int*)CastOperations.ReinterpretAsPointer(MemoryOperations.GcMalloc(new IntPtr(4)));
+            *lobounds = 0;
+            *(int**)(ret + (int)libsupcs.ArrayOperations.GetLoboundsOffset()) = lobounds;
+
+            int* sizes = (int*)CastOperations.ReinterpretAsPointer(MemoryOperations.GcMalloc(new IntPtr(4)));
+            *sizes = length;
+            *(int**)(ret + (int)libsupcs.ArrayOperations.GetSizesOffset()) = sizes;
+
+            *(int*)(ret + (int)libsupcs.ArrayOperations.GetInnerArrayLengthOffset()) = length;
+
+            *(byte**)(ret + (int)libsupcs.ArrayOperations.GetInnerArrayOffset()) = data;
+
+            return (byte[])CastOperations.ReinterpretAsObject(ret);
         }
 
         class TysosArrayTypeMethod : TysosMethod

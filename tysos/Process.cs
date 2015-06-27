@@ -52,6 +52,12 @@ namespace tysos
 
         internal Virtual_Regions.Region ipc_region;
         internal IPC ipc;
+
+        public static Process CreateProcess(IInputStream file, object [] parameters)
+        {
+            /* Create a process from an ELF module in a file object */
+            throw new NotImplementedException();
+        }
     }
 
     public class Thread

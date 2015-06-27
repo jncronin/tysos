@@ -27,6 +27,7 @@ namespace tysos
 {
     public interface IFile
     {
+        long Length { get; }
         IInputStream GetInputStream();
         IOutputStream GetOutputStream();
     }
@@ -35,10 +36,18 @@ namespace tysos
     {
         int Read(byte[] dest, int dest_offset, int count);
         int DataAvailable(int timeout);
+        long Length { get; }
+        long Position { get; }
+        void Seek(long position, SeekPosition whence);
     }
 
     public interface IOutputStream
     {
         void Write(byte[] src, int src_offset, int count);
+        long Length { get; }
+        long Position { get; }
+        void Seek(long position, SeekPosition whence);
     }
+
+    public enum SeekPosition { Set, Cur, End }
 }
