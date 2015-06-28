@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using tysos.Messages;
 
 namespace vfs
 {
@@ -68,6 +69,44 @@ namespace vfs
             f.GetInputStream().Read(buf, 0, (int)f.Length);
             foreach(byte b in buf)
                 tysos.Syscalls.DebugFunctions.DebugWrite((char)b);
+
+            // get the value of the 'driver'
+            tysos.StructuredStartupParameters.Param driver = f.GetPropertyByName("driver");
+            if (driver == null)
+                throw new Exception("driver was null");
+            tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: found driver: " + driver.Value.ToString() + "\n");
+
+            // see if it is loaded
+            tysos.Process p = tysos.Syscalls.ProcessFunctions.GetProcessByName(driver.Value.ToString());
+            if(p == null)
+            {
+                // process is not loaded - we have to load it
+                tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: driver not loaded - loading it\n");
+
+                tysos.IFile fp = _OpenFile("/modules/" + driver.Value.ToString(), System.IO.FileMode.Open,
+                    System.IO.FileAccess.Read, System.IO.FileShare.None, System.IO.FileOptions.None,
+                    out err, tysos.Syscalls.ProcessFunctions.GetCurrentProcess());
+
+                if(fp == null)
+                {
+                    throw new Exception("fp is null: " + err.ToString());
+                }
+
+                // load it
+                p = tysos.Process.CreateProcess(fp.GetInputStream(), driver.Value.ToString(),
+                    new object[] { });
+                p.Start();
+            }
+
+            tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: driver process loaded\n");
+
+            /* Send a mount message to acpipc */
+            deviceMessageTypes.InitDeviceMessage tmsg = new deviceMessageTypes.InitDeviceMessage();
+            tmsg.Resources = f.Properties;
+            tmsg.Node = f;
+            tysos.Syscalls.IPCFunctions.SendMessage(p, tmsg, deviceMessageTypes.INIT_DEVICE);
+
+            tysos.Syscalls.SchedulerFunctions.Yield();
 
             bool cont = true;
             while (cont)
@@ -244,7 +283,7 @@ namespace vfs
                     return GetFSO(mounts[mount], additional);
 
                 if (mount == "/")
-                    return null;
+                    return new List<FileSystemObject>();
 
                 int last_idx = mount.LastIndexOf('/');
                 additional.Insert(0, mount.Substring(last_idx + 1));
@@ -284,7 +323,7 @@ namespace vfs
             {
                 path_below.RemoveAt(0);
                 if (mount_point.Children == null)
-                    return null;
+                    return new List<FileSystemObject>();
                 foreach (FileSystemObject fso in mount_point.Children)
                     ret.AddRange(GetFSO(fso, path_below));
                 return ret;
@@ -302,7 +341,7 @@ namespace vfs
                 }
             }
 
-            return null;
+            return new List<FileSystemObject>();
         }
     }
 
@@ -314,7 +353,20 @@ namespace vfs
         public virtual string Name { get { return name; } }
         public virtual IList<FileSystemObject> Children { get { return null; } }
         public virtual FileSystemObject Parent { get { return parent; } }
-        public virtual IList<tysos.StructuredStartupParameters.Param> Attributes { get { return null; } }
+
+        internal VersionedList<tysos.StructuredStartupParameters.Param> props =
+            new VersionedList<tysos.StructuredStartupParameters.Param>();
+
+        protected internal virtual ICollection<tysos.StructuredStartupParameters.Param> Properties { get { return props; } }
+        protected internal virtual tysos.StructuredStartupParameters.Param GetPropertyByName(string name)
+        {
+            foreach(tysos.StructuredStartupParameters.Param p in props)
+            {
+                if (p.Name == name)
+                    return p;
+            }
+            return null;
+        }
 
         public abstract tysos.IFile Open(System.IO.FileAccess access, out tysos.lib.MonoIOError error);
 
@@ -375,64 +427,5 @@ namespace vfs
         }
 
         public DirectoryFileSystemObject(string _name, DirectoryFileSystemObject Parent) : base(_name, Parent) { }
-    }
-
-    public class vfsMessageTypes
-    {
-        public const int WRITE = 0x10010000;
-        public const int READ = 0x10010001;
-        public const int PEEK = 0x10010002;
-        public const int GET_ATTRIBUTES = 0x10010003;
-        public const int GET_FILE_SYSTEM_ENTRIES = 0x10010004;
-        public const int OPEN = 0x10010005;
-        public const int CLOSE = 0x10010006;
-        public const int MOUNT = 0x10010007;
-        public const int UNMOUNT = 0x10010008;
-
-        public class ReadWriteMessage
-        {
-            public ulong Handle;
-            public byte[] buf;
-            public int buf_offset;
-            public int count;
-            public int count_read;
-            public tysos.Event completed = new tysos.Event();
-        }
-
-        public class FileAttributesMessage
-        {
-            public string path;
-            public System.IO.FileAttributes attributes;
-            public tysos.Event completed = new tysos.Event();
-        }
-
-        public class FileSystemEntriesMessage
-        {
-            public string path;
-            public string path_with_pattern;
-            public int attrs;
-            public int mask;
-            public tysos.Event completed = new tysos.Event();
-            public string[] files;
-        }
-
-        public class OpenFileMessage
-        {
-            public string path;
-            public System.IO.FileMode mode;
-            public System.IO.FileAccess access;
-            public System.IO.FileShare share;
-            public System.IO.FileOptions options;
-            public tysos.lib.MonoIOError error;
-            public tysos.IFile handle;
-            public tysos.Event completed = new tysos.Event();
-        }
-
-        public class MountMessage
-        {
-            public string mount_point;
-            public DirectoryFileSystemObject device;
-            public tysos.Event completed = new tysos.Event();
-        }
     }
 }

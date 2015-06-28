@@ -141,6 +141,10 @@
     <Compile Include="lib\TimeZone.cs" />
     <Compile Include="lib\Type.cs" />
     <Compile Include="lib\UnicodeData.cs" />
+    <Compile Include="Messages\Devices.cs" />
+    <Compile Include="Messages\Generic.cs" />
+    <Compile Include="Messages\Gui.cs" />
+    <Compile Include="Messages\Vfs.cs" />
     <Compile Include="NullOutput.cs" />
     <Compile Include="Pmem_Stack.cs" />
     <Compile Include="Resource.cs" />

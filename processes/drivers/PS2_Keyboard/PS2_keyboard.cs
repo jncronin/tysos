@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using tysos.Messages;
 
 namespace PS2_keyboard
 {
@@ -81,7 +82,7 @@ namespace PS2_keyboard
             gui = e.Process;
             if (gui == null)
                 throw new Exception("Unable to communicate with gui process");
-            tysos.Syscalls.IPCFunctions.SendMessage(gui, new tysos.IPCMessage { Type = Gui.GuiMessageTypes.REGISTER_INPUT });
+            tysos.Syscalls.IPCFunctions.SendMessage(gui, new tysos.IPCMessage { Type = GuiMessageTypes.REGISTER_INPUT });
 
             /* Register our callback function */
             tysos.Syscalls.DebugFunctions.DebugWrite("PS2K: registering irq handler\n");
@@ -205,7 +206,7 @@ namespace PS2_keyboard
 
         static void handle_tysos_scancode(ushort code)
         {
-            tysos.Syscalls.IPCFunctions.SendMessage(gui, new tysos.IPCMessage { Type = Gui.GuiMessageTypes.KEYPRESS_MESSAGE, Message = new Gui.GuiMessageTypes.KeyPressMessage { tysos_scancode = code } });
+            tysos.Syscalls.IPCFunctions.SendMessage(gui, new tysos.IPCMessage { Type = GuiMessageTypes.KEYPRESS_MESSAGE, Message = new GuiMessageTypes.KeyPressMessage { tysos_scancode = code } });
         }
     }
 }

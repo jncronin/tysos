@@ -73,7 +73,7 @@ namespace tysos
             p.ipc.writepointer = p.ipc.start;
             p.ipc.ready = true;
 
-            return false;
+            return true;
         }
 
         private object lock_obj = new object();

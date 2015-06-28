@@ -324,8 +324,8 @@ namespace libsupcs
             byte* ret = (byte*)CastOperations.ReinterpretAsPointer(MemoryOperations.GcMalloc(new IntPtr(libsupcs.ArrayOperations.GetArrayClassSize())));
 
             /* Add in the object fields */
-            IntPtr *ti = (IntPtr *)OtherOperations.GetStaticObjectAddress("_Zu1ZhTI");
-            *(IntPtr*)(ret + (int)libsupcs.ClassOperations.GetVtblFieldOffset()) = *ti;
+            TysosType ti = TysosType.ReinterpretAsType(OtherOperations.GetStaticObjectAddress("_Zu1ZhTI"));
+            *(IntPtr*)(ret + (int)libsupcs.ClassOperations.GetVtblFieldOffset()) = ti.VTable;
             *(int*)(ret + (int)libsupcs.ClassOperations.GetObjectIdFieldOffset()) = TysosType.obj_id++;
 
             /* Add in the array fields */

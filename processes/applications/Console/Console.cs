@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using tysos.Messages;
 
 namespace Console
 {
@@ -95,9 +96,9 @@ namespace Console
         {
             switch (msg.Type)
             {
-                case vfs.vfsMessageTypes.READ:
+                case vfsMessageTypes.READ:
                     {
-                        vfs.vfsMessageTypes.ReadWriteMessage rwm = msg.Message as vfs.vfsMessageTypes.ReadWriteMessage;
+                        vfsMessageTypes.ReadWriteMessage rwm = msg.Message as vfsMessageTypes.ReadWriteMessage;
                         if (rwm != null)
                         {
                             if (read_buffer.Count > 0)
@@ -118,17 +119,17 @@ namespace Console
                     }
                     break;
 
-                case vfs.vfsMessageTypes.WRITE:
+                case vfsMessageTypes.WRITE:
                     {
-                        vfs.vfsMessageTypes.ReadWriteMessage rwm = msg.Message as vfs.vfsMessageTypes.ReadWriteMessage;
+                        vfsMessageTypes.ReadWriteMessage rwm = msg.Message as vfsMessageTypes.ReadWriteMessage;
                         if (rwm != null)
                             _Write(rwm.buf, rwm.buf_offset, rwm.count);
                     }
                     break;
 
-                case vfs.vfsMessageTypes.PEEK:
+                case vfsMessageTypes.PEEK:
                     {
-                        vfs.vfsMessageTypes.ReadWriteMessage rwm = msg.Message as vfs.vfsMessageTypes.ReadWriteMessage;
+                        vfsMessageTypes.ReadWriteMessage rwm = msg.Message as vfsMessageTypes.ReadWriteMessage;
                         if (rwm != null)
                         {
                             //lock (rwm.completed)
@@ -145,9 +146,9 @@ namespace Console
                     }
                     break;
 
-                case Gui.GuiMessageTypes.KEYPRESS_MESSAGE:
+                case GuiMessageTypes.KEYPRESS_MESSAGE:
                     {
-                        Gui.GuiMessageTypes.KeyPressMessage kpm = msg.Message as Gui.GuiMessageTypes.KeyPressMessage;
+                        GuiMessageTypes.KeyPressMessage kpm = msg.Message as GuiMessageTypes.KeyPressMessage;
                         if (kpm != null)
                         {
                             read_buffer.Add((byte)kpm.key);
@@ -164,7 +165,7 @@ namespace Console
             {
                 //lock (pending_awaits[0].completed)
                 {
-                    vfs.vfsMessageTypes.ReadWriteMessage rwm = pending_reads[0].Message as vfs.vfsMessageTypes.ReadWriteMessage;
+                    vfsMessageTypes.ReadWriteMessage rwm = pending_reads[0].Message as vfsMessageTypes.ReadWriteMessage;
 
                     if (rwm == null)
                     {
@@ -181,7 +182,7 @@ namespace Console
                     if(read_buffer.Count > 0)
                     {
                         int count_read = 0;
-                        if (pending_reads[0].Type == vfs.vfsMessageTypes.READ)
+                        if (pending_reads[0].Type == vfsMessageTypes.READ)
                         {
                             while ((read_buffer.Count > 0) && (count_read < rwm.count))
                             {
@@ -210,24 +211,24 @@ namespace Console
 
         public void Write(byte[] src, int src_offset, int count)
         {
-            vfs.vfsMessageTypes.ReadWriteMessage rwm = new vfs.vfsMessageTypes.ReadWriteMessage();
+            vfsMessageTypes.ReadWriteMessage rwm = new vfsMessageTypes.ReadWriteMessage();
             rwm.buf = new byte[count];
             for (int i = 0; i < count; i++)
                 rwm.buf[i] = src[i + src_offset];
             rwm.buf_offset = 0;
             rwm.count = count;
 
-            tysos.Syscalls.IPCFunctions.SendMessage(GetConsoleProcess(), new tysos.IPCMessage { Type = vfs.vfsMessageTypes.WRITE, Message = rwm });
+            tysos.Syscalls.IPCFunctions.SendMessage(GetConsoleProcess(), new tysos.IPCMessage { Type = vfsMessageTypes.WRITE, Message = rwm });
         }
 
         public int Read(byte[] dest, int dest_offset, int count)
         {
-            vfs.vfsMessageTypes.ReadWriteMessage rwm = new vfs.vfsMessageTypes.ReadWriteMessage();
+            vfsMessageTypes.ReadWriteMessage rwm = new vfsMessageTypes.ReadWriteMessage();
             rwm.buf = dest;
             rwm.buf_offset = dest_offset;
             rwm.count = count;
             
-            tysos.Syscalls.IPCFunctions.SendMessage(GetConsoleProcess(), new tysos.IPCMessage { Type = vfs.vfsMessageTypes.READ, Message = rwm });
+            tysos.Syscalls.IPCFunctions.SendMessage(GetConsoleProcess(), new tysos.IPCMessage { Type = vfsMessageTypes.READ, Message = rwm });
             tysos.Syscalls.SchedulerFunctions.Block(rwm.completed);
             tysos.Syscalls.DebugFunctions.DebugWrite("Console: Read: returning " + rwm.count_read.ToString() + "\n");
             return rwm.count_read;
@@ -356,7 +357,7 @@ namespace Console
             Gui.Buffer.Blit(window.Graphics, backbuffer, 0, cur_window_y, 0, 0, window.Graphics.Width, window.Graphics.Height);
 
             /* Send an UPDATE_OUTPUT message to the gui */
-            tysos.Syscalls.IPCFunctions.SendMessage(gui, new tysos.IPCMessage { Type = Gui.GuiMessageTypes.UPDATE_OUTPUT });
+            tysos.Syscalls.IPCFunctions.SendMessage(gui, new tysos.IPCMessage { Type = GuiMessageTypes.UPDATE_OUTPUT });
         }
 
         private bool is_char(char p)
@@ -404,14 +405,14 @@ namespace Console
 
         public int DataAvailable(int timeout)
         {
-            vfs.vfsMessageTypes.ReadWriteMessage rwm = new vfs.vfsMessageTypes.ReadWriteMessage();
+            vfsMessageTypes.ReadWriteMessage rwm = new vfsMessageTypes.ReadWriteMessage();
             rwm.buf = new byte[1];
             rwm.buf_offset = 0;
             rwm.count = 1;
 
             tysos.Syscalls.DebugFunctions.DebugWrite("Console: KeyAvailable: called (timeout = " + timeout.ToString() + ")\n");
             
-            tysos.Syscalls.IPCFunctions.SendMessage(GetConsoleProcess(), new tysos.IPCMessage { Type = vfs.vfsMessageTypes.PEEK, Message = rwm });
+            tysos.Syscalls.IPCFunctions.SendMessage(GetConsoleProcess(), new tysos.IPCMessage { Type = vfsMessageTypes.PEEK, Message = rwm });
 
             /* Block on either receiving a character or the timeout, whichever comes first */
             tysos.WaitAnyEvent wae = new tysos.WaitAnyEvent();

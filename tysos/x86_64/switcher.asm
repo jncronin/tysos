@@ -35,7 +35,7 @@ _ZN5tysos14tysos#2Ex86_6412TaskSwitcherM_0_16do_x86_64_switch_Rv_P4yU5tysos6Thre
 
 	; if cur_thread != null
 	mov rbx, [rax + rdx]		; cur_thread_tsi
-	mov [rdx + rcx], rsp		; store rsp to rsp within current thread
+	mov [rbx + rcx], rsp		; store rsp to rsp within current thread
 .dontsave:
 
 	; load rsp from the new thread

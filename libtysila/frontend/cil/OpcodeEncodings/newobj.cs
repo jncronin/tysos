@@ -291,6 +291,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     ass.Assign(state, used_locs, t2, loc_params[1], Assembler.CliType.native_int, il.il.tybel);
                     ass.Assign(state, used_locs, loc_params[1], new libasm.hardware_contentsof { base_loc = t2, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
                     ass.Assign(state, used_locs, t2, new libasm.hardware_contentsof { base_loc = t2, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length), size = 4 }, Assembler.CliType.int32, il.il.tybel);
+                    ass.Mul(state, used_locs, t2, t2, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
                     ass.LoadAddress(state, used_locs, t3, data_ptr, il.il.tybel);
                     used_locs.MarkUsed(t3);
                     ass.MemCpy(state, used_locs, t3, loc_params[1], t2, il.il.tybel);
@@ -379,6 +380,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 ass.Assign(state, used_locs, loc_dest,
                     new libasm.hardware_contentsof { base_loc = loc_value, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length),
                         size = 4 }, Assembler.CliType.int32, il.il.tybel);
+                ass.Mul(state, used_locs, loc_dest, loc_dest, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
                 loc_strlength = null;
                 return 2;
             }

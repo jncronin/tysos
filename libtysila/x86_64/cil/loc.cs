@@ -64,7 +64,53 @@ namespace libtysila.x86_64.cil
             libasm.hardware_location src = state.lv_locs[p];
             libasm.hardware_location dest = il.stack_vars_after.GetAddressFor(state.lvs[p], ass);
 
-            ass.Assign(state, il.stack_vars_before, dest, src, state.lvs[p].CliType(ass), il.il.tybel);
+            /* Special handling for byte, sbyte, short, ushort */
+            if(ass.GetPackedSizeOf(state.lvs[p]) < 4)
+            {
+                Signature.Param p_lv = ass.GetUnderlyingType(state.lvs[p]);
+
+                libasm.hardware_location loc_dest = dest;
+                if (!(dest is libasm.register))
+                    dest = ass.GetTemporary(state);
+
+                src = x86_64_Assembler.ResolveStackLoc(ass as x86_64_Assembler, state, src);
+
+                if(!(p_lv.Type is Signature.BaseType))
+                {
+                    throw new Exception("ldloc: Underlying of type of " + state.lvs[p] +
+                        " is not a base type");
+                }
+                BaseType_Type t_lv = ((Signature.BaseType)p_lv.Type).Type;
+                switch(t_lv)
+                {
+                    case BaseType_Type.Byte:
+                    case BaseType_Type.U1:
+                    case BaseType_Type.Boolean:
+                        ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.MOVZXB, il.il.tybel, vara.MachineReg(dest), vara.MachineReg(src));
+                        break;
+
+                    case BaseType_Type.U2:
+                    case BaseType_Type.Char:
+                        ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.MOVZXW, il.il.tybel, vara.MachineReg(dest), vara.MachineReg(src));
+                        break;
+
+                    case BaseType_Type.I1:
+                        ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.MOVSXB, il.il.tybel, vara.MachineReg(dest), vara.MachineReg(src));
+                        break;
+
+                    case BaseType_Type.I2:
+                        ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.MOVSXW, il.il.tybel, vara.MachineReg(dest), vara.MachineReg(src));
+                        break;
+                        
+                    default:
+                        throw new NotSupportedException("ldloc: unsupported base type: " + t_lv.ToString());
+                }
+
+                if (!dest.Equals(loc_dest))
+                    ass.Assign(state, il.stack_vars_before, loc_dest, dest, Assembler.CliType.int32, il.il.tybel);
+            }
+            else
+                ass.Assign(state, il.stack_vars_before, dest, src, state.lvs[p].CliType(ass), il.il.tybel);
 
             il.stack_after.Push(state.lvs[p]);
         }

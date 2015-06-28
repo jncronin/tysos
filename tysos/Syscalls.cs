@@ -232,6 +232,25 @@ namespace tysos
 
                 return dest.ipc.SendMessage(message);
             }
+
+            [libsupcs.Syscall]
+            public static bool SendMessage(Process dest, Messages.Message message, int type)
+            {
+                if (dest == null)
+                    return false;
+                if (dest.ipc == null)
+                {
+                    if (IPC.InitIPC(dest) == false)
+                        return false;
+                }
+
+                IPCMessage msg = new IPCMessage();
+                msg.Source = Program.cur_cpu_data.CurrentThread;
+                msg.Type = type;
+                msg.Message = message;
+
+                return dest.ipc.SendMessage(msg);
+            }
         }
 
         public class MemoryFunctions

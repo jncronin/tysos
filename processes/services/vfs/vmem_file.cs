@@ -27,7 +27,7 @@ namespace vfs
 {
     class vmem_file : FileSystemObject
     {
-        tysos.RangeResource vm;
+        internal tysos.RangeResource vm;
         internal vmem_file(string Name, tysos.RangeResource vmem,
             DirectoryFileSystemObject Parent) : base(Name, Parent)
         {
@@ -36,16 +36,36 @@ namespace vfs
 
         class vmem_file_handle : tysos.IFile, tysos.IInputStream, tysos.IOutputStream
         {
-            int offset;
+            long offset;
             long wroffset;
             tysos.RangeResource vmem;
+            vmem_file f;
 
-            internal vmem_file_handle(tysos.RangeResource vm) { vmem = vm; }
+            internal vmem_file_handle(vmem_file fso) { f = fso; vmem = fso.vm; }
 
-            long tysos.IInputStream.Position { get { return (long)offset; } }
+            long tysos.IInputStream.Position { get { return offset; } }
             long tysos.IOutputStream.Position { get { return wroffset; } }
             public long Length { get { return (long)vmem.Length64; } }
-            public void Seek(long position, tysos.SeekPosition whence) { throw new NotImplementedException(); }
+
+            public void Seek(long position, tysos.SeekPosition whence)
+            { 
+                switch(whence)
+                {
+                    case tysos.SeekPosition.Cur:
+                        position = offset + position;
+                        break;
+
+                    case tysos.SeekPosition.End:
+                        position = (long)vmem.Length64 - position;
+                        break;
+                }
+
+                if (position < 0)
+                    position = 0;
+                else if ((ulong)position > vmem.Length64)
+                    position = (long)vmem.Length64;
+                offset = position;
+            }
 
             public tysos.IInputStream GetInputStream()
             {
@@ -56,6 +76,11 @@ namespace vfs
             {
                 return this;
             }
+
+            public ICollection<tysos.StructuredStartupParameters.Param> Properties
+            { get { return f.Properties; } }
+            public tysos.StructuredStartupParameters.Param GetPropertyByName(string name)
+            { return f.GetPropertyByName(name); }
 
             public int Read(byte[] dest, int dest_offset, int count)
             {
@@ -88,20 +113,20 @@ namespace vfs
 
             public void Write(byte[] src, int src_offset, int count)
             {
-                if (offset < 0)
+                if (wroffset < 0)
                     return;
                 if (count < 0)
                     return;
-                if ((ulong)offset > vmem.Length64)
+                if ((ulong)wroffset > vmem.Length64)
                     return;
-                ulong to_write = vmem.Length64 - (ulong)offset;
+                ulong to_write = vmem.Length64 - (ulong)wroffset;
                 if (to_write > (ulong)count)
                     to_write = (ulong)count;
 
                 for (ulong i = 0; i < to_write; i++)
-                    vmem.Write(vmem.Addr64 + (ulong)offset + i, 1, src[src_offset + (int)i]);
+                    vmem.Write(vmem.Addr64 + (ulong)wroffset + i, 1, src[src_offset + (int)i]);
 
-                offset += (int)to_write;
+                wroffset += (int)to_write;
             }
         }
 
@@ -114,7 +139,7 @@ namespace vfs
             }
 
             error = tysos.lib.MonoIOError.ERROR_SUCCESS;
-            return new vmem_file_handle(vm);
+            return new vmem_file_handle(this);
         }
     }
 }

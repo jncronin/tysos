@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using tysos.Messages;
 
 namespace Gui
 {
@@ -89,7 +90,7 @@ namespace Gui
                     if (rom != null)
                     {
                         Output o = new Output();
-                        o.back_buffer = rom.buffer;
+                        o.back_buffer = rom.buffer as Buffer;
                         o.process = msg.Source.owning_process;
                         o.x_origin = 0;
                         o.y_origin = 0;
@@ -171,25 +172,5 @@ namespace Gui
 
         public int x_origin;
         public int y_origin;
-    }
-
-    public class GuiMessageTypes
-    {
-        public const int REGISTER_INPUT = 0x10000000;
-        public const int REGISTER_OUTPUT = 0x10000001;
-        public const int KEYPRESS_MESSAGE = 0x10000002;
-        public const int UPDATE_OUTPUT = 0x10000003;
-        public const int CREATE_WINDOW = 0x10000004;
-
-        public class KeyPressMessage
-        {
-            public ushort tysos_scancode;
-            public char key;
-        }
-
-        public class RegisterOutputMessage
-        {
-            public Buffer buffer;
-        }
     }
 }

@@ -27,7 +27,7 @@ namespace vfs
 {
     partial class vfs
     {
-        void _Mount(string mount_path, DirectoryFileSystemObject device)
+        void _Mount(string mount_path, tysos.IDirectory device)
         {
             if (device == null)
             {
@@ -61,11 +61,12 @@ namespace vfs
                 return;
             }
 
-            device.parent = fso.parent;
+            throw new NotImplementedException();
+            /*device.parent = fso.parent;
             device.name = fso.name;
 
             mounts.Add(mount_path, device);
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: _Mount: successful mount to " + mount_path + "\n");
+            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: _Mount: successful mount to " + mount_path + "\n");*/
         }
     }
 }

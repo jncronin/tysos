@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using tysos.Messages;
 
 namespace ACPI_PC
 {
@@ -166,10 +167,10 @@ namespace ACPI_PC
             tysos.Process p_vfs = e.Process;
 
             // Mount ourselves as /dev
-            vfs.vfsMessageTypes.MountMessage mm = new vfs.vfsMessageTypes.MountMessage();
+            /*vfsMessageTypes.MountMessage mm = new vfsMessageTypes.MountMessage();
             mm.mount_point = "/dev";
             mm.device = devfs;
-            tysos.Syscalls.IPCFunctions.SendMessage(p_vfs, new tysos.IPCMessage { Type = vfs.vfsMessageTypes.MOUNT, Message = mm });
+            tysos.Syscalls.IPCFunctions.SendMessage(p_vfs, new tysos.IPCMessage { Type = vfsMessageTypes.MOUNT, Message = mm });*/
         }
     }
 }

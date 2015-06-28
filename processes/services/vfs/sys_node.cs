@@ -62,6 +62,11 @@ namespace vfs
                 return null;
             }
 
+            public ICollection<tysos.StructuredStartupParameters.Param> Properties
+            { get { return parent.Properties; } }
+            public tysos.StructuredStartupParameters.Param GetPropertyByName(string name)
+            { return parent.GetPropertyByName(name); }
+
             long tysos.IInputStream.Position { get { return (long)offset; } }
             public long Length { get { return parent.contents.Length; } }
             public void Seek(long position, tysos.SeekPosition whence) { throw new NotImplementedException(); }

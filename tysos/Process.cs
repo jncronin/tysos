@@ -35,6 +35,7 @@ namespace tysos
         public IOutputStream stdout, stderr;
         internal bool started = false;
         public bool Started { get { return started; } }
+
         internal string current_directory = "/";
         public string CurrentDirectory { get { return current_directory; } }
 
@@ -53,10 +54,23 @@ namespace tysos
         internal Virtual_Regions.Region ipc_region;
         internal IPC ipc;
 
-        public static Process CreateProcess(IInputStream file, object [] parameters)
+        public static Process CreateProcess(IInputStream file, string name, object [] parameters)
         {
             /* Create a process from an ELF module in a file object */
-            throw new NotImplementedException();
+
+            ulong epoint = elf.ElfFileReader.LoadObject(Program.arch.VirtualRegions,
+                Program.arch.VirtMem, Program.stab, file, name);
+
+            return Create(name, epoint, 0x8000, Program.arch.VirtualRegions, Program.stab,
+                parameters);
+        }
+
+        public void Start()
+        {
+            if (started)
+                return;
+            Program.cur_cpu_data.CurrentScheduler.Reschedule(startup_thread);
+            started = true;
         }
     }
 

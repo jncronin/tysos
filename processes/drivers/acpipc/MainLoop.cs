@@ -22,41 +22,50 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using tysos.Messages;
 
-namespace vfs
+namespace acpipc
 {
-    class props_file : fixed_text_file
+    partial class Program
     {
-        string cached_str = "";
-
-        internal props_file(string Name, tysos.StructuredStartupParameters Props,
-            DirectoryFileSystemObject Parent) : base(Name, Parent)
+        static void Main(string[] args)
         {
-            foreach (tysos.StructuredStartupParameters.Param p in Props.Parameters)
-                props.Add(p);
+            /* Add any specific startup code here */
+            tysos.Syscalls.DebugFunctions.DebugWrite("acpipc: driver starting\n");
+
+            /* The main message loop */
+            while (true)
+            {
+                tysos.IPCMessage msg = null;
+                do
+                {
+                    msg = tysos.Syscalls.IPCFunctions.ReadMessage();
+
+                    if (msg != null)
+                        HandleMessage(msg);
+                } while (msg != null);
+
+                tysos.Syscalls.SchedulerFunctions.Block();
+            }
         }
 
-        protected internal override string contents
+        private static void HandleMessage(tysos.IPCMessage msg)
         {
-            get
+            switch (msg.Type)
             {
-                if(props.Changed)
-                {
-                    StringBuilder sb = new StringBuilder();
-                    foreach (tysos.StructuredStartupParameters.Param p in props)
+                #region Device Messages
+                case deviceMessageTypes.INIT_DEVICE:
                     {
-                        tysos.Syscalls.DebugFunctions.DebugWrite("vfs: props_file: adding property: ");
-                        tysos.Syscalls.DebugFunctions.DebugWrite(p.Name);
-                        tysos.Syscalls.DebugFunctions.DebugWrite("\n");
-
-                        sb.Append(p.Name);
-                        sb.Append(": ");
-                        sb.Append(p.Value.ToString());
-                        sb.Append("\n");
+                        deviceMessageTypes.InitDeviceMessage idm = msg.Message as deviceMessageTypes.InitDeviceMessage;
+                        if (idm != null)
+                        {
+                            // Handle the message
+                            _InitDevice(idm.Resources, idm.Node, ref idm.Device);
+                            idm.completed.Set();
+                        }
                     }
-                    cached_str = sb.ToString();
-                }
-                return cached_str;
+                    break;
+                #endregion
             }
         }
     }

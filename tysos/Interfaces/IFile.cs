@@ -30,6 +30,8 @@ namespace tysos
         long Length { get; }
         IInputStream GetInputStream();
         IOutputStream GetOutputStream();
+        ICollection<StructuredStartupParameters.Param> Properties { get; }
+        StructuredStartupParameters.Param GetPropertyByName(string name);
     }
 
     public interface IInputStream
@@ -50,4 +52,9 @@ namespace tysos
     }
 
     public enum SeekPosition { Set, Cur, End }
+
+    public interface IDirectory
+    {
+
+    }
 }
