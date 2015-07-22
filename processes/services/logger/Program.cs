@@ -31,6 +31,7 @@ namespace Logger
             Logger l = new Logger();
             tysos.Syscalls.ProcessFunctions.RegisterSpecialProcess(l,
                 tysos.Syscalls.ProcessFunctions.SpecialProcessType.Logger);
+            l.MessageLoop();
         }
     }
 

@@ -132,6 +132,7 @@ namespace tysos
         public class SchedulerFunctions
         {
             [libsupcs.Syscall]
+            [libsupcs.Uninterruptible]
             public static void Yield()
             {
                 /* Yield the timeslice of the current thread */
@@ -156,6 +157,7 @@ namespace tysos
             }
 
             [libsupcs.Syscall]
+            [libsupcs.Uninterruptible]
             public static void Block()
             {
                 /* Block pending receipt of a message */
@@ -180,6 +182,7 @@ namespace tysos
             }
 
             [libsupcs.Syscall]
+            [libsupcs.Uninterruptible]
             public static void Block(Event e)
             {
                 /* Block on an event */
@@ -204,6 +207,7 @@ namespace tysos
             }
 
             [libsupcs.Syscall]
+            [libsupcs.Uninterruptible]
             public static Thread GetCurrentThread()
             {
                 return Program.cur_cpu_data.CurrentThread;
@@ -257,8 +261,10 @@ namespace tysos
                 if (dest == null)
                     return false;
                 if (dest.ipc == null)
-                    return false;
-
+                {
+                    if (IPC.InitIPC(dest) == false)
+                        return false;
+                }
                 message.Source = Program.cur_cpu_data.CurrentThread;
 
                 return dest.ipc.SendMessage(message);

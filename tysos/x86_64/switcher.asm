@@ -23,6 +23,25 @@ _ZN5tysos14tysos#2Ex86_6412TaskSwitcherM_0_16do_x86_64_switch_Rv_P4yU5tysos6Thre
 	push r14
 	push r15
 
+	; for now, just save the entire xmm registers.  Later, we will do it demand-based.
+	sub rsp, 128
+	movq [rsp], xmm0
+	movq [rsp + 8], xmm1
+	movq [rsp + 16], xmm2
+	movq [rsp + 24], xmm3
+	movq [rsp + 32], xmm4
+	movq [rsp + 40], xmm5
+	movq [rsp + 48], xmm6
+	movq [rsp + 56], xmm7
+	movq [rsp + 64], xmm8
+	movq [rsp + 72], xmm9
+	movq [rsp + 80], xmm10
+	movq [rsp + 88], xmm11
+	movq [rsp + 96], xmm12
+	movq [rsp + 104], xmm13
+	movq [rsp + 112], xmm14
+	movq [rsp + 120], xmm15
+
 	; cur_thread_pointer			= rdx
 	; next_thread					= rsi
 	; tsi_offset_within_thread		= rdx
@@ -46,6 +65,24 @@ _ZN5tysos14tysos#2Ex86_6412TaskSwitcherM_0_16do_x86_64_switch_Rv_P4yU5tysos6Thre
 	mov [rdi], rsi
 
 	; restore state
+
+	movq xmm0, [rsp]
+	movq xmm1, [rsp + 8]
+	movq xmm2, [rsp + 16]
+	movq xmm3, [rsp + 24]
+	movq xmm4, [rsp + 32]
+	movq xmm5, [rsp + 40]
+	movq xmm6, [rsp + 48]
+	movq xmm7, [rsp + 56]
+	movq xmm8, [rsp + 64]
+	movq xmm9, [rsp + 72]
+	movq xmm10, [rsp + 80]
+	movq xmm11, [rsp + 88]
+	movq xmm12, [rsp + 96]
+	movq xmm13, [rsp + 104]
+	movq xmm14, [rsp + 112]
+	movq xmm15, [rsp + 120]
+	add rsp, 128	
 
 	pop r15
 	pop r14

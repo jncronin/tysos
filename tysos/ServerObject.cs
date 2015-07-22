@@ -116,8 +116,10 @@ namespace tysos
             return mi.Invoke(this, p);
         }
 
-        protected virtual void MessageLoop()
+        public virtual void MessageLoop()
         {
+            Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": entering message loop\n");
+
             while(true)
             {
                 IPCMessage msg = null;

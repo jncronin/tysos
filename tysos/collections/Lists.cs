@@ -155,7 +155,7 @@ namespace tysos.Collections
             {
                 Node n = _item(index);
                 if (n == null)
-                    throw new IndexOutOfRangeException();
+                    throw new IndexOutOfRangeException("idx: " + index.ToString() + ", count: " + count.ToString());
                 return n.item;
             }
             set

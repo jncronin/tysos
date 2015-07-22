@@ -101,6 +101,24 @@ namespace tysos.x86_64
                 *--p_st = 0;                            // R14
                 *--p_st = 0;                            // R15
 
+                // XMMs
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+                *--p_st = 0;
+
                 rsp = (ulong)p_st;
             }
         }

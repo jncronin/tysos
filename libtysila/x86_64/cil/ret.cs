@@ -62,6 +62,10 @@ namespace libtysila.x86_64.cil
             }
 
             il.il.tybel.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.RestoreCalleeSaved, Val = state.used_locs });
+            if (attrs.attrs.ContainsKey("libsupcs.Uninterruptible"))
+            {
+                ((x86_64_Assembler)ass).ChooseInstruction(((x86_64_Assembler)ass).ia == x86_64_Assembler.IA.i586 ? x86_64_asm.opcode.POPFD : x86_64_asm.opcode.POPFQ, il.il.tybel);
+            }
             ((x86_64_Assembler)ass).ChooseInstruction(x86_64_asm.opcode.LEAVE, il.il.tybel);
 
             if (attrs.attrs.ContainsKey("libsupcs.ISR"))

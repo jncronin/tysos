@@ -150,6 +150,8 @@ namespace tydisasm.x86_64
             opcodes.Add(0x8d, new opcode { name = "lea", has_rm = true, operand_sources = new List<opcode.operand_source> { new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_Reg, length = opcode.operand_source.reg_length.r32 }, new opcode.operand_source { type = opcode.operand_source.src_type.ModRM_RM, length = opcode.operand_source.reg_length.r32 } } });
 
             // 0x90
+            opcodes.Add(0x9c, new opcode { name = "pushf", has_rm = false, operand_sources = new List<opcode.operand_source> { } });
+            opcodes.Add(0x9d, new opcode { name = "popf", has_rm = false, operand_sources = new List<opcode.operand_source> { } });
 
             // 0xa0
             opcodes.Add(0xa4, new opcode { name = "movs", has_rm = false, operand_sources = new List<opcode.operand_source> { } });

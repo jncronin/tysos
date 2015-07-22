@@ -113,29 +113,34 @@ namespace tysos
         {
             int i = 0;
 
-            while (i < blocking_tasks.Count)
+            lock (blocking_tasks)
             {
-                bool can_continue = true;
-
-                lock (blocking_tasks[i].BlockingOn)
+                while (i < blocking_tasks.Count)
                 {
-                    foreach (Event e in blocking_tasks[i].BlockingOn)
+                    bool can_continue = true;
+
+                    lock (blocking_tasks[i].BlockingOn)
                     {
-                        if (!e.IsSet)
+                        foreach (Event e in blocking_tasks[i].BlockingOn)
                         {
-                            can_continue = false;
-                            break;
+                            if (!e.IsSet)
+                            {
+                                can_continue = false;
+                                break;
+                            }
                         }
                     }
-                }
 
-                if (can_continue)
-                {
-                    //blocking_tasks[i].BlockingOn.Clear();
-                    _Reschedule(blocking_tasks[i]);
+                    if (can_continue)
+                    {
+                        //blocking_tasks[i].BlockingOn.Clear();
+                        _Reschedule(blocking_tasks[i]);
+                    }
+                    else
+                    {
+                        i++;
+                    }
                 }
-                else
-                    i++;
             }
         }
 
@@ -238,6 +243,7 @@ namespace tysos
             return ScheduleNext(ns, cur, switcher);
         }
 
+        [libsupcs.Uninterruptible]
         public static void TimerProc(long ns)
         {
             Program.cur_cpu_data.CurrentScheduler.TimerTick(ns, Program.cur_cpu_data.CurrentThread, Program.arch.Switcher);

@@ -2000,6 +2000,12 @@ namespace libtysila
             }
 
             /* Store callee-saved registers */
+            if (attrs.attrs.ContainsKey("libsupcs.Uninterruptible"))
+            {
+                ChooseInstruction(x86_64.x86_64_asm.opcode.PUSHF, ret);
+                ChooseInstruction(x86_64.x86_64_asm.opcode.CLI, ret);
+            }
+
             ret.Add(new tybel.SpecialNode { Type = tybel.SpecialNode.SpecialNodeType.SaveCalleeSaved, Val = state.used_locs });
 
             /* Copy arguments to stack arg space */
