@@ -439,6 +439,8 @@ namespace libtysila
             del_meth_s.HasThis = false;
             del_meth_s.ExplicitThis = false;
 
+            int cur_il_offset = 0;
+
             /* Load up System.Object to use as the this pointer for the instance call (rationale is that
              * we don't know exactly which object the delegate will be called on, but that if an object
              * _is_ specified then it must be a reference type for the this pointer)
@@ -448,68 +450,82 @@ namespace libtysila
             Metadata.TypeDefRow tdr_obj = Metadata.GetTypeDef(p_obj.Type, this);
 
             CilGraph instrs = new CilGraph();
-            instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)], il_offset = cur_il_offset++ });
             instrs.Add(new InstructionLine
             {
                 opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)],
-                inline_tok = new FTCToken { ftc = m_target.field }
+                inline_tok = new FTCToken { ftc = m_target.field },
+                il_offset = cur_il_offset++
             });
-            CilNode brfalse = instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.brfalse)] });
-            instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            CilNode brfalse = instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.brfalse)], il_offset = cur_il_offset++ });
+            instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)], il_offset = cur_il_offset++ });
             instrs.Add(new InstructionLine
             {
                 opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)],
-                inline_tok = new FTCToken { ftc = m_target.field }
+                inline_tok = new FTCToken { ftc = m_target.field },
+                il_offset = cur_il_offset++
             });
             for (int i = 0; i < mtc.msig.Method.Params.Count; i++)
             {
                 instrs.Add(new InstructionLine
                 {
                     opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)],
-                    inline_int = i + 1
+                    inline_int = i + 1,
+                    il_offset = cur_il_offset++
                 });
             }
-            instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)], il_offset = cur_il_offset++ });
             instrs.Add(new InstructionLine
             {
                 opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)],
-                inline_tok = new FTCToken { ftc = method_ptr.field }
+                inline_tok = new FTCToken { ftc = method_ptr.field },
+                il_offset = cur_il_offset++
             });
             instrs.Add(new InstructionLine
             {
                 opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.calli)],
-                inline_tok = new MTCToken { mtc = new MethodToCompile { _ass = this, msig = del_meth_inst, meth = mtc.meth, tsigp = p_obj, type = tdr_obj } }
+                inline_tok = new MTCToken { mtc = new MethodToCompile { _ass = this, msig = del_meth_inst, meth = mtc.meth, tsigp = p_obj, type = tdr_obj } },
+                il_offset = cur_il_offset++
             });
-            CilNode ret = instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.br)] });
-            CilNode _static = instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.nop)] });
+            CilNode ret = instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.br)], il_offset = cur_il_offset++ });
+            CilNode _static = instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.nop)], il_offset = cur_il_offset++ });
             for (int i = 0; i < mtc.msig.Method.Params.Count; i++)
             {
                 instrs.Add(new InstructionLine
                 {
                     opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_s)],
-                    inline_int = i + 1
+                    inline_int = i + 1,
+                    il_offset = cur_il_offset++
                 });
             }
-            instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)] });
+            instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldarg_0)], il_offset = cur_il_offset++ });
             instrs.Add(new InstructionLine
             {
                 opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ldfld)],
-                inline_tok = new FTCToken { ftc = method_ptr.field }
+                inline_tok = new FTCToken { ftc = method_ptr.field },
+                il_offset = cur_il_offset++
             });
             instrs.Add(new InstructionLine
             {
                 opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.calli)],
-                inline_tok = new MTCToken { mtc = new MethodToCompile { _ass = this, msig = del_meth_s, meth = mtc.meth, tsigp = p_obj, type = tdr_obj } }
+                inline_tok = new MTCToken { mtc = new MethodToCompile { _ass = this, msig = del_meth_s, meth = mtc.meth, tsigp = p_obj, type = tdr_obj } },
+                il_offset = cur_il_offset++
             });
-            CilNode end = instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)] });
+            CilNode end = instrs.Add(new InstructionLine { opcode = OpcodeList.Opcodes[Opcode.OpcodeVal(Opcode.SingleOpcodes.ret)], il_offset = cur_il_offset++ });
+
+            /* Add il_offset_after s (== il_offset + 1 here) */
+            foreach (CilNode n in instrs.LinearStream)
+                n.il.il_offset_after = n.il.il_offset + 1;
             
             /* link the blocks */
             brfalse.Next.Insert(0, _static);
+            brfalse.il.inline_int = _static.il.il_offset - brfalse.il.il_offset_after;
             _static.Prev.Clear();
             _static.Prev.Insert(0, brfalse);
 
             ret.Next.Clear();
             ret.Next.Add(end);
+            ret.il.inline_int = end.il.il_offset - ret.il.il_offset_after;
             end.Prev.Add(ret);
 
             return instrs;
