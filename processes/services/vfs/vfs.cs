@@ -34,7 +34,8 @@ namespace vfs
         static void Main(string[] args)
         {
             vfs v = new vfs();
-            tysos.Syscalls.ProcessFunctions.RegisterSpecialProcess(v, tysos.Syscalls.ProcessFunctions.SpecialProcessType.Vfs);
+            // TODO
+            //tysos.Syscalls.ProcessFunctions.RegisterSpecialProcess(v, tysos.Syscalls.ProcessFunctions.SpecialProcessType.Vfs);
 
             object[] a = args as object[];
             tysos.StructuredStartupParameters system_node = a[0] as tysos.StructuredStartupParameters;

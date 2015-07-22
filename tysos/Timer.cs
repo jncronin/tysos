@@ -28,7 +28,15 @@ namespace tysos
     public abstract class Timer
     {
         virtual internal long TimerInterval { get { return interval; } set { interval = value; } }
-        virtual internal TimerCallback Callback { get { return callback; } set { callback = value; } }
+        virtual internal TimerCallback Callback { get { return callback; }
+            set
+            {
+                callback = value;
+
+                Formatter.Write(this.GetType().FullName, Program.arch.DebugOutput);
+                Formatter.WriteLine(": callback set", Program.arch.DebugOutput);
+            }
+        }
 
         internal delegate void TimerCallback(long interval);
 

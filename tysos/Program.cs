@@ -34,6 +34,7 @@ namespace tysos
         internal static InterruptMap imap;
         internal static Multiboot.Header mboot_header;
         internal static Ivfs vfs;
+        internal static ServerObject Vfs, Logger, Gui;
 
         internal static Dictionary<string, Process> running_processes;
 
@@ -231,10 +232,21 @@ namespace tysos
             }
             StructuredStartupParameters startup_mods = new StructuredStartupParameters { Parameters = mods };
 
+            /* Load the logger */
+            Process logger = LoadELFModule("logger", mboot, stab, running_processes, 0x8000,
+                new object[] { });
+
+            Process debugprint = LoadELFModule("debugprint", mboot, stab, running_processes, 
+                0x8000, new object[] { });
+
+            logger.Start();
+            debugprint.Start();
+
             /* Load the vfs */
-            Process vfs = LoadELFModule("vfs", mboot, stab, running_processes, 0x8000, new object[] { arch.VfsParams, startup_mods });
-            arch.Switcher.Switch(vfs.startup_thread);
-            
+            //Process vfs = LoadELFModule("vfs", mboot, stab, running_processes, 0x8000, new object[] { arch.VfsParams, startup_mods });
+            //arch.Switcher.Switch(vfs.startup_thread);
+
+            arch.EnableMultitasking();
 
             while (true) ;
 

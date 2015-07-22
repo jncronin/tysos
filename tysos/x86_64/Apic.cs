@@ -139,12 +139,10 @@ namespace tysos.x86_64
         bool calibrated = false;
         double lapic_base_freq;
 
-        static TimerCallback _callback;
         long _interval;
 
         long ticks = 0;
 
-        internal override Timer.TimerCallback Callback { get { return _callback; } set { _callback = value; } }
         internal override long TimerInterval { get { return _interval; } }
 
         public ulong LApicTimerDivisor
@@ -487,8 +485,8 @@ namespace tysos.x86_64
 
             cur_lapic.ticks += cur_lapic._interval;
             cur_lapic.SendEOI();
-            if (_callback != null)
-                _callback(cur_lapic._interval);
+            if (cur_lapic.callback != null)
+                cur_lapic.callback(cur_lapic._interval);
         }
 
         internal override long Ticks { get { return ticks / 100; } }

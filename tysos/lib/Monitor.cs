@@ -35,6 +35,7 @@ namespace tysos.lib
         internal static extern void spinunlockb(ulong addr);
 
         [libsupcs.AlwaysCompile]
+        [libsupcs.Uninterruptible]
         [libsupcs.MethodAlias("__try_acquire")]
         static int try_acquire(ulong mutex_lock_address, int cur_thread_id)
         {
@@ -68,6 +69,7 @@ namespace tysos.lib
         }
 
         [libsupcs.AlwaysCompile]
+        [libsupcs.Uninterruptible]
         [libsupcs.MethodAlias("__release")]
         static void release(ulong mutex_lock_address, int cur_thread_id)
         {

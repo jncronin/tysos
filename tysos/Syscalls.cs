@@ -45,10 +45,10 @@ namespace tysos
         public class ProcessFunctions
         {
             public enum SpecialProcessType
-            { Vfs };
+            { Vfs, Gui, Logger };
 
             [libsupcs.Syscall]
-            public static bool RegisterSpecialProcess(object o, SpecialProcessType proc_type)
+            public static bool RegisterSpecialProcess(ServerObject o, SpecialProcessType proc_type)
             {
                 switch (proc_type)
                 {
@@ -58,9 +58,34 @@ namespace tysos
                             Program.vfs = o as Ivfs;
                             return true;
                         }
+                        Program.Vfs = o;
+                        break;
+
+                    case SpecialProcessType.Gui:
+                        Program.Gui = o;
+                        break;
+
+                    case SpecialProcessType.Logger:
+                        Program.Logger = o;
                         break;
                 }
                 return false;
+            }
+
+            [libsupcs.Syscall]
+            public static ServerObject GetSpecialProcess(SpecialProcessType type)
+            {
+                switch(type)
+                {
+                    case SpecialProcessType.Gui:
+                        return Program.Gui;
+                    case SpecialProcessType.Logger:
+                        return Program.Logger;
+                    case SpecialProcessType.Vfs:
+                        return Program.Vfs;
+                    default:
+                        return null;
+                }
             }
 
             [libsupcs.Syscall]
@@ -176,6 +201,12 @@ namespace tysos
 
                 if ((next != cur) && (next != null))
                     switcher.Switch(next);
+            }
+
+            [libsupcs.Syscall]
+            public static Thread GetCurrentThread()
+            {
+                return Program.cur_cpu_data.CurrentThread;
             }
         }
 

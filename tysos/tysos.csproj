@@ -148,6 +148,7 @@
     <Compile Include="NullOutput.cs" />
     <Compile Include="Pmem_Stack.cs" />
     <Compile Include="Resource.cs" />
+    <Compile Include="ServerObject.cs" />
     <Compile Include="Syscalls.cs" />
     <Compile Include="Timer.cs" />
     <Compile Include="x86_64\Acpi.cs" />

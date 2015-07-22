@@ -56,16 +56,42 @@ namespace acpipc
                 }
             }
 
-            System.Diagnostics.Debugger.Break();
             if (csum == 0)
                 System.Diagnostics.Debugger.Log(0, "acpipc", "table checksum passed");
             else
                 System.Diagnostics.Debugger.Log(0, "acpipc", "table checksum failed: " +
                     csum.ToString());
 
-            if(sig_string == "TODO")
+            if(sig_string == "FACP")
             {
-                throw new NotImplementedException();
+                FADT f = new FADT();
+
+                f.FIRMWARE_CTRL = table.Read(table.Addr64 + 132, 8);
+                if (f.FIRMWARE_CTRL == 0)
+                    f.FIRMWARE_CTRL = table.Read(table.Addr64 + 36, 4);
+                f.DSDT = table.Read(table.Addr64 + 140, 8);
+                if (f.DSDT == 0)
+                    f.DSDT = table.Read(table.Addr64 + 40, 4);
+
+                f.Preferred_PM_Profile = (byte)table.Read(table.Addr64 + 45, 1);
+                f.SCI_INT = (ushort)table.Read(table.Addr64 + 46, 2);
+                f.SMI_CMD = (uint)table.Read(table.Addr64 + 48, 4);
+                f.ACPI_ENABLE = (byte)table.Read(table.Addr64 + 52, 1);
+                f.ACPI_DISABLE = (byte)table.Read(table.Addr64 + 53, 1);
+                f.S4BIOS_REQ = (byte)table.Read(table.Addr64 + 54, 1);
+                f.PSTATE_CNT = (byte)table.Read(table.Addr64 + 55, 1);
+
+                f.IAPC_BOOT_ARCH = (ushort)table.Read(table.Addr64 + 109, 2);
+                f.Flags = (uint)table.Read(table.Addr64 + 112, 4);
+
+                System.Diagnostics.Debugger.Log(0, "acpipc", "FADT table: DSDT: " +
+                    f.DSDT.ToString("X16") +
+                    ", FIRMWARE_CTRL: " + f.FIRMWARE_CTRL.ToString("X16") +
+                    ", Preferred_PM_Profile: " + f.Preferred_PM_Profile.ToString() +
+                    ", IAPC_BOOT_ARCH: " + f.IAPC_BOOT_ARCH.ToString("X4") +
+                    ", Flags: " + f.Flags.ToString("X8"));
+
+                ret = f;
             }
             else
             {
@@ -77,5 +103,24 @@ namespace acpipc
 
             return ret;
         }
+    }
+
+    class FADT : Table
+    {
+        public ulong FIRMWARE_CTRL;
+        public ulong DSDT;
+        public byte Preferred_PM_Profile;
+        public ushort SCI_INT;
+        public ulong SMI_CMD;
+        public byte ACPI_ENABLE;
+        public byte ACPI_DISABLE;
+        public byte S4BIOS_REQ;
+        public byte PSTATE_CNT;
+
+        // TODO PM/GPE blocks
+
+        public ushort IAPC_BOOT_ARCH;
+        public uint Flags;
+        
     }
 }

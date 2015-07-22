@@ -224,6 +224,9 @@ namespace typroject
             if (tools_ver_override != null)
                 tools_ver = tools_ver_override;
 
+            if (tools_ver == "4.5")
+                tools_ver = "4.0";
+
             if (platform == 0)
             {
                 // assume mono for unix
@@ -271,6 +274,9 @@ namespace typroject
             else
             {
                 string fwork_ver;
+                if (tools_ver == "4.5")
+                    tools_ver = "4.0";
+
                 if ((tools_ver == "2.0") || (tools_ver == "3.0") || (tools_ver == "3.5") || (tools_ver == "4.0"))
                     fwork_ver = "2.0";
                 else
