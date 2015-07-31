@@ -316,19 +316,19 @@ namespace libsupcs
     public class ClassOperations
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public static extern System.UIntPtr GetVtblFieldOffset();
+        public static extern int GetVtblFieldOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public static extern System.UIntPtr GetObjectIdFieldOffset();
+        public static extern int GetObjectIdFieldOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public static extern System.UIntPtr GetVtblTypeInfoPtrOffset();
+        public static extern int GetVtblTypeInfoPtrOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public static extern System.UIntPtr GetVtblInterfacesPtrOffset();
+        public static extern int GetVtblInterfacesPtrOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public static extern System.UIntPtr GetVtblExtendsVtblPtrOffset();
+        public static extern int GetVtblExtendsVtblPtrOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern int GetBoxedTypeDataOffset();

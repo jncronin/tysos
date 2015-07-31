@@ -646,11 +646,11 @@ namespace libsupcs
         {
             object ret = MemoryOperations.GcMalloc(new IntPtr(this.ClassSize));
 
-            UIntPtr addr = CastOperations.ReinterpretAsUIntPtr(ret);
             unsafe
             {
-                *(IntPtr*)(OtherOperations.Add(addr, libsupcs.ClassOperations.GetVtblFieldOffset())) = this.VTable;
-                *(int*)(OtherOperations.Add(addr, libsupcs.ClassOperations.GetObjectIdFieldOffset())) = obj_id++;
+                void* addr = CastOperations.ReinterpretAsPointer(ret);
+                *(IntPtr*)((byte*)addr + libsupcs.ClassOperations.GetVtblFieldOffset()) = this.VTable;
+                *(int*)((byte*)addr + libsupcs.ClassOperations.GetObjectIdFieldOffset()) = obj_id++;
             }
 
             return ret;
@@ -686,38 +686,37 @@ namespace libsupcs
             return this == other;
         }
 
-        /* NB CastClassEx is implemented twice, once for 32 bit architectures and once for 64 bit architectures.
-         * Be sure to update both when changing! */
         [AlwaysCompile]
         [MethodAlias("castclassex")]
-        [Bits32Only]
-        internal static unsafe uint CastClassEx(uint from_obj, uint to_vtbl)
+        internal static unsafe void *CastClassEx(void *from_obj, void *to_vtbl)
         {
-            if (from_obj == 0)
-                return 0;
+            if (from_obj == null)
+                return null;
 
-            if (to_vtbl == 0)
-                throw new InvalidCastException("CastClassEx: to_type is null");
+            if (to_vtbl == null)
+                throw new InvalidCastException("CastClassEx: to_vtbl is null");
 
-            uint from_type;
-            uint from_vtbl;
-            uint to_type;
+            void* from_type;
+            void* from_vtbl;
+            void* to_type;
 
-            from_vtbl = *(uint*)from_obj;
-            from_type = *(uint*)from_vtbl;
-            to_type = *(uint*)to_vtbl;
+            from_vtbl = *(void**)from_obj;
+            if (from_vtbl == null)
+                throw new InvalidCastException("CastClassEx: from_vtbl is null");
+            from_type = *(void**)from_vtbl;
+            to_type = *(void**)to_vtbl;
 
-            if (from_vtbl == to_vtbl)
+            if (from_type == to_type)
                 return from_obj;
 
             bool has_rtti = true;
-            if (from_type == 0)
+            if (from_type == null)
                 has_rtti = false;
-            if (*(uint*)from_type == 0)
+            if (*(void**)from_type == null)
                 has_rtti = false;
-            if (to_type == 0)
+            if (to_type == null)
                 has_rtti = false;
-            if (*(uint*)to_type == 0)
+            if (*(void**)to_type == null)
                 has_rtti = false;
 
             /* Check for equality amongst dynamic types */
@@ -729,105 +728,34 @@ namespace libsupcs
                 {
                     if (IsAssignableFrom(to_type_obj.GetUnboxedType(), from_type_obj.GetUnboxedType()))
                         return from_obj;
-                    return 0;
+                    return null;
                 }
             }
 
             /* Check whether we extend the type */
-            uint cur_extends_vtbl = *(uint*)(from_vtbl + (uint)ClassOperations.GetVtblExtendsVtblPtrOffset());
-            while (cur_extends_vtbl != 0)
+            void* cur_extends_vtbl = *(void**)((byte*)from_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            while (cur_extends_vtbl != null)
             {
                 if (cur_extends_vtbl == to_vtbl)
                     return from_obj;
-                cur_extends_vtbl = *(uint*)(cur_extends_vtbl + (uint)ClassOperations.GetVtblExtendsVtblPtrOffset());
+                cur_extends_vtbl = *(void**)((byte*)cur_extends_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
             }
 
             /* Check whether we implement the type as an interface */
-            uint* cur_iface = (uint*)(from_vtbl + (uint)ClassOperations.GetVtblInterfacesPtrOffset());
+            void** cur_iface_ptr = *(void***)((byte*)from_vtbl + ClassOperations.GetVtblInterfacesPtrOffset());
 
-            if (cur_iface != null)
+            if (cur_iface_ptr != null)
             {
-                while (*cur_iface != 0)
+                while (*cur_iface_ptr != null)
                 {
-                    if (*cur_iface == to_type)
+                    if (*cur_iface_ptr == to_type)
                         return from_obj;
 
-                    cur_iface += 2;
+                    cur_iface_ptr += 2;
                 }
             }
 
-            return 0;
-        }
-
-        [AlwaysCompile]
-        [MethodAlias("castclassex")]
-        [Bits64Only]
-        internal static unsafe ulong CastClassEx(ulong from_obj, ulong to_vtbl)
-        {
-            if (from_obj == 0)
-                return 0;
-
-            if (to_vtbl == 0)
-                throw new InvalidCastException("CastClassEx: to_type is null");
-
-            ulong from_type;
-            ulong from_vtbl;
-            ulong to_type;
-
-            from_vtbl = *(ulong*)from_obj;
-            from_type = *(ulong*)from_vtbl;
-            to_type = *(ulong*)to_vtbl;
-
-            if (from_vtbl == to_vtbl)
-                return from_obj;
-
-            bool has_rtti = true;
-            if (from_type == 0)
-                has_rtti = false;
-            if (*(ulong*)from_type == 0)
-                has_rtti = false;
-            if (to_type == 0)
-                has_rtti = false;
-            if (*(ulong*)to_type == 0)
-                has_rtti = false;
-
-            /* Check for equality amongst dynamic types */
-            if (has_rtti)
-            {
-                TysosType from_type_obj = ReinterpretAsType(from_type);
-                TysosType to_type_obj = ReinterpretAsType(to_type);
-                if ((from_type_obj.IsDynamic || to_type_obj.IsDynamic) && (from_type_obj.TypeFlags != 0) && (from_type_obj.TypeFlags == to_type_obj.TypeFlags))
-                {
-                    if (IsAssignableFrom(to_type_obj.GetUnboxedType(), from_type_obj.GetUnboxedType()))
-                        return from_obj;
-                    return 0;
-                }
-            }
-
-            /* Check whether we extend the type */
-            ulong cur_extends_vtbl = *(ulong*)(from_vtbl + (ulong)ClassOperations.GetVtblExtendsVtblPtrOffset());
-            while (cur_extends_vtbl != 0)
-            {
-                if (cur_extends_vtbl == to_vtbl)
-                    return from_obj;
-                cur_extends_vtbl = *(ulong*)(cur_extends_vtbl + (ulong)ClassOperations.GetVtblExtendsVtblPtrOffset());
-            }
-
-            /* Check whether we implement the type as an interface */
-            ulong* cur_iface = (ulong*)(from_vtbl + (ulong)ClassOperations.GetVtblInterfacesPtrOffset());
-
-            if (cur_iface != null)
-            {
-                while (*cur_iface != 0)
-                {
-                    if (*cur_iface == to_type)
-                        return from_obj;
-
-                    cur_iface += 2;
-                }
-            }
-
-            return 0;
+            return null;
         }
 
         /** <summary>Get the size of the type when it is a field in a type.  This will return the pointer size for

@@ -81,11 +81,11 @@ namespace libtysila.frontend.cil.OpcodeEncodings
 
             int_calls["_ZX15OtherOperationsM_0_4Halt_Rv_P0"] = halt;
 
-            int_calls["_ZX15ClassOperationsM_0_27GetVtblExtendsVtblPtrOffset_Ru1U_P0"] = get_vtbl_extendsvtblptr_offset;
-            int_calls["_ZX15ClassOperationsM_0_26GetVtblInterfacesPtrOffset_Ru1U_P0"] = get_vtbl_ifaceptr_offset;
-            int_calls["_ZX15ClassOperationsM_0_24GetVtblTypeInfoPtrOffset_Ru1U_P0"] = get_vtbl_typeinfoptr_offset;
-            int_calls["_ZX15ClassOperationsM_0_22GetObjectIdFieldOffset_Ru1U_P0"] = get_ti_objid_offset;
-            int_calls["_ZX15ClassOperationsM_0_18GetVtblFieldOffset_Ru1U_P0"] = get_ti_vtbl_offset;
+            int_calls["_ZX15ClassOperationsM_0_27GetVtblExtendsVtblPtrOffset_Ri_P0"] = get_vtbl_extendsvtblptr_offset;
+            int_calls["_ZX15ClassOperationsM_0_26GetVtblInterfacesPtrOffset_Ri_P0"] = get_vtbl_ifaceptr_offset;
+            int_calls["_ZX15ClassOperationsM_0_24GetVtblTypeInfoPtrOffset_Ri_P0"] = get_vtbl_typeinfoptr_offset;
+            int_calls["_ZX15ClassOperationsM_0_22GetObjectIdFieldOffset_Ri_P0"] = get_ti_objid_offset;
+            int_calls["_ZX15ClassOperationsM_0_18GetVtblFieldOffset_Ri_P0"] = get_ti_vtbl_offset;
             int_calls["_ZX15ClassOperationsM_0_22GetBoxedTypeDataOffset_Ri_P0"] = get_boxed_type_data_offset;
 
             int_calls["_ZX16MemoryOperationsM_0_4Poke_Rv_P2u1Uy"] = poke_U8;
