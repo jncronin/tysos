@@ -28,61 +28,50 @@ namespace tysos.x86_64
 {
 	public class x86_64_cpu : tysos.Cpu
 	{
-        [libsupcs.SpecialType]
-        internal class data
-        {
-            public Thread cur_thread;
-            public LApic cur_lapic;
-            public Thread last_sse_thread;
-            public Scheduler sched;
+        ulong gs;
 
-            [MethodImpl(MethodImplOptions.InternalCall)]
-            [libsupcs.ReinterpretAsMethod]
-            internal unsafe static extern data ReinterpretAsX86_64_data(ulong addr);
+        internal unsafe x86_64_cpu(Virtual_Regions.Region cpu_region)
+        {
+            /* We divide the cpu region into a pointer at offset 0 which
+            points to the actual Cpu class ('this' pointer) and a cpu-specific
+            heap following it.
+
+            We then set the GS pointer to the start of the cpu region, thus
+            gs:0x0 is a pointer to the current Cpu instance for the current
+            processor.  Setting of cur cpu's gs is done in InitCurrentCpu()
+            which is called on the BSP and every AP (and also sets up other
+            stuff like Apic address) */
+
+            gs = cpu_region.start;
+            *(void**)cpu_region.start = libsupcs.CastOperations.ReinterpretAsPointer(this);
+            this.cpu_alloc_current = (byte*)cpu_region.start + 8;
+            this.cpu_alloc_max = (byte*)cpu_region.end;
         }
 
-        ulong data_ptr;
-        ulong protected_heap, protected_heap_end;
-
-        internal x86_64_cpu(Virtual_Regions.Region cpu_region, int id)
-        { Init(cpu_region, id); }
-        public x86_64_cpu() { }
-
-        internal override void Init(Virtual_Regions.Region cpu_region, int id)
+        internal unsafe override void InitCurrentCpu()
         {
-            cpu_data = cpu_region;
-            cpu_id = id;
+            /* First, get the APIC id of the current processor - we have to
+            map in the LAPIC registers first */
+            ulong apic_base = libsupcs.x86_64.Cpu.RdMsr(LApic.IA32_APIC_BASE_MSR) & LApic.IA32_APIC_BASE_ADDR_MASK;
 
-            data_ptr = cpu_region.start;
-            protected_heap = data_ptr + 0x100;
-            protected_heap_end = cpu_region.end;
+            LApicAddress = Program.arch.VirtualRegions.Alloc(0x1000, 0x1000,
+                "LAPIC");
+            Program.arch.VirtMem.map_page(LApicAddress, apic_base);
 
-            data d = data.ReinterpretAsX86_64_data(data_ptr);
-            d.cur_thread = null;
-            d.cur_lapic = null;
-            d.last_sse_thread = null;
-            d.sched = null;
+            uint apic_id = *(uint*)(LApicAddress + LApic.LAPIC_ID_offset) >> 24;
+            cpu_id = (int)apic_id;
+            Formatter.Write("x86_64_cpu: cpu id ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)cpu_id, "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
+
+            /* Next, set GS base to be the start of our cpu_region */
+            // IA32_GS_BASE is 0xC0000101
+            libsupcs.x86_64.Cpu.WrMsr(0xc0000101, gs);
         }
 
-        public override Thread CurrentThread { get { return data.ReinterpretAsX86_64_data(data_ptr).cur_thread; } }
-        public LApic CurrentLApic { get { return data.ReinterpretAsX86_64_data(data_ptr).cur_lapic; } set { data.ReinterpretAsX86_64_data(data_ptr).cur_lapic = value; } }
-        internal override Scheduler CurrentScheduler { get { return data.ReinterpretAsX86_64_data(data_ptr).sched; } set { data.ReinterpretAsX86_64_data(data_ptr).sched = value; } }
-        public override int RequiredDataSize { get { return 0x2000; } }
-        internal override Timer CurrentTimer { get { return data.ReinterpretAsX86_64_data(data_ptr).cur_lapic; } }
-        internal override ulong IntPtrSize { get { return 8; } }
+        internal ulong LApicAddress;
+        internal LApic cur_lapic = null;
 
-        internal override ulong CpuAlloc(ulong size)
-        {
-            ulong new_end = protected_heap + size;
-            if (new_end >= protected_heap_end)
-            {
-                Formatter.WriteLine("*** FATAL ERROR ***", Program.arch.DebugOutput);
-                Formatter.WriteLine("CPU heap exhausted", Program.arch.DebugOutput);
-                libsupcs.OtherOperations.Halt();
-            }
-            ulong ret = protected_heap;
-            protected_heap = new_end;
-            return ret;
-        }
+        public LApic CurrentLApic { get { return cur_lapic; } set { cur_lapic = value; } }
 	}
 }

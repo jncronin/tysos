@@ -46,6 +46,8 @@ namespace tysos.x86_64
 
         bool multitasking = false;
 
+        bool cpu_structure_setup = false;
+
         FirmwareConfiguration fwconf = null;
 
         internal abstract unsafe class FirmwareConfiguration
@@ -69,11 +71,11 @@ namespace tysos.x86_64
         {
             get
             {
-                if (Program.cur_cpu_data == null)
+                if (Program.arch.CurrentCpu == null)
                     return init_exit_address;
-                if (Program.cur_cpu_data.CurrentThread == null)
+                if (Program.arch.CurrentCpu.CurrentThread == null)
                     return init_exit_address;
-                return Program.cur_cpu_data.CurrentThread.exit_address;
+                return Program.arch.CurrentCpu.CurrentThread.exit_address;
             }
         }
 
@@ -115,6 +117,21 @@ namespace tysos.x86_64
 
                 default:
                     return false;
+            }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
+        [libsupcs.ReinterpretAsMethod]
+        public unsafe static extern Cpu ReinterpretAsCpu(void* addr);
+
+        internal unsafe override Cpu CurrentCpu
+        {
+            get
+            {
+                if (cpu_structure_setup == false)
+                    return null;
+                void* cpu_ptr = libsupcs.x86_64.Cpu.ReadGSData(0);
+                return ReinterpretAsCpu(cpu_ptr);
             }
         }
 
@@ -279,34 +296,44 @@ namespace tysos.x86_64
             }
             Formatter.WriteLine("x86_64: Default exception handlers installed", DebugOutput);
 
-            /* Set up the tss and kernel stack */
-            ulong tss_start;
-            unsafe
+            /* Set up the tss and IST stacks */
+            ulong tss;
+            tss = VirtualRegions.Alloc(0x1000, 0x1000, "tss");
+            ulong[] ists = new ulong[7];
+
+            /* Create 2 ISTs with guard pages */
+            int ist_count = 2;
+            ulong ist_size = 0x2000;
+            ulong ist_guard_size = 0x1000;
+            for (int i = 0; i < ist_count; i++)
             {
-                tss_start = VirtualRegions.Alloc((ulong)sizeof(tysos.x86_64.Tss.Tss_struct), 0x1000, "tss");
+                ulong ist_base = VirtualRegions.Alloc(ist_size + ist_guard_size, 0x1000, "IST");
+                ists[i] = ist_base + ist_guard_size + ist_size;
+                for (ulong addr = ist_base + ist_guard_size; addr < ist_base + ist_guard_size + ist_size; addr += 0x1000)
+                    VirtMem.map_page(addr);
             }
-            ulong rsp0_start = VirtualRegions.Alloc(VirtMem.page_size, VirtMem.page_size, "rsp0");
-            ulong rsp0 = rsp0_start + VirtMem.page_size;
-            ulong ist_block = VirtualRegions.Alloc(VirtMem.page_size * 7, VirtMem.page_size, "ISTs");
 
-            VirtMem.map_page(rsp0_start);
-            VirtMem.map_page(tss_start);
-            for(int i = 0; i < 7; i++)
-                VirtMem.map_page(ist_block + (ulong)i * VirtMem.page_size);
-
-            tysos.x86_64.Tss tss = new tysos.x86_64.Tss(mboot.gdt, tss_start, rsp0, ist_block, VirtMem.page_size);
+            VirtMem.map_page(tss);
+            Tss.Init(tss, ists);
             Formatter.WriteLine("x86_64: TSS installed", DebugOutput);
 
             // Now inform the page fault and double fault handlers to use their own stack
             unsafe
             {
-                Interrupts.InstallHandler(14, new Interrupts.ISREC(PageFault.PFHandler), 0);
+                Interrupts.InstallHandler(14, new Interrupts.ISREC(PageFault.PFHandler), 1);
                 Interrupts.InstallHandler(8, new Interrupts.ISREC(Exceptions.DoubleFault_8_Handler), 2);
             }
             Formatter.WriteLine("x86_64: Page fault and double fault handlers installed", DebugOutput);
 
+            /* Set up the current cpu */
+            Virtual_Regions.Region cpu_reg = VirtualRegions.AllocRegion(0x1000, 0x1000, "BSP cpu", 0, Virtual_Regions.Region.RegionType.CPU_specific);
+            VirtMem.map_page(cpu_reg.start);
+            x86_64_cpu bsp = new x86_64_cpu(cpu_reg);
+            bsp.InitCurrentCpu();
+            cpu_structure_setup = true;
+
             // Set up the page fault handler's stack switching mechanism
-            ulong pfault_ist_block = VirtualRegions.Alloc(VirtMem.page_size * 7, VirtMem.page_size, "PageFault ISTs");
+            /*ulong pfault_ist_block = VirtualRegions.Alloc(VirtMem.page_size * 7, VirtMem.page_size, "PageFault ISTs");
             List<ulong> pfault_ists = new List<ulong>();
             pfault_ists.Add(ist_block + VirtMem.page_size);
             for (int i = 0; i < 7; i++)
@@ -317,7 +344,7 @@ namespace tysos.x86_64
             PageFault.cur_ist_idx = 0;
             PageFault.tss_addr = tss_start;
             PageFault.ist1_offset = (ulong)(((libsupcs.TysosField)typeof(tysos.x86_64.Tss.Tss_struct).GetField("ist1")).Offset);
-            PageFault.ist_stack = pfault_ists;
+            PageFault.ist_stack = pfault_ists;*/
 
             /* Test the gengc */
             Formatter.WriteLine("x86_64: testing gengc", Program.arch.DebugOutput);
@@ -423,13 +450,10 @@ namespace tysos.x86_64
             SchedulerTimer = bsp_lapic;
 
             /* Set up the current cpu */
-            cpu_datasize = (ulong)new x86_64_cpu().RequiredDataSize;
-            Virtual_Regions.Region cpu_reg = VirtualRegions.AllocRegion(cpu_datasize, 0x1000, "BSP cpu", 0, Virtual_Regions.Region.RegionType.CPU_specific);
-            Program.cur_cpu_data = new x86_64_cpu(cpu_reg, 0);
-            ((x86_64_cpu)Program.cur_cpu_data).CurrentLApic = bsp_lapic;
+            bsp.CurrentLApic = bsp_lapic;
 
             Processors = new List<Cpu>();
-            Processors.Add(Program.cur_cpu_data);
+            Processors.Add(Program.arch.CurrentCpu);
 
             /* Initialize the interrupt map */
             Program.imap = new x86_64.x86_64_InterruptMap();
@@ -617,7 +641,7 @@ namespace tysos.x86_64
 
         internal override void EnableMultitasking()
         {
-            ((x86_64.x86_64_cpu)Program.cur_cpu_data).CurrentLApic.Enable();
+            ((x86_64.x86_64_cpu)Program.arch.CurrentCpu).CurrentLApic.Enable();
             multitasking = true;
             libsupcs.x86_64.Cpu.Sti();
         }
@@ -631,10 +655,10 @@ namespace tysos.x86_64
 
         internal override long GetNow()
         {
-            if (((x86_64.x86_64_cpu)Program.cur_cpu_data).CurrentLApic == null)
+            if (((x86_64.x86_64_cpu)Program.arch.CurrentCpu).CurrentLApic == null)
                 return 0;
             else
-                return ((x86_64.x86_64_cpu)Program.cur_cpu_data).CurrentLApic.Ticks;
+                return ((x86_64.x86_64_cpu)Program.arch.CurrentCpu).CurrentLApic.Ticks;
         }
     }
 }

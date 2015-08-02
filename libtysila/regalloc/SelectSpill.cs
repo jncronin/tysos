@@ -42,11 +42,6 @@ namespace libtysila.regalloc
 
                 int dist = -1;
 
-                if (v.ToString() == "12.3")
-                {
-                    int asdfgasrgs = 0;
-                }
-
                 foreach (timple.BaseNode use in code.Liveness.uses[v])
                 {
                     int cur_dist = GetDistance(def, use);

@@ -274,7 +274,7 @@ namespace tydisasm.arm
                                     // STMDB (STMFD)
                                     throw new NotImplementedException();
                             }
-                            break;
+                            //break;
                         case 0x11:
                         case 0x13:
                             // LDMDB/LDMEA
@@ -557,7 +557,7 @@ namespace tydisasm.arm
                                     // LDRB (immediate, ARM)
                                     throw new NotImplementedException();
                             }
-                            break;
+                            //break;
                         case 1:
                             // LDRB (register)
                             throw new NotImplementedException();
@@ -941,7 +941,7 @@ namespace tydisasm.arm
                         default:
                             throw new NotSupportedException();
                     }
-                    break;
+                    //break;
                 case 2:
                     switch (op)
                     {
@@ -951,7 +951,7 @@ namespace tydisasm.arm
                         default:
                             throw new NotSupportedException();
                     }
-                    break;
+                    //break;
                 case 3:
                     switch (op)
                     {
@@ -976,7 +976,7 @@ namespace tydisasm.arm
                         default:
                             throw new NotSupportedException();
                     }
-                    break;
+                    //break;
                 case 7:
                     switch (op)
                     {
@@ -992,7 +992,7 @@ namespace tydisasm.arm
                         default:
                             throw new NotSupportedException();
                     }
-                    break;
+                    //break;
                 default:
                     throw new NotSupportedException();
             }
@@ -1125,7 +1125,7 @@ namespace tydisasm.arm
                                     // ROR (immediate)
                                     throw new NotImplementedException();
                             }
-                            break;
+                            //break;
                     }
                     break;
                 case 28:

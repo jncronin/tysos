@@ -27,28 +27,28 @@ namespace tysos.elf
 {
     class ElfFileReader
     {
-        static ulong ReadUInt64(IInputStream s)
+        static ulong ReadUInt64(lib.File s)
         {
             byte[] val = new byte[8];
             s.Read(val, 0, 8);
             return BitConverter.ToUInt64(val, 0);
         }
 
-        static long ReadInt64(IInputStream s)
+        static long ReadInt64(lib.File s)
         {
             byte[] val = new byte[8];
             s.Read(val, 0, 8);
             return BitConverter.ToInt64(val, 0);
         }
 
-        static uint ReadUInt32(IInputStream s)
+        static uint ReadUInt32(lib.File s)
         {
             byte[] val = new byte[4];
             s.Read(val, 0, 4);
             return BitConverter.ToUInt32(val, 0);
         }
 
-        static ElfReader.Elf64_Ehdr ReadHeader(IInputStream s)
+        static ElfReader.Elf64_Ehdr ReadHeader(lib.File s)
         {
             ElfReader.Elf64_Ehdr ret = new ElfReader.Elf64_Ehdr();
             ret.e_ident_1 = ReadUInt64(s);
@@ -77,7 +77,7 @@ namespace tysos.elf
             return ret;
         }
 
-        static ElfReader.Elf64_Shdr ReadShdr(IInputStream s)
+        static ElfReader.Elf64_Shdr ReadShdr(lib.File s)
         {
             ElfReader.Elf64_Shdr ret = new ElfReader.Elf64_Shdr();
             ret.sh_name = ReadUInt32(s);
@@ -94,7 +94,7 @@ namespace tysos.elf
             return ret;
         }
 
-        static ElfReader.Elf64_Sym ReadSym(IInputStream s)
+        static ElfReader.Elf64_Sym ReadSym(lib.File s)
         {
             ElfReader.Elf64_Sym ret = new ElfReader.Elf64_Sym();
             ret.st_name = ReadUInt32(s);
@@ -105,7 +105,7 @@ namespace tysos.elf
             return ret;
         }
 
-        static ElfReader.Elf64_Rela ReadRela(IInputStream s)
+        static ElfReader.Elf64_Rela ReadRela(lib.File s)
         {
             ElfReader.Elf64_Rela ret = new ElfReader.Elf64_Rela();
             ret.r_offset = ReadUInt64(s);
@@ -115,10 +115,10 @@ namespace tysos.elf
             return ret;
         }
 
-        static unsafe byte* ReadStructure(IInputStream s, long pos, long len)
+        static unsafe byte* ReadStructure(lib.File s, long pos, long len)
         {
             byte[] ret = new byte[len];
-            s.Seek(pos, SeekPosition.Set);
+            s.Seek(pos, System.IO.SeekOrigin.Begin);
             int bytes_read = s.Read(ret, 0, (int)len);
             if (bytes_read != len)
                 throw new Exception("ReadStructure: read " + bytes_read.ToString() +
@@ -126,10 +126,10 @@ namespace tysos.elf
             return (byte*)libsupcs.MemoryOperations.GetInternalArray(ret);
         }
 
-        static unsafe byte* ReadStructure(IInputStream s, ulong pos, ulong len)
+        static unsafe byte* ReadStructure(lib.File s, ulong pos, ulong len)
         { return ReadStructure(s, (long)pos, (long)len); }
 
-        public static unsafe ulong LoadObject(Virtual_Regions vreg, VirtMem vmem, SymbolTable stab, IInputStream s, string name)
+        public static unsafe ulong LoadObject(Virtual_Regions vreg, VirtMem vmem, SymbolTable stab, lib.File s, string name)
         {
             ElfReader.Elf64_Ehdr ehdr = ReadHeader(s);
 
@@ -175,7 +175,7 @@ namespace tysos.elf
                         byte[] sect_data = libsupcs.TysosArrayType.CreateByteArray((byte*)sect_addr, (int)cur_shdr->sh_size);
 
                         // Read the section data into it
-                        s.Seek((long)cur_shdr->sh_offset, SeekPosition.Set);
+                        s.Seek((long)cur_shdr->sh_offset, System.IO.SeekOrigin.Begin);
                         s.Read(sect_data, 0, (int)cur_shdr->sh_size);
                     }
                     else if (cur_shdr->sh_type == 0x8)

@@ -66,9 +66,9 @@ namespace Console
 
             tysos.Syscalls.DebugFunctions.DebugWrite("Console: starting shell\n");
             tysos.Process shell_p = tysos.Syscalls.ProcessFunctions.ExecModule("shell", false);
-            shell_p.stderr = this;
-            shell_p.stdout = this;
-            shell_p.stdin = this;
+            //shell_p.stderr = this;
+            //shell_p.stdout = this;
+            //shell_p.stdin = this;
             shell_p.startup_thread.do_profile = true;
             tysos.Syscalls.ProcessFunctions.StartProcess(shell_p);
 

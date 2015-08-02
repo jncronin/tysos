@@ -223,7 +223,18 @@ namespace libtysila
                 implflags |= libsupcs.TysosType.IF_ZBA;
             }
             else if (ttc.type.IsEnum(ass))
+            {
+                List<Metadata.FieldRow> ifs = ttc.type.GetAllInstanceFields(ass);
+                if (ifs.Count != 1)
+                    throw new Exception("Invalid number of instance fields for enum: " + ifs.Count.ToString());
+                Signature.Param fsig = Signature.ResolveGenericParam(ifs[0].GetSignature().AsParam(ass), ttc.tsig.Type, null, ass);
+                Assembler.TypeToCompile unboxed_ttc = new Assembler.TypeToCompile { _ass = ass, tsig = fsig, type = Metadata.GetTypeDef(fsig.Type, ass) };
+                unboxed_typeinfo = unboxed_ttc;
+                if (request_types)
+                    ass.Requestor.RequestTypeInfo(unboxed_ttc);
+                
                 implflags |= libsupcs.TysosType.IF_ENUM;
+            }
 
             IdentifyImplementedClasses(ttc, ass);
             LayoutInstanceFields(ttc, ass);

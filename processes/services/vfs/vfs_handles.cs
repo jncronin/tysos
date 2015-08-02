@@ -30,82 +30,52 @@ namespace vfs
     {
         class open_handle
         {
-            internal tysos.IFile handle;
+            internal tysos.lib.File handle;
             internal tysos.Process process;
         }
 
         List<open_handle> open_handles = new List<open_handle>();
 
-        public tysos.IFile OpenFile(string path, System.IO.FileMode mode, System.IO.FileAccess access,
-            System.IO.FileShare share, System.IO.FileOptions options, out tysos.lib.MonoIOError error)
+        public tysos.lib.File OpenFile(string path, System.IO.FileMode mode, System.IO.FileAccess access,
+            System.IO.FileShare share, System.IO.FileOptions options)
         {
-            vfsMessageTypes.OpenFileMessage ofm = new vfsMessageTypes.OpenFileMessage();
-            ofm.path = path;
-            ofm.mode = mode;
-            ofm.access = access;
-            ofm.share = share;
-            ofm.options = options;
+            Path p = GetPath(path);
+            if (p == null || p.device == null)
+                return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
 
-            tysos.Syscalls.IPCFunctions.SendMessage(p_vfs, new tysos.IPCMessage { Type = vfsMessageTypes.OPEN, Message = ofm });
-            tysos.Syscalls.SchedulerFunctions.Block(ofm.completed);
+            tysos.lib.File ret = (tysos.lib.File)p.device.Invoke("Open",
+                new object[] { p.path, mode, access, share, options }, tysos.lib.File.sig_Open);
 
-            error = ofm.error;
-            return ofm.handle;
-        }
-
-        public bool CloseFile(tysos.IFile handle, out tysos.lib.MonoIOError error)
-        {
-            vfsMessageTypes.OpenFileMessage ofm = new vfsMessageTypes.OpenFileMessage();
-            ofm.handle = handle;
-
-            tysos.Syscalls.IPCFunctions.SendMessage(p_vfs, new tysos.IPCMessage { Type = vfsMessageTypes.CLOSE, Message = ofm });
-            tysos.Syscalls.SchedulerFunctions.Block(ofm.completed);
-
-            error = ofm.error;
-            if (error != tysos.lib.MonoIOError.ERROR_SUCCESS)
-                return false;
-            return true;
-        }
-
-        tysos.IFile _OpenFile(string path, System.IO.FileMode mode, System.IO.FileAccess access,
-            System.IO.FileShare share, System.IO.FileOptions options, out tysos.lib.MonoIOError error, tysos.Process from_proc)
-        {
-            List<FileSystemObject> fsos = GetFSO(path);
-            if (fsos.Count != 1)
-            {
-                error = tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND;
-                return null;
-            }
-
-            FileSystemObject fso = fsos[0];
-            tysos.lib.MonoIOError err;
-            tysos.IFile handle = fso.Open(access, out err);
-
-            if (err == tysos.lib.MonoIOError.ERROR_SUCCESS)
+            if (ret.Error == tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
                 open_handle h = new open_handle();
-                h.handle = handle;
-                h.process = from_proc;
+                h.handle = ret;
+                h.process = SourceThread.owning_process;
                 open_handles.Add(h);
             }
 
-            error = err;
-            return handle;
+            return ret;
         }
 
-        void _CloseFile(tysos.IFile handle, out tysos.lib.MonoIOError error, tysos.Process from_proc)
+        public bool CloseFile(tysos.lib.File handle)
         {
+            handle.Error = tysos.lib.MonoIOError.ERROR_INVALID_HANDLE;
+
             for (int i = 0; i < open_handles.Count; i++)
             {
-                if ((open_handles[i].handle == handle) && (open_handles[i].process == from_proc))
+                if ((open_handles[i].handle == handle) && (open_handles[i].process == SourceThread.owning_process))
                 {
                     open_handles.RemoveAt(i);
-                    error = tysos.lib.MonoIOError.ERROR_SUCCESS;
-                    return;
+                    handle.Error = tysos.lib.MonoIOError.ERROR_SUCCESS;
+                    break;
                 }
             }
 
-            error = tysos.lib.MonoIOError.ERROR_INVALID_HANDLE;
+            if(handle.Error == tysos.lib.MonoIOError.ERROR_SUCCESS)
+                return (bool)handle.Device.Invoke("Close", new object[] { handle },
+                    tysos.lib.File.sig_Close);
+            else
+                return false;
         }
     }
 }

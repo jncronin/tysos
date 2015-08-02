@@ -65,6 +65,7 @@
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="GetFileSystemEntries.cs" />
     <Compile Include="props_file.cs" />
     <Compile Include="proc_node.cs" />
     <Compile Include="root_fs.cs" />

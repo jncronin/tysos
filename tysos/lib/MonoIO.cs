@@ -1,4 +1,4 @@
-/* Copyright (C) 2008 - 2011 by John Cronin
+/* Copyright (C) 2008 - 2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -51,169 +51,87 @@ namespace tysos.lib
 
         [libsupcs.MethodAlias("_ZW6System13ConsoleDriverM_0_6Isatty_Rb_P1u1I")]
         [libsupcs.AlwaysCompile]
-        static bool Isatty(IntPtr handle)
+        static bool Isatty(lib.File handle)
         {
-            if ((handle == (IntPtr)STDIN) || (handle == (IntPtr)STDOUT) || (handle == (IntPtr)STDERR))
-                return true;
-            return false;
+            return handle.Isatty;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_17get_ConsoleOutput_Ru1I_P0")]
         [libsupcs.AlwaysCompile]
-        static IntPtr get_ConsoleOutput()
+        static tysos.lib.File get_ConsoleOutput()
         {
             Formatter.WriteLine("MonoIO.getConsoleOutput: called", Program.arch.DebugOutput);
-            return (IntPtr)STDOUT;
+            return Program.arch.CurrentCpu.CurrentThread.owning_process.stdout;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_16get_ConsoleInput_Ru1I_P0")]
         [libsupcs.AlwaysCompile]
-        static IntPtr get_ConsoleInput()
+        static tysos.lib.File get_ConsoleInput()
         {
             Formatter.WriteLine("MonoIO.getConsoleInput: called", Program.arch.DebugOutput);
-            return (IntPtr)STDIN;
+            return Program.arch.CurrentCpu.CurrentThread.owning_process.stdin;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_16get_ConsoleError_Ru1I_P0")]
         [libsupcs.AlwaysCompile]
-        static IntPtr get_ConsoleError()
+        static tysos.lib.File get_ConsoleError()
         {
             Formatter.WriteLine("MonoIO.getConsoleError: called", Program.arch.DebugOutput);
-            return (IntPtr)STDERR;
+            return Program.arch.CurrentCpu.CurrentThread.owning_process.stderr;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_11GetFileType_RV12MonoFileType_P2u1IRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
-        static MonoFileType GetFileType(IntPtr handle, out MonoIOError err)
+        static MonoFileType GetFileType(tysos.lib.File handle, out MonoIOError err)
         {
-            long h = (long)handle;
-
-            Formatter.WriteLine("MonoIO.GetFileType: called", Program.arch.DebugOutput);
-
-            if (h == INVALID)
-            {
-                err = MonoIOError.ERROR_INVALID_HANDLE;
-                return MonoFileType.Unknown;
-            }
-
-            if ((h == STDOUT) || (h == STDIN) || (h == STDERR))
-            {
-                err = MonoIOError.ERROR_SUCCESS;
-                return MonoFileType.Char;
-            }
-
-            if ((h < 0) || (h >= 0x1000))
-            {
-                err = MonoIOError.ERROR_SUCCESS;
-                return MonoFileType.Char;
-            }
-
-            err = MonoIOError.ERROR_INVALID_HANDLE;
-            return MonoFileType.Unknown;
+            err = MonoIOError.ERROR_SUCCESS;
+            return handle.FileType;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_4Read_Ri_P5u1Iu1ZhiiRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
-        static int Read(IntPtr handle, byte[] dest, int dest_offset, int count, out MonoIOError error)
+        static int Read(lib.File handle, byte[] dest, int dest_offset, int count, out MonoIOError error)
         {
-            long h = (long)handle;
-
             Formatter.Write("MonoIO.Read: called (handle: ", Program.arch.DebugOutput);
-            Formatter.Write((ulong)h, "X", Program.arch.DebugOutput);
+            Formatter.Write((ulong)libsupcs.CastOperations.ReinterpretAsUlong(handle), "X", Program.arch.DebugOutput);
             Formatter.Write(" dest_offset: ", Program.arch.DebugOutput);
             Formatter.Write((ulong)dest_offset, Program.arch.DebugOutput);
             Formatter.Write(" count: ", Program.arch.DebugOutput);
             Formatter.Write((ulong)count, Program.arch.DebugOutput);
             Formatter.WriteLine(")", Program.arch.DebugOutput);
 
-
-            if (h == INVALID)
+            if(handle == null)
             {
                 error = MonoIOError.ERROR_INVALID_HANDLE;
                 return -1;
             }
 
-            if (h == STDIN)
-            {
-                if (Program.cur_cpu_data.CurrentThread.owning_process.stdin != null)
-                {
-                    int ret = Program.cur_cpu_data.CurrentThread.owning_process.stdin.Read(dest, dest_offset, count);
-                    error = MonoIOError.ERROR_SUCCESS;
-                    return ret;
-                }
-                else
-                    throw new Exception("Process does not have a stdin stream");
-            }
-
-            if ((h < 0) || (h >= 0x1000))
-            {
-                /* A 'safe' limit to ensure we're dealing with an actual pointer */
-                tysos.IFile file = ReinterpretAsIFile(handle);
-
-                tysos.IInputStream istream = file.GetInputStream();
-                if (istream == null)
-                {
-                    error = MonoIOError.ERROR_READ_FAULT;
-                    return -1;
-                }
-
-                error = MonoIOError.ERROR_SUCCESS;
-                int ret = istream.Read(dest, dest_offset, count);
-                tysos.Syscalls.DebugFunctions.DebugWrite("MonoIO.Read: reading from file, returning " + ret.ToString() + "\n");
-                return ret;
-            }
-
-            error = MonoIOError.ERROR_INVALID_HANDLE;
-            return -1;
+            int ret = handle.Read(dest, dest_offset, count);
+            error = handle.Error;
+            return ret;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_5Write_Ri_P5u1Iu1ZhiiRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
-        static int Write(IntPtr handle, byte[] src, int src_offset, int count, out MonoIOError error)
+        static int Write(lib.File handle, byte[] src, int src_offset, int count, out MonoIOError error)
         {
-            long h = (long)handle;
+            Formatter.Write("MonoIO.Write: called (handle: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)libsupcs.CastOperations.ReinterpretAsUlong(handle), "X", Program.arch.DebugOutput);
+            Formatter.Write(" src_offset: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)src_offset, Program.arch.DebugOutput);
+            Formatter.Write(" count: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)count, Program.arch.DebugOutput);
+            Formatter.WriteLine(")", Program.arch.DebugOutput);
 
-            Formatter.WriteLine("MonoIO.Write: called", Program.arch.DebugOutput);
-
-            if (h == INVALID)
+            if (handle == null)
             {
                 error = MonoIOError.ERROR_INVALID_HANDLE;
                 return -1;
             }
 
-            if (h == STDOUT)
-            {
-                Formatter.WriteLine("MonoIO.Write: handle is STDOUT", Program.arch.DebugOutput);
-                if (Program.cur_cpu_data.CurrentThread.owning_process.stdout != null)
-                {
-                    Formatter.WriteLine("MonoIO.Write: thread has stdout stream", Program.arch.DebugOutput);
-                    Program.cur_cpu_data.CurrentThread.owning_process.stdout.Write(src, src_offset, count);
-                    error = MonoIOError.ERROR_SUCCESS;
-                    return count;
-                }
-                else
-                {
-                    error = MonoIOError.ERROR_SUCCESS;
-                    return count;
-                }
-            }
-
-            if (h == STDERR)
-            {
-                if (Program.cur_cpu_data.CurrentThread.owning_process.stderr != null)
-                {
-                    Program.cur_cpu_data.CurrentThread.owning_process.stderr.Write(src, src_offset, count);
-                    error = MonoIOError.ERROR_SUCCESS;
-                    return count;
-                }
-                else
-                {
-                    error = MonoIOError.ERROR_SUCCESS;
-                    return count;
-                }
-            }
-
-            throw new Exception("Write not yet implemented");
+            int ret = handle.Write(src, src_offset, count);
+            error = handle.Error;
+            return ret;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_19GetCurrentDirectory_Ru1S_P1RV11MonoIOError")]
@@ -221,20 +139,23 @@ namespace tysos.lib
         static string GetCurrentDirectory(out MonoIOError error)
         {
             error = MonoIOError.ERROR_SUCCESS;
-            return Program.cur_cpu_data.CurrentThread.owning_process.current_directory;
+            return Program.arch.CurrentCpu.CurrentThread.owning_process.current_directory;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_17GetFileAttributes_RV14FileAttributes_P2u1SRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static System.IO.FileAttributes GetFileAttributes(string path, out MonoIOError error)
         {
-            if(Program.vfs == null)
+            //Formatter.WriteLine("MonoIO: GetFileAttributes: called with path: " + path, Program.arch.DebugOutput);
+            while (Program.Vfs == null) ;
+            /*if (Program.Vfs == null)
             {
                 error = MonoIOError.ERROR_GEN_FAILURE;
                 return InvalidFileAttributes;
-            }
+            }*/
 
-            System.IO.FileAttributes fa = Program.vfs.GetFileAttributes(ref path);
+            System.IO.FileAttributes fa = (System.IO.FileAttributes)Program.Vfs.Invoke("GetFileAttributes", new object[] { path }, File.sig_vfs_GetFileAttributes);
+
             if (fa == InvalidFileAttributes)
                 error = MonoIOError.ERROR_FILE_NOT_FOUND;
             else
@@ -246,18 +167,20 @@ namespace tysos.lib
         [libsupcs.AlwaysCompile]
         static string[] GetFileSystemEntries(string path, string path_with_pattern, int attrs, int mask, out MonoIOError error)
         {
-            Formatter.WriteLine("MonoIO: GetFileSystemEntries: called with path: " + path + " and path_with_pattern: " + path_with_pattern, Program.arch.DebugOutput);
-            if (Program.vfs == null)
+            //Formatter.WriteLine("MonoIO: GetFileSystemEntries: called with path: " + path + " and path_with_pattern: " + path_with_pattern, Program.arch.DebugOutput);
+            while (Program.Vfs == null) ;
+
+            string[] ret = Program.Vfs.Invoke("GetFileSystemEntries",
+                new object[] { path, path_with_pattern, attrs, mask },
+                File.sig_vfs_GetFileSystemEntries) as string[];
+
+            if(ret == null)
             {
                 error = MonoIOError.ERROR_GEN_FAILURE;
-                return null;
+                return new string[] { };
             }
 
-            string[] ret = Program.vfs.GetFileSystemEntries(path, path_with_pattern, attrs, mask);
-            if(ret == null)
-                error = MonoIOError.ERROR_FILE_NOT_FOUND;
-            else
-                error = MonoIOError.ERROR_SUCCESS;
+            error = MonoIOError.ERROR_SUCCESS;
             return ret;
         }
 
@@ -265,13 +188,14 @@ namespace tysos.lib
         [libsupcs.AlwaysCompile]
         static bool SetCurrentDirectory(string path, out MonoIOError error)
         {
-            if (Program.vfs == null)
+            Formatter.WriteLine("MonoIO: SetCurrentDirectory: called with path: " + path, Program.arch.DebugOutput);
+            if (Program.Vfs == null)
             {
                 error = MonoIOError.ERROR_GEN_FAILURE;
                 return false;
             }
 
-            System.IO.FileAttributes fa = Program.vfs.GetFileAttributes(ref path);
+            System.IO.FileAttributes fa = (System.IO.FileAttributes)Program.Vfs.Invoke("GetFileAttributes", new object[] { path }, File.sig_vfs_GetFileAttributes);
             if ((fa == InvalidFileAttributes) || ((fa & System.IO.FileAttributes.Directory) != System.IO.FileAttributes.Directory))
             {
                 error = MonoIOError.ERROR_PATH_NOT_FOUND;
@@ -279,36 +203,71 @@ namespace tysos.lib
             }
 
             Formatter.WriteLine("MonoIO: SetCurrentDirectory: setting current directory to " + path, Program.arch.DebugOutput);
-            Program.cur_cpu_data.CurrentThread.owning_process.current_directory = path;
+            Program.arch.CurrentCpu.CurrentThread.owning_process.current_directory = path;
             error = MonoIOError.ERROR_SUCCESS;
             return true;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_4Open_Ru1I_P6u1SV8FileModeV10FileAccessV9FileShareV11FileOptionsRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
-        static tysos.IFile Open(string name, System.IO.FileMode mode, System.IO.FileAccess access,
+        static lib.File Open(string name, System.IO.FileMode mode, System.IO.FileAccess access,
             System.IO.FileShare share, System.IO.FileOptions options, out MonoIOError error)
         {
-            if (Program.vfs == null)
+            if (Program.Vfs == null)
             {
                 error = MonoIOError.ERROR_GEN_FAILURE;
                 return null;
             }
 
-            return Program.vfs.OpenFile(name, mode, access, share, options, out error);
+            tysos.lib.File ret = (tysos.lib.File)Program.Vfs.Invoke("OpenFile", 
+                new object[] { name, mode, access, share, options },
+                File.sig_vfs_OpenFile);
+            error = ret.Error;
+            return ret;
         }
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_5Close_Rb_P2u1IRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
-        static bool Close(tysos.IFile handle, out MonoIOError error)
+        static bool Close(lib.File handle, out MonoIOError error)
         {
-            if (Program.vfs == null)
+            if (Program.Vfs == null)
             {
                 error = MonoIOError.ERROR_GEN_FAILURE;
                 return false;
             }
 
-            return Program.vfs.CloseFile(handle, out error);
+            Program.Vfs.Invoke("CloseFile",
+                new object[] { handle }, File.sig_vfs_CloseFile);
+            error = handle.Error;
+            return error == MonoIOError.ERROR_SUCCESS;
+        }
+
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_11GetFileStat_Rb_P3u1SRV10MonoIOStatRV11MonoIOError")]
+        [libsupcs.AlwaysCompile]
+        static bool GetFileStat(string path, out MonoIOStat stat, out MonoIOError error)
+        {
+            stat = new MonoIOStat();
+
+            while (Program.Vfs == null) ;
+
+            lib.File handle = (lib.File)Program.Vfs.Invoke("OpenFile",
+                new object[] { path, System.IO.FileMode.Open, System.IO.FileAccess.Read,
+                    System.IO.FileShare.ReadWrite, System.IO.FileOptions.None },
+                File.sig_vfs_OpenFile);
+            if(handle.Error != MonoIOError.ERROR_SUCCESS)
+            {
+                error = handle.Error;
+                stat.Attributes = System.IO.FileAttributes.Offline;
+                return false;
+            }
+
+            stat.Attributes = (System.IO.FileAttributes)handle.IntProperties;
+            stat.Length = handle.Length;
+            stat.Name = handle.Name;
+
+            error = MonoIOError.ERROR_SUCCESS;
+
+            return true;
         }
     }
 }

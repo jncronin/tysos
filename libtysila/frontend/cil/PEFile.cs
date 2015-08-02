@@ -403,7 +403,7 @@ namespace libtysila
                 throw new Exception("PE optional header too small");
             file.Seek(pefh_start + 18, SeekOrigin.Begin);
             pefh.Chars = Read16(file);
-            if ((pefh.Chars != 0x210e) && (pefh.Chars != 0x10e) && (pefh.Chars != 0x102) && (pefh.Chars != 0x2102))
+            if((pefh.Chars & 0x3) != 0x2)
                 throw new Exception("Invalid PE file header characteristics");
             file.Seek(pefh_start + 20 + 208, SeekOrigin.Begin);
             pefh.CliHeader = new DataDir();

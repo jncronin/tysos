@@ -31,19 +31,57 @@ using System.Text;
 
 namespace tysos
 {
-    public abstract class Cpu
+    public abstract unsafe class Cpu
     {
-        public int cpu_id;
-        internal Virtual_Regions.Region cpu_data;
+        protected int cpu_id;
         bool cpu_alloc = false;
 
-        abstract internal void Init(Virtual_Regions.Region cpu_region, int id);
-        abstract public Thread CurrentThread { get; }
-        abstract internal Scheduler CurrentScheduler { get; set; }
-        abstract public int RequiredDataSize { get; }
-        abstract internal Timer CurrentTimer { get; }
-        abstract internal ulong IntPtrSize { get; }
+        virtual internal void InitCurrentCpu() { }
+
+        protected Thread currentThread = null;
+        protected Scheduler currentScheduler = null;
+        protected Timer currentTimer = null;
+
+        protected byte* cpu_alloc_current;
+        protected byte* cpu_alloc_max;
+
+        virtual public Thread CurrentThread { get { return currentThread; } }
+        virtual internal Scheduler CurrentScheduler
+        {
+            get { return currentScheduler; }
+            set { currentScheduler = value; }
+        }
+
+        virtual internal Timer CurrentTimer
+        {
+            get { return currentTimer; }
+            set { currentTimer = value; }
+        }
+
+        virtual internal ulong IntPtrSize
+        {
+            get { return (ulong)libsupcs.OtherOperations.GetPointerSize(); }
+        }
+
+        virtual internal int Id
+        {
+            get { return cpu_id; }
+        }
+
         virtual internal bool UseCpuAlloc { get { return cpu_alloc; } set { cpu_alloc = value; if (value) gc.gc.Heap = gc.gc.HeapType.PerCPU; } }
-        abstract internal ulong CpuAlloc(ulong size);
+        virtual internal ulong CpuAlloc(ulong size)
+        {
+            if (cpu_alloc_max - cpu_alloc_current < (long)size)
+            {
+                Formatter.WriteLine("*** FATAL ERROR ***", Program.arch.DebugOutput);
+                Formatter.WriteLine("CPU heap exhausted", Program.arch.DebugOutput);
+                libsupcs.OtherOperations.Halt();
+                return 0;
+            }
+
+            byte* ret = cpu_alloc_current;
+            cpu_alloc_current += size;
+            return (ulong)ret;
+        }
     }
 }

@@ -25,7 +25,7 @@ using System.Text;
 
 namespace tysos
 {
-    abstract class TaskSwitcher
+    public abstract class TaskSwitcher
     {
         public abstract void Switch(Thread next);
     }

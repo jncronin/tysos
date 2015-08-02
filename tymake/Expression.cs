@@ -519,7 +519,8 @@ namespace tymake
 
     internal class ObjectExpression : Expression
     {
-        public Dictionary<string, Expression.EvalResult> val;
+        public Dictionary<string, Expression.EvalResult> val =
+            new Dictionary<string, EvalResult>();
 
         public override EvalResult Evaluate(MakeState s)
         {

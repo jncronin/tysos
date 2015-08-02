@@ -55,8 +55,8 @@ namespace tysos.x86_64
             Formatter.WriteLine("NMI received", Program.arch.DebugOutput);
 
             // Switch to protected heap and unwind stack
-            if (Program.cur_cpu_data != null)
-                Program.cur_cpu_data.UseCpuAlloc = true;
+            if (Program.arch.CurrentCpu != null)
+                Program.arch.CurrentCpu.UseCpuAlloc = true;
             Unwind.DumpUnwindInfo(((libsupcs.x86_64.Unwinder)Program.arch.GetUnwinder().Init()).UnwindOneWithErrorCode().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
             libsupcs.OtherOperations.Halt();
         }
@@ -102,8 +102,8 @@ namespace tysos.x86_64
             Formatter.WriteLine("Stack trace: ", Program.arch.DebugOutput);
 
             // Switch to protected heap and unwind stack
-            if (Program.cur_cpu_data != null)
-                Program.cur_cpu_data.UseCpuAlloc = true;
+            if (Program.arch.CurrentCpu != null)
+                Program.arch.CurrentCpu.UseCpuAlloc = true;
             Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
             libsupcs.OtherOperations.Halt();
         }
@@ -125,11 +125,14 @@ namespace tysos.x86_64
         {
             Formatter.WriteLine("Double fault", Program.arch.BootInfoOutput);
 
+            DumpExceptionData(ec, return_rip, return_cs, rflags, return_rsp, return_ss,
+                regs);
+
             Formatter.WriteLine("Stack trace:", Program.arch.DebugOutput);
 
             // Switch to protected heap and unwind stack
-            if (Program.cur_cpu_data != null)
-                Program.cur_cpu_data.UseCpuAlloc = true;
+            if (Program.arch.CurrentCpu != null)
+                Program.arch.CurrentCpu.UseCpuAlloc = true;
             Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
             libsupcs.OtherOperations.Halt();
         }
@@ -200,8 +203,8 @@ namespace tysos.x86_64
             Formatter.WriteLine("Stack trace:", Program.arch.DebugOutput);
 
             // Switch to protected heap and unwind stack
-            if (Program.cur_cpu_data != null)
-                Program.cur_cpu_data.UseCpuAlloc = true;
+            if (Program.arch.CurrentCpu != null)
+                Program.arch.CurrentCpu.UseCpuAlloc = true;
             else
                 gc.gc.Heap = gc.gc.HeapType.Startup;
             Unwind.DumpUnwindInfo(((libsupcs.x86_64.Unwinder)Program.arch.GetUnwinder().Init()).UnwindOneWithErrorCode().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
@@ -250,8 +253,8 @@ namespace tysos.x86_64
             Formatter.WriteLine(Program.arch.DebugOutput);
 
             // Switch to protected heap and unwind stack
-            if (Program.cur_cpu_data != null)
-                Program.cur_cpu_data.UseCpuAlloc = true;
+            if (Program.arch.CurrentCpu != null)
+                Program.arch.CurrentCpu.UseCpuAlloc = true;
             Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
             libsupcs.OtherOperations.Halt();
         }

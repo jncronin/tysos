@@ -27,50 +27,33 @@ namespace tysos.x86_64
 {
     class Tss
     {
-        public struct Tss_struct
+        internal unsafe static void Init(ulong tss_addr, ulong[] ists)
         {
-            uint reserved1;
-            public ulong rsp0;
-            public ulong rsp1;
-            public ulong rsp2;
-            ulong reserved2;
-            public ulong ist1;
-            public ulong ist2;
-            public ulong ist3;
-            public ulong ist4;
-            public ulong ist5;
-            public ulong ist6;
-            public ulong ist7;
-            ulong reserved3;
-            public uint io_map_addr;
-        }
+            byte* tss = (byte*)tss_addr;
 
-        public Tss(ulong gdt_addr, ulong tss, ulong rsp0, ulong ist_block, ulong ist_length)
-        {
-            unsafe
+            /* Install ISTs */
+            for(int i = 0; i < ists.Length && i < 7; i++)
             {
-                *(ulong*)(tss + (ulong)(((libsupcs.TysosField)typeof(Tss_struct).GetField("rsp0")).Offset)) = rsp0;
-                *(ulong*)(tss + (ulong)(((libsupcs.TysosField)typeof(Tss_struct).GetField("ist1")).Offset)) = ist_block + 1 * ist_length;
-                *(ulong*)(tss + (ulong)(((libsupcs.TysosField)typeof(Tss_struct).GetField("ist2")).Offset)) = ist_block + 2 * ist_length;
-                *(ulong*)(tss + (ulong)(((libsupcs.TysosField)typeof(Tss_struct).GetField("ist3")).Offset)) = ist_block + 3 * ist_length;
-                *(ulong*)(tss + (ulong)(((libsupcs.TysosField)typeof(Tss_struct).GetField("ist4")).Offset)) = ist_block + 4 * ist_length;
-                *(ulong*)(tss + (ulong)(((libsupcs.TysosField)typeof(Tss_struct).GetField("ist5")).Offset)) = ist_block + 5 * ist_length;
-                *(ulong*)(tss + (ulong)(((libsupcs.TysosField)typeof(Tss_struct).GetField("ist6")).Offset)) = ist_block + 6 * ist_length;
-                *(ulong*)(tss + (ulong)(((libsupcs.TysosField)typeof(Tss_struct).GetField("ist7")).Offset)) = ist_block + 7 * ist_length;
+                ulong* tss_entry = (ulong*)(tss + 36 + 8 * i);
+                *tss_entry = ists[i];
             }
 
-            tysos.Collections.StaticULongArray gdt = new tysos.Collections.StaticULongArray(gdt_addr, 64);
+            /* Install this TSS in the GDT */
+            void* gdt;
+            ushort gdt_limit;
+            libsupcs.x86_64.Cpu.Sgdt(out gdt, out gdt_limit);
 
-            uint dw_1 = (uint)((tss << 16) & 0xffffffff) + 108;
-            uint dw_2 = (uint)((tss >> 16) & 0xff);
-            dw_2 |= ((uint)((tss >> 24) & 0xff)) << 24;
+            uint dw_1 = (uint)((tss_addr << 16) & 0xffffffff) + 108;
+            uint dw_2 = (uint)((tss_addr >> 16) & 0xff);
+            dw_2 |= ((uint)((tss_addr >> 24) & 0xff)) << 24;
             dw_2 |= 0x8900;     // set as TSS (64-bit) available, dpl 0, granularity = 0
             ulong low_qword = (((ulong)dw_2) << 32) | (ulong)dw_1;
-            ulong high_qword = (tss >> 32) & 0xffffffff;
+            ulong high_qword = (tss_addr >> 32) & 0xffffffff;
 
-            gdt[5] = low_qword;
-            gdt[6] = high_qword;
+            *(ulong*)((byte*)gdt + 5 * 8) = low_qword;
+            *(ulong*)((byte*)gdt + 6 * 8) = high_qword;
 
+            /* Load the TSS */
             libsupcs.x86_64.Cpu.Ltr(0x28);
         }
     }

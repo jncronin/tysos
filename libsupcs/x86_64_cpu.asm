@@ -14,12 +14,17 @@ weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_6_Cpuid_Rv_P2jPj:function
 weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_RBP_Ry_P0:function
 weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_RSP_Ry_P0:function
 weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5RdMsr_Ry_P1j:function
+weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5WrMsr_Rv_P2jy:function
 weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Tsc_Ry_P0:function
 weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Sti_Rv_P0:function
 weak _ZX16MemoryOperationsM_0_19QuickClearAligned16_Rv_P2yy:function
 weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Cli_Rv_P0:function
 weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_RBP_Rv_P1y:function
 weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Int_Rv_P1h:function
+weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_10ReadFSData_RPv_P1i:function
+weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_10ReadGSData_RPv_P1i:function
+weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_11WriteFSData_Rv_P2iPv:function
+weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_11WriteGSData_Rv_P2iPv:function
 
 weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5Break_Rv_P0:function
 
@@ -268,6 +273,15 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5RdMsr_Ry_P1j:
 	add rsp, 8
 	ret
 
+_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5WrMsr_Rv_P2jy:
+	; static void WrMsr(uint reg_no, ulong val)
+	mov dword ecx, edi
+	mov rax, rsi
+	mov rdx, rsi
+	shr rdx, 32
+	wrmsr
+	ret
+
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Tsc_Ry_P0:
 	rdtsc
 	sub rsp, 8
@@ -346,6 +360,22 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_6Invlpg_Rv_P1y:
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_RBP_Rv_P1y:
 	mov rbp, rdi
+	ret
+
+_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_10ReadFSData_RPv_P1i:
+	mov rax, [fs:rdi]
+	ret
+
+_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_10ReadGSData_RPv_P1i:
+	mov rax, [gs:rdi]
+	ret
+
+_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_11WriteFSData_Rv_P2iPv:
+	mov [fs:rdi], rsi
+	ret
+
+_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_11WriteGSData_Rv_P2iPv:
+	mov [gs:rdi], rsi
 	ret
 
 _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Int_Rv_P1h:

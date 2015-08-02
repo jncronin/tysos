@@ -58,6 +58,14 @@ namespace tysos
             int sep_len = separator.Length;
             int num_parts = 0;
 
+            /* Formatter.Write("InternalSplit: s: ", Program.arch.DebugOutput);
+            Formatter.Write(s, Program.arch.DebugOutput);
+            Formatter.Write(", separator.Length: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)separator.Length, Program.arch.DebugOutput);
+            Formatter.Write(", count: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)count, Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput); */
+
             start_chars.Add(0);
             num_parts++;
 
@@ -67,6 +75,10 @@ namespace tysos
                 {
                     if (s[i] == separator[j])
                     {
+                        /* Formatter.Write("InternalSplit: found separator at ", Program.arch.DebugOutput);
+                        Formatter.Write((ulong)i, Program.arch.DebugOutput);
+                        Formatter.WriteLine(Program.arch.DebugOutput); */
+
                         start_chars.Add(i + 1);
                         num_parts++;
                         break;
@@ -74,9 +86,17 @@ namespace tysos
                 }
             }
 
+            /* Formatter.Write("InternalSplit: num_parts: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)num_parts, Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput); */
+
             int parts = num_parts;
             if (count < parts)
                 parts = count;
+
+            /* Formatter.Write("InternalSplit: parts: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)parts, Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput); */
 
             string[] ret = new string[parts];
 
@@ -89,6 +109,10 @@ namespace tysos
                     last_char = start_chars[i + 1] - 2;
 
                 ret[i] = s.Substring(start_chars[i], last_char - start_chars[i] + 1);
+
+                /* Formatter.Write("InternalSplit: adding '", Program.arch.DebugOutput);
+                Formatter.Write(ret[i], Program.arch.DebugOutput);
+                Formatter.WriteLine("'", Program.arch.DebugOutput); */
             }
 
             return ret;

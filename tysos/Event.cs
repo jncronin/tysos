@@ -183,7 +183,7 @@ namespace tysos
 
         public TimerEvent(long tick_delay)
         {
-            timer = Program.cur_cpu_data.CurrentTimer;
+            timer = Program.arch.CurrentCpu.CurrentTimer;
             unchecked
             {
                 limit_val = timer.Ticks + tick_delay;

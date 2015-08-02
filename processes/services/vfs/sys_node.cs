@@ -49,6 +49,7 @@ namespace vfs
         {
             fixed_text_file parent;
             int offset = 0;
+            tysos.lib.MonoIOError err = tysos.lib.MonoIOError.ERROR_SUCCESS;
 
             internal handle(fixed_text_file p) { parent = p; }
 
@@ -61,6 +62,9 @@ namespace vfs
             {
                 return null;
             }
+
+            public int IntProperties { get { return parent.IntAttributes; } }
+            public tysos.lib.MonoIOError Error { get { return err; } }
 
             public ICollection<tysos.StructuredStartupParameters.Param> Properties
             { get { return parent.Properties; } }

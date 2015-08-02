@@ -25,11 +25,11 @@ using System.Text;
 
 namespace tysos
 {
-    class Scheduler
+    public class Scheduler
     {
-        internal protected tysos.Collections.Queue<Thread>[] running_tasks;
-        internal protected tysos.Collections.DeltaQueue<Thread> sleeping_tasks;
-        internal protected tysos.Collections.LinkedList<Thread> blocking_tasks;
+        internal tysos.Collections.Queue<Thread>[] running_tasks;
+        internal tysos.Collections.DeltaQueue<Thread> sleeping_tasks;
+        internal tysos.Collections.LinkedList<Thread> blocking_tasks;
 
         const int DEF_PRIORITIES = 11;
 
@@ -246,7 +246,7 @@ namespace tysos
         [libsupcs.Uninterruptible]
         public static void TimerProc(long ns)
         {
-            Program.cur_cpu_data.CurrentScheduler.TimerTick(ns, Program.cur_cpu_data.CurrentThread, Program.arch.Switcher);
+            Program.arch.CurrentCpu.CurrentScheduler.TimerTick(ns, Program.arch.CurrentCpu.CurrentThread, Program.arch.Switcher);
         }
     }
 }

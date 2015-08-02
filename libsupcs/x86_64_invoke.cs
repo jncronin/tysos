@@ -36,7 +36,7 @@ namespace libsupcs.x86_64
 
         [MethodAlias("__invoke")]
         [Bits64Only]
-        static unsafe object InternalInvoke(IntPtr meth, Object[] parameters)
+        static unsafe object InternalInvoke(IntPtr meth, Object[] parameters, TysosType rettype)
         {
             /* Build an array of the call locations of each parameter
              * 
@@ -97,9 +97,83 @@ namespace libsupcs.x86_64
                 }
             }
 
-            return asm_invoke(meth, p_length,
+            object ret = asm_invoke(meth, p_length,
                 (parameters == null) ? null : MemoryOperations.GetInternalArray(parameters),
                 (plocs == null) ? null : MemoryOperations.GetInternalArray(plocs));
+
+            // See if we have to box the return type
+            if (rettype.IsValueType)
+            {
+                if (rettype.IsEnum)
+                    rettype = rettype.GetUnboxedType();
+                if (rettype == typeof(int))
+                    ret = ReinterpretAsInt(ret);
+                else if (rettype == typeof(uint))
+                    ret = ReinterpretAsUInt(ret);
+                else if (rettype == typeof(long))
+                    ret = ReinterpretAsLong(ret);
+                else if (rettype == typeof(ulong))
+                    ret = ReinterpretAsULong(ret);
+                else if (rettype == typeof(short))
+                    ret = ReinterpretAsShort(ret);
+                else if (rettype == typeof(ushort))
+                    ret = ReinterpretAsUShort(ret);
+                else if (rettype == typeof(byte))
+                    ret = ReinterpretAsByte(ret);
+                else if (rettype == typeof(sbyte))
+                    ret = ReinterpretAsSByte(ret);
+                else if (rettype == typeof(char))
+                    ret = ReinterpretAsChar(ret);
+                else if (rettype == typeof(IntPtr))
+                    ret = ReinterpretAsIntPtr(ret);
+                else if (rettype == typeof(UIntPtr))
+                    ret = ReinterpretAsUIntPtr(ret);
+                else if (rettype == typeof(bool))
+                    ret = ReinterpretAsBoolean(ret);
+                else
+                    throw new NotImplementedException("InternalInvoke: return type " + rettype.FullName + " not supported");
+
+                return ret;
+            }
+            else
+                return ret;
         }
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern int ReinterpretAsInt(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern uint ReinterpretAsUInt(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern long ReinterpretAsLong(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern ulong ReinterpretAsULong(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern short ReinterpretAsShort(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern ushort ReinterpretAsUShort(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern byte ReinterpretAsByte(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern sbyte ReinterpretAsSByte(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern char ReinterpretAsChar(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern IntPtr ReinterpretAsIntPtr(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern UIntPtr ReinterpretAsUIntPtr(object addr);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public static extern bool ReinterpretAsBoolean(object addr);
     }
 }

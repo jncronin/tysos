@@ -41,7 +41,8 @@ namespace tysos
 {
     public abstract class ServerObject
     {
-        Thread t;
+        protected Thread t = null;
+        protected Thread SourceThread = null;
 
         // cache of previously called methods
         Dictionary<string, System.Reflection.MethodInfo> members =
@@ -49,12 +50,19 @@ namespace tysos
 
         public ServerObject()
         {
-            t = Syscalls.SchedulerFunctions.GetCurrentThread();
         }
 
         public virtual object Invoke(string name, object[] p)
         {
-            InvokeEvent e = InvokeAsync(name, p);
+            Type[] ts = new Type[p.Length];
+            for (int i = 0; i < p.Length; i++)
+                ts[i] = p[i].GetType();
+            return Invoke(name, p, ts);
+        }
+
+        public virtual object Invoke(string name, object[] p, Type[] ts)
+        {
+            InvokeEvent e = InvokeAsync(name, p, ts);
             while (e.IsSet == false)
                 Syscalls.SchedulerFunctions.Block(e);
             return e.ReturnValue;
@@ -65,29 +73,45 @@ namespace tysos
             public object ReturnValue;
             public string MethodName;
             public object[] Parameters;
+            public Type[] ParamTypes;
         }
 
         public virtual InvokeEvent InvokeAsync(string name, object[] p)
         {
+            Type[] ts = new Type[p.Length];
+            for (int i = 0; i < p.Length; i++)
+                ts[i] = p[i].GetType();
+            return InvokeAsync(name, p, ts);
+        }
+
+        public virtual InvokeEvent InvokeAsync(string name, object[] p, Type[] ts)
+        {
+            // Wait for us to enter the message loop
+            while (t == null) ;
+
             if (Syscalls.SchedulerFunctions.GetCurrentThread() == t)
             {
                 // If we are running on the current thread of the target object then just call it
                 InvokeEvent e = new InvokeEvent();
-                e.ReturnValue = InvokeInternal(name, p);
+                e.ReturnValue = InvokeInternal(name, p, ts);
                 e.Set();
                 return e;
             }
             else
             {
                 // Else, send a message to the target thread to run it
-                InvokeEvent e = new InvokeEvent { Parameters = p, MethodName = name };
-                Syscalls.IPCFunctions.SendMessage(t.owning_process,
-                    new IPCMessage { Message = e, Type = tysos.Messages.Message.MESSAGE_GENERIC });
-                return e;
+                return InvokeRemoteAsync(t.owning_process, name, p, ts);
             }
         }
 
-        public virtual object InvokeInternal(string name, object[] p)
+        public static InvokeEvent InvokeRemoteAsync(Process proc, string name, object[] p, Type[] ts)
+        {
+            InvokeEvent e = new InvokeEvent { Parameters = p, MethodName = name, ParamTypes = ts };
+            Syscalls.IPCFunctions.SendMessage(proc, new IPCMessage { Message = e, Type = tysos.Messages.Message.MESSAGE_GENERIC });
+            return e;
+        }
+
+        public virtual object InvokeInternal(string name, object[] p, Type[] ts)
         {
             if(name == null)
             {
@@ -100,15 +124,16 @@ namespace tysos
                 mi = members[name];
             else
             {
-                Type[] ts = new Type[p.Length];
-                for (int i = 0; i < p.Length; i++)
-                    ts[i] = p[i].GetType();
-
                 mi = this.GetType().GetMethod(name, ts);
 
                 // Can only invoke public instance methods
                 if (mi == null || mi.IsPublic == false || mi.IsStatic == true)
+                {
+                    Formatter.Write("InvokeInternal: method ", Program.arch.DebugOutput);
+                    Formatter.Write(name, Program.arch.DebugOutput);
+                    Formatter.WriteLine(" not found", Program.arch.DebugOutput);
                     return null;
+                }
 
                 members[name] = mi;
             }
@@ -119,6 +144,7 @@ namespace tysos
         public virtual void MessageLoop()
         {
             Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": entering message loop\n");
+            t = Syscalls.SchedulerFunctions.GetCurrentThread();
 
             while(true)
             {
@@ -139,10 +165,11 @@ namespace tysos
 
         protected virtual void HandleMessage(IPCMessage msg)
         {
+            SourceThread = msg.Source;
             if(msg.Type == Messages.Message.MESSAGE_GENERIC)
             {
                 InvokeEvent e = msg.Message as InvokeEvent;
-                e.ReturnValue = InvokeInternal(e.MethodName, e.Parameters);
+                e.ReturnValue = InvokeInternal(e.MethodName, e.Parameters, e.ParamTypes);
                 e.Set();
             }
             else
@@ -150,6 +177,7 @@ namespace tysos
                 Syscalls.DebugFunctions.DebugWrite("ServerObject: unknown message type: " +
                     msg.Type.ToString("X8") + "\n");
             }
+            SourceThread = null;
         }
 
         protected virtual void BackgroundProc()

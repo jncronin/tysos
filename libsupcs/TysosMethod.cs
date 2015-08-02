@@ -75,7 +75,7 @@ namespace libsupcs
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         [MethodReferenceAlias("__invoke")]
-        static extern object InternalInvoke(IntPtr meth, Object[] parameters);
+        static extern object InternalInvoke(IntPtr meth, Object[] parameters, TysosType rettype);
 
         public override System.Reflection.CallingConventions CallingConvention
         {
@@ -171,7 +171,7 @@ namespace libsupcs
                 //return InternalInvoke(MethodAddress, p_length, (p == null) ? null : MemoryOperations.GetInternalArray(p));
             }
 
-            return InternalInvoke(MethodAddress, p);
+            return InternalInvoke(MethodAddress, p, this._ReturnType);
         }
 
         public override RuntimeMethodHandle MethodHandle

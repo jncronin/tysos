@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2011 by John Cronin
+﻿/* Copyright (C) 2011-2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,10 @@ namespace tysos
         public List<Thread> threads = new List<Thread>();
         public Thread startup_thread;
         public string name;
-        public IInputStream stdin;
-        public IOutputStream stdout, stderr;
+        internal lib.File stdin, stdout, stderr;
         internal bool started = false;
         public bool Started { get { return started; } }
+        public ServerObject MessageServer;
 
         internal string current_directory = "/";
         public string CurrentDirectory { get { return current_directory; } }
@@ -51,10 +51,17 @@ namespace tysos
             return p;
         }
 
+        public static Process CreateProcess(string name, Delegate e_point, object[] parameters)
+        {
+            return Create(name,
+                (ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(e_point),
+                0x8000, Program.arch.VirtualRegions, Program.stab, parameters);
+        }
+
         internal Virtual_Regions.Region ipc_region;
         internal IPC ipc;
 
-        public static Process CreateProcess(IInputStream file, string name, object [] parameters)
+        public static Process CreateProcess(lib.File file, string name, object [] parameters)
         {
             /* Create a process from an ELF module in a file object */
 
@@ -69,7 +76,7 @@ namespace tysos
         {
             if (started)
                 return;
-            Program.cur_cpu_data.CurrentScheduler.Reschedule(startup_thread);
+            Program.arch.CurrentCpu.CurrentScheduler.Reschedule(startup_thread);
             started = true;
         }
     }
@@ -122,7 +129,7 @@ namespace tysos
         {
             get
             {
-                return Program.cur_cpu_data.CurrentThread;
+                return Program.arch.CurrentCpu.CurrentThread;
             }
         }
     }

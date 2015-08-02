@@ -49,13 +49,37 @@ namespace libsupcs
         {
             get
             {
-                if (_GenericParams != null)
-                    return _GenericParams;
-                else
+                if(_GenericParams == null)
                 {
-                    // TODO: convert _GParams into an array
-                    throw new NotImplementedException();
+                    // convert _GParams into an array
+                    unsafe
+                    {
+                        void** curgp = (void**)_GParams;
+                        int count = 0;
+                        if(curgp != null)
+                        {
+                            while (*curgp != null)
+                            {
+                                curgp++;
+                                count++;
+                            }
+                        }
+
+                        TysosType[] ret = new TysosType[count];
+                        curgp = (void**)_GParams;
+                        count = 0;
+                        if(curgp != null)
+                        {
+                            while(*curgp != null)
+                            {
+                                ret[count++] = ReinterpretAsType(*curgp);
+                                curgp++;
+                            }
+                        }
+                        _GenericParams = ret;
+                    }
                 }
+                return _GenericParams;
             }
         }
 

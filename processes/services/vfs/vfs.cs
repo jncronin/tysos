@@ -26,228 +26,35 @@ using tysos.Messages;
 
 namespace vfs
 {
-    partial class vfs : tysos.Ivfs
+    partial class vfs : tysos.ServerObject
     {
-        static Dictionary<string, FileSystemObject> mounts = new Dictionary<string, FileSystemObject>(new tysos.Program.MyGenericEqualityComparer<string>());
-        tysos.Process p_vfs;
+        static Dictionary<string, tysos.ServerObject> mounts =
+            new Dictionary<string, tysos.ServerObject>(new tysos.Program.MyGenericEqualityComparer<string>());
 
-        static void Main(string[] args)
+        static void Main()
         {
             vfs v = new vfs();
-            // TODO
-            //tysos.Syscalls.ProcessFunctions.RegisterSpecialProcess(v, tysos.Syscalls.ProcessFunctions.SpecialProcessType.Vfs);
-
-            object[] a = args as object[];
-            tysos.StructuredStartupParameters system_node = a[0] as tysos.StructuredStartupParameters;
-            tysos.StructuredStartupParameters mods = a[1] as tysos.StructuredStartupParameters;
-
-            v.Init(system_node, mods);
+            tysos.Syscalls.ProcessFunctions.RegisterSpecialProcess(v, tysos.Syscalls.ProcessFunctions.SpecialProcessType.Vfs);
+            v.MessageLoop();
         }
 
-        void Init(tysos.StructuredStartupParameters system_node,
-            tysos.StructuredStartupParameters mods)
+        public System.IO.FileAttributes GetFileAttributes(string path)
         {
-            root_fs root = new root_fs(system_node, mods);
-            mounts.Add("/", root);
-
-            p_vfs = tysos.Syscalls.ProcessFunctions.GetCurrentProcess();
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: entering message loop\n");
-            tysos.Syscalls.IPCFunctions.InitIPC();
-
-            // TEST: try and execute and load a program
-            // first, dump the /devices/system node
-            tysos.lib.MonoIOError err;
-            tysos.IFile f = _OpenFile("/devices/system", System.IO.FileMode.Open,
-                System.IO.FileAccess.Read, System.IO.FileShare.None, System.IO.FileOptions.None,
-                out err, tysos.Syscalls.ProcessFunctions.GetCurrentProcess());
-            if (f == null)
-                throw new Exception("f is null: " + err.ToString());
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: found file with length " + f.Length.ToString() + "\n");
-            //byte[] buf = new byte[300];
-            System.Diagnostics.Debugger.Break();
-            byte[] buf = new byte[f.Length];
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: buffer allocated, calling Read()\n");
-            f.GetInputStream().Read(buf, 0, (int)f.Length);
-            foreach(byte b in buf)
-                tysos.Syscalls.DebugFunctions.DebugWrite((char)b);
-
-            // get the value of the 'driver'
-            tysos.StructuredStartupParameters.Param driver = f.GetPropertyByName("driver");
-            if (driver == null)
-                throw new Exception("driver was null");
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: found driver: " + driver.Value.ToString() + "\n");
-
-            // see if it is loaded
-            tysos.Process p = tysos.Syscalls.ProcessFunctions.GetProcessByName(driver.Value.ToString());
-            if(p == null)
-            {
-                // process is not loaded - we have to load it
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: driver not loaded - loading it\n");
-
-                tysos.IFile fp = _OpenFile("/modules/" + driver.Value.ToString(), System.IO.FileMode.Open,
-                    System.IO.FileAccess.Read, System.IO.FileShare.None, System.IO.FileOptions.None,
-                    out err, tysos.Syscalls.ProcessFunctions.GetCurrentProcess());
-
-                if(fp == null)
-                {
-                    throw new Exception("fp is null: " + err.ToString());
-                }
-
-                // load it
-                p = tysos.Process.CreateProcess(fp.GetInputStream(), driver.Value.ToString(),
-                    new object[] { });
-                p.Start();
-            }
-
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs_test: driver process loaded\n");
-
-            /* Send a mount message to acpipc */
-            deviceMessageTypes.InitDeviceMessage tmsg = new deviceMessageTypes.InitDeviceMessage();
-            tmsg.Resources = f.Properties;
-            tmsg.Node = f;
-            tysos.Syscalls.IPCFunctions.SendMessage(p, tmsg, deviceMessageTypes.INIT_DEVICE);
-
-            tysos.Syscalls.SchedulerFunctions.Yield();
-
-            bool cont = true;
-            while (cont)
-            {
-                tysos.IPCMessage msg = null;
-                do
-                {
-                    msg = tysos.Syscalls.IPCFunctions.ReadMessage();
-
-                    if (msg != null)
-                        handle_message(msg);
-                } while (msg != null);
-
-                tysos.Syscalls.SchedulerFunctions.Block();
-            }
-        }
-
-        private void handle_message(tysos.IPCMessage msg)
-        {
-            switch (msg.Type)
-            {
-                case vfsMessageTypes.GET_ATTRIBUTES:
-                    {
-                        vfsMessageTypes.FileAttributesMessage fam = msg.Message as vfsMessageTypes.FileAttributesMessage;
-                        if (fam != null)
-                        {
-                            fam.attributes = _GetFileAttributes(ref fam.path);
-                            fam.completed.Set();
-                        }
-                    }
-                    break;
-
-                case vfsMessageTypes.GET_FILE_SYSTEM_ENTRIES:
-                    {
-                        vfsMessageTypes.FileSystemEntriesMessage fsem = msg.Message as vfsMessageTypes.FileSystemEntriesMessage;
-                        if (fsem != null)
-                        {
-                            fsem.files = _GetFileSystemEntries(fsem.path, fsem.path_with_pattern, fsem.attrs, fsem.mask);
-                            fsem.completed.Set();
-                        }
-                    }
-                    break;
-
-                case vfsMessageTypes.OPEN:
-                    {
-                        vfsMessageTypes.OpenFileMessage ofm = msg.Message as vfsMessageTypes.OpenFileMessage;
-                        if (ofm != null)
-                        {
-                            ofm.handle = _OpenFile(ofm.path, ofm.mode, ofm.access, ofm.share, ofm.options, out ofm.error, msg.Source.owning_process);
-                            ofm.completed.Set();
-                        }
-                    }
-                    break;
-
-                case vfsMessageTypes.CLOSE:
-                    {
-                        vfsMessageTypes.OpenFileMessage ofm = msg.Message as vfsMessageTypes.OpenFileMessage;
-                        if (ofm != null)
-                        {
-                            _CloseFile(ofm.handle, out ofm.error, msg.Source.owning_process);
-                            ofm.completed.Set();
-                        }
-                    }
-                    break;
-
-                case vfsMessageTypes.MOUNT:
-                    {
-                        vfsMessageTypes.MountMessage mm = msg.Message as vfsMessageTypes.MountMessage;
-                        if (mm != null)
-                        {
-                            _Mount(mm.mount_point, mm.device);
-                            mm.completed.Set();
-                        }
-                    }
-                    break;
-            }
-        }
-
-        public object OpenFile(string fname)
-        {
-            throw new NotImplementedException();
-        }
-
-        public System.IO.FileAttributes GetFileAttributes(ref string fname)
-        {
-            vfsMessageTypes.FileAttributesMessage fam = new vfsMessageTypes.FileAttributesMessage();
-            fam.path = fname;
-            tysos.Syscalls.IPCFunctions.SendMessage(p_vfs, new tysos.IPCMessage { Type = vfsMessageTypes.GET_ATTRIBUTES, Message = fam });
-
-            tysos.Syscalls.SchedulerFunctions.Block(fam.completed);
-            fname = fam.path;
-            return fam.attributes;
-        }
-
-        public string[] GetFileSystemEntries(string path, string path_with_pattern, int attrs, int mask)
-        {
-            vfsMessageTypes.FileSystemEntriesMessage fsem = new vfsMessageTypes.FileSystemEntriesMessage();
-            fsem.path = path;
-            fsem.path_with_pattern = path_with_pattern;
-            fsem.attrs = attrs;
-            fsem.mask = mask;
-            tysos.Syscalls.IPCFunctions.SendMessage(p_vfs, new tysos.IPCMessage { Type = vfsMessageTypes.GET_FILE_SYSTEM_ENTRIES, Message = fsem });
-
-            tysos.Syscalls.SchedulerFunctions.Block(fsem.completed);
-            return fsem.files;
-        }
-
-        System.IO.FileAttributes _GetFileAttributes(ref string path)
-        {
-            List<FileSystemObject> fsos = GetFSO(path);
-            if ((fsos == null) || (fsos.Count == 0))
+            tysos.lib.File f = OpenFile(path, System.IO.FileMode.Open,
+                System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
+                System.IO.FileOptions.None);
+            if (f.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
                 return (System.IO.FileAttributes)(-1);
 
-            FileSystemObject fso = fsos[0];
-            path = fso.FullPath;
-            return (System.IO.FileAttributes)fso.IntAttributes;
+            int props = f.IntProperties;
+            CloseFile(f);
+
+            return (System.IO.FileAttributes)props;
         }
 
-        string[] _GetFileSystemEntries(string path, string path_with_pattern, int attrs, int mask)
+        public Path GetPath(string path)
         {
-            List<FileSystemObject> fsos = GetFSO(path_with_pattern);
-            if (fsos == null)
-                return null;
-
-            List<string> ret = new List<string>();
-            path = path.TrimEnd('/');
-            path = path + "/";
-
-            foreach (FileSystemObject fso in fsos)
-            {
-                if ((fso.IntAttributes & mask) == attrs)
-                    ret.Add(path + fso.Name);
-            }
-
-            return ret.ToArray();
-        }
-
-        private List<FileSystemObject> GetFSO(string path)
-        {
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetFSO(string) called with path: " + path + "\n");
+            //tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetPath(string) called with path: " + path + "\n");
 
             path = path.TrimEnd('/');
             if (path == String.Empty)
@@ -272,19 +79,27 @@ namespace vfs
             }
 
             string mount = "/" + string.Join("/", new_path.ToArray());
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetFSO(string) resolved path to: " + mount + "\n");
+            //tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetPath(string) resolved path to: " + mount + "\n");
             List<string> additional = new List<string>();
 
             do
             {
-                if(mount != "/")
+                if (mount != "/")
                     mount = mount.TrimEnd('/');
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetFSO: checking for mount point " + mount + "\n");
+                //tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetPath: checking for mount point " + mount + "\n");
                 if (mounts.ContainsKey(mount))
-                    return GetFSO(mounts[mount], additional);
+                {
+                    //tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetPath: found mount point " + mount + " of type " + mounts[mount].GetType().FullName + "\n");
+                    return new Path { device = mounts[mount], path = additional, mount_point = mount };
+                }
 
                 if (mount == "/")
-                    return new List<FileSystemObject>();
+                {
+                    // handle being passed the root directory when nothing is mounted
+                    if (new_path.Count == 0)
+                        return new Path { device = null, mount_point = null, path = new List<string> { } };
+                    return null;
+                }
 
                 int last_idx = mount.LastIndexOf('/');
                 additional.Insert(0, mount.Substring(last_idx + 1));
@@ -293,56 +108,35 @@ namespace vfs
                 else
                     mount = "/";
             } while (true);
+
         }
+    }
 
-        private List<FileSystemObject> GetFSO(FileSystemObject mount_point, List<string> path_below)
+    public class Path
+    {
+        public tysos.ServerObject device;
+        public string mount_point;
+        public IList<string> path;
+
+        public string FullPath
         {
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetFSO(FileSystemObject, List<string>) called\n");
-            List<FileSystemObject> ret = new List<FileSystemObject>();
-
-            if (path_below.Count == 0)
+            get
             {
-                ret.Add(mount_point);
-                return ret;
-            }
+                StringBuilder sb = new StringBuilder();
+                if (mount_point != null)
+                    sb.Append(mount_point);
 
-            if (path_below[0] == ".")
-            {
-                path_below.RemoveAt(0);
-                return GetFSO(mount_point, path_below);
-            }
-
-            if (path_below[0] == "..")
-            {
-                path_below.RemoveAt(0);
-                if (mount_point.parent == null)
-                    return ret;
-                return GetFSO(mount_point.parent, path_below);
-            }
-
-            if (path_below[0] == "*")
-            {
-                path_below.RemoveAt(0);
-                if (mount_point.Children == null)
-                    return new List<FileSystemObject>();
-                foreach (FileSystemObject fso in mount_point.Children)
-                    ret.AddRange(GetFSO(fso, path_below));
-                return ret;
-            }
-
-            if (mount_point.Children != null)
-            {
-                foreach (FileSystemObject fso in mount_point.Children)
+                foreach(string s in path)
                 {
-                    if (fso.name == path_below[0])
-                    {
-                        path_below.RemoveAt(0);
-                        return GetFSO(fso, path_below);
-                    }
+                    sb.Append("/");
+                    sb.Append(s);
                 }
-            }
 
-            return new List<FileSystemObject>();
+                if (sb.Length == 0)
+                    sb.Append("/");
+
+                return sb.ToString();
+            }
         }
     }
 

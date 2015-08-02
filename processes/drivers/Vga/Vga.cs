@@ -60,7 +60,7 @@ namespace Vga
             gui = e.Process;
             if (gui == null)
                 throw new Exception("Unable to communicate with gui process");
-            tysos.Syscalls.IPCFunctions.SendMessage(gui, new tysos.IPCMessage { Type = Gui.GuiMessageTypes.REGISTER_OUTPUT, Message = new Gui.GuiMessageTypes.RegisterOutputMessage { buffer = back_buffer } });
+            //tysos.Syscalls.IPCFunctions.SendMessage(gui, new tysos.IPCMessage { Type = Gui.GuiMessageTypes.REGISTER_OUTPUT, Message = new Gui.GuiMessageTypes.RegisterOutputMessage { buffer = back_buffer } });
 
             /* Listen for shutdown messages */
             tysos.Syscalls.DebugFunctions.DebugWrite("Vga: entering message loop\n");
@@ -82,9 +82,9 @@ namespace Vga
                                 cont = false;
                                 break;
 
-                            case Gui.GuiMessageTypes.UPDATE_OUTPUT:
+                            /*case Gui.GuiMessageTypes.UPDATE_OUTPUT:
                                 update_output();
-                                break;
+                                break;*/
                         }
                     }
 

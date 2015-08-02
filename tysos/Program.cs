@@ -30,10 +30,8 @@ namespace tysos
     {
         internal static Environment env;
         internal static SymbolTable stab;
-        internal static Cpu cur_cpu_data;
         internal static InterruptMap imap;
         internal static Multiboot.Header mboot_header;
-        internal static Ivfs vfs;
         internal static ServerObject Vfs, Logger, Gui;
 
         internal static Dictionary<string, Process> running_processes;
@@ -43,10 +41,6 @@ namespace tysos
         internal static System.Threading.Thread StartupThread;
 
         internal static string[] kernel_cmd_line;
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
-        [libsupcs.ReinterpretAsMethod]
-        public static extern Multiboot.Header ReinterpretAsMboot(ulong addr);
 
         [libsupcs.MethodAlias("kmain")]
         static void KMain(Multiboot.Header mboot)
@@ -199,8 +193,14 @@ namespace tysos
                 Formatter.WriteLine("done", arch.BootInfoOutput);
             }
 
+            // Test castclass with generic types
+            if (generic_castclass_test(new List<string>()) == null)
+                Formatter.WriteLine("generic_castclass_test: null", arch.DebugOutput);
+            else
+                Formatter.WriteLine("generic_castclass_test: not null", arch.DebugOutput);
+
             /* Start the scheduler */
-            cur_cpu_data.CurrentScheduler = new Scheduler();
+            arch.CurrentCpu.CurrentScheduler = new Scheduler();
             arch.SchedulerTimer.Callback = new Timer.TimerCallback(Scheduler.TimerProc);
 
             /* Store the process info */
@@ -217,11 +217,21 @@ namespace tysos
 
             // Now add the test thread
             //Process test_thread = Process.Create("test_thread", stab.GetAddress("_ZN5tysos5tysos7ProgramM_0_19TestAssemblerThread_Rv_P0"), 0x8000, arch.VirtualRegions, stab, new object[] { });
-            //cur_cpu_data.CurrentScheduler.Reschedule(test_thread.startup_thread);
+            //arch.CurrentCpu.CurrentScheduler.Reschedule(test_thread.startup_thread);
             //test_thread.started = true;
 
             // Enable multitasking
             //arch.EnableMultitasking();
+
+            /* Init vfs signatures */
+            lib.File.InitSigs();
+
+            /* Test delegate->uintptr function */
+            Formatter.Write("IdleFunction: ", Program.arch.DebugOutput);
+            Delegate d = new System.Threading.ThreadStart(IdleFunction);
+            System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(d);
+            Formatter.Write((ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(d), "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
 
             /* Build a list of available modules */
             List<StructuredStartupParameters.Param> mods = new List<StructuredStartupParameters.Param>();
@@ -240,11 +250,26 @@ namespace tysos
                 0x8000, new object[] { });
 
             logger.Start();
-            debugprint.Start();
+            //debugprint.Start();
 
             /* Load the vfs */
-            //Process vfs = LoadELFModule("vfs", mboot, stab, running_processes, 0x8000, new object[] { arch.VfsParams, startup_mods });
-            //arch.Switcher.Switch(vfs.startup_thread);
+            Process vfs = LoadELFModule("vfs", mboot, stab, running_processes, 0x8000, new object[] { arch.VfsParams, startup_mods });
+            vfs.Start();
+
+            /* Load and mount the root fs */
+            rootfs rootfs = new rootfs();
+            Process rootfs_p = Process.CreateProcess("rootfs",
+                new System.Threading.ThreadStart(rootfs.MessageLoop), new object[] { rootfs });
+            rootfs_p.Start();
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/", rootfs },
+                new Type[] { typeof(string), typeof(ServerObject) });
+
+            /* Load the modfs driver */
+            Process modfs = LoadELFModule("modfs", mboot, stab, running_processes, 0x8000, new object[] { });
+            modfs.Start();
+
+            /* Load a filesystem dump tester */
+            LoadELFModule("fsdump", mboot, stab, running_processes, 0x8000, new object[] { }).Start();
 
             arch.EnableMultitasking();
 
@@ -278,6 +303,16 @@ namespace tysos
             while (true) ;
         }
 
+        static string str_array_test(string [] val)
+        {
+            return val[0];
+        }
+
+        private static object generic_castclass_test(object list)
+        {
+            return list as IList<string>;
+        }
+
         private static void null_func(object obj)
         {
             throw new NotImplementedException();
@@ -286,17 +321,17 @@ namespace tysos
         private static void CreateKernelThreads()
         {
             Process kernel_pmem = Process.Create("kernel_pmem", stab.GetAddress("_ZN5tysos5tysos7PmemM_0_12TaskFunction_Rv_P1u1t"), 0x1000, arch.VirtualRegions, stab, new object[] { arch.PhysMem });
-            //cur_cpu_data.CurrentScheduler.Reschedule(kernel_pmem.startup_thread);
+            //arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_pmem.startup_thread);
             kernel_pmem.started = true;
 
             Process kernel_idle = Process.Create("kernel_idle", stab.GetAddress("_ZN5tysos5tysos7ProgramM_0_12IdleFunction_Rv_P0"), 0x1000, arch.VirtualRegions, stab, new object[] { });
             kernel_idle.startup_thread.priority = 0;
-            cur_cpu_data.CurrentScheduler.Reschedule(kernel_idle.startup_thread);
+            arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_idle.startup_thread);
             kernel_idle.started = true;
 
             /*Process kernel_gc = Process.Create("kernel_gc", stab.GetAddress("_ZN5tysos10tysos#2Egc2gcM_0_16CollectionThread_Rv_P0"), 0x10000, arch.VirtualRegions, stab, new object[] { });
             kernel_gc.startup_thread.priority = 10;
-            cur_cpu_data.CurrentScheduler.Reschedule(kernel_gc.startup_thread);
+            arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_gc.startup_thread);
             kernel_gc.started = true;*/
         }
 
@@ -440,7 +475,7 @@ namespace tysos
             running_processes.Add(name, p);
             
             if(start)
-                cur_cpu_data.CurrentScheduler.Reschedule(p.startup_thread);
+                arch.CurrentCpu.CurrentScheduler.Reschedule(p.startup_thread);
             p.started = start;
 
             Formatter.WriteLine("done", arch.BootInfoOutput);
@@ -528,7 +563,7 @@ namespace tysos
         {
             indent++;
 
-            if (do_profile || ((Program.cur_cpu_data != null) && (Program.cur_cpu_data.CurrentThread != null) && (Program.cur_cpu_data.CurrentThread.do_profile == true)))
+            if (do_profile || ((Program.arch.CurrentCpu != null) && (Program.arch.CurrentCpu.CurrentThread != null) && (Program.arch.CurrentCpu.CurrentThread.do_profile == true)))
             {
                 for (int i = 0; i < indent; i++)
                     Program.arch.DebugOutput.Write(' ');
@@ -543,7 +578,7 @@ namespace tysos
         [libsupcs.Profile(false)]
         static void EndProfile(string meth_name)
         {
-            if (do_profile || ((Program.cur_cpu_data != null) && (Program.cur_cpu_data.CurrentThread != null) && (Program.cur_cpu_data.CurrentThread.do_profile == true)))
+            if (do_profile || ((Program.arch.CurrentCpu != null) && (Program.arch.CurrentCpu.CurrentThread != null) && (Program.arch.CurrentCpu.CurrentThread.do_profile == true)))
             {
                 for (int i = 0; i < indent; i++)
                     Program.arch.DebugOutput.Write(' ');
@@ -603,7 +638,7 @@ namespace tysos
         [libsupcs.AlwaysCompile]
         static void Exit()
         {
-            Program.cur_cpu_data.CurrentScheduler.Deschedule(Program.cur_cpu_data.CurrentThread);
+            Program.arch.CurrentCpu.CurrentScheduler.Deschedule(Program.arch.CurrentCpu.CurrentThread);
             libsupcs.OtherOperations.Exit();
         }
 
@@ -633,12 +668,12 @@ namespace tysos
         [libsupcs.AlwaysCompile]
         static int GetCurThreadId()
         {
-            if (cur_cpu_data == null)
+            if (arch.CurrentCpu == null)
                 return 1;
-            else if (cur_cpu_data.CurrentThread == null)
+            else if (arch.CurrentCpu.CurrentThread == null)
                 return 1;
             else
-                return cur_cpu_data.CurrentThread.thread_id;
+                return arch.CurrentCpu.CurrentThread.thread_id;
         }
 
         [libsupcs.MethodAlias("_ZW18System#2EThreading6ThreadM_0_22CurrentThread_internal_RV6Thread_P0")]

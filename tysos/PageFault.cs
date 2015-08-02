@@ -75,8 +75,8 @@ namespace tysos
                     Formatter.WriteLine("kernel: Stack dump", Program.arch.DebugOutput);
 
                     // Switch to protected heap
-                    if (Program.cur_cpu_data != null)
-                        Program.cur_cpu_data.UseCpuAlloc = true;
+                    if (Program.arch.CurrentCpu != null)
+                        Program.arch.CurrentCpu.UseCpuAlloc = true;
                     else
                         tysos.gc.gc.Heap = gc.gc.HeapType.Startup;
                     Unwind.DumpUnwindInfo(pf_unwinder.Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
@@ -131,8 +131,8 @@ namespace tysos
                                 /* Unwind the stack */
                                 if (pf_unwinder != null)
                                 {
-                                    if (Program.cur_cpu_data != null)
-                                        Program.cur_cpu_data.UseCpuAlloc = true;
+                                    if (Program.arch.CurrentCpu != null)
+                                        Program.arch.CurrentCpu.UseCpuAlloc = true;
                                     else
                                         tysos.gc.gc.Heap = gc.gc.HeapType.Startup;
                                     Formatter.WriteLine("Stack trace: ", Program.arch.DebugOutput);
@@ -205,8 +205,8 @@ namespace tysos
 
                     if (pf_unwinder != null)
                     {
-                        if (Program.cur_cpu_data != null)
-                            Program.cur_cpu_data.UseCpuAlloc = true;
+                        if (Program.arch.CurrentCpu != null)
+                            Program.arch.CurrentCpu.UseCpuAlloc = true;
                         else
                             tysos.gc.gc.Heap = gc.gc.HeapType.Startup;
 

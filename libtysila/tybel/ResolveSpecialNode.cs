@@ -116,7 +116,6 @@ namespace libtysila.tybel
                             node.Remove();
                             return;
                         }
-                        break;
 
                     case SpecialNode.SpecialNodeType.Restore:
                         {
@@ -137,7 +136,6 @@ namespace libtysila.tybel
                             return;
 
                         }
-                        break;
 
                     default:
                         throw new NotImplementedException();

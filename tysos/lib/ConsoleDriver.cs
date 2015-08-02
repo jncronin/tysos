@@ -78,19 +78,19 @@ namespace tysos.lib
 
             if (h == MonoIO.STDOUT)
             {
-                if (Program.cur_cpu_data.CurrentThread.owning_process.stdout is IConsole)
+                if (Program.arch.CurrentCpu.CurrentThread.owning_process.stdout is IConsole)
                 {
-                    width = ((IConsole)Program.cur_cpu_data.CurrentThread.owning_process.stdout).GetWidth();
-                    height = ((IConsole)Program.cur_cpu_data.CurrentThread.owning_process.stdout).GetHeight();
+                    width = ((IConsole)Program.arch.CurrentCpu.CurrentThread.owning_process.stdout).GetWidth();
+                    height = ((IConsole)Program.arch.CurrentCpu.CurrentThread.owning_process.stdout).GetHeight();
                     return true;
                 }
             }
             else if (h == MonoIO.STDERR)
             {
-                if (Program.cur_cpu_data.CurrentThread.owning_process.stderr is IConsole)
+                if (Program.arch.CurrentCpu.CurrentThread.owning_process.stderr is IConsole)
                 {
-                    width = ((IConsole)Program.cur_cpu_data.CurrentThread.owning_process.stderr).GetWidth();
-                    height = ((IConsole)Program.cur_cpu_data.CurrentThread.owning_process.stderr).GetHeight();
+                    width = ((IConsole)Program.arch.CurrentCpu.CurrentThread.owning_process.stderr).GetWidth();
+                    height = ((IConsole)Program.arch.CurrentCpu.CurrentThread.owning_process.stderr).GetHeight();
                     return true;
                 }
             }
@@ -104,8 +104,8 @@ namespace tysos.lib
         [libsupcs.AlwaysCompile]
         static int InternalKeyAvailable(int ms_timeout)
         {
-            if (Program.cur_cpu_data.CurrentThread.owning_process.stdin != null)
-                return Program.cur_cpu_data.CurrentThread.owning_process.stdin.DataAvailable(ms_timeout * 10000);
+            if (Program.arch.CurrentCpu.CurrentThread.owning_process.stdin != null)
+                return (Program.arch.CurrentCpu.CurrentThread.owning_process.stdin.DataAvailable(ms_timeout * 10000)) ? 1 : 0;
             else
                 return 0;
         }

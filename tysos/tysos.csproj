@@ -120,7 +120,6 @@
     <Compile Include="gc\heap_tree2.cs" />
     <Compile Include="gc\simple_heap.cs" />
     <Compile Include="Interfaces\IFile.cs" />
-    <Compile Include="Interfaces\Ivfs.cs" />
     <Compile Include="InterruptMap.cs" />
     <Compile Include="lib\Assembly.cs" />
     <Compile Include="lib\char-conversions.cs" />
@@ -129,12 +128,15 @@
     <Compile Include="lib\DateTime.cs" />
     <Compile Include="lib\Enum_Impl.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="lib\ErrorFile.cs" />
+    <Compile Include="lib\File.cs" />
     <Compile Include="lib\GC.cs" />
     <Compile Include="lib\Locale.cs" />
     <Compile Include="lib\Monitor.cs" />
     <Compile Include="lib\MonoFileType.cs" />
     <Compile Include="lib\MonoIO.cs" />
     <Compile Include="lib\MonoIOError.cs" />
+    <Compile Include="lib\MonoIOStat.cs" />
     <Compile Include="lib\Security.cs" />
     <Compile Include="lib\String.cs" />
     <Compile Include="lib\TextEncoding.cs" />
@@ -148,6 +150,7 @@
     <Compile Include="NullOutput.cs" />
     <Compile Include="Pmem_Stack.cs" />
     <Compile Include="Resource.cs" />
+    <Compile Include="rootfs.cs" />
     <Compile Include="ServerObject.cs" />
     <Compile Include="Syscalls.cs" />
     <Compile Include="Timer.cs" />

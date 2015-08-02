@@ -125,7 +125,7 @@ namespace tysos
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("A default handler which acknowledged the LAPIC was called", Program.arch.DebugOutput);
-            ((x86_64.x86_64_cpu)Program.cur_cpu_data).CurrentLApic.SendEOI();
+            ((x86_64.x86_64_cpu)Program.arch.CurrentCpu).CurrentLApic.SendEOI();
         }
 
         [libsupcs.ISR]

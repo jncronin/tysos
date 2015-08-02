@@ -27,46 +27,77 @@ namespace vfs
 {
     partial class vfs
     {
-        void _Mount(string mount_path, tysos.IDirectory device)
+        public bool Mount(string mount_path, string src, string protocol)
         {
-            if (device == null)
+            if (mount_path == null)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: _Mount: device is null\n");
-                return;
+                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount_path is null\n");
+                return false;
             }
 
-            List<FileSystemObject> fsos = GetFSO(mount_path);
-            if (fsos.Count == 0)
-            {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: _Mount: mount_point " + mount_path + " not found\n");
-                return;
-            }
-            if (fsos.Count > 1)
-            {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: _Mount: multiple matches for mount point " + mount_path + "\n");
-                return;
-            }
+            Path path = GetPath(mount_path);
 
-            FileSystemObject fso = fsos[0];
-            mount_path = fso.FullPath;
+            mount_path = path.FullPath;
             if (mounts.ContainsKey(mount_path))
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: _Mount: mount point " + mount_path + " is already mounted\n");
-                return;
+                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount point " + mount_path + " is already mounted\n");
+                return false;
             }
 
-            if (fso.parent == null)
+            /* See if the requested file system process is already running */
+            tysos.Process p = tysos.Syscalls.ProcessFunctions.GetProcessByName(protocol);
+            if(p == null)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: _Mount: trying to remount root - not allowed\n");
-                return;
+                tysos.lib.File f = OpenFile("/modules/" + protocol, System.IO.FileMode.Open,
+                    System.IO.FileAccess.Read, System.IO.FileShare.Read,
+                    System.IO.FileOptions.None);
+                if(f.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
+                    throw new Exception("failed to open /modules/" + protocol + ": " +
+                        f.Error.ToString());
+
+                p = tysos.Process.CreateProcess(f, protocol, new object[] { });
+                p.Start();
             }
 
-            throw new NotImplementedException();
-            /*device.parent = fso.parent;
-            device.name = fso.name;
+            // TODO: create a special event class that waits for p.MessageServer to be non-null
+            //  or for a timeout then handle failure
+            while (p.MessageServer == null) ;
 
-            mounts.Add(mount_path, device);
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: _Mount: successful mount to " + mount_path + "\n");*/
+            // Invoke the process to create a new handler for the new mount
+            tysos.ServerObject fs =
+                p.MessageServer.Invoke("CreateFSHandler", new object[] { src }) as tysos.ServerObject;
+
+            if (fs == null)
+                throw new Exception("CreateFSHandler failed");
+
+            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mounting " + fs.GetType().FullName + " to " + mount_path + "\n");
+
+            mounts[mount_path] = fs;
+
+            return true;
+        }
+
+        public bool Mount(string mount_path, tysos.ServerObject device)
+        {
+            if (mount_path == null)
+            {
+                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount_path is null\n");
+                return false;
+            }
+
+            Path p = GetPath(mount_path);
+
+            mount_path = p.FullPath;
+            if (mounts.ContainsKey(mount_path))
+            {
+                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount point " + mount_path + " is already mounted\n");
+                return false;
+            }
+
+            mounts[mount_path] = device;
+            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mounting " + device.GetType().FullName + " to " + mount_path + "\n");
+
+            return true;
         }
     }
 }

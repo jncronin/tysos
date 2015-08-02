@@ -32,6 +32,8 @@ namespace tysos
         IOutputStream GetOutputStream();
         ICollection<StructuredStartupParameters.Param> Properties { get; }
         StructuredStartupParameters.Param GetPropertyByName(string name);
+        int IntProperties { get; }
+        tysos.lib.MonoIOError Error { get; }
     }
 
     public interface IInputStream

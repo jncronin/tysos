@@ -184,7 +184,7 @@ namespace tysos.gc
                     ulong sv_start = Program.stab.static_fields_addresses[sv_i];
                     ulong sv_length = Program.stab.static_fields_lengths[sv_i];
 
-                    ulong obj_alignment = Program.cur_cpu_data.IntPtrSize;
+                    ulong obj_alignment = Program.arch.CurrentCpu.IntPtrSize;
                     for (ulong cur_offset = 0; cur_offset < sv_length; cur_offset += obj_alignment)
                         collect_object(*(ulong*)(sv_start + cur_offset));
                 }
@@ -387,7 +387,7 @@ namespace tysos.gc
                 // 6) Try to collect all the members of this object
                 ulong obj_alignment = 4;
                 if ((blk_flags & heap_arena.BLK_GC_FLAGS_INTPTR_ARRAY) == heap_arena.BLK_GC_FLAGS_INTPTR_ARRAY)
-                    obj_alignment = Program.cur_cpu_data.IntPtrSize;
+                    obj_alignment = Program.arch.CurrentCpu.IntPtrSize;
                 for (ulong cur_offset = 0; cur_offset < obj_length; cur_offset += obj_alignment)
                     collect_object(*(ulong*)(obj_start + cur_offset));
             }

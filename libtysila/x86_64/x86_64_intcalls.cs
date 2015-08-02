@@ -33,6 +33,7 @@ namespace libtysila
 
             int_calls["_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_RSP_Rv_P1y"] = set_Rsp_v_y;
             int_calls["_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_4Lidt_Rv_P1u1U"] = Lidt_U;
+            int_calls["_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_4Sgdt_Rv_P1Pv"] = Sgdt_Pv;
             int_calls["_ZX12IoOperationsM_0_7PortInd_Rj_P1t"] = PortInd;
             int_calls["_ZX12IoOperationsM_0_7PortInw_Rt_P1t"] = PortInw;
             int_calls["_ZX12IoOperationsM_0_7PortInb_Rh_P1t"] = PortInb;
@@ -72,6 +73,21 @@ namespace libtysila
             }
 
             ((x86_64_Assembler)ass).ChooseInstruction(x86_64.x86_64_asm.opcode.LIDT, il.il.tybel, new libasm.hardware_contentsof { base_loc = loc_src });
+        }
+
+        static void Sgdt_Pv(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+          Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            libasm.hardware_location loc_src = il.stack_vars_after.Pop(ass);
+            il.stack_after.Pop();
+
+            if (!(loc_src is libasm.x86_64_gpr))
+            {
+                ass.Assign(state, il.stack_vars_before, x86_64_Assembler.Rax, loc_src, CliType.native_int, il.il.tybel);
+                loc_src = x86_64_Assembler.Rax;
+            }
+
+          ((x86_64_Assembler)ass).ChooseInstruction(x86_64.x86_64_asm.opcode.SGDT, il.il.tybel, new libasm.hardware_contentsof { base_loc = loc_src });
         }
 
         static void PortInb(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,

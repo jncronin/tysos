@@ -30,7 +30,7 @@ namespace tysos
         public class CPUFunctions
         {
             [libsupcs.Syscall]
-            public static Cpu GetCurrentCpu() { return Program.cur_cpu_data; }
+            public static Cpu GetCurrentCpu() { return Program.arch.CurrentCpu; }
         }
 
         public class InterruptFunctions
@@ -53,11 +53,6 @@ namespace tysos
                 switch (proc_type)
                 {
                     case SpecialProcessType.Vfs:
-                        if (o is Ivfs)
-                        {
-                            Program.vfs = o as Ivfs;
-                            return true;
-                        }
                         Program.Vfs = o;
                         break;
 
@@ -113,19 +108,19 @@ namespace tysos
             public static void StartProcess(Process p)
             {
                 if(!p.started)
-                    Program.cur_cpu_data.CurrentScheduler.Reschedule(p.startup_thread);
+                    Program.arch.CurrentCpu.CurrentScheduler.Reschedule(p.startup_thread);
             }
 
             [libsupcs.Syscall]
             public static Process GetCurrentProcess()
             {
-                return Program.cur_cpu_data.CurrentThread.owning_process;
+                return Program.arch.CurrentCpu.CurrentThread.owning_process;
             }
 
             [libsupcs.Syscall]
             public static Thread GetCurrentThread()
             {
-                return Program.cur_cpu_data.CurrentThread;
+                return Program.arch.CurrentCpu.CurrentThread;
             }
         }
 
@@ -136,8 +131,8 @@ namespace tysos
             public static void Yield()
             {
                 /* Yield the timeslice of the current thread */
-                Thread cur = Program.cur_cpu_data.CurrentThread;
-                Scheduler sched = Program.cur_cpu_data.CurrentScheduler;
+                Thread cur = Program.arch.CurrentCpu.CurrentThread;
+                Scheduler sched = Program.arch.CurrentCpu.CurrentScheduler;
                 TaskSwitcher switcher = Program.arch.Switcher;
 
                 if (sched == null)
@@ -161,8 +156,8 @@ namespace tysos
             public static void Block()
             {
                 /* Block pending receipt of a message */
-                Thread cur = Program.cur_cpu_data.CurrentThread;
-                Scheduler sched = Program.cur_cpu_data.CurrentScheduler;
+                Thread cur = Program.arch.CurrentCpu.CurrentThread;
+                Scheduler sched = Program.arch.CurrentCpu.CurrentScheduler;
                 TaskSwitcher switcher = Program.arch.Switcher;
 
                 if (sched == null)
@@ -186,8 +181,8 @@ namespace tysos
             public static void Block(Event e)
             {
                 /* Block on an event */
-                Thread cur = Program.cur_cpu_data.CurrentThread;
-                Scheduler sched = Program.cur_cpu_data.CurrentScheduler;
+                Thread cur = Program.arch.CurrentCpu.CurrentThread;
+                Scheduler sched = Program.arch.CurrentCpu.CurrentScheduler;
                 TaskSwitcher switcher = Program.arch.Switcher;
 
                 if (sched == null)
@@ -210,7 +205,7 @@ namespace tysos
             [libsupcs.Uninterruptible]
             public static Thread GetCurrentThread()
             {
-                return Program.cur_cpu_data.CurrentThread;
+                return Program.arch.CurrentCpu.CurrentThread;
             }
         }
 
@@ -251,10 +246,10 @@ namespace tysos
         {
             [libsupcs.Syscall]
             public static bool InitIPC()
-            { return IPC.InitIPC(Program.cur_cpu_data.CurrentThread.owning_process); }
+            { return IPC.InitIPC(Program.arch.CurrentCpu.CurrentThread.owning_process); }
             [libsupcs.Syscall]
             public static IPCMessage ReadMessage()
-            { if (Program.cur_cpu_data.CurrentThread.owning_process.ipc == null) return null; else return Program.cur_cpu_data.CurrentThread.owning_process.ipc.ReadMessage(); }
+            { if (Program.arch.CurrentCpu.CurrentThread.owning_process.ipc == null) return null; else return Program.arch.CurrentCpu.CurrentThread.owning_process.ipc.ReadMessage(); }
             [libsupcs.Syscall]
             public static bool SendMessage(Process dest, IPCMessage message)
             {
@@ -265,7 +260,7 @@ namespace tysos
                     if (IPC.InitIPC(dest) == false)
                         return false;
                 }
-                message.Source = Program.cur_cpu_data.CurrentThread;
+                message.Source = Program.arch.CurrentCpu.CurrentThread;
 
                 return dest.ipc.SendMessage(message);
             }
@@ -282,7 +277,7 @@ namespace tysos
                 }
 
                 IPCMessage msg = new IPCMessage();
-                msg.Source = Program.cur_cpu_data.CurrentThread;
+                msg.Source = Program.arch.CurrentCpu.CurrentThread;
                 msg.Type = type;
                 msg.Message = message;
 
@@ -309,7 +304,7 @@ namespace tysos
                         break;
                 }
 
-                return Program.map_in(phys_addr, size, Program.cur_cpu_data.CurrentThread.owning_process.name, writeable, cache_disable, write_through);
+                return Program.map_in(phys_addr, size, Program.arch.CurrentCpu.CurrentThread.owning_process.name, writeable, cache_disable, write_through);
             }
         }
     }

@@ -302,9 +302,11 @@ DEBUGPRINTOBJ = objfromexe(typroject(ROOT + "/testsuite/debugprint/debugprint.cs
 VFSOBJ = objfromexe(typroject(ROOT + "/processes/services/vfs/vfs.csproj"));
 ACPIPCOBJ = objfromexe(typroject(ROOT + "/processes/drivers/acpipc/acpipc.csproj"));
 LOGGEROBJ = objfromexe(typroject(ROOT + "/processes/services/logger/logger.csproj"));
+MODFSOBJ = objfromexe(typroject(ROOT + "/processes/drivers/modfs/modfs.csproj"));
+FSDUMPOBJ = objfromexe(typroject(ROOT + "/testsuite/fsdump/fsdump.csproj"));
 
 PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj"), DEBUGPRINTOBJ,
-	VFSOBJ, ACPIPCOBJ, LOGGEROBJ ];
+	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ ];
 
 COREIMG = OUTDIR + "/core.img";
 XORRISO = "xorriso";

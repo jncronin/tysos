@@ -217,31 +217,21 @@ namespace libtysila
         public static var LocalVar(int var_id)
         {
             throw new NotSupportedException();
-            var ret = AddrOf(0);
-            ret.address_of = false;
-            ret.local_var = var_id;
-            return ret;
         }
 
         public static var LocalArg(int arg_id)
         {
             throw new NotSupportedException();
-            var ret = AddrOf(0);
-            ret.address_of = false;
-            ret.local_arg = arg_id;
-            return ret;
         }
 
         public static var AddrLocalVar(int var_id)
         {
             throw new NotSupportedException();
-            return AddrOf(LocalVar(var_id));
         }
 
         public static var AddrLocalArg(int var_id)
         {
             throw new NotSupportedException();
-            return AddrOf(LocalArg(var_id));
         }
 
         public static implicit operator int(var v)

@@ -63,6 +63,14 @@ namespace libsupcs.x86_64
             Lidt((UIntPtr)idt_ptr);
         }
 
+        public unsafe static void Sgdt(out void *addr, out ushort limit)
+        {
+            byte* ptr = stackalloc byte[10];
+            Sgdt(ptr);
+            addr = *(void**)(ptr + 2);
+            limit = *(ushort*)ptr;
+        }
+
         [InterruptRegisterStructure]
         public struct InterruptRegisters64
         {
@@ -118,6 +126,9 @@ namespace libsupcs.x86_64
         }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        public static unsafe extern void Sgdt(void* ptr);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern void Lidt(UIntPtr idt_ptr);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -132,8 +143,8 @@ namespace libsupcs.x86_64
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern ulong RdMsr(uint reg_no);
-        //[MethodImpl(MethodImplOptions.InternalCall)]
-        //internal static extern void WrMsr(uint reg_no, ulong val);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern void WrMsr(uint reg_no, ulong val);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static unsafe extern void _Cpuid(uint req_no, uint* buf);
@@ -216,5 +227,14 @@ namespace libsupcs.x86_64
         public extern static void Sti();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void Cli();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern unsafe static void* ReadFSData(int offset);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern unsafe static void* ReadGSData(int offset);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern unsafe static void WriteFSData(int offset, void* data);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern unsafe static void WriteGSData(int offset, void* data);
     }
 }

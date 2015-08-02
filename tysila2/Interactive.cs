@@ -312,7 +312,6 @@ namespace tysila
                             debug[dn.Offset].Add(dn);
                         }
 
-                        libtysila.timple.TimpleNode old_timple_node = null;
                         libtysila.frontend.cil.CilNode old_cil_node = null;
 
                         tydisasm.tydisasm d = tydisasm.tydisasm.GetDisassembler(ass.Arch.InstructionSet);
@@ -349,11 +348,6 @@ namespace tysila
                                 }
 
                                 /* See if we have a timple node for the code */
-
-                                if(offset == 201)
-                                {
-                                    int asfagf = 0;
-                                }
                                 if (debug.ContainsKey((int)offset))
                                 {
                                     foreach (libtysila.tybel.Tybel.DebugNode dn in debug[(int)offset])

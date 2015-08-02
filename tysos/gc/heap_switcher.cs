@@ -65,7 +65,7 @@ namespace tysos.gc
                     break;
 
                 case HeapType.PerCPU:
-                    ret = Program.cur_cpu_data.CpuAlloc(size);
+                    ret = Program.arch.CurrentCpu.CpuAlloc(size);
                     break;
 
                 case HeapType.GenGC:

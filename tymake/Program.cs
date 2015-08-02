@@ -227,7 +227,7 @@ namespace tymake
                 }
             }
             throw new Exception("rm: " + fname + " does not exist");
-            return new Expression.EvalResult(-1);
+            //return new Expression.EvalResult(-1);
         }
     }
 

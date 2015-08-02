@@ -40,12 +40,16 @@ namespace vfs
             long wroffset;
             tysos.RangeResource vmem;
             vmem_file f;
+            tysos.lib.MonoIOError err = tysos.lib.MonoIOError.ERROR_SUCCESS;
 
             internal vmem_file_handle(vmem_file fso) { f = fso; vmem = fso.vm; }
 
             long tysos.IInputStream.Position { get { return offset; } }
             long tysos.IOutputStream.Position { get { return wroffset; } }
             public long Length { get { return (long)vmem.Length64; } }
+
+            public int IntProperties { get { return f.IntAttributes; } }
+            public tysos.lib.MonoIOError Error { get { return err; } }
 
             public void Seek(long position, tysos.SeekPosition whence)
             { 

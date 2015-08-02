@@ -51,6 +51,8 @@ namespace tysos
 
         internal abstract ulong ExitAddress { get; }
 
+        internal abstract Cpu CurrentCpu { get; }
+
         internal abstract libsupcs.Unwinder GetUnwinder();
 
         internal virtual bool InitGDBStub() { return false; }

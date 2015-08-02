@@ -250,7 +250,7 @@ namespace tysos
 
                 if (!stack_ready.IsSet || (stack == null))
                 {
-                    if ((Program.cur_cpu_data.CurrentScheduler == null) || (Program.arch.Multitasking == false))
+                    if ((Program.arch.CurrentCpu.CurrentScheduler == null) || (Program.arch.Multitasking == false))
                     {
                         Formatter.WriteLine("Out of physical memory!", Program.arch.BootInfoOutput);
                         Formatter.WriteLine("Out of physical memory - initial 128 MiB used and stack not set up yet", Program.arch.DebugOutput);

@@ -83,14 +83,14 @@ namespace tysos
 
             // Switch to protected heap and unwind stack
             bool old_cpu_alloc = false;
-            if (Program.cur_cpu_data != null)
+            if (Program.arch.CurrentCpu != null)
             {
-                old_cpu_alloc = Program.cur_cpu_data.UseCpuAlloc;
-                Program.cur_cpu_data.UseCpuAlloc = true;
+                old_cpu_alloc = Program.arch.CurrentCpu.UseCpuAlloc;
+                Program.arch.CurrentCpu.UseCpuAlloc = true;
             }
             Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
-            if (Program.cur_cpu_data != null)
-                Program.cur_cpu_data.UseCpuAlloc = old_cpu_alloc;
+            if (Program.arch.CurrentCpu != null)
+                Program.arch.CurrentCpu.UseCpuAlloc = old_cpu_alloc;
             libsupcs.OtherOperations.Halt();
         }
 
@@ -172,14 +172,14 @@ namespace tysos
 
             // Switch to protected heap and unwind stack
             bool old_cpu_alloc = false;
-            if (Program.cur_cpu_data != null)
+            if (Program.arch.CurrentCpu != null)
             {
-                old_cpu_alloc = Program.cur_cpu_data.UseCpuAlloc;
-                Program.cur_cpu_data.UseCpuAlloc = true;
+                old_cpu_alloc = Program.arch.CurrentCpu.UseCpuAlloc;
+                Program.arch.CurrentCpu.UseCpuAlloc = true;
             }
             Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
-            if (Program.cur_cpu_data != null)
-                Program.cur_cpu_data.UseCpuAlloc = old_cpu_alloc;
+            if (Program.arch.CurrentCpu != null)
+                Program.arch.CurrentCpu.UseCpuAlloc = old_cpu_alloc;
             libsupcs.OtherOperations.Halt();
         }
     }
