@@ -147,11 +147,19 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location t1 = ass.GetTemporary(state, Assembler.CliType.native_int);
             libasm.hardware_location t2 = ass.GetTemporary2(state, Assembler.CliType.native_int);
 
-            /* Load up the address of the inner_array member */
+            /* Get the array object into t1 */
             ass.Assign(state, il.stack_vars_before, t1, loc_arr, Assembler.CliType.native_int, il.il.tybel);
 
             if (il.il.int_array == false)
             {
+                /* Array bounds check */
+                ass.ThrowIf(state, il.stack_vars_before, loc_index,
+                    new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length), size = 4 },
+                    new libasm.hardware_addressoflabel("sthrow", false), new libasm.const_location { c = Assembler.throw_IndexOutOfRangeException },
+                    Assembler.CliType.int32, ThreeAddressCode.OpName.throwge_un,
+                    il.il.tybel);
+
+                /* Load up the address of the inner_array member */
                 ass.Assign(state, il.stack_vars_before, t1,
                     new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfIntPtr() },
                     Assembler.CliType.native_int, il.il.tybel);
@@ -254,11 +262,19 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             libasm.hardware_location t1 = ass.GetTemporary(state, Assembler.CliType.native_int);
             libasm.hardware_location t2 = ass.GetTemporary2(state, Assembler.CliType.native_int);
 
-            /* Load up the address of the inner_array member */
+            /* Get the array object into t1 */
             ass.Assign(state, il.stack_vars_before, t1, loc_arr, Assembler.CliType.native_int, il.il.tybel);
 
             if (il.il.int_array == false)
             {
+                /* Array bounds check */
+                ass.ThrowIf(state, il.stack_vars_before, loc_index,
+                    new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array_length), size = 4 },
+                    new libasm.hardware_addressoflabel("sthrow", false), new libasm.const_location { c = Assembler.throw_IndexOutOfRangeException },
+                    Assembler.CliType.int32, ThreeAddressCode.OpName.throwge_un,
+                    il.il.tybel);
+
+                /* Load up the address of the inner_array member */
                 ass.Assign(state, il.stack_vars_before, t1,
                     new libasm.hardware_contentsof { base_loc = t1, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfIntPtr() },
                     Assembler.CliType.native_int, il.il.tybel);
