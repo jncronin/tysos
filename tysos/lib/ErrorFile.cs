@@ -72,7 +72,7 @@ namespace tysos.lib
             }
         }
 
-        public override tysos.StructuredStartupParameters.Param GetPropertyByName(string name)
+        public override tysos.lib.File.Property GetPropertyByName(string name)
         {
             return null;
         }

@@ -66,15 +66,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="GetFileSystemEntries.cs" />
-    <Compile Include="props_file.cs" />
-    <Compile Include="proc_node.cs" />
-    <Compile Include="root_fs.cs" />
-    <Compile Include="sys_node.cs" />
     <Compile Include="vfs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="vfs_handles.cs" />
     <Compile Include="vfs_mounts.cs" />
-    <Compile Include="vmem_file.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

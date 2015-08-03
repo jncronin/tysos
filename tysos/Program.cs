@@ -140,9 +140,6 @@ namespace tysos
             gc.heap_arena.debug = true;
 #endif  // NO_BOEHM
 
-
-
-
             /* Load up the symbol table for tysos */
             if (GetCmdLine("skip_kernel_syms") == false)
             {
@@ -167,22 +164,6 @@ namespace tysos
                 ElfReader.LoadSymbols(stab, mboot);
                 //ElfReader.LoadSymbols(stab, tysos_vaddr, mboot.tysos_virtaddr, khash_addr);
                 Formatter.WriteLine("done", arch.BootInfoOutput);
-
-                /* Test symbol table */
-                ulong gcmalloc_addr = stab.GetAddress("gcmalloc");
-                Formatter.Write("Testing symbol table, address of gcmalloc: ", arch.DebugOutput);
-                Formatter.Write(gcmalloc_addr, "X", arch.DebugOutput);
-                Formatter.WriteLine(arch.DebugOutput);
-
-                /* Test current method getting */
-                libsupcs.TysosMethod cur_meth = GetCurrentMethod();
-                if (cur_meth == null)
-                    Formatter.WriteLine("GetCurrentMethod() returned null", arch.DebugOutput);
-                else
-                {
-                    Formatter.Write("GetCurrentMethod(): ", arch.DebugOutput);
-                    Formatter.WriteLine(cur_meth.Name, arch.DebugOutput);
-                }
             }
 
             /* Test the garbage collector */
@@ -193,12 +174,6 @@ namespace tysos
                 Formatter.WriteLine("done", arch.BootInfoOutput);
             }
 
-            // Test castclass with generic types
-            if (generic_castclass_test(new List<string>()) == null)
-                Formatter.WriteLine("generic_castclass_test: null", arch.DebugOutput);
-            else
-                Formatter.WriteLine("generic_castclass_test: not null", arch.DebugOutput);
-
             /* Start the scheduler */
             arch.CurrentCpu.CurrentScheduler = new Scheduler();
             arch.SchedulerTimer.Callback = new Timer.TimerCallback(Scheduler.TimerProc);
@@ -206,41 +181,19 @@ namespace tysos
             /* Store the process info */
             running_processes = new Dictionary<string, Process>(new MyGenericEqualityComparer<string>());
 
-            /* Test enum dictionaries */
-            //test_hcp();
-            //test_my_hcp();
-            //test_dict();
-
-            // Test the assembler
-            // First start the garbage collector thread
-            //CreateKernelThreads();
-
-            // Now add the test thread
-            //Process test_thread = Process.Create("test_thread", stab.GetAddress("_ZN5tysos5tysos7ProgramM_0_19TestAssemblerThread_Rv_P0"), 0x8000, arch.VirtualRegions, stab, new object[] { });
-            //arch.CurrentCpu.CurrentScheduler.Reschedule(test_thread.startup_thread);
-            //test_thread.started = true;
-
-            // Enable multitasking
-            //arch.EnableMultitasking();
-
             /* Init vfs signatures */
             lib.File.InitSigs();
 
-            /* Test delegate->uintptr function */
-            Formatter.Write("IdleFunction: ", Program.arch.DebugOutput);
-            Delegate d = new System.Threading.ThreadStart(IdleFunction);
-            System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(d);
-            Formatter.Write((ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(d), "X", Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
             /* Build a list of available modules */
-            List<StructuredStartupParameters.Param> mods = new List<StructuredStartupParameters.Param>();
+            List<tysos.lib.File.Property> mods = new List<tysos.lib.File.Property>();
             foreach (Multiboot.Module mod in mboot.modules)
             {
                 ulong vaddr = map_in(mod);
-                mods.Add(new StructuredStartupParameters.Param { Name = mod.name, Value = new VirtualMemoryResource64(vaddr, mod.length) });
+                mods.Add(new tysos.lib.File.Property { Name = mod.name, Value = new VirtualMemoryResource64(vaddr, mod.length) });
             }
-            StructuredStartupParameters startup_mods = new StructuredStartupParameters { Parameters = mods };
+            List<tysos.lib.File.Property> modfs_props = new List<lib.File.Property>();
+            modfs_props.Add(new lib.File.Property { Name = "device", Value = "modfs" });
+            modfs_props.Add(new lib.File.Property { Name = "mods", Value = mods });
 
             /* Load the logger */
             Process logger = LoadELFModule("logger", mboot, stab, running_processes, 0x8000,
@@ -253,16 +206,22 @@ namespace tysos
             //debugprint.Start();
 
             /* Load the vfs */
-            Process vfs = LoadELFModule("vfs", mboot, stab, running_processes, 0x8000, new object[] { arch.VfsParams, startup_mods });
+            Process vfs = LoadELFModule("vfs", mboot, stab, running_processes, 0x8000, new object[] { });
             vfs.Start();
 
             /* Load and mount the root fs */
-            rootfs rootfs = new rootfs();
+            rootfs rootfs = new rootfs(new List<rootfs.rootfs_item>
+            {
+                new rootfs.rootfs_item { Name = "system", Props = arch.SystemProperties },
+                new rootfs.rootfs_item { Name = "modules", Props = modfs_props }
+            });
             Process rootfs_p = Process.CreateProcess("rootfs",
                 new System.Threading.ThreadStart(rootfs.MessageLoop), new object[] { rootfs });
             rootfs_p.Start();
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/", rootfs },
                 new Type[] { typeof(string), typeof(ServerObject) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/modules", "/modules", "modfs" },
+                new Type[] { typeof(string), typeof(string), typeof(string) });
 
             /* Load the modfs driver */
             Process modfs = LoadELFModule("modfs", mboot, stab, running_processes, 0x8000, new object[] { });

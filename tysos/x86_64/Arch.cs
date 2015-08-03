@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using tysos.lib;
 
 namespace tysos.x86_64
 {
@@ -31,10 +32,6 @@ namespace tysos.x86_64
         ulong pmem_bitmap_va;
         ulong vmem_temppage_va;
         ulong vga_fb_va;
-
-        ulong cpu_va;
-
-        ulong cpu_datasize;
 
         ulong init_exit_address;
 
@@ -49,6 +46,7 @@ namespace tysos.x86_64
         bool cpu_structure_setup = false;
 
         FirmwareConfiguration fwconf = null;
+        List<tysos.lib.File.Property> ps;
 
         internal abstract unsafe class FirmwareConfiguration
         {
@@ -467,19 +465,26 @@ namespace tysos.x86_64
             /* Finally, create a list of parameters for handing to the system device enumerator */
             if (acpi == null)
                 throw new Exception("ACPI required");
-            List<StructuredStartupParameters.Param> ps = new List<StructuredStartupParameters.Param>();
-            ps.Add(new StructuredStartupParameters.Param { Name = "driver", Value = "acpipc" });
+            ps = new List<tysos.lib.File.Property>();
+            ps.Add(new tysos.lib.File.Property { Name = "driver", Value = "acpipc" });
             foreach(Acpi.AcpiTable table in acpi.tables)
             {
                 string tab_name = "table_" + table.signature.ToString("X8");
-                ps.Add(new StructuredStartupParameters.Param { Name = tab_name, Value = new VirtualMemoryResource64(table.start_vaddr, table.length) });
+                ps.Add(new tysos.lib.File.Property { Name = tab_name, Value = new VirtualMemoryResource64(table.start_vaddr, table.length) });
             }
-            ps.Add(new StructuredStartupParameters.Param { Name = "vmem", Value = new VirtualMemoryResource64(VirtualRegions.devs.start, VirtualRegions.devs.length) });
-            ps.Add(new StructuredStartupParameters.Param { Name = "pmem", Value = new PhysicalMemoryResource64(0, UInt64.MaxValue) });
-            ps.Add(new StructuredStartupParameters.Param { Name = "io", Value = new x86_64.IOResource(0, 0x10000) });
-            VfsParams = new StructuredStartupParameters { Parameters = ps };
+            ps.Add(new tysos.lib.File.Property { Name = "vmem", Value = new VirtualMemoryResource64(VirtualRegions.devs.start, VirtualRegions.devs.length) });
+            ps.Add(new tysos.lib.File.Property { Name = "pmem", Value = new PhysicalMemoryResource64(0, UInt64.MaxValue) });
+            ps.Add(new tysos.lib.File.Property { Name = "io", Value = new x86_64.IOResource(0, 0x10000) });
 
             Formatter.WriteLine("x86_64: Arch initialized", Program.arch.DebugOutput);
+        }
+
+        internal override List<File.Property> SystemProperties
+        {
+            get
+            {
+                return ps;
+            }
         }
 
         private void SetUpHighMemory(Pmem PhysMem, Multiboot.Header mboot)

@@ -38,6 +38,10 @@ namespace vfs
              * and move on
              */
 
+            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetFileSystemEntries(" +
+                path + ", " + path_with_pattern + ", " + attrs.ToString() + ", " +
+                mask.ToString() + ")\n");
+
             List<string> ret = new List<string>();
             string[] split_path = path_with_pattern.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -60,7 +64,7 @@ namespace vfs
                 tysos.Syscalls.DebugFunctions.DebugWrite("getFSE: cur_dir_f is null");
                 return;
             }
-            tysos.StructuredStartupParameters.Param children = cur_dir_f.GetPropertyByName("Children");
+            tysos.lib.File.Property children = cur_dir_f.GetPropertyByName("Children");
             if(children == null)
             {
                 tysos.Syscalls.DebugFunctions.DebugWrite("getFSE: GetPropertyByName(\"Children\") returned null");

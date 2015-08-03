@@ -33,7 +33,6 @@ namespace tysos
         internal Timer SchedulerTimer;
         internal Virtual_Regions VirtualRegions;
         internal List<Cpu> Processors;
-        internal StructuredStartupParameters VfsParams;
 
         public IDebugOutput DebugOutput;
         public IDebugOutput BootInfoOutput;
@@ -41,6 +40,8 @@ namespace tysos
         internal Interrupts Interrupts;
 
         internal abstract TaskSwitchInfo CreateTaskSwitchInfo();
+
+        internal abstract List<lib.File.Property> SystemProperties { get; }
 
         internal abstract void Init(UIntPtr chunk_vaddr, UIntPtr chunk_length, Multiboot.Header mboot);
         internal abstract void EnableMultitasking();

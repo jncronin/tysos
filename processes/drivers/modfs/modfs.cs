@@ -36,18 +36,17 @@ namespace modfs
         public tysos.ServerObject CreateFSHandler(tysos.lib.File src)
         {
             // Get the modules associated with the handler
-            tysos.StructuredStartupParameters.Param m_param =
+            tysos.lib.File.Property m_param =
                 src.GetPropertyByName("mods");
             if (m_param == null)
                 throw new Exception("src does not contain 'mods' property");
 
-            List<tysos.StructuredStartupParameters.Param> mods = m_param.Value as
-                List<tysos.StructuredStartupParameters.Param>;
+            List<tysos.lib.File.Property> mods = m_param.Value as
+                List<tysos.lib.File.Property>;
             if (mods == null)
                 throw new Exception("mods is of inappropriate type");
 
-            modfs fs = new modfs();
-            fs.mods = mods;
+            modfs fs = new modfs(mods);
 
             // Fork off a separate process to handle this instance of the driver
             tysos.Process p = tysos.Process.CreateProcess("modfs: " + src.Name, 
@@ -61,7 +60,16 @@ namespace modfs
 
     class modfs : tysos.ServerObject
     {
-        internal List<tysos.StructuredStartupParameters.Param> mods;
+        public modfs(List<tysos.lib.File.Property> Mods)
+        {
+            mods = Mods;
+
+            /* Build a cache of the root directory entries */
+            children = new List<string>();
+            foreach (tysos.lib.File.Property mod in mods)
+                children.Add(mod.Name);
+        }
+        internal List<tysos.lib.File.Property> mods;
 
         public int IntProperties(tysos.lib.File f)
         {
@@ -73,15 +81,22 @@ namespace modfs
             return (long)((modfs_File)f).mem.Length64;
         }
 
+        List<string> children;
+
         public tysos.lib.File Open(IList<string> path, System.IO.FileMode mode,
             System.IO.FileAccess access, System.IO.FileShare share,
             System.IO.FileOptions options)
         {
+            if(path.Count == 0)
+            {
+                return new tysos.lib.VirtualDirectory(this, "", children);
+            }
+
             // modfs has only one level
             if (path.Count != 1)
                 return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
 
-            foreach(tysos.StructuredStartupParameters.Param p in mods)
+            foreach(tysos.lib.File.Property p in mods)
             {
                 if(p.Name == path[0])
                 {

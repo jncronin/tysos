@@ -133,15 +133,4 @@ namespace tysos
             }
         }
     }
-
-    public class StructuredStartupParameters
-    {
-        public class Param
-        {
-            public string Name;
-            public object Value;
-        }
-
-        public ICollection<Param> Parameters;
-    }
 }

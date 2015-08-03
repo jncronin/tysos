@@ -28,8 +28,8 @@ namespace vfs
 {
     partial class vfs : tysos.ServerObject
     {
-        static Dictionary<string, tysos.ServerObject> mounts =
-            new Dictionary<string, tysos.ServerObject>(new tysos.Program.MyGenericEqualityComparer<string>());
+        static Dictionary<PathPart, tysos.ServerObject> mounts =
+            new Dictionary<PathPart, tysos.ServerObject>(new tysos.Program.MyGenericEqualityComparer<PathPart>());
 
         static void Main()
         {
@@ -61,6 +61,8 @@ namespace vfs
                 path = "/";
             if (path == "*")
                 path = "/*";
+            if (path[0] != '/')
+                throw new Exception("relative paths not supported");
 
             string[] split_string = path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             List<string> new_path = new List<string>();
@@ -78,65 +80,139 @@ namespace vfs
                     new_path.Add(s);
             }
 
-            string mount = "/" + string.Join("/", new_path.ToArray());
-            //tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetPath(string) resolved path to: " + mount + "\n");
             List<string> additional = new List<string>();
 
+            PathPart pp_mount = new PathPart { path = new_path };
+            PathPart pp_additional = new PathPart { path = additional };
+
+            /* The entire path is in pp_mount.  Check if this is a mount point.
+                If not, take the last element and insert it at the beginning of
+                additional and repeat until either a mount point is found or
+                mount is empty, at which point fail
+            */
             do
             {
-                if (mount != "/")
-                    mount = mount.TrimEnd('/');
                 //tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetPath: checking for mount point " + mount + "\n");
-                if (mounts.ContainsKey(mount))
+                if (mounts.ContainsKey(pp_mount))
                 {
                     //tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetPath: found mount point " + mount + " of type " + mounts[mount].GetType().FullName + "\n");
-                    return new Path { device = mounts[mount], path = additional, mount_point = mount };
+                    return new Path { device = mounts[pp_mount], path = pp_additional, mount_point = pp_mount };
                 }
 
-                if (mount == "/")
+                // handle being passed the root directory when nothing is mounted
+                if (new_path.Count == 0)
                 {
-                    // handle being passed the root directory when nothing is mounted
-                    if (new_path.Count == 0)
-                        return new Path { device = null, mount_point = null, path = new List<string> { } };
-                    return null;
+                    if (additional.Count == 0)
+                        return new Path { device = null, mount_point = null, path = pp_additional };
+                    else
+                        return null;
                 }
 
-                int last_idx = mount.LastIndexOf('/');
-                additional.Insert(0, mount.Substring(last_idx + 1));
-                if (last_idx != 0)
-                    mount = mount.Substring(0, last_idx);
-                else
-                    mount = "/";
+                string last_elem = new_path[new_path.Count - 1];
+                new_path.RemoveAt(new_path.Count - 1);
+                additional.Insert(0, last_elem);
             } while (true);
+        }
+    }
 
+    public class PathPart : IEquatable<PathPart>
+    {
+        public IList<string> path;
+
+        public void AppendTo(StringBuilder sb)
+        {
+            if (path == null)
+                return;
+            foreach(string s in path)
+            {
+                sb.Append("/");
+                sb.Append(s);
+            }
+        }
+
+        public bool Equals(PathPart other)
+        {
+            if (other == null)
+                return false;
+
+            if (path == null)
+            {
+                if (other.path == null)
+                    return true;
+                else
+                    return false;
+            }
+            else if (other.path == null)
+                return false;
+
+            if (path.Count != other.path.Count)
+                return false;
+
+            for(int i = 0; i < path.Count; i++)
+            {
+                if (path[i].Equals(other.path[i]) == false)
+                    return false;
+            }
+
+            return true;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as PathPart);
+        }
+
+        public override int GetHashCode()
+        {
+            if (path == null)
+                return base.GetHashCode();
+
+            int hc = 0;
+            foreach (string s in path)
+                hc ^= s.GetHashCode();
+
+            return hc;
         }
     }
 
     public class Path
     {
         public tysos.ServerObject device;
-        public string mount_point;
-        public IList<string> path;
+        public PathPart mount_point;
+        public PathPart path;
 
         public string FullPath
         {
             get
             {
                 StringBuilder sb = new StringBuilder();
-                if (mount_point != null)
-                    sb.Append(mount_point);
 
-                foreach(string s in path)
-                {
-                    sb.Append("/");
-                    sb.Append(s);
-                }
+                if (mount_point != null)
+                    mount_point.AppendTo(sb);
+                if (path != null)
+                    path.AppendTo(sb);
 
                 if (sb.Length == 0)
                     sb.Append("/");
 
                 return sb.ToString();
             }
+        }
+
+        public static explicit operator PathPart(Path p)
+        {
+            List<string> pp = new List<string>();
+            if(p.mount_point != null)
+            {
+                foreach (string s in p.mount_point.path)
+                    pp.Add(s);
+            }
+            if(p.path != null)
+            {
+                foreach (string s in p.path.path)
+                    pp.Add(s);
+            }
+            return new PathPart { path = pp };
         }
     }
 
@@ -149,13 +225,13 @@ namespace vfs
         public virtual IList<FileSystemObject> Children { get { return null; } }
         public virtual FileSystemObject Parent { get { return parent; } }
 
-        internal VersionedList<tysos.StructuredStartupParameters.Param> props =
-            new VersionedList<tysos.StructuredStartupParameters.Param>();
+        internal VersionedList<tysos.lib.File.Property> props =
+            new VersionedList<tysos.lib.File.Property>();
 
-        protected internal virtual ICollection<tysos.StructuredStartupParameters.Param> Properties { get { return props; } }
-        protected internal virtual tysos.StructuredStartupParameters.Param GetPropertyByName(string name)
+        protected internal virtual ICollection<tysos.lib.File.Property> Properties { get { return props; } }
+        protected internal virtual tysos.lib.File.Property GetPropertyByName(string name)
         {
-            foreach(tysos.StructuredStartupParameters.Param p in props)
+            foreach(tysos.lib.File.Property p in props)
             {
                 if (p.Name == name)
                     return p;

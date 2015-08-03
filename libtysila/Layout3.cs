@@ -546,6 +546,51 @@ namespace libtysila
                     cont = false;
             } while (cont);
 
+            /* In addition, all vectors should implement IList<T> (CIL I 8.9.1)
+            and therefore ICollection<T> and IEnumerable<T> */
+            if(parent.tsig.Type is Signature.ZeroBasedArray)
+            {
+                Signature.BaseOrComplexType T_bct =
+                    ((Signature.ZeroBasedArray)parent.tsig.Type).ElemType;
+
+                Metadata.TypeDefRow tdr_ilist = Metadata.GetTypeDef("mscorlib",
+                    "System.Collections.Generic", "IList`1", ass);
+                Metadata.TypeDefRow tdr_icollection = Metadata.GetTypeDef("mscorlib",
+                    "System.Collections.Generic", "ICollection`1", ass);
+                Metadata.TypeDefRow tdr_ienumerable = Metadata.GetTypeDef("mscorlib",
+                    "System.Collections.Generic", "IEnumerable`1", ass);
+
+                Signature.Param p_ilist = new Signature.Param(new Signature.GenericType
+                {
+                    GenParams = new List<Signature.BaseOrComplexType> { T_bct },
+                    GenType = new Signature.Param(tdr_ilist, ass).Type,
+                    _ass = ass
+                }, ass);
+                Signature.Param p_icollection = new Signature.Param(new Signature.GenericType
+                {
+                    GenParams = new List<Signature.BaseOrComplexType> { T_bct },
+                    GenType = new Signature.Param(tdr_icollection, ass).Type,
+                    _ass = ass
+                }, ass);
+                Signature.Param p_ienumerable = new Signature.Param(new Signature.GenericType
+                {
+                    GenParams = new List<Signature.BaseOrComplexType> { T_bct },
+                    GenType = new Signature.Param(tdr_ienumerable, ass).Type,
+                    _ass = ass
+                }, ass);
+
+                Assembler.TypeToCompile ttc_ilist = new Assembler.TypeToCompile(
+                    tdr_ilist, p_ilist, ass);
+                Assembler.TypeToCompile ttc_icollection = new Assembler.TypeToCompile(
+                    tdr_icollection, p_icollection, ass);
+                Assembler.TypeToCompile ttc_ienumerable = new Assembler.TypeToCompile(
+                    tdr_ienumerable, p_ienumerable, ass);
+
+                ret.Add(ttc_ilist);
+                ret.Add(ttc_icollection);
+                ret.Add(ttc_ienumerable);
+            }
+
             return ret;
         }
 

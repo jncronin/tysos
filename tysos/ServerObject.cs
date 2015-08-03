@@ -135,7 +135,7 @@ namespace tysos
                     return null;
                 }
 
-                members[name] = mi;
+                //members[name] = mi;
             }
 
             return mi.Invoke(this, p);
@@ -145,6 +145,7 @@ namespace tysos
         {
             Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": entering message loop\n");
             t = Syscalls.SchedulerFunctions.GetCurrentThread();
+            Syscalls.SchedulerFunctions.GetCurrentThread().owning_process.MessageServer = this;
 
             while(true)
             {

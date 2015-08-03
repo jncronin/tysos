@@ -32,6 +32,12 @@ namespace tysos.lib
             public System.DateTime Creation, LastAccessed, LastModified;
         }
 
+        public class Property
+        {
+            public string Name;
+            public object Value;
+        }
+
         public enum SeekPosition { Set, Cur, End }
 
         protected internal MonoIOError err;
@@ -140,10 +146,10 @@ namespace tysos.lib
             return true;
         }
 
-        public virtual tysos.StructuredStartupParameters.Param GetPropertyByName(string name)
+        public virtual tysos.lib.File.Property GetPropertyByName(string name)
         {
             return d.Invoke("GetPropertyByName", new object[] { this, name }, sig_GetPropertyByName)
-                as tysos.StructuredStartupParameters.Param;
+                as tysos.lib.File.Property;
         }
 
         public virtual string Name
@@ -218,19 +224,26 @@ namespace tysos.lib
 
     public class VirtualDirectory : VirtualPropertyFile
     {
-        public VirtualDirectory(ServerObject device, string name) : base(device, name)
+        public VirtualDirectory(ServerObject device, string name,
+            List<string> children) : base(device, name)
         {
             intProperties = (int)System.IO.FileAttributes.Directory;
+            base.Props.Add(new Property { Name = "Children", Value = children });
         }
     }
 
     public class VirtualPropertyFile : File
     {
         protected internal int intProperties;
-        protected internal List<tysos.StructuredStartupParameters.Param> Props;
+        protected internal List<tysos.lib.File.Property> Props;
         protected internal string _name;
 
         public VirtualPropertyFile(ServerObject device, string name)
+            : this(device, name, new List<Property>())
+        { }        
+
+        public VirtualPropertyFile(ServerObject device, string name,
+            List<tysos.lib.File.Property> props)
         {
             d = device;
 
@@ -241,7 +254,7 @@ namespace tysos.lib
 
             isatty = false;
 
-            Props = new List<StructuredStartupParameters.Param>();
+            Props = props;
 
             intProperties = (int)System.IO.FileAttributes.ReadOnly;
             _name = name;
@@ -255,12 +268,12 @@ namespace tysos.lib
             }
         }
 
-        public override StructuredStartupParameters.Param GetPropertyByName(string name)
+        public override tysos.lib.File.Property GetPropertyByName(string name)
         {
             if (Props == null)
                 return null;
 
-            foreach(StructuredStartupParameters.Param p in Props)
+            foreach(tysos.lib.File.Property p in Props)
             {
                 if (p.Name == name)
                     return p;

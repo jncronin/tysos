@@ -33,13 +33,13 @@ namespace acpipc
         static List<tysos.x86_64.IOResource> ios = new List<tysos.x86_64.IOResource>();
         static List<Table> tables = new List<Table>();
 
-        private static void _InitDevice(ICollection<tysos.StructuredStartupParameters.Param> resources,
+        private static void _InitDevice(ICollection<tysos.lib.File.Property> resources,
             tysos.IFile file, ref object device_node)
         {
             tysos.Syscalls.DebugFunctions.DebugWrite("acpipc: received InitDevice message\n");
 
             /* Interpret the resources we have */
-            foreach(tysos.StructuredStartupParameters.Param p in resources)
+            foreach(tysos.lib.File.Property p in resources)
             {
                 if (p.Name == "vmem")
                 {

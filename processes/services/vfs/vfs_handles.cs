@@ -44,13 +44,15 @@ namespace vfs
                 return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
 
             tysos.lib.File ret = (tysos.lib.File)p.device.Invoke("Open",
-                new object[] { p.path, mode, access, share, options }, tysos.lib.File.sig_Open);
+                new object[] { p.path.path, mode, access, share, options }, tysos.lib.File.sig_Open);
 
             if (ret.Error == tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
                 open_handle h = new open_handle();
                 h.handle = ret;
-                h.process = SourceThread.owning_process;
+
+                if(SourceThread != null)
+                    h.process = SourceThread.owning_process;
                 open_handles.Add(h);
             }
 
@@ -63,7 +65,9 @@ namespace vfs
 
             for (int i = 0; i < open_handles.Count; i++)
             {
-                if ((open_handles[i].handle == handle) && (open_handles[i].process == SourceThread.owning_process))
+                if ((open_handles[i].handle == handle) && 
+                    ((open_handles[i].process == null && SourceThread == null) || 
+                    (open_handles[i].process == SourceThread.owning_process)))
                 {
                     open_handles.RemoveAt(i);
                     handle.Error = tysos.lib.MonoIOError.ERROR_SUCCESS;

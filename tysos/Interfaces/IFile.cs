@@ -30,8 +30,8 @@ namespace tysos
         long Length { get; }
         IInputStream GetInputStream();
         IOutputStream GetOutputStream();
-        ICollection<StructuredStartupParameters.Param> Properties { get; }
-        StructuredStartupParameters.Param GetPropertyByName(string name);
+        ICollection<tysos.lib.File.Property> Properties { get; }
+        tysos.lib.File.Property GetPropertyByName(string name);
         int IntProperties { get; }
         tysos.lib.MonoIOError Error { get; }
     }
