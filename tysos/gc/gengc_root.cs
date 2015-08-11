@@ -35,6 +35,12 @@ namespace tysos.gc
             *rptr++ = end;
 
             r->size++;
+
+            Formatter.Write("gengc: adding root: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)start, "X", Program.arch.DebugOutput);
+            Formatter.Write(" - ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)end, "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
         }
 
         private void allocate_root_block()

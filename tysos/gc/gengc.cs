@@ -68,6 +68,9 @@ namespace tysos.gc
 {
     unsafe partial class gengc
     {
+        /* The number of allocations since the last collection */
+        int allocs = 0;
+
         /* tree_idx determines which tree is being used:
          * 
          * 0 - free tree, sorted by length
@@ -79,6 +82,8 @@ namespace tysos.gc
             public chunk_header* parent;
             public chunk_header* left;
             public chunk_header* right;
+            public chunk_header* next;
+            public chunk_header* prev;
             public int red;
             public byte* length;
             public int flags;
@@ -106,6 +111,11 @@ namespace tysos.gc
             public chunk_header* root_used_chunk;
             public chunk_header* root_free_chunk;
             public chunk_header* nil;
+            public chunk_header* first_used_chunk;
+            public chunk_header* last_used_chunk;
+            public chunk_header* first_free_chunk;
+            public chunk_header* last_free_chunk;
+            public int used_chunks, free_chunks;
             public root_header* roots;
             public int lo_size;
 
@@ -142,6 +152,8 @@ namespace tysos.gc
 
             /* Allocate the header structure */
             hdr = (heap_header*)start;
+            hdr->used_chunks = 0;
+            hdr->free_chunks = 0;
 
             /* Start chunks 1 page in */
             byte* cur_ptr = (byte*)start + 0x1000;
@@ -199,12 +211,31 @@ namespace tysos.gc
             }
         }
 
+        [libsupcs.Uninterruptible]
         public void *Alloc(int length)
         {
+            /* Wait for all other allocations and collections to complete */
+            bool can_continue = false;
+            while(can_continue == false)
+            {
+                lock(collection_mutex)
+                {
+                    if(collection_in_progress == false && alloc_in_progress == false)
+                    {
+                        alloc_in_progress = true;
+                        can_continue = true;
+                    }
+                }
+            }
+
+            /* Increase the allocation counter */
+            allocs++;
+
             /* Decide if we want a large or small object */
             if(length > hdr->lo_size)
             {
                 chunk_header* c = allocate_chunk(length);
+                alloc_in_progress = false;
                 if (c == null)
                     return null;
                 return (void*)((byte*)c + sizeof(chunk_header));
@@ -214,7 +245,10 @@ namespace tysos.gc
                 /* Small object */
                 int sm_index = get_size_index(length);
                 if (sm_index < 0)
+                {
+                    alloc_in_progress = false;
                     return null;
+                }
 
                 /* Get first sma_header */
                 sma_header** sma_ptr = get_sma_ptr(sm_index);
@@ -225,7 +259,9 @@ namespace tysos.gc
                     allocate_sma_header(sma_ptr, sm_index);
 
                 /* Allocate space */
-                return allocate_small_object(*sma_ptr, sm_index);
+                void *ret = allocate_small_object(*sma_ptr, sm_index);
+                alloc_in_progress = false;
+                return ret;
             }            
         }
 

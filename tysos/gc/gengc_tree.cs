@@ -231,6 +231,12 @@ namespace tysos.gc
             chunk_header* newNode;
             chunk_header* root = (tree_idx == 0) ? tree->root_free_chunk : tree->root_used_chunk;
 
+            /* Add to the count */
+            if (tree_idx == 0)
+                tree->free_chunks++;
+            else
+                tree->used_chunks++;
+
             TreeInsertHelp(tree, tree_idx, x);
             newNode = x;
             x->red = 1;
@@ -479,6 +485,12 @@ namespace tysos.gc
             chunk_header* x;
             chunk_header* nil = tree->nil;
             chunk_header* root = (tree_idx == 0) ? tree->root_free_chunk : tree->root_used_chunk;
+
+            /* Remove from the count */
+            if (tree_idx == 0)
+                tree->free_chunks--;
+            else
+                tree->used_chunks--;
 
             y = ((z->left == nil) || (z->right == nil)) ? z : TreeSuccessor(tree, tree_idx, z);
             x = (y->left == nil) ? y->right : y->left;
