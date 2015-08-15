@@ -339,6 +339,8 @@ namespace libsupcs
 
             *(int*)(ret + libsupcs.ArrayOperations.GetInnerArrayLengthOffset()) = length;
 
+            *(int*)(ret + libsupcs.ArrayOperations.GetRankOffset()) = 1;
+
             *(byte**)(ret + libsupcs.ArrayOperations.GetInnerArrayOffset()) = data;
 
             return (byte[])CastOperations.ReinterpretAsObject(ret);

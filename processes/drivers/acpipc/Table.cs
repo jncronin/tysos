@@ -31,7 +31,8 @@ namespace acpipc
         string signature;
         tysos.VirtualMemoryResource64 vmem;
 
-        internal static Table InterpretTable(tysos.VirtualMemoryResource64 table)
+        internal static Table InterpretTable(tysos.VirtualMemoryResource64 table,
+            acpipc a)
         {
             Table ret;
             char[] sig = new char[4];
@@ -62,7 +63,7 @@ namespace acpipc
                 System.Diagnostics.Debugger.Log(0, "acpipc", "table checksum failed: " +
                     csum.ToString());
 
-            if(sig_string == "FACP")
+            if (sig_string == "FACP")
             {
                 FADT f = new FADT();
 
@@ -89,14 +90,110 @@ namespace acpipc
                     ", FIRMWARE_CTRL: " + f.FIRMWARE_CTRL.ToString("X16") +
                     ", Preferred_PM_Profile: " + f.Preferred_PM_Profile.ToString() +
                     ", IAPC_BOOT_ARCH: " + f.IAPC_BOOT_ARCH.ToString("X4") +
-                    ", Flags: " + f.Flags.ToString("X8"));
+                    ", Flags: " + f.Flags.ToString("X8") + "\n");
+
+                /* Store the DSDT details */
+                a.p_dsdt_addr = f.DSDT;
+                a.dsdt_len = 36;    // changed later after the DSDT is loaded
 
                 ret = f;
             }
-            else
+            else if (sig_string == "APIC")
+            {
+                APIC atbl = new APIC();
+
+                atbl.LocalAPICAddress = (ulong)table.Read(table.Addr64 + 36, 4);
+                atbl.Flags = (uint)table.Read(table.Addr64 + 40, 4);
+                atbl.APICs = new List<APICStructure>();
+
+                System.Diagnostics.Debugger.Log(0, "acpipc", "ACPI table: LocalAPICAddress: " +
+                    atbl.LocalAPICAddress.ToString("X16") +
+                    ", Flags: " + atbl.Flags.ToString("X8") + "\n");
+
+                uint cur_addr = 44;
+                while(cur_addr < length)
+                {
+                    APICStructure s;
+
+                    uint type = (uint)table.Read(table.Addr64 + cur_addr, 1);
+                    uint s_length = (uint)table.Read(table.Addr64 + cur_addr + 1, 1);
+
+                    if (type == 0)
+                    {
+                        LocalAPICStructure las = new LocalAPICStructure();
+                        las.APICProcessorID = (uint)table.Read(table.Addr64 + cur_addr + 2, 1);
+                        las.APICID = (uint)table.Read(table.Addr64 + cur_addr + 3, 1);
+                        las.Flags = (uint)table.Read(table.Addr64 + cur_addr + 4, 4);
+
+                        System.Diagnostics.Debugger.Log(0, "acpipc", "LocalAPICStructure: " +
+                            "APICProcessorID: " + las.APICProcessorID.ToString("X8") +
+                            ", APICID: " + las.APICProcessorID.ToString("X8") +
+                            ", Flags: " + las.Flags.ToString("X8") + "\n");
+
+                        s = las;
+                    }
+                    else if (type == 1)
+                    {
+                        IOAPICStructure ias = new IOAPICStructure();
+                        ias.IOAPICID = (uint)table.Read(table.Addr64 + cur_addr + 2, 1);
+                        ias.IOAPICAddress = (ulong)table.Read(table.Addr64 + cur_addr + 4, 4);
+                        ias.GSIBase = (uint)table.Read(table.Addr64 + cur_addr + 8, 4);
+
+                        System.Diagnostics.Debugger.Log(0, "acpipc", "IOAPICStructure: " +
+                            "IOAPICID: " + ias.IOAPICID.ToString("X8") +
+                            ", IOAPICAddress: " + ias.IOAPICAddress.ToString("X16") +
+                            ", GSIBase: " + ias.GSIBase.ToString("X8") + "\n");
+
+                        s = ias;
+                    }
+                    else if (type == 2)
+                    {
+                        InterruptSourceOverrideStructure iso = new InterruptSourceOverrideStructure();
+                        iso.Bus = (int)table.Read(table.Addr64 + cur_addr + 2, 1);
+                        iso.Source = (int)table.Read(table.Addr64 + cur_addr + 3, 1);
+                        iso.GSI = (uint)table.Read(table.Addr64 + cur_addr + 4, 4);
+                        iso.Flags = (uint)table.Read(table.Addr64 + cur_addr + 8, 2);
+
+                        System.Diagnostics.Debugger.Log(0, "acpipc", "InterruptSourceOverrideStructure: " +
+                            "Bus: " + iso.Bus.ToString("X8") +
+                            ", Source: " + iso.Source.ToString("X16") +
+                            ", GSI: " + iso.GSI.ToString("X8") +
+                            ", Flags: " + iso.Flags.ToString("X8") + "\n");
+
+                        s = iso;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debugger.Log(0, "acpipc", "APICStructure: unsupported type: " + type.ToString() + "\n");
+
+                        s = new APICStructure();
+                    }
+
+                    s.Length = (int)s_length;
+                    s.Type = (int)type;
+
+                    cur_addr += s_length;
+                }
+
+                ret = atbl;
+            }
+            else if(sig_string == "SSDT")
             {
                 ret = new Table();
+
+                ulong ssdt_vaddr = table.Addr64;
+                ulong ssdt_length = length;
+
+                tysos.VirtualMemoryResource64 ssdt_region = table.Split(ssdt_vaddr, ssdt_length)
+                    as tysos.VirtualMemoryResource64;
+
+                System.Diagnostics.Debugger.Log(0, "acpipc", "ACPI table: SSDT: " +
+                    ssdt_vaddr.ToString("X16") + " - " + (ssdt_vaddr + ssdt_length).ToString("X16"));
+
+                a.ssdts.Add(ssdt_region);
             }
+            else
+                ret = new Table();
 
             ret.signature = sig_string;
             ret.vmem = table;
@@ -122,5 +219,41 @@ namespace acpipc
         public ushort IAPC_BOOT_ARCH;
         public uint Flags;
         
+    }
+
+    class APIC : Table
+    {
+        public ulong LocalAPICAddress;
+        public uint Flags;
+
+        public List<APICStructure> APICs;
+    }
+
+    class APICStructure : Table
+    {
+        public int Type;
+        public int Length;
+    }
+
+    class LocalAPICStructure : APICStructure
+    {
+        public uint APICProcessorID;
+        public uint APICID;
+        public uint Flags;
+    }
+
+    class IOAPICStructure : APICStructure
+    {
+        public uint IOAPICID;
+        public ulong IOAPICAddress;
+        public uint GSIBase;
+    }
+
+    class InterruptSourceOverrideStructure : APICStructure
+    {
+        public int Bus;
+        public int Source;
+        public uint GSI;
+        public uint Flags;
     }
 }

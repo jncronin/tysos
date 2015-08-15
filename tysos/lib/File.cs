@@ -71,7 +71,7 @@ namespace tysos.lib
                     throw new NotSupportedException();
                 if (value < 0)
                     throw new ArgumentOutOfRangeException("Cannot seek to negative position");
-                if (value > pos && CanGrow == false)
+                if (value > Length && CanGrow == false)
                     throw new System.IO.EndOfStreamException();
 
                 pos = value;
@@ -152,6 +152,12 @@ namespace tysos.lib
                 as tysos.lib.File.Property;
         }
 
+        public virtual tysos.lib.File.Property[] GetAllProperties()
+        {
+            return d.Invoke("GetAllProperties", new object[] { this }, sig_GetAllProperties)
+                as tysos.lib.File.Property[];
+        }
+
         public virtual string Name
         {
             get
@@ -168,6 +174,7 @@ namespace tysos.lib
         public static System.Type[] sig_GetLength;
         public static System.Type[] sig_GetName;
         public static System.Type[] sig_GetPropertyByName;
+        public static System.Type[] sig_GetAllProperties;
 
         public static System.Type[] sig_vfs_OpenFile;
         public static System.Type[] sig_vfs_CloseFile;
@@ -199,6 +206,7 @@ namespace tysos.lib
             sig_GetLength = new System.Type[] { typeof(File) };
             sig_GetName = new System.Type[] { typeof(File) };
             sig_GetPropertyByName = new System.Type[] { typeof(File), typeof(string) };
+            sig_GetAllProperties = new System.Type[] { typeof(File) };
 
             sig_vfs_OpenFile = new System.Type[] {
                 typeof(string),
@@ -279,6 +287,11 @@ namespace tysos.lib
                     return p;
             }
             return null;
+        }
+
+        public override Property[] GetAllProperties()
+        {
+            return Props.ToArray();
         }
 
         public override long Length

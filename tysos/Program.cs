@@ -233,13 +233,14 @@ namespace tysos
                 new Type[] { typeof(string), typeof(ServerObject) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/modules", "/modules", "modfs" },
                 new Type[] { typeof(string), typeof(string), typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system", "/system", "acpipc" },
+                new Type[] { typeof(string), typeof(string), typeof(string) });
 
             /* Load the modfs driver */
             Process modfs = LoadELFModule("modfs", mboot, stab, running_processes, 0x8000, new object[] { });
             modfs.Start();
 
-            /* Load a filesystem dump tester */
-            LoadELFModule("fsdump", mboot, stab, running_processes, 0x8000, new object[] { }).Start();
+
 
             arch.EnableMultitasking();
 

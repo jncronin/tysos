@@ -35,9 +35,11 @@ namespace tysos.gc
             {
                 tysos.Syscalls.SchedulerFunctions.Block(new DelegateEvent(
                     delegate () { return heap.allocs >= max_allocs; }));
+#if GENGC_BASICDEBUG
                 Formatter.Write("gengc: performing collection due to high number of allocations (", Program.arch.DebugOutput);
                 Formatter.Write((ulong)heap.allocs, Program.arch.DebugOutput);
                 Formatter.WriteLine(")", Program.arch.DebugOutput);
+#endif
                 heap.DoCollection();
             }
         }
@@ -51,9 +53,11 @@ namespace tysos.gc
             {
                 tysos.Syscalls.SchedulerFunctions.Block(new DelegateEvent(
                     delegate () { return heap.allocs >= min_allocs; }));
+#if GENGC_BASICDEBUG
                 Formatter.Write("gengc: performing background collection (", Program.arch.DebugOutput);
                 Formatter.Write((ulong)heap.allocs, Program.arch.DebugOutput);
                 Formatter.WriteLine(" allocations)", Program.arch.DebugOutput);
+#endif
                 heap.DoCollection();
             }
         }

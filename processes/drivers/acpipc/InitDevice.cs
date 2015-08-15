@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2015 by John Croninq
+﻿/* Copyright (C) 2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,20 +26,25 @@ using tysos.Messages;
 
 namespace acpipc
 {
-    partial class Program
+    partial class acpipc : tysos.ServerObject
     {
-        static List<tysos.VirtualMemoryResource64> vmems = new List<tysos.VirtualMemoryResource64>();
-        static List<tysos.PhysicalMemoryResource64> pmems = new List<tysos.PhysicalMemoryResource64>();
-        static List<tysos.x86_64.IOResource> ios = new List<tysos.x86_64.IOResource>();
-        static List<Table> tables = new List<Table>();
+        internal List<tysos.VirtualMemoryResource64> vmems = new List<tysos.VirtualMemoryResource64>();
+        internal List<tysos.PhysicalMemoryResource64> pmems = new List<tysos.PhysicalMemoryResource64>();
+        internal List<tysos.x86_64.IOResource> ios = new List<tysos.x86_64.IOResource>();
+        List<Table> tables = new List<Table>();
+        tysos.lib.File.Property[] props;
+        internal ulong p_dsdt_addr, dsdt_len;
+        internal List<tysos.VirtualMemoryResource64> ssdts = new List<tysos.VirtualMemoryResource64>();
 
-        private static void _InitDevice(ICollection<tysos.lib.File.Property> resources,
-            tysos.IFile file, ref object device_node)
+        public acpipc(tysos.lib.File.Property[] Properties)
         {
-            tysos.Syscalls.DebugFunctions.DebugWrite("acpipc: received InitDevice message\n");
+            props = Properties;
+        }
 
+        public override bool InitServer()
+        {
             /* Interpret the resources we have */
-            foreach(tysos.lib.File.Property p in resources)
+            foreach(tysos.lib.File.Property p in props)
             {
                 if (p.Name == "vmem")
                 {
@@ -58,11 +63,69 @@ namespace acpipc
                 else if(p.Name.StartsWith("table_"))
                 {
                     tysos.Syscalls.DebugFunctions.DebugWrite("acpipc: adding table\n");
-                    tables.Add(Table.InterpretTable(p.Value as tysos.VirtualMemoryResource64));                    
+                    tables.Add(Table.InterpretTable(p.Value as tysos.VirtualMemoryResource64, this));                    
                 }
             }
 
             tysos.Syscalls.DebugFunctions.DebugWrite("acpipc: finished parsing resources\n");
+
+            /* Now allocate space for the DSDT */
+            if(p_dsdt_addr == 0)
+            {
+                throw new Exception("DSDT not found");
+            }
+            tysos.PhysicalMemoryResource64 p_dsdt = AllocPmemFixed(p_dsdt_addr, dsdt_len);
+            tysos.VirtualMemoryResource64 v_dsdt = AllocVmem(dsdt_len);
+            p_dsdt.Map(v_dsdt);
+
+            dsdt_len = v_dsdt.Read(v_dsdt.Addr64 + 4, 4);
+            System.Diagnostics.Debugger.Log(0, "acpipc", "DSDT table length " + dsdt_len.ToString("X16"));
+
+            p_dsdt = AllocPmemFixed(p_dsdt_addr, dsdt_len);
+            v_dsdt = AllocVmem(dsdt_len);
+            p_dsdt.Map(v_dsdt);
+
+            System.Diagnostics.Debugger.Log(0, "acpipc", "DSDT region: " + v_dsdt.Addr64.ToString("X16") +
+                " - " + (v_dsdt.Addr64 + v_dsdt.Length64).ToString("X16"));
+
+            /* Execute the DSDT followed by SSDTs */
+            Aml.Namespace n = new Aml.Namespace(new MachineInterface(this));
+
+            System.Diagnostics.Debugger.Log(0, "acpipc", "Executing DSDT");
+            Aml.DefBlockHeader h = new Aml.DefBlockHeader();
+            int idx = 0;
+            byte[] aml = v_dsdt.ToArray();
+            n.ParseDefBlockHeader(aml, ref idx, h);
+            System.Diagnostics.Debugger.Log(0, "acpipc", "DefBlockHeader parsed");
+
+            Aml.Namespace.State s = new Aml.Namespace.State
+            {
+                Args = new Dictionary<int, Aml.ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()),
+                Locals = new Dictionary<int, Aml.ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()),
+                Scope = Aml.ACPIName.RootName
+            };
+            n.ParseTermList(aml, ref idx, -1, s);
+            System.Diagnostics.Debugger.Log(0, "acpipc", "DSDT parsed");
+
+            foreach(tysos.VirtualMemoryResource64 v_ssdt in ssdts)
+            {
+                System.Diagnostics.Debugger.Log(0, "acpipc", "Executing SSDT");
+                idx = 0;
+                byte[] ssdt_aml = v_ssdt.ToArray();
+                Aml.DefBlockHeader h_ssdt = new Aml.DefBlockHeader();
+                n.ParseDefBlockHeader(ssdt_aml, ref idx, h_ssdt);
+                System.Diagnostics.Debugger.Log(0, "acpipc", "DefBlockHeader parsed");
+
+                s = new Aml.Namespace.State
+                {
+                    Args = new Dictionary<int, Aml.ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()),
+                    Locals = new Dictionary<int, Aml.ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()),
+                    Scope = Aml.ACPIName.RootName
+                };
+                n.ParseTermList(ssdt_aml, ref idx, -1, s);
+                System.Diagnostics.Debugger.Log(0, "acpipc", "SSDT parsed");
+            }
+
             throw new NotImplementedException();
         }
     }

@@ -130,6 +130,8 @@ namespace libsupcs.x86_64
                     ret = ReinterpretAsUIntPtr(ret);
                 else if (rettype == typeof(bool))
                     ret = ReinterpretAsBoolean(ret);
+                else if (rettype == typeof(void))
+                    ret = null;
                 else
                     throw new NotImplementedException("InternalInvoke: return type " + rettype.FullName + " not supported");
 

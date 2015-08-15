@@ -82,10 +82,14 @@ namespace tysos.gc
              *              whitening black blocks (there should be no grey blocks now)
              */
 
+#if GENGC_BASICDEBUG
             Formatter.WriteLine("gengc: Starting collection", Program.arch.DebugOutput);
+#endif
 
-            /* grey root blocks */
+/* grey root blocks */
+#if GENGC_BASICDEBUG
             Formatter.WriteLine("gengc: greying roots... ", Program.arch.DebugOutput);
+#endif
             root_header* cur_root_hdr = hdr->roots;
             while(cur_root_hdr != null)
             {
@@ -107,11 +111,14 @@ namespace tysos.gc
                 }
                 cur_root_hdr = cur_root_hdr->next;
             }
+#if GENGC_BASICDEBUG
             Formatter.WriteLine("done", Program.arch.DebugOutput);
+#endif
 
-
-            /* blacken reachable blocks */
+/* blacken reachable blocks */
+#if GENGC_BASICDEBUG
             Formatter.Write("gengc: blackening reachable blocks... ", Program.arch.DebugOutput);
+#endif
             int blackened_count;
             int total_blackened = 0;
             int small_blackened = 0;
@@ -210,10 +217,14 @@ namespace tysos.gc
                 Formatter.WriteLine(" blocks", Program.arch.DebugOutput);
 #endif
             } while (blackened_count > 0);
+#if GENGC_BASICDEBUG
             Formatter.WriteLine("done", Program.arch.DebugOutput);
+#endif
 
-            /* Iterate through again, setting white to free and black to white */
+/* Iterate through again, setting white to free and black to white */
+#if GENGC_BASICDEBUG
             Formatter.Write("gengc: freeing white blocks... ", Program.arch.DebugOutput);
+#endif
             // Get the first block
             chk = hdr->root_used_chunk;
             while (chk->left != hdr->nil)
@@ -298,7 +309,9 @@ namespace tysos.gc
                 // Loop to the next chunk
                 chk = TreeSuccessor(hdr, 1, chk);
             }
+#if GENGC_BASICDEBUG
             Formatter.WriteLine("done", Program.arch.DebugOutput);
+#endif
 
 #if GENGC_DEBUG
             Formatter.Write("gengc: final loop visited ", Program.arch.DebugOutput);
@@ -311,11 +324,13 @@ namespace tysos.gc
             Formatter.WriteLine(Program.arch.DebugOutput);
 #endif
 
+#if GENGC_BASICDEBUG
             Formatter.Write("gengc: Collection completed: ", Program.arch.DebugOutput);
             Formatter.Write((ulong)white_large_objects, Program.arch.DebugOutput);
             Formatter.Write(" large objects and ", Program.arch.DebugOutput);
             Formatter.Write((ulong)white_small_objects, Program.arch.DebugOutput);
             Formatter.WriteLine(" small objects freed", Program.arch.DebugOutput);
+#endif
 
 #if GENGC_DEBUG
             Formatter.Write("gengc: ", Program.arch.DebugOutput);
@@ -331,12 +346,14 @@ namespace tysos.gc
             Formatter.WriteLine(" small objects were blackened", Program.arch.DebugOutput);
 #endif
 
+#if GENGC_BASICDEBUG
             Formatter.Write("gengc: ", Program.arch.DebugOutput);
             Formatter.Write((ulong)total_blackened, Program.arch.DebugOutput);
             Formatter.WriteLine(" objects remain in use", Program.arch.DebugOutput);
             Formatter.Write("gengc: ", Program.arch.DebugOutput);
             Formatter.Write((ulong)loops, Program.arch.DebugOutput);
             Formatter.WriteLine(" loops required to blacken all in-use objects", Program.arch.DebugOutput);
+#endif
 
             allocs = 0;
             collection_in_progress = false;

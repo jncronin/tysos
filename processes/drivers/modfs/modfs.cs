@@ -76,7 +76,7 @@ namespace modfs
             return ((modfs_File)f).intProperties;
         }
 
-        public long Length(tysos.lib.File f)
+        public long GetLength(tysos.lib.File f)
         {
             return (long)((modfs_File)f).mem.Length64;
         }

@@ -141,8 +141,19 @@ namespace tysos
             return mi.Invoke(this, p);
         }
 
+        public virtual bool InitServer()
+        {
+            return true;
+        }
+
         public virtual void MessageLoop()
         {
+            if(InitServer() == false)
+            {
+                Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": InitServer failed\n");
+                return;
+            }
+
             Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": entering message loop\n");
             t = Syscalls.SchedulerFunctions.GetCurrentThread();
             Syscalls.SchedulerFunctions.GetCurrentThread().owning_process.MessageServer = this;

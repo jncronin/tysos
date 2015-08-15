@@ -50,33 +50,26 @@ namespace tysos
         public abstract ulong Addr64 { get; }
         public abstract uint Length32 { get; }
         public abstract ulong Length64 { get; }
+
+        public abstract bool Intersects(uint base_addr, uint length);
+        public abstract bool Intersects(ulong base_addr, ulong length);
     }
 
     public abstract class RangeResource32 : RangeResource
     {
-        struct range { public uint addr; public uint length; }
-        List<range> free_ranges;
+        protected uint a, l;
 
         internal RangeResource32(uint addr, uint length)
         {
-            free_ranges = new List<range>();
-            free_ranges.Add(new range { addr = addr, length = length });
+            a = addr;
+            l = length;
         }
 
         public override RangeResource Split(uint base_addr, uint length)
         {
-            int range_to_split = -1;
-            for(int i = 0; i < free_ranges.Count; i++)
-            {
-                if (base_addr >= free_ranges[i].addr &&
-                    (base_addr + length) <= (free_ranges[i].addr + free_ranges[i].length))
-                {
-                    range_to_split = i;
-                    break;
-                }
-            }
-
-            if (range_to_split == -1)
+            if (base_addr < a)
+                return null;
+            if ((base_addr + length) > (a + l))
                 return null;
 
             /* Create a new resource of the appropriate subclass */
@@ -84,41 +77,6 @@ namespace tysos
                 this.GetType().GetConstructor(new Type[] { typeof(uint), typeof(uint) });
 
             RangeResource ret = ci.Invoke(new object[] { base_addr, length }) as RangeResource;
-
-            /* split the original chunk into parts
-             * 
-             * There are 4 possibilities:
-             * 
-             * 1) The new chunk is all of the old chunk - delete the old chunk
-             * 2) The new chunk starts at the beginning of the old - increase the
-             *          base_addr of the old chunk and shorten it
-             * 3) The new chunk ends at the end of the old - shorten the old one
-             * 4) The new chunk is within the old one - we need to shorten the old one
-             *          and add a new one at the end
-             */
-
-            uint old_base = free_ranges[range_to_split].addr;
-            uint old_len = free_ranges[range_to_split].length;
-
-            if (base_addr == old_base && length == old_len)
-                free_ranges.RemoveAt(range_to_split);
-            else if (base_addr == old_base)
-            {
-                range new_range = new range { addr = old_base + length, length = old_len - length };
-                free_ranges[range_to_split] = new_range;
-            }
-            else if(base_addr + length == old_base + old_len)
-            {
-                range new_range = new range { addr = old_base, length = old_len - length };
-                free_ranges[range_to_split] = new_range;
-            }
-            else
-            {
-                range new_range_1 = new range { addr = old_base, length = base_addr - old_base };
-                range new_range_2 = new range { addr = base_addr + length, length = old_base + old_len - base_addr - length };
-                free_ranges[range_to_split] = new_range_1;
-                free_ranges.Add(new_range_2);
-            }         
 
             return ret;
         }
@@ -131,225 +89,84 @@ namespace tysos
             uint base_addr = (uint)base_addr_ul;
             uint length = (uint)length_ul;
 
-            int range_to_split = -1;
-            for (int i = 0; i < free_ranges.Count; i++)
-            {
-                if (base_addr >= free_ranges[i].addr &&
-                    (base_addr + length) <= (free_ranges[i].addr + free_ranges[i].length))
-                {
-                    range_to_split = i;
-                    break;
-                }
-            }
-
-            if (range_to_split == -1)
-                return null;
-
-            /* Create a new resource of the appropriate subclass */
-            System.Reflection.ConstructorInfo ci =
-                this.GetType().GetConstructor(new Type[] { typeof(uint), typeof(uint) });
-
-            RangeResource ret = ci.Invoke(new object[] { base_addr, length }) as RangeResource;
-
-            /* split the original chunk into parts
-             * 
-             * There are 4 possibilities:
-             * 
-             * 1) The new chunk is all of the old chunk - delete the old chunk
-             * 2) The new chunk starts at the beginning of the old - increase the
-             *          base_addr of the old chunk and shorten it
-             * 3) The new chunk ends at the end of the old - shorten the old one
-             * 4) The new chunk is within the old one - we need to shorten the old one
-             *          and add a new one at the end
-             */
-
-            uint old_base = free_ranges[range_to_split].addr;
-            uint old_len = free_ranges[range_to_split].length;
-
-            if (base_addr == old_base && length == old_len)
-                free_ranges.RemoveAt(range_to_split);
-            else if (base_addr == old_base)
-            {
-                range new_range = new range { addr = old_base + length, length = old_len - length };
-                free_ranges[range_to_split] = new_range;
-            }
-            else if (base_addr + length == old_base + old_len)
-            {
-                range new_range = new range { addr = old_base, length = old_len - length };
-                free_ranges[range_to_split] = new_range;
-            }
-            else
-            {
-                range new_range_1 = new range { addr = old_base, length = base_addr - old_base };
-                range new_range_2 = new range { addr = base_addr + length, length = old_base + old_len - base_addr - length };
-                free_ranges[range_to_split] = new_range_1;
-                free_ranges.Add(new_range_2);
-            }
-
-            return ret;
+            return Split(base_addr, length);
         }
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(this.GetType().Name);
-            sb.Append(": \n");
-            foreach(range r in free_ranges)
-            {
-                sb.Append("    ");
-                sb.Append(r.addr.ToString("X8"));
-                sb.Append(" - ");
-                sb.Append((r.addr + r.length).ToString("X8"));
-                sb.Append("\n");
-            }
+            sb.Append(": ");
+            sb.Append(a.ToString("X8"));
+            sb.Append(" - ");
+            sb.Append((a + l).ToString("X8"));
+            sb.Append("\n");
             return sb.ToString();
         }
 
         public override uint Addr32
         {
-            get { if (free_ranges.Count > 0) return free_ranges[0].addr; else return 0; }
+            get { return a; }
         }
         public override ulong Addr64
         {
-            get { if (free_ranges.Count > 0) return free_ranges[0].addr; else return 0; }
+            get { return a; }
         }
         public override uint Length32
         {
-            get { if (free_ranges.Count > 0) return free_ranges[0].length; else return 0; }
+            get { return l; }
         }
         public override ulong Length64
         {
-            get { if (free_ranges.Count > 0) return free_ranges[0].length; else return 0; }
+            get { return l; }
+        }
+
+        public override bool Intersects(uint base_addr, uint length)
+        {
+            if ((base_addr + length) <= a)
+                return false;
+            if (base_addr >= (a + l))
+                return false;
+            return true;
+        }
+
+        public override bool Intersects(ulong base_addr, ulong length)
+        {
+            if (base_addr > uint.MaxValue)
+                return false;
+            if (base_addr + length > uint.MaxValue)
+                length = uint.MaxValue - base_addr;
+            return Intersects((uint)base_addr, (uint)length);
         }
     }
 
     public abstract class RangeResource64 : RangeResource
     {
-        struct range { public ulong addr; public ulong length; }
-        List<range> free_ranges;
+        protected ulong a, l;
 
         internal RangeResource64(ulong addr, ulong length)
         {
-            free_ranges = new List<range>();
-            free_ranges.Add(new range { addr = addr, length = length });
+            a = addr;
+            l = length;
         }
 
         public override RangeResource Split(uint base_addr, uint length)
         {
-            int range_to_split = -1;
-            for (int i = 0; i < free_ranges.Count; i++)
-            {
-                if (base_addr >= free_ranges[i].addr &&
-                    (base_addr + length) <= (free_ranges[i].addr + free_ranges[i].length))
-                {
-                    range_to_split = i;
-                    break;
-                }
-            }
-
-            if (range_to_split == -1)
-                return null;
-
-            /* Create a new resource of the appropriate subclass */
-            System.Reflection.ConstructorInfo ci =
-                this.GetType().GetConstructor(new Type[] { typeof(uint), typeof(uint) });
-
-            RangeResource ret = ci.Invoke(new object[] { base_addr, length }) as RangeResource;
-
-            /* split the original chunk into parts
-             * 
-             * There are 4 possibilities:
-             * 
-             * 1) The new chunk is all of the old chunk - delete the old chunk
-             * 2) The new chunk starts at the beginning of the old - increase the
-             *          base_addr of the old chunk and shorten it
-             * 3) The new chunk ends at the end of the old - shorten the old one
-             * 4) The new chunk is within the old one - we need to shorten the old one
-             *          and add a new one at the end
-             */
-
-            ulong old_base = free_ranges[range_to_split].addr;
-            ulong old_len = free_ranges[range_to_split].length;
-
-            if (base_addr == old_base && length == old_len)
-                free_ranges.RemoveAt(range_to_split);
-            else if (base_addr == old_base)
-            {
-                range new_range = new range { addr = old_base + length, length = old_len - length };
-                free_ranges[range_to_split] = new_range;
-            }
-            else if (base_addr + length == old_base + old_len)
-            {
-                range new_range = new range { addr = old_base, length = old_len - length };
-                free_ranges[range_to_split] = new_range;
-            }
-            else
-            {
-                range new_range_1 = new range { addr = old_base, length = base_addr - old_base };
-                range new_range_2 = new range { addr = base_addr + length, length = old_base + old_len - base_addr - length };
-                free_ranges[range_to_split] = new_range_1;
-                free_ranges.Add(new_range_2);
-            }
-
-            return ret;
+            return Split((ulong)base_addr, (ulong)length);
         }
 
         public override RangeResource Split(ulong base_addr, ulong length)
         {
-            int range_to_split = -1;
-            for (int i = 0; i < free_ranges.Count; i++)
-            {
-                if (base_addr >= free_ranges[i].addr &&
-                    (base_addr + length) <= (free_ranges[i].addr + free_ranges[i].length))
-                {
-                    range_to_split = i;
-                    break;
-                }
-            }
-
-            if (range_to_split == -1)
+            if (base_addr < a)
+                return null;
+            if ((base_addr + length) > (a + l))
                 return null;
 
             /* Create a new resource of the appropriate subclass */
             System.Reflection.ConstructorInfo ci =
-                this.GetType().GetConstructor(new Type[] { typeof(uint), typeof(uint) });
+                this.GetType().GetConstructor(new Type[] { typeof(ulong), typeof(ulong) });
 
             RangeResource ret = ci.Invoke(new object[] { base_addr, length }) as RangeResource;
-
-            /* split the original chunk into parts
-             * 
-             * There are 4 possibilities:
-             * 
-             * 1) The new chunk is all of the old chunk - delete the old chunk
-             * 2) The new chunk starts at the beginning of the old - increase the
-             *          base_addr of the old chunk and shorten it
-             * 3) The new chunk ends at the end of the old - shorten the old one
-             * 4) The new chunk is within the old one - we need to shorten the old one
-             *          and add a new one at the end
-             */
-
-            ulong old_base = free_ranges[range_to_split].addr;
-            ulong old_len = free_ranges[range_to_split].length;
-
-            if (base_addr == old_base && length == old_len)
-                free_ranges.RemoveAt(range_to_split);
-            else if (base_addr == old_base)
-            {
-                range new_range = new range { addr = old_base + length, length = old_len - length };
-                free_ranges[range_to_split] = new_range;
-            }
-            else if (base_addr + length == old_base + old_len)
-            {
-                range new_range = new range { addr = old_base, length = old_len - length };
-                free_ranges[range_to_split] = new_range;
-            }
-            else
-            {
-                range new_range_1 = new range { addr = old_base, length = base_addr - old_base };
-                range new_range_2 = new range { addr = base_addr + length, length = old_base + old_len - base_addr - length };
-                free_ranges[range_to_split] = new_range_1;
-                free_ranges.Add(new_range_2);
-            }
 
             return ret;
         }
@@ -358,33 +175,43 @@ namespace tysos
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(this.GetType().Name);
-            sb.Append(": \n");
-            foreach (range r in free_ranges)
-            {
-                sb.Append("    ");
-                sb.Append(r.addr.ToString("X16"));
-                sb.Append(" - ");
-                sb.Append((r.addr + r.length).ToString("X16"));
-                sb.Append("\n");
-            }
+            sb.Append(": ");
+            sb.Append(a.ToString("X8"));
+            sb.Append(" - ");
+            sb.Append((a + l).ToString("X8"));
+            sb.Append("\n");
             return sb.ToString();
         }
 
         public override uint Addr32
         {
-            get { if (free_ranges.Count > 0) return (uint)(free_ranges[0].addr & 0xffffffff); else return 0; }
+            get { return (uint)a; }
         }
         public override ulong Addr64
         {
-            get { if (free_ranges.Count > 0) return free_ranges[0].addr; else return 0; }
+            get { return a; }
         }
         public override uint Length32
         {
-            get { if (free_ranges.Count > 0) return (uint)(free_ranges[0].length & 0xffffffff); else return 0; }
+            get { return (uint)l; }
         }
         public override ulong Length64
         {
-            get { if (free_ranges.Count > 0) return free_ranges[0].length; else return 0; }
+            get { return l; }
+        }
+
+        public override bool Intersects(ulong base_addr, ulong length)
+        {
+            if ((base_addr + length) <= a)
+                return false;
+            if (base_addr >= (a + l))
+                return false;
+            return true;
+        }
+
+        public override bool Intersects(uint base_addr, uint length)
+        {
+            return Intersects((ulong)base_addr, (ulong)length);
         }
     }
 
@@ -458,6 +285,13 @@ namespace tysos
             }
             return 0;
         }
+
+        public unsafe byte[] ToArray()
+        {
+            if (l > (uint)Int32.MaxValue)
+                throw new Exception("region is too big for byte array");
+            return libsupcs.TysosArrayType.CreateByteArray((byte*)a, (int)l);
+        }
     }
 
     public class VirtualMemoryResource64 : RangeResource64
@@ -529,6 +363,13 @@ namespace tysos
                     return *(ulong*)addr;
             }
             return 0;
+        }
+
+        public unsafe byte[] ToArray()
+        {
+            if (l > (ulong)Int32.MaxValue)
+                throw new Exception("region is too big for byte array");
+            return libsupcs.TysosArrayType.CreateByteArray((byte*)a, (int)l);
         }
     }
 
