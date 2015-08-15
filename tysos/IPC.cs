@@ -60,7 +60,7 @@ namespace tysos
                 return false;
 
             Virtual_Regions.Region ipc_region = Program.arch.VirtualRegions.AllocRegion(Program.arch.PageSize,
-                Program.arch.PageSize, p.name.ToString() + " IPC", 0, Virtual_Regions.Region.RegionType.IPC);
+                Program.arch.PageSize, p.name.ToString() + " IPC", 0, Virtual_Regions.Region.RegionType.IPC, true);
 
             if (ipc_region == null)
                 return false;
@@ -72,11 +72,13 @@ namespace tysos
             p.ipc.readpointer = p.ipc.start;
             p.ipc.writepointer = p.ipc.start;
             p.ipc.ready = true;
+            p.ipc.owning_process = p;
 
             return true;
         }
 
         private object lock_obj = new object();
+        internal Process owning_process;
 
         internal IPCMessage PeekMessage()
         {

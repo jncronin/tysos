@@ -101,6 +101,10 @@ namespace tysos
         { return AllocRegion(length, align, name, 0, Region.RegionType.Other).start; }
 
         public Region AllocRegion(ulong length, ulong align, string name, ulong stack_protect, Region.RegionType r_type)
+        { return AllocRegion(length, align, name, stack_protect, r_type, false); }
+
+        public Region AllocRegion(ulong length, ulong align, string name, ulong stack_protect, Region.RegionType r_type,
+            bool gc_data)
         {
             /* Allocate a new region from the 'free' region */
 
@@ -122,12 +126,29 @@ namespace tysos
 
                 Add(ret);
 
+                if (gc_data)
+                {
+                    if (gc.gengc.heap == null)
+                    {
+                        Formatter.WriteLine("VirtualRegions: attempt to allocate gc_data region without valid gc", Program.arch.DebugOutput);
+                    }
+                    else
+                    {
+                        unsafe
+                        {
+                            gc.gengc.heap.AddRoots((byte*)(start + stack_protect), (byte*)(start + length + stack_protect));
+                        }
+                    }
+                }
+
                 Formatter.Write("VirtualRegions: Allocated new region: ", Program.arch.DebugOutput);
                 Formatter.Write(name, Program.arch.DebugOutput);
                 Formatter.Write(", start: ", Program.arch.DebugOutput);
                 Formatter.Write(start, "X", Program.arch.DebugOutput);
                 Formatter.Write(", length: ", Program.arch.DebugOutput);
                 Formatter.Write(length, "X", Program.arch.DebugOutput);
+                if (gc_data)
+                    Formatter.Write(", gc_data", Program.arch.DebugOutput);
                 Formatter.WriteLine(Program.arch.DebugOutput);
 
                 return ret;

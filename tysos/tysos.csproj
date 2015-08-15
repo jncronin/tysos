@@ -112,6 +112,7 @@
     <Compile Include="gc\gc.cs" />
     <Compile Include="gc\gengc.cs" />
     <Compile Include="gc\gengc_collect.cs" />
+    <Compile Include="gc\gengc_collectthread.cs" />
     <Compile Include="gc\gengc_root.cs" />
     <Compile Include="gc\gengc_tree.cs" />
     <Compile Include="gc\heap.cs" />

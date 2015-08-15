@@ -208,4 +208,23 @@ namespace tysos
             }
         }
     }
+
+    public class DelegateEvent : Event
+    {
+        public delegate bool EventDelegate();
+        EventDelegate d;
+
+        public DelegateEvent(EventDelegate _function)
+        {
+            d = _function;
+        }
+
+        public override bool IsSet
+        {
+            get
+            {
+                return d();
+            }
+        }
+    }
 }

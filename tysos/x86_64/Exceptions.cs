@@ -33,7 +33,7 @@ namespace tysos.x86_64
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Divide error", Program.arch.BootInfoOutput);
-            DumpExceptionData(0, return_rip, return_cs, rflags, return_rsp, return_ss, regs);
+            DumpExceptionData(0, return_rip, return_cs, rflags, return_rsp, return_ss, *(ulong*)libsupcs.x86_64.Cpu.RBP, regs);
             libsupcs.OtherOperations.Halt();
         }
 
@@ -67,7 +67,7 @@ namespace tysos.x86_64
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Breakpoint", Program.arch.BootInfoOutput);
-            DumpExceptionData(0, return_rip, return_cs, rflags, return_rsp, return_ss, regs);
+            DumpExceptionData(0, return_rip, return_cs, rflags, return_rsp, return_ss, *(ulong*)libsupcs.x86_64.Cpu.RBP, regs);
             libsupcs.OtherOperations.Halt();
         }
 
@@ -126,7 +126,7 @@ namespace tysos.x86_64
             Formatter.WriteLine("Double fault", Program.arch.BootInfoOutput);
 
             DumpExceptionData(ec, return_rip, return_cs, rflags, return_rsp, return_ss,
-                regs);
+                *(ulong*)libsupcs.x86_64.Cpu.RBP, regs);
 
             Formatter.WriteLine("Stack trace:", Program.arch.DebugOutput);
 
@@ -196,17 +196,17 @@ namespace tysos.x86_64
             Formatter.Write(rip, "X", Program.arch.DebugOutput);
             Formatter.WriteLine(Program.arch.DebugOutput);
 
-            DumpExceptionData(ec, return_rip, return_cs, rflags, return_rsp, return_ss, regs);
+            DumpExceptionData(ec, return_rip, return_cs, rflags, return_rsp, return_ss, *(ulong*)libsupcs.x86_64.Cpu.RBP, regs);
 
-            libsupcs.x86_64.Cpu.Break();
+            //libsupcs.x86_64.Cpu.Break();
 
             Formatter.WriteLine("Stack trace:", Program.arch.DebugOutput);
 
             // Switch to protected heap and unwind stack
-            if (Program.arch.CurrentCpu != null)
+            /*if (Program.arch.CurrentCpu != null)
                 Program.arch.CurrentCpu.UseCpuAlloc = true;
             else
-                gc.gc.Heap = gc.gc.HeapType.Startup;
+                gc.gc.Heap = gc.gc.HeapType.Startup;*/
             Unwind.DumpUnwindInfo(((libsupcs.x86_64.Unwinder)Program.arch.GetUnwinder().Init()).UnwindOneWithErrorCode().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
             libsupcs.OtherOperations.Halt();
         }
@@ -260,7 +260,8 @@ namespace tysos.x86_64
         }
 
         public static unsafe void DumpExceptionData(ulong ec, ulong return_rip, ulong return_cs,
-            ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
+            ulong rflags, ulong return_rsp, ulong return_ss, ulong return_rbp,
+            libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
             Formatter.WriteLine("Exception information:", Program.arch.DebugOutput);
 
@@ -269,6 +270,7 @@ namespace tysos.x86_64
             DumpRegister("CS    ", return_cs);
             DumpRegister("RFLAGS", rflags);
             DumpRegister("RSP   ", return_rsp);
+            DumpRegister("RBP   ", return_rbp);
             DumpRegister("SS    ", return_ss);
             DumpRegister("RAX   ", regs->rax);
             DumpRegister("RBX   ", regs->rbx);

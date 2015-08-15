@@ -159,8 +159,16 @@ namespace tysos.elf
                     byte* name_addr = sect_shstr + cur_shdr->sh_name;
                     string sect_name = new string((sbyte*)name_addr);
 
+                    /* Register with gc if writeable and not executable */
+                    bool gc_data = false;
+                    if (((cur_shdr->sh_flags & 0x1) != 0) && ((cur_shdr->sh_flags & 0x4) == 0))
+                        gc_data = true;
+
                     // allocate space for it
-                    ulong sect_addr = vreg.AllocRegion(cur_shdr->sh_size, 0x1000, name + sect_name, 0, Virtual_Regions.Region.RegionType.ModuleSection).start;
+                    ulong sect_addr = vreg.AllocRegion(cur_shdr->sh_size, 0x1000, 
+                        name + sect_name, 0, 
+                        Virtual_Regions.Region.RegionType.ModuleSection, 
+                        gc_data).start;
                     cur_shdr->sh_addr = sect_addr;
 
                     if (sect_addr + cur_shdr->sh_size > 0x7effffffff)

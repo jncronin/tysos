@@ -48,6 +48,9 @@ namespace tysos
             p.threads.Add(p.startup_thread);
             p.name = name;
 
+            if (Program.running_processes != null)
+                Program.running_processes[name] = p;
+
             return p;
         }
 
@@ -117,12 +120,18 @@ namespace tysos
             t.thread_id = next_thread_id++;
 
             t.saved_state = Program.arch.CreateTaskSwitchInfo();
-            t.stack = vreg.AllocRegion(stack_size, 0x1000, name + "_Stack", 0x1000, Virtual_Regions.Region.RegionType.Stack);
+            t.stack = vreg.AllocRegion(stack_size, 0x1000, name + "_Stack", 0x1000, Virtual_Regions.Region.RegionType.Stack, true);
             t.saved_state.Init(new UIntPtr(e_point), t.stack, new UIntPtr(stab.GetAddress("__exit")), parameters);
 
             t.exit_address = stab.GetAddress("__exit");
 
             return t;
+        }
+
+        internal static Thread Create(string name, Delegate e_point, object[] parameters)
+        {
+            return Create(name, (ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(e_point),
+                0x8000, Program.arch.VirtualRegions, Program.stab, parameters);
         }
 
         public static Thread CurrentThread

@@ -720,65 +720,6 @@ namespace tysos.x86_64
             return libsupcs.IoOperations.PortInb((ushort)(com2 + 5)) & 0x20;
         }
 
-        internal static unsafe GDB_Registers get_registers(long rbp_offset_to_registers)
-        {
-            libsupcs.x86_64.Unwinder u = new libsupcs.x86_64.Unwinder();
-            u.UnwindOne();
-            ulong rbp = u.GetRBP();
-
-            GDB_Registers regs = new GDB_Registers();
-            regs.rbp = (ulong*)(rbp);
-            regs.rip = (ulong*)(rbp + 8);
-            regs.rflags = (ulong*)(rbp + 24);
-            regs.rsp = (ulong*)(rbp + 32);
-                        /* local variables are stored immediately below rbp in the method,
-             * the registers are pushed below this, therefore we have to adjust the
-             * rbp we are using by the used stack space
-             */
-            if (rbp_offset_to_registers > 0)
-                rbp += (ulong)rbp_offset_to_registers;
-            else if (rbp_offset_to_registers < 0)
-                rbp -= (ulong)(-rbp_offset_to_registers);
-            regs.rax = (ulong*)(rbp - 8);
-            regs.rbx = (ulong*)(rbp - 16);
-            regs.rcx = (ulong*)(rbp - 24);
-            regs.rdx = (ulong*)(rbp - 32);
-            regs.rdi = (ulong*)(rbp - 40);
-            regs.rsi = (ulong*)(rbp - 48);
-            regs.r8 = (ulong*)(rbp - 56);
-            regs.r9 = (ulong*)(rbp - 64);
-            regs.r10 = (ulong*)(rbp - 72);
-            regs.r11 = (ulong*)(rbp - 80);
-            regs.r12 = (ulong*)(rbp - 88);
-            regs.r13 = (ulong*)(rbp - 96);
-            regs.r14 = (ulong*)(rbp - 104);
-            regs.r15 = (ulong*)(rbp - 112);
-
-            return regs;
-        }
-
-        internal unsafe class GDB_Registers
-        {
-            internal ulong* rflags;
-            internal ulong* rip;
-            internal ulong* rsp;
-            internal ulong* rbp;
-            internal ulong* rax;
-            internal ulong* rbx;
-            internal ulong* rcx;
-            internal ulong* rdx;
-            internal ulong* rdi;
-            internal ulong* rsi;
-            internal ulong* r8;
-            internal ulong* r9;
-            internal ulong* r10;
-            internal ulong* r11;
-            internal ulong* r12;
-            internal ulong* r13;
-            internal ulong* r14;
-            internal ulong* r15;
-        }
-
         internal override void Breakpoint()
         {
             libsupcs.x86_64.Cpu.Break();

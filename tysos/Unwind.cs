@@ -60,6 +60,15 @@ namespace tysos
 
                         Formatter.WriteLine(output);
                     }
+                    /*else if(Program.stab != null)
+                    {
+                        ulong offset;
+                        string meth = Program.stab.GetSymbolAndOffset((ulong)ue.ProgramCounter, out offset);
+                        Formatter.Write(meth, output);
+                        Formatter.Write(" + ", output);
+                        Formatter.Write(offset, "X", output);
+                        Formatter.WriteLine(output);
+                    }*/
                     else
                         Formatter.WriteLine("unknown method", output);
                 }

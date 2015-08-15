@@ -189,6 +189,7 @@ namespace tysos
                     {
                         ec = *(ulong*)(rbp + 8);
                         rip = *(ulong*)(rbp + 16);
+                        rbp = *(ulong*)rbp;
                     }
                     Formatter.Write("Error code: ", Program.arch.DebugOutput);
                     Formatter.Write(ec, Program.arch.DebugOutput);
@@ -198,7 +199,7 @@ namespace tysos
                     Formatter.WriteLine(Program.arch.DebugOutput);
 
                     tysos.x86_64.Exceptions.DumpExceptionData(error_code, return_rip, return_cs, rflags,
-                        return_rsp, return_ss, regs);
+                        return_rsp, return_ss, rbp, regs);
 
 
                     //Program.arch.VirtualRegions.Dump(Program.arch.DebugOutput);

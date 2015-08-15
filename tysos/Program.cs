@@ -54,7 +54,7 @@ namespace tysos
             /* Create a temporary heap, then initialize the architecture
              * which will set up the permanent heap.  Then initialize the garbage collector */
             ulong arch_data_length = 0;
-            switch(mboot.machine_major_type)
+            switch (mboot.machine_major_type)
             {
                 case (uint)Multiboot.MachineMajorType.x86_64:
                     arch_data_length = tysos.x86_64.Arch.GetRecommendedChunkLength();
@@ -76,7 +76,7 @@ namespace tysos
             UIntPtr chunk_vaddr = new UIntPtr(mboot.heap_start);
             UIntPtr chunk_length = new UIntPtr(arch_data_length);
 
-            switch(mboot.machine_major_type)
+            switch (mboot.machine_major_type)
             {
                 case (uint)Multiboot.MachineMajorType.x86_64:
                     arch = new tysos.x86_64.Arch();
@@ -119,7 +119,7 @@ namespace tysos
                 }
             }
 
-         
+
             /* Map in the ELF image of the kernel, so we can load its symbols */
             ulong tysos_vaddr = map_in(mboot.tysos_paddr, mboot.tysos_size, "tysos binary");
 
@@ -129,7 +129,7 @@ namespace tysos
                 Formatter.WriteLine("Synchronizing with debugger...", arch.BootInfoOutput);
                 System.Diagnostics.Debugger.Break();
             }
-            
+
             /* Set up a default environment */
             env = new Environment();
             env.env_vars.Add("OS", "tysos");
@@ -180,6 +180,17 @@ namespace tysos
 
             /* Store the process info */
             running_processes = new Dictionary<string, Process>(new MyGenericEqualityComparer<string>());
+
+            /* Add in threads for GC collections */
+            Thread t_max = Thread.Create("gc_max_alloc", new System.Threading.ThreadStart(gc.gengc.MaxAllocCollectThreadProc),
+                new object[] { });
+            t_max.priority = 10;
+            arch.CurrentCpu.CurrentScheduler.Reschedule(t_max);
+
+            Thread t_min = Thread.Create("gc_min_alloc", new System.Threading.ThreadStart(gc.gengc.MinAllocCollectThreadProc),
+                new object[] { });
+            t_min.priority = 0;
+            arch.CurrentCpu.CurrentScheduler.Reschedule(t_min);
 
             /* Init vfs signatures */
             lib.File.InitSigs();
@@ -405,7 +416,6 @@ namespace tysos
             ulong e_point = ElfReader.LoadObject(arch.VirtualRegions, arch.VirtMem, stab, base_addr, base_addr, name);
 
             Process p = Process.Create(name, e_point, stack_size, arch.VirtualRegions, stab, parameters);
-            running_processes.Add(name, p);
 
             Formatter.Write(name, arch.DebugOutput);
             Formatter.Write(" process created, entry point: ", arch.DebugOutput);

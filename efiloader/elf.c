@@ -132,15 +132,17 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 			size_t rest_to_zero = phdr->p_memsz - phdr->p_filesz;
 			memset((void *)cur_paddr, 0, rest_to_zero);
 
-			if (phdr->p_filesz != phdr->p_memsz)
+			/* Find all writeable sections - we need to add them as GC roots */
+			if ((phdr->p_flags & PF_W) != 0)
 			{
-				printf("elf: bss start: %x, end: %x\n", phdr->p_vaddr + phdr->p_filesz, phdr->p_vaddr + phdr->p_memsz);
+				printf("elf: writeable section found from %x to %x\n",
+					phdr->p_vaddr, phdr->p_vaddr + phdr->p_memsz);
 				if (static_start != 0)
 				{
-					printf("error: more than one bss section found in file\n");
+					printf("error: more than one writeable section found in file\n");
 					return EFI_ABORTED;
 				}
-				static_start = (EFI_PHYSICAL_ADDRESS)(phdr->p_vaddr + phdr->p_filesz);
+				static_start = (EFI_PHYSICAL_ADDRESS)phdr->p_vaddr;
 				static_end = (EFI_PHYSICAL_ADDRESS)(phdr->p_vaddr + phdr->p_memsz);
 			}
 		}

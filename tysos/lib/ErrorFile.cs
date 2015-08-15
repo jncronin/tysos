@@ -84,5 +84,13 @@ namespace tysos.lib
                 return "ERROR";
             }
         }
+
+        public override int IntProperties
+        {
+            get
+            {
+                return -1;      // MonoIO.InvalidFileAttributes
+            }
+        }
     }
 }
