@@ -260,6 +260,21 @@ namespace tysos.gc
 
                 /* Allocate space */
                 void *ret = allocate_small_object(*sma_ptr, sm_index);
+
+                if(ret == null)
+                {
+                    Formatter.Write("gengc: allocate_small_object failed.  sm_free_ptr = ", Program.arch.DebugOutput);
+                    Formatter.Write((ulong)*sm_free_ptr, Program.arch.DebugOutput);
+                    Formatter.Write(".  Trying again... ", Program.arch.DebugOutput);
+
+                    allocate_sma_header(sma_ptr, sm_index);
+                    ret = allocate_small_object(*sma_ptr, sm_index);
+
+                    if (ret == null)
+                        Formatter.WriteLine("failed again", Program.arch.DebugOutput);
+                    else
+                        Formatter.WriteLine("succeeded", Program.arch.DebugOutput);
+                }
                 alloc_in_progress = false;
                 return ret;
             }            
