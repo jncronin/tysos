@@ -78,6 +78,34 @@ namespace acpipc
             return ret;
         }
 
+        tysos.x86_64.IOResource AllocIOFixed(uint base_addr, uint length)
+        {
+            /* First, determine if the requested range is available */
+            tysos.x86_64.IOResource src = null;
+
+            foreach (tysos.x86_64.IOResource io in ios)
+            {
+                if (base_addr >= io.Addr32 && ((base_addr + length) <= (io.Addr64 + io.Length32)))
+                {
+                    src = io;
+                    break;
+                }
+            }
+
+            if (src == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "acpipc", "AllocIOFixed: source range not found for " +
+                    base_addr.ToString("X8") + " - " + (base_addr + length).ToString("X8"));
+                return null;
+            }
+
+            /* Create the range to return */
+            tysos.x86_64.IOResource ret = src.Split(base_addr, length) as
+                tysos.x86_64.IOResource;
+
+            return ret;
+        }
+
         ulong next_vaddr = 0;
         int next_vaddr_region = 0;
         tysos.VirtualMemoryResource64 cur_heap_region = null;

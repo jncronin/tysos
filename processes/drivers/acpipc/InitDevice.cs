@@ -21,12 +21,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using tysos.Messages;
+using tysos.lib;
 
 namespace acpipc
 {
-    partial class acpipc : tysos.ServerObject
+    partial class acpipc : tysos.lib.VirtualDirectoryServer
     {
         internal List<tysos.VirtualMemoryResource64> vmems = new List<tysos.VirtualMemoryResource64>();
         internal List<tysos.PhysicalMemoryResource64> pmems = new List<tysos.PhysicalMemoryResource64>();
@@ -36,9 +35,12 @@ namespace acpipc
         internal ulong p_dsdt_addr, dsdt_len;
         internal List<tysos.VirtualMemoryResource64> ssdts = new List<tysos.VirtualMemoryResource64>();
 
+        Dictionary<string, int> next_device_id = new Dictionary<string, int>(new tysos.Program.MyGenericEqualityComparer<string>());
+
         public acpipc(tysos.lib.File.Property[] Properties)
         {
             props = Properties;
+            root = new List<File.Property>(Properties);
         }
 
         public override bool InitServer()
@@ -89,7 +91,8 @@ namespace acpipc
                 " - " + (v_dsdt.Addr64 + v_dsdt.Length64).ToString("X16"));
 
             /* Execute the DSDT followed by SSDTs */
-            Aml.Namespace n = new Aml.Namespace(new MachineInterface(this));
+            MachineInterface mi = new MachineInterface(this);
+            Aml.Namespace n = new Aml.Namespace(mi);
 
             System.Diagnostics.Debugger.Log(0, "acpipc", "Executing DSDT");
             Aml.DefBlockHeader h = new Aml.DefBlockHeader();
@@ -126,7 +129,44 @@ namespace acpipc
                 System.Diagnostics.Debugger.Log(0, "acpipc", "SSDT parsed");
             }
 
-            throw new NotImplementedException();
+            /* Now extract a list of devices that have a _HID object.
+            These are the only ones ACPI needs to enumerate, all others are
+            enumerated by the respective bus enumerator */
+            foreach(KeyValuePair<string, Aml.ACPIObject> kvp in n.Devices)
+            {
+                Aml.ACPIObject hid = n.FindObject(kvp.Key + "._HID", false);
+                if (hid == null)
+                    continue;
+                s = new Aml.Namespace.State
+                {
+                    Args = new Dictionary<int, Aml.ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()),
+                    Locals = new Dictionary<int, Aml.ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()),
+                    Scope = hid.Name
+                };
+
+                Aml.ACPIObject hid_ret = hid.Evaluate(mi, s, n);
+                string hid_str = "";
+                switch(hid_ret.Type)
+                {
+                    case Aml.ACPIObject.DataType.Integer:
+                        hid_str = hid_ret.IntegerData.ToString("X8");
+                        break;
+                    case Aml.ACPIObject.DataType.String:
+                        hid_str = (string)hid_ret.Data;
+                        break;
+                    default:
+                        hid_str = hid_ret.Type.ToString() + ": " + hid_ret.Data.ToString();
+                        break;
+                }
+
+                AddDevice(hid_str, kvp.Key, n, mi);
+            }
+            foreach(KeyValuePair<string, Aml.ACPIObject> kvp in n.Processors)
+            {
+                AddDevice("cpu", kvp.Key, n, mi);
+            }
+
+            return true;
         }
     }
 }

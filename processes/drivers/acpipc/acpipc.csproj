@@ -33,6 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AddDevice.cs" />
     <Compile Include="aml\ACPIName.cs" />
     <Compile Include="aml\ACPIObject.cs" />
     <Compile Include="aml\DataAccess.cs" />

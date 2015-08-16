@@ -210,14 +210,58 @@ namespace acpipc.Aml
                                         dst[i] = (byte)src[i];
                                     return new ACPIObject(DataType.Buffer, dst);
                                 }
-                            default:
-                                throw new NotImplementedException();
                         }
                     }
                     break;
-                default:
-                    throw new NotImplementedException();
+                case DataType.Integer:
+                    {
+                        ulong src = ret.IntegerData;
+                        switch(dest_type)
+                        {
+                            case DataType.Buffer:
+                                {
+                                    byte[] dst = new byte[8];
+
+                                    for(int i = 0; i < 8; i++)
+                                    {
+                                        dst[i] = (byte)(src & 0xff);
+                                        src >>= 8;
+                                    }
+
+                                    return new ACPIObject(DataType.Buffer, dst);
+                                }
+                        }
+                    }
+                    break;
+                case DataType.Buffer:
+                    {
+                        byte[] src = (byte[])ret.Data;
+                        switch(dest_type)
+                        {
+                            case DataType.Integer:
+                                {
+                                    ulong dst = 0;
+
+                                    for(int i = 0; i < src.Length; i++)
+                                    {
+                                        byte v = src[i];
+
+                                        if (i > 8)
+                                        {
+                                            if (v != 0)
+                                                throw new Exception("Unable to convert large buffer to integer");
+                                        }
+                                        else
+                                            dst |= (((ulong)v) << (i * 8));
+                                    }
+
+                                    return new ACPIObject(DataType.Integer, dst);
+                                }
+                        }
+                    }
+                    break;
             }
+            throw new NotImplementedException("Convert " + ret.Type.ToString() + " to " + dest_type.ToString());
         }
 
         public void Write(ACPIObject d, IMachineInterface mi, Namespace.State s, Namespace n)
@@ -233,6 +277,8 @@ namespace acpipc.Aml
                 (Type == DataType.Integer &&
                 (ulong)Data == 0UL))
                 return;
+
+            //System.Diagnostics.Debugger.Log(0, "acpipc", "Write: " + d.Type.ToString() + " to " + Type.ToString());
 
             switch (Type)
             {
@@ -258,13 +304,116 @@ namespace acpipc.Aml
                     }
                 case DataType.ObjectReference:
                     {
-                        ACPIObject dst = ((ObjRefData)Data).Object.Evaluate(mi, s, n);
-                        int idx = ((ObjRefData)Data).Index;
-                        dst.Write(d, idx, mi, s, n);
+                        ObjRefData ord = Data as ObjRefData;
+                        ACPIObject dst = ord.Object;
+
+                        switch (dst.Type)
+                        {
+                            case DataType.Buffer:
+                                dst.Write(d, ord.Index, mi, s, n);
+                                return;
+                            case DataType.BufferField:
+                                dst.Write(d, mi, s, n);
+                                return;
+                            case DataType.FieldUnit:
+                                dst.Write(d, mi, s, n);
+                                return;
+                            default:
+                                throw new NotSupportedException("Write: " + d.Type + " to ObjectReference(" + dst.Type + ")");
+                        }
+                    }
+                case DataType.BufferField:
+                    {
+                        BufferFieldData bfd = Data as BufferFieldData;
+                        ACPIObject new_buf_src = d.EvaluateTo(DataType.Buffer, mi, s, n);
+                        ACPIObject new_buf_dst = bfd.Buffer.EvaluateTo(DataType.Buffer, mi, s, n);
+
+                        if (bfd.BitOffset % 8 != 0)
+                            throw new NotImplementedException("BitOffset not divisible by 8");
+                        if (bfd.BitLength % 8 != 0)
+                            throw new NotImplementedException("BitLength not divisible by 8");
+
+                        int byte_offset = bfd.BitOffset / 8;
+                        int byte_length = bfd.BitLength / 8;
+
+                        byte[] src = (byte[])new_buf_src.Data;
+                        byte[] dst = (byte[])new_buf_dst.Data;
+
+                        for (int i = 0; i < byte_length; i++)
+                            dst[byte_offset + i] = src[i];
+
                         return;
                     }
+                case DataType.FieldUnit:
+                    {
+                        FieldUnitData fud = Data as FieldUnitData;
+                        ACPIObject op_region = fud.OpRegion;
+                        if (op_region.Type != DataType.OpRegion)
+                            throw new Exception("Write to FieldUnit with invalid OpRegion type (" + op_region.Type.ToString() + ")");
+                        OpRegionData ord = op_region.Data as OpRegionData;
+
+                        /* Ensure the requested field index is within the opregion */
+                        int byte_offset = fud.BitOffset / 8;
+                        int byte_length = fud.BitLength / 8;
+
+                        if ((ulong)byte_offset + (ulong)byte_length > ord.Length)
+                            throw new Exception("Write: attempt to write to field beyond length of opregion (offset: " + byte_offset.ToString() + ", length: " + byte_length.ToString() + ", OpRegion.Length: " + ord.Length + ")");
+
+                        if (fud.BitOffset % 8 != 0)
+                            throw new NotImplementedException("Write: non-byte aligned offset (" + fud.BitOffset.ToString() + ")");
+                        if (fud.BitLength % 8 != 0)
+                            throw new NotImplementedException("Write: non-byte aligned length (" + fud.BitLength.ToString() + ")");
+
+                        /* Get the data */
+                        ulong int_val = d.EvaluateTo(DataType.Integer, mi, s, n).IntegerData;
+
+                        /* Do the write depending on the op region type */
+                        switch(ord.RegionSpace)
+                        {
+                            case 0:
+                                // Memory
+                                switch(byte_length)
+                                {
+                                    case 1:
+                                        mi.WriteMemoryByte(ord.Offset + (ulong)byte_offset, (byte)(int_val & 0xff));
+                                        return;
+                                    case 2:
+                                        mi.WriteMemoryWord(ord.Offset + (ulong)byte_offset, (ushort)(int_val & 0xffff));
+                                        return;
+                                    case 4:
+                                        mi.WriteMemoryDWord(ord.Offset + (ulong)byte_offset, (uint)(int_val & 0xffffff));
+                                        return;
+                                    case 8:
+                                        mi.WriteMemoryQWord(ord.Offset + (ulong)byte_offset, int_val);
+                                        return;
+                                    default:
+                                        throw new NotImplementedException("Write: unsupported byte length: " + byte_length.ToString());
+                                }
+                            case 1:
+                                // IO
+                                switch (byte_length)
+                                {
+                                    case 1:
+                                        mi.WriteIOByte(ord.Offset + (ulong)byte_offset, (byte)(int_val & 0xff));
+                                        return;
+                                    case 2:
+                                        mi.WriteIOWord(ord.Offset + (ulong)byte_offset, (ushort)(int_val & 0xffff));
+                                        return;
+                                    case 4:
+                                        mi.WriteIODWord(ord.Offset + (ulong)byte_offset, (uint)(int_val & 0xffffff));
+                                        return;
+                                    case 8:
+                                        mi.WriteIOQWord(ord.Offset + (ulong)byte_offset, int_val);
+                                        return;
+                                    default:
+                                        throw new NotImplementedException("Write: unsupported byte length: " + byte_length.ToString());
+                                }
+                            default:
+                                throw new NotImplementedException("Write: unsupported OpRegion type: " + ord.ToString());
+                        }
+                    }
                 default:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("Write: " + Type.ToString());
             }
             throw new NotImplementedException();
         }
@@ -289,9 +438,28 @@ namespace acpipc.Aml
                 case DataType.Buffer:
                     return this;
                 case DataType.BufferField:
-                    throw new NotImplementedException();
+                    {
+                        BufferFieldData bfd = Data as BufferFieldData;
+                        ACPIObject new_buf = bfd.Buffer.EvaluateTo(DataType.Buffer, mi, s, n);
+
+                        if (bfd.BitOffset % 8 != 0)
+                            throw new NotImplementedException("BitOffset not divisible by 8");
+                        if (bfd.BitLength % 8 != 0)
+                            throw new NotImplementedException("BitLength not divisible by 8");
+
+                        int byte_offset = bfd.BitOffset / 8;
+                        int byte_length = bfd.BitLength / 8;
+
+                        byte[] ret = new byte[byte_length];
+                        byte[] src = (byte[])new_buf.Data;
+
+                        for (int i = 0; i < byte_length; i++)
+                            ret[i] = src[byte_offset + i];
+
+                        return new ACPIObject(DataType.Buffer, ret);
+                    }                     
                 case DataType.DDBHandle:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("DDBHandle");
                 case DataType.Device:
                     return this;
                 case DataType.Event:
@@ -301,7 +469,7 @@ namespace acpipc.Aml
                         return DataAccess.ReadField(Data as FieldUnitData, mi);
                     else if (Data is IndexFieldUnitData)
                         return DataAccess.ReadIndexField(Data as IndexFieldUnitData, mi, s, n);
-                    throw new NotSupportedException();
+                    throw new NotSupportedException("FieldUnit");
                 case DataType.Integer:
                     return this;
                 case DataType.Local:

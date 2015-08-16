@@ -38,6 +38,9 @@ namespace acpipc.Aml
         IMachineInterface mi;
 
         Dictionary<string, ACPIObject> Objects = new Dictionary<string, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<string>());
+        public Dictionary<string, ACPIObject> Devices = new Dictionary<string, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<string>());
+        public Dictionary<string, ACPIObject> Processors = new Dictionary<string, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<string>());
+
         const ulong Revision = 0x20;
         const ulong One = 1UL;
         const ulong Zero = 0UL;
@@ -120,6 +123,8 @@ namespace acpipc.Aml
         {
             int old_idx = idx;
             retval = null;
+
+            //System.Diagnostics.Debugger.Log(0, "acpipc", "TermList");
 
             if (count < 0)
                 count = aml.Length - idx;
@@ -409,6 +414,8 @@ namespace acpipc.Aml
             if (ParseByte(aml, ref idx, 0x76) &&
                 ParseSuperName(aml, ref idx, out a, s))
             {
+                //System.Diagnostics.Debugger.Log(0, "acpipc", "Decrement");
+
                 ACPIObject a2 = a.Evaluate(mi, s, this);
                 if (a2.Type != ACPIObject.DataType.Integer)
                     throw new Exception("Decrement requires Integer argument");
@@ -516,6 +523,7 @@ namespace acpipc.Aml
             if (ParseByte(aml, ref idx, 0x75) &&
                 ParseSuperName(aml, ref idx, out a, s))
             {
+                //System.Diagnostics.Debugger.Log(0, "acpipc", "Increment");
                 ACPIObject a2 = a.Evaluate(mi, s, this);
                 if (a2.Type != ACPIObject.DataType.Integer)
                     throw new Exception("Increment requires Integer argument");
@@ -847,9 +855,23 @@ namespace acpipc.Aml
         private bool ParseDefShiftLeft(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
+            ACPIObject target;
 
-            if (ParseByte(aml, ref idx, 0x79))
-                throw new NotImplementedException();
+            if (ParseByte(aml, ref idx, 0x79) &&
+                ParseTermArg(aml, ref idx, out a, s) &&
+                ParseTermArg(aml, ref idx, out b, s) &&
+                ParseTarget(aml, ref idx, out target, s))
+            {
+                a = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                b = b.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+
+                ulong val = unchecked(a.IntegerData << (int)b.IntegerData);
+
+                target.Write(val, mi, s, this);
+                result = val;
+                return true;
+            }
 
             idx = old_idx;
             result = null;
@@ -859,9 +881,23 @@ namespace acpipc.Aml
         private bool ParseDefShiftRight(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
+            ACPIObject target;
 
-            if (ParseByte(aml, ref idx, 0x7a))
-                throw new NotImplementedException();
+            if (ParseByte(aml, ref idx, 0x7a) &&
+                ParseTermArg(aml, ref idx, out a, s) &&
+                ParseTermArg(aml, ref idx, out b, s) &&
+                ParseTarget(aml, ref idx, out target, s))
+            {
+                a = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                b = b.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+
+                ulong val = unchecked(a.IntegerData >> (int)b.IntegerData);
+
+                target.Write(val, mi, s, this);
+                result = val;
+                return true;
+            }
 
             idx = old_idx;
             result = null;
@@ -913,6 +949,8 @@ namespace acpipc.Aml
                 ParseTermArg(aml, ref idx, out Source, s) &&
                 ParseSuperName(aml, ref idx, out Dest, s))
             {
+                //System.Diagnostics.Debugger.Log(0, "acpipc", "Store");
+
                 Source = Source.Evaluate(mi, s, this);
                 Dest.Write(Source, mi, s, this);
                 result = null;
@@ -927,9 +965,26 @@ namespace acpipc.Aml
         private bool ParseDefSubtract(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
+            ACPIObject target;
 
-            if (ParseByte(aml, ref idx, 0x74))
-                throw new NotImplementedException();
+            if (ParseByte(aml, ref idx, 0x74) &&
+                ParseTermArg(aml, ref idx, out a, s) &&
+                ParseTermArg(aml, ref idx, out b, s) &&
+                ParseTarget(aml, ref idx, out target, s))
+            {
+                a = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                b = b.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+
+                if (a.Type != ACPIObject.DataType.Integer || b.Type != ACPIObject.DataType.Integer)
+                    throw new Exception("Subtract requires integer operands (" + a.Type.ToString() + " and " + b.Type.ToString() + ")");
+
+                ulong val = unchecked(a.IntegerData - b.IntegerData);
+
+                target.Write(val, mi, s, this);
+                result = val;
+                return true;
+            }
 
             idx = old_idx;
             result = null;
@@ -1098,19 +1153,48 @@ namespace acpipc.Aml
             return false;
         }
 
+        public ACPIObject Evaluate(ACPIName name, IMachineInterface mi)
+        {
+            return Evaluate(name, mi, new Dictionary<int, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()));
+        }
+
+        public ACPIObject Evaluate(ACPIName name, IMachineInterface mi,
+            Dictionary<int, ACPIObject> args)
+        {
+            /* Look for the specified object and evaluate it */
+            ACPIObject obj = FindObject(name, false);
+            if (obj == null)
+                return null;
+
+            State s = new State
+            {
+                Args = args,
+                Locals = new Dictionary<int, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()),
+                Scope = obj.Name
+            };
+
+            return obj.Evaluate(mi, s, this);
+        }
+
         public ACPIObject FindObject(ACPIName name)
+        { return FindObject(name, true); }
+
+        public ACPIObject FindObject(ACPIName name, bool check_outer_scope)
         {
             /* Find an object in the current scope or all upper ones */
             ACPIName new_name = name.Clone();
             if (Objects.ContainsKey(new_name))
                 return Objects[new_name];
 
-            while ((new_name = new_name.ScopeUp()) != null)
+            if (check_outer_scope)
             {
-                if (Objects.ContainsKey(new_name))
-                    return Objects[new_name];
+                while ((new_name = new_name.ScopeUp()) != null)
+                {
+                    if (Objects.ContainsKey(new_name))
+                        return Objects[new_name];
+                }
             }
-            throw new Exception("NamedObj not found: " + name);
+            return null;
         }
 
         private bool ParseType1Opcode(byte[] aml, ref int idx, State s)
@@ -1245,7 +1329,9 @@ namespace acpipc.Aml
             int old_idx = idx;
 
             if (ParseByte(aml, ref idx, 0xa3))
-                throw new NotImplementedException();
+            {
+                return true;
+            }
 
             idx = old_idx;
             return false;
@@ -1745,6 +1831,9 @@ namespace acpipc.Aml
                 int scope_end = pkg_length_offset + pkg_length;
                 bool ret = ParseTermList(aml, ref idx, scope_end - idx, ProcessorName.Clone());
                 s.Scope.CloneFrom(old_scope);
+
+                Processors[ProcessorName] = p;
+
                 if (ret)
                     return true;
             }
@@ -1899,6 +1988,9 @@ namespace acpipc.Aml
                 bool ret = ParseTermList(aml, ref idx, device_end - idx, DeviceName.Clone());
                 s.Scope.CloneFrom(old_scope);
 
+                System.Diagnostics.Debugger.Log(0, "acpipc", "Found device: " + DeviceName.ToString());
+                Devices[DeviceName] = d;
+
                 if (ret)
                     return true;
             }
@@ -1972,9 +2064,25 @@ namespace acpipc.Aml
         private bool ParseDefCreateDWordField(byte[] aml, ref int idx, State s)
         {
             int old_idx = idx;
+            ACPIObject SourceBuff;
+            ACPIObject ByteIndex;
+            ACPIName Name;
 
-            if (ParseByte(aml, ref idx, 0x8a))
-                throw new NotImplementedException();
+            if (ParseByte(aml, ref idx, 0x8a) &&
+                ParseTermArg(aml, ref idx, out SourceBuff, s) &&
+                ParseTermArg(aml, ref idx, out ByteIndex, s) &&
+                ParseNameString(aml, ref idx, out Name, s))
+            {
+                ACPIObject.BufferFieldData bfd = new ACPIObject.BufferFieldData();
+                bfd.Buffer = SourceBuff;
+                bfd.BitLength = 32;
+                bfd.BitOffset = (int)(ByteIndex.IntegerData * 8);
+
+                ACPIObject n = new ACPIObject(ACPIObject.DataType.BufferField, bfd);
+                n.Name = Name;
+                Objects[Name] = n;
+                return true;
+            }
 
             idx = old_idx;
             return false;
