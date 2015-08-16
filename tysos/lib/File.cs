@@ -64,9 +64,11 @@ namespace tysos.lib
 
         protected internal ServerObject d;
 
-        public virtual long Position { 
+        public virtual long Position
+        {
             get { return pos; }
-            set {
+            set
+            {
                 if (CanSeek == false)
                     throw new NotSupportedException();
                 if (value < 0)
@@ -80,7 +82,7 @@ namespace tysos.lib
 
         public void Seek(long offset, System.IO.SeekOrigin whence)
         {
-            switch(whence)
+            switch (whence)
             {
                 case System.IO.SeekOrigin.Current:
                     Position = Position + offset;
@@ -248,7 +250,7 @@ namespace tysos.lib
 
         public VirtualPropertyFile(ServerObject device, string name)
             : this(device, name, new List<Property>())
-        { }        
+        { }
 
         public VirtualPropertyFile(ServerObject device, string name,
             List<tysos.lib.File.Property> props)
@@ -281,7 +283,7 @@ namespace tysos.lib
             if (Props == null)
                 return null;
 
-            foreach(tysos.lib.File.Property p in Props)
+            foreach (tysos.lib.File.Property p in Props)
             {
                 if (p.Name == name)
                     return p;
@@ -310,4 +312,65 @@ namespace tysos.lib
             }
         }
     }
+
+    public class VirtualDirectoryServer : ServerObject
+    {
+        protected Dictionary<string, List<File.Property>> children;
+        protected List<File.Property> root;
+        protected string name;
+
+        public VirtualDirectoryServer(string Name,
+            List<File.Property> Root,
+            Dictionary<string, List<File.Property>> Children)
+        {
+            children = Children;
+            root = Root;
+            name = Name;
+        }
+
+        public VirtualDirectoryServer()
+        {
+            children = new Dictionary<string, List<File.Property>>(new Program.MyGenericEqualityComparer<string>());
+            root = new List<File.Property>();
+            name = "";
+        }
+
+        public tysos.lib.File Open(IList<string> path, System.IO.FileMode mode,
+            System.IO.FileAccess access, System.IO.FileShare share,
+            System.IO.FileOptions options)
+        {
+            if (path.Count == 0)
+            {
+                List<string> c = new List<string>(children.Keys);
+                return new tysos.lib.VirtualDirectory(this, "", c);
+            }
+
+            // only one level
+            if (path.Count != 1)
+                return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
+
+            if (children.ContainsKey(path[0]))
+                return new VirtualPropertyFile(this, path[0], children[path[0]]);
+
+            return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
+        }
+
+        public bool Close(tysos.lib.File handle)
+        {
+            return true;
+        }
+
+        public int Read(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
+        {
+            f.Error = MonoIOError.ERROR_READ_FAULT;
+            return 0;
+        }
+
+        public int Write(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
+        {
+            f.Error = MonoIOError.ERROR_WRITE_FAULT;
+            return 0;
+        }
+    }
 }
+

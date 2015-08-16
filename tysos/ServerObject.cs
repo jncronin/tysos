@@ -124,7 +124,14 @@ namespace tysos
                 mi = members[name];
             else
             {
-                mi = this.GetType().GetMethod(name, ts);
+                /* Look for methods on all base classes too
+                TODO: libsupcs should do this for us */
+                Type cur_type = this.GetType();
+                while(mi == null && cur_type != null)
+                {
+                    mi = cur_type.GetMethod(name, ts);
+                    cur_type = cur_type.BaseType;
+                }
 
                 // Can only invoke public instance methods
                 if (mi == null || mi.IsPublic == false || mi.IsStatic == true)

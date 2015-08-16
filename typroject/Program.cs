@@ -224,7 +224,7 @@ namespace typroject
             if (tools_ver_override != null)
                 tools_ver = tools_ver_override;
 
-            if (tools_ver == "4.5")
+            if (tools_ver.StartsWith("4.5"))
                 tools_ver = "4.0";
 
             if (platform == 0)
@@ -627,19 +627,27 @@ namespace typroject
             foreach (string lib_dir in extra_libdirs)
             {
                 sb.Append("/lib:\"");
-                sb.Append(Program.replace_dir_split(lib_dir));
+                string ld = Program.replace_dir_split(lib_dir);
+                if (ld.EndsWith("\\"))
+                    ld = ld.Substring(0, ld.Length - 1);
+                sb.Append(ld);
                 sb.Append("\" ");
             }
 
             sb.Append("/lib:\"");
-            sb.Append(Program.ref_dir(tools_ver));
+            string tvd = Program.ref_dir(tools_ver);
+            if (tvd.EndsWith("\\"))
+                tvd = tvd.Substring(0, tvd.Length - 1);
+            sb.Append(tvd);
             sb.Append("\" ");
 
             foreach (string lib in extra_libs)
             {
                 sb.Append("/reference:\"");
-                sb.Append(Program.replace_dir_split(lib));
-                sb.Append("\" ");
+                string ld = Program.replace_dir_split(lib);
+                if (ld.EndsWith("\\"))
+                    ld = ld.Substring(0, ld.Length - 1);
+                sb.Append(ld); sb.Append("\" ");
             }
 
             foreach (string lib in References)

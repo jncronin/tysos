@@ -100,7 +100,6 @@ namespace tysos
             sb.Append(a.ToString("X8"));
             sb.Append(" - ");
             sb.Append((a + l).ToString("X8"));
-            sb.Append("\n");
             return sb.ToString();
         }
 
@@ -176,10 +175,9 @@ namespace tysos
             StringBuilder sb = new StringBuilder();
             sb.Append(this.GetType().Name);
             sb.Append(": ");
-            sb.Append(a.ToString("X8"));
+            sb.Append(a.ToString("X16"));
             sb.Append(" - ");
-            sb.Append((a + l).ToString("X8"));
-            sb.Append("\n");
+            sb.Append((a + l).ToString("X16"));
             return sb.ToString();
         }
 
@@ -406,7 +404,12 @@ namespace tysos
             if (max_length == 0)
                 return;
 
-            Program.arch.VirtMem.map_page(vmem.Addr64, this.Addr64);
+            ulong offset = 0;
+            while (offset < max_length)
+            {
+                Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
+                offset += Program.arch.PageSize;
+            }
         }
 
         public void Map(VirtualMemoryResource64 vmem)
@@ -418,7 +421,12 @@ namespace tysos
             if (max_length == 0)
                 return;
 
-            Program.arch.VirtMem.map_page(vmem.Addr64, this.Addr64);
+            ulong offset = 0;
+            while (offset < max_length)
+            {
+                Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
+                offset += Program.arch.PageSize;
+            }
         }
     }
 
@@ -455,7 +463,12 @@ namespace tysos
             if (max_length == 0)
                 return;
 
-            Program.arch.VirtMem.map_page(vmem.Addr64, this.Addr64);
+            ulong offset = 0;
+            while (offset < max_length)
+            {
+                Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
+                offset += Program.arch.PageSize;
+            }
         }
 
         public void Map(VirtualMemoryResource64 vmem)
@@ -467,7 +480,12 @@ namespace tysos
             if (max_length == 0)
                 return;
 
-            Program.arch.VirtMem.map_page(vmem.Addr64, this.Addr64);
+            ulong offset = 0;
+            while (offset < max_length)
+            {
+                Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
+                offset += Program.arch.PageSize;
+            }
         }
     }
 }

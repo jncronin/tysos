@@ -235,6 +235,8 @@ namespace tysos
                 new Type[] { typeof(string), typeof(string), typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system", "/system", "acpipc" },
                 new Type[] { typeof(string), typeof(string), typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0", "/system/pci_hostbridge_0", "pci" },
+                new Type[] { typeof(string), typeof(string), typeof(string) });
 
             /* Load the modfs driver */
             Process modfs = LoadELFModule("modfs", mboot, stab, running_processes, 0x8000, new object[] { });
