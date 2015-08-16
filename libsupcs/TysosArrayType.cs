@@ -343,6 +343,9 @@ namespace libsupcs
 
             *(byte**)(ret + libsupcs.ArrayOperations.GetInnerArrayOffset()) = data;
 
+            *(void**)(ret + libsupcs.ArrayOperations.GetElemTypeOffset()) = libsupcs.CastOperations.ReinterpretAsPointer(typeof(byte));
+            *(int*)(ret + libsupcs.ArrayOperations.GetElemSizeOffset()) = 1;
+
             return (byte[])CastOperations.ReinterpretAsObject(ret);
         }
 
