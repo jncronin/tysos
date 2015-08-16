@@ -43,8 +43,14 @@ namespace vfs
             if (p == null || p.device == null)
                 return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
 
-            tysos.lib.File ret = (tysos.lib.File)p.device.Invoke("Open",
-                new object[] { p.path.path, mode, access, share, options }, tysos.lib.File.sig_Open);
+            tysos.lib.File ret = p.device.Invoke("Open",
+                new object[] { p.path.path, mode, access, share, options }, tysos.lib.File.sig_Open)
+                as tysos.lib.File;
+
+            if(ret == null)
+            {
+                ret = new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_GEN_FAILURE);
+            }   
 
             if (ret.Error == tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
