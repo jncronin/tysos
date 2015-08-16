@@ -123,7 +123,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 init_int_calls(ass);
 
             Assembler.MethodToCompile call_mtc;
-            if(il.il.inline_tok is MTCToken)
+            if (il.il.inline_tok is MTCToken)
                 call_mtc = ((MTCToken)il.il.inline_tok).mtc;
             else
                 call_mtc = Metadata.GetMTC(il.il.inline_tok, mtc.GetTTC(ass), mtc.msig, ass);
@@ -180,6 +180,14 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 il.stack_after.Push(state.las[arg_no_i]);
                 return true;
             }
+
+            /* Handle System.Array.GetGenericValueImpl<T> */
+            if (call_mtc.ToString().StartsWith("_ZW6System5ArrayM_2_19GetGenericValueImpl"))
+            {
+                array_GetGenericValueImpl(il, ass, mtc, ref next_block, state, attrs);
+                return true;
+            }
+
             return false;
         }
 
@@ -425,9 +433,13 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 loc_array = t1;
             }
 
-            ass.Assign(state, il.stack_vars_before, loc_dest, 
-                new libasm.hardware_contentsof { base_loc = loc_array, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), 
-                    size = ass.GetSizeOfPointer() }, Assembler.CliType.native_int, il.il.tybel);
+            ass.Assign(state, il.stack_vars_before, loc_dest,
+                new libasm.hardware_contentsof
+                {
+                    base_loc = loc_array,
+                    const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array),
+                    size = ass.GetSizeOfPointer()
+                }, Assembler.CliType.native_int, il.il.tybel);
 
             il.stack_after.Push(p_dest);
         }
@@ -1095,7 +1107,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 Assembler.CliType.int32, il.il.tybel);
 
             il.stack_after.Push(p_ret);
-        }        
+        }
 
         static void object_MemberwiseClone(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
@@ -1148,7 +1160,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             ass.GetTysosTypeLayout();
             ass.Assign(state, in_use, loc_t1, new libasm.hardware_contentsof { base_loc = loc_t1, const_offset = ass.tysos_type_offsets["Int32 ClassSize"], size = 4 },
                 Assembler.CliType.int32, il.il.tybel);
-            
+
             /* Get memory of the appropriate size */
             il.il.tybel.Add(new tybel.LabelNode(s_docopy, true));
             ass.Call(state, in_use, new libasm.hardware_addressoflabel("gcmalloc", false), loc_t2, new libasm.hardware_location[] { loc_t1 }, ass.callconv_gcmalloc,
@@ -1187,7 +1199,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             il.stack_after.Push(p_ret);
             libasm.hardware_location loc_ret = il.stack_vars_after.GetAddressFor(p_ret, ass);
 
-            if(!(loc_del is libasm.register))
+            if (!(loc_del is libasm.register))
             {
                 libasm.hardware_location t1 = ass.GetTemporary(state);
                 ass.Assign(state, il.stack_vars_before, t1, loc_del, Assembler.CliType.native_int, il.il.tybel);
@@ -1196,7 +1208,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 loc_del = t1;
             }
 
-            ass.Assign(state, in_use, loc_ret, 
+            ass.Assign(state, in_use, loc_ret,
                 new libasm.hardware_contentsof { base_loc = loc_del, const_offset = method_ptr_offset, size = ass.GetSizeOfPointer() },
                 Assembler.CliType.native_int, il.il.tybel);
         }
@@ -1262,6 +1274,55 @@ namespace libtysila.frontend.cil.OpcodeEncodings
             ass.Call(state, il.stack_vars_before, new libasm.hardware_addressoflabel("__log", false),
                 null, new libasm.hardware_location[] { loc_level, loc_category, loc_msg },
                 cc_log, il.il.tybel);
+        }
+
+        static void array_GetGenericValueImpl(frontend.cil.CilNode il, Assembler ass, Assembler.MethodToCompile mtc, ref int next_block,
+            Encoder.EncoderState state, Assembler.MethodAttributes attrs)
+        {
+            /* void GetGenericValueImpl<T>(int pos, out T value) */
+
+            libasm.hardware_location loc_value_addr = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_pos = il.stack_vars_after.Pop(ass);
+            libasm.hardware_location loc_this = il.stack_vars_after.Pop(ass);
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+            il.stack_after.Pop();
+
+            /* Get the size of the element type */
+            int elem_size = ass.GetPackedSizeOf(new Signature.Param(((Signature.GenericMethod)mtc.msig).GenParams[0], ass));
+
+            /* internal_array -> t1 */
+            Stack in_use = il.stack_vars_before.Clone();
+
+            libasm.hardware_location t1 = ass.GetTemporary(state);
+            if (!(loc_this is libasm.register))
+            {
+                ass.Assign(state, in_use, t1, loc_this, Assembler.CliType.native_int,
+                    il.il.tybel);
+                loc_this = t1;
+            }
+            ass.Assign(state, in_use, t1,
+                new libasm.hardware_contentsof { base_loc = loc_this, const_offset = ass.GetArrayFieldOffset(Assembler.ArrayFields.inner_array), size = ass.GetSizeOfPointer() },
+                Assembler.CliType.native_int, il.il.tybel);
+            in_use.MarkUsed(t1);
+
+            /* offset -> t2 */
+            libasm.hardware_location t2 = ass.GetTemporary2(state);
+            ass.Conv(state, in_use, t2, loc_pos, new Signature.BaseType(BaseType_Type.I),
+                new Signature.BaseType(BaseType_Type.I4), true, il.il.tybel);
+            ass.Mul(state, in_use, t2, t2, new libasm.const_location { c = elem_size },
+                Assembler.CliType.native_int, il.il.tybel);
+            in_use.MarkUsed(t2);
+
+            /* src_addr -> t1 */
+            ass.Add(state, in_use, t1, t1, t2, Assembler.CliType.native_int, il.il.tybel);
+
+            /* dest_addr -> t2 */
+            ass.Assign(state, in_use, t2, loc_value_addr, Assembler.CliType.native_int, il.il.tybel);
+
+            /* do the copy */
+            ass.MemCpy(state, in_use, t2, t1, new libasm.const_location { c = elem_size },
+                il.il.tybel);
         }
     }
 }

@@ -506,6 +506,76 @@ namespace libtysila
                 if (find_implementations != null)
                 {
                     m.implementation_mtc = GetImplementation(m.meth, parent, parent, ass, find_implementations);
+
+                    /* Special case some methods on vectors */
+                    if (m.implementation_mtc.HasValue == false && parent.tsig.Type is Signature.ZeroBasedArray)
+                    {
+                        /* Mono implements some vector methods as InternalArray__<InterfaceName>_<MethodName>
+                        Rewrite the method we are looking for to match this */
+
+                        string new_name = null;
+                        if (m.meth.meth.Name == "GetEnumerator")
+                            new_name = "InternalArray__IEnumerable_GetEnumerator";
+                        else if (m.meth.meth.Name == "get_Count")
+                            new_name = "InternalArray__ICollection_get_Count";
+                        else if (m.meth.meth.Name == "Clear")
+                            new_name = "InternalArray__ICollection_Clear";
+                        else if (m.meth.meth.Name == "Add")
+                            new_name = "InternalArray__ICollection_Add";
+                        else if (m.meth.meth.Name == "Remove")
+                            new_name = "InternalArray__ICollection_Remove";
+                        else if (m.meth.meth.Name == "Contains")
+                            new_name = "InternalArray__ICollection_Contains";
+                        else if (m.meth.meth.Name == "CopyTo")
+                            new_name = "InternalArray__ICollection_CopyTo";
+                        else if (m.meth.meth.Name == "Insert")
+                            new_name = "InternalArray__Insert";
+                        else if (m.meth.meth.Name == "RemoveAt")
+                            new_name = "InternalArray__RemoveAt";
+                        else if (m.meth.meth.Name == "IndexOf")
+                            new_name = "InternalArray__IndexOf";
+                        else if (m.meth.meth.Name == "get_Item")
+                            new_name = "InternalArray__get_Item";
+                        else if (m.meth.meth.Name == "set_Item")
+                            new_name = "InternalArray__set_Item";
+
+                        if (new_name != null)
+                        {
+                            Metadata.MethodDefRow rewritten_mdr = new Metadata.MethodDefRow { ass = ass };
+                            rewritten_mdr.Name = new_name;
+                            Assembler.MethodToCompile new_meth = new Assembler.MethodToCompile
+                            {
+                                _ass = ass,
+                                meth = rewritten_mdr,
+                                msig = m.meth.msig,
+                                tsigp = m.meth.tsigp,
+                                type = m.meth.type
+                            };
+
+                            /* Make the current method have a generic parameter */
+                            Signature.BaseOrComplexType T_bct =
+                                ((Signature.ZeroBasedArray)parent.tsig.Type).ElemType;
+                            Signature.GenericMethod gm = new Signature.GenericMethod { GenParams = new List<Signature.BaseOrComplexType> { T_bct } };
+
+                            m.implementation_mtc = GetImplementation(new_meth, parent, parent, gm, ass, find_implementations);
+                            if(m.implementation_mtc.HasValue && m.implementation_mtc.Value.msig.Method.CallingConvention == Signature.Method.CallConv.Generic)
+                            {
+                                gm.GenMethod = m.implementation_mtc.Value.msig.Method;
+
+                                m.implementation_mtc = new Assembler.MethodToCompile
+                                {
+                                    _ass = m.implementation_mtc.Value._ass,
+                                    msig = gm,
+                                    meth = m.implementation_mtc.Value.meth,
+                                    tsigp = m.implementation_mtc.Value.tsigp,
+                                    type = m.implementation_mtc.Value.type,
+                                    m = m.implementation_mtc.Value.m,
+                                    MetadataToken = m.implementation_mtc.Value.MetadataToken
+                                };
+                            }
+                        }
+                    }
+
                     if (m.implementation_mtc.HasValue)
                         m.implementation = Mangler2.MangleMethod(m.implementation_mtc.Value, ass);
                 }
@@ -623,12 +693,15 @@ namespace libtysila
         }
 
         private static Assembler.MethodToCompile? GetImplementation(Assembler.MethodToCompile method, Assembler.TypeToCompile type_to_search, Assembler.TypeToCompile parent, Assembler ass, Layout l)
+        { return GetImplementation(method, type_to_search, parent, null, ass, l); }
+
+        private static Assembler.MethodToCompile? GetImplementation(Assembler.MethodToCompile method, Assembler.TypeToCompile type_to_search, Assembler.TypeToCompile parent, Signature.BaseMethod containing_meth, Assembler ass, Layout l)
         {
-            /* Get the implementation for a virtual method
-             * 
-             * First see if there is an entry in the MethodImpl table for the method in the current type, if not search its Method list, else
-             * repeat the process for base classes back to System.Object
-             */
+            /* Get the implementation for a virtual method */
+
+            /* See if there is an entry in the MethodImpl table for the method in the current type, if not search its Method list, else
+                * repeat the process for base classes back to System.Object
+                */
 
             foreach (Metadata.MethodImplRow mir in type_to_search.type.MethodImpls)
             {
@@ -672,7 +745,7 @@ namespace libtysila
             {
                 if (mdr.Name == method.meth.Name)
                 {
-                    Signature.BaseMethod test_msig = Signature.ResolveGenericMember(mdr.GetSignature(), parent.tsig.Type, null, ass);
+                    Signature.BaseMethod test_msig = Signature.ResolveGenericMember(mdr.GetSignature(), parent.tsig.Type, containing_meth, ass);
                     test_msig.Method.meth = mdr;
                     if (Signature.BaseMethodSigCompare(test_msig, method.msig, ass))
                     {
@@ -698,7 +771,7 @@ namespace libtysila
             if (type_to_search.type.Extends.Value == null)
                 return null;
 
-            return GetImplementation(method, Metadata.GetTTC(type_to_search.type.Extends, parent, ass), parent, ass, l);
+            return GetImplementation(method, Metadata.GetTTC(type_to_search.type.Extends, parent, ass), parent, containing_meth, ass, l);
         }
 
         private void LayoutVirtualMethods(Assembler.TypeToCompile ttc, Assembler ass, bool request_types)

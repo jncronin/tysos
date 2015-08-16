@@ -64,6 +64,7 @@
  * vector_index is defined as:
  * 
  * rank3_index - rank3_lobound + rank3_size * ( rank2_index - rank2_lobound * rank2_size * ( rank1_index - rank1_lobound ) )
+ *
  */
 
 

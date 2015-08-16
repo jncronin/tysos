@@ -1681,8 +1681,8 @@ namespace libtysila
                 return false;
             if (a.ExplicitThis != b.ExplicitThis)
                 return false;
-            if (a.CallingConvention != b.CallingConvention)
-                return false;
+            //if (a.CallingConvention != b.CallingConvention)
+            //    return false;
             if(!ParamCompare(a.RetType, b.RetType, ass))
                 return false;
             if (a.Params.Count != b.Params.Count)
