@@ -96,8 +96,24 @@ namespace pci
             uint classcode = (revID_progIF_subclass_class >> 24) & 0xffU;
             uint subclasscode = (revID_progIF_subclass_class >> 16) & 0xffU;
             uint prog_IF = (revID_progIF_subclass_class >> 8) & 0xffU;
+            uint revisionID = revID_progIF_subclass_class & 0xffU;
 
             System.Diagnostics.Debugger.Log(0, "pci", bus.ToString() + ":" + dev.ToString() + ":" + func.ToString() + " : " + vendorID.ToString("X4") + ":" + deviceID.ToString("X4") + "   " + classcode.ToString("X2") + ":" + subclasscode.ToString("X2") + ":" + prog_IF.ToString("X2"));
+
+            DeviceDBEntry details = DeviceDB.GetDeviceDetails(new DeviceDBKey
+            {
+                VendorID = vendorID,
+                DeviceID = deviceID,
+                RevisionID = revisionID,
+                ClassCode = classcode,
+                SubclassCode = subclasscode,
+                ProgIF = prog_IF
+            });
+
+            if (details == null)
+                System.Diagnostics.Debugger.Log(0, "pci", "unknown device");
+            else
+                System.Diagnostics.Debugger.Log(0, "pci", details.ToString());
 
             uint header_type = (cacheline_latency_ht_bist >> 16) & 0xffU;
             if((header_type & 0x7f) == 0)
@@ -113,6 +129,16 @@ namespace pci
                     uint bar_len = ReadConfig(bus, dev, func, bar_addr);
                     unchecked
                     {
+                        if((orig_bar & 0x1) == 0)
+                        {
+                            // memory bar
+                            bar_len &= 0xfffffff0;
+                        }
+                        else
+                        {
+                            // io bar
+                            bar_len &= 0xfffffffc;
+                        }
                         bar_len = ~bar_len;
                         bar_len++;
                     }
