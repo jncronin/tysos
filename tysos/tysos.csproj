@@ -150,7 +150,8 @@
     <Compile Include="Messages\Vfs.cs" />
     <Compile Include="NullOutput.cs" />
     <Compile Include="Pmem_Stack.cs" />
-    <Compile Include="Resource.cs" />
+    <Compile Include="Resources\RangeResourceManager.cs" />
+    <Compile Include="Resources\Resource.cs" />
     <Compile Include="rootfs.cs" />
     <Compile Include="ServerObject.cs" />
     <Compile Include="Syscalls.cs" />

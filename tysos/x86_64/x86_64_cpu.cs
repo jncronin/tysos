@@ -67,11 +67,22 @@ namespace tysos.x86_64
             /* Next, set GS base to be the start of our cpu_region */
             // IA32_GS_BASE is 0xC0000101
             libsupcs.x86_64.Cpu.WrMsr(0xc0000101, gs);
+
+            /* Expose the available interrupt lines */
+            for(int i = 32; i < 256; i++)
+            {
+                x86_64_Interrupt interrupt = new x86_64_Interrupt();
+                interrupt.cpu = this;
+                interrupt.cpu_int_no = i;
+                interrupts.Add(interrupt);
+            }
         }
 
         internal ulong LApicAddress;
         internal LApic cur_lapic = null;
 
         public LApic CurrentLApic { get { return cur_lapic; } set { cur_lapic = value; } }
+
+        public Dictionary<int, ulong> interrupt_handlers = new Dictionary<int, ulong>(new Program.MyGenericEqualityComparer<int>());
 	}
 }

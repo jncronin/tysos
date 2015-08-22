@@ -45,7 +45,20 @@ namespace tysos
         protected byte* cpu_alloc_current;
         protected byte* cpu_alloc_max;
 
+        protected List<Resources.InterruptLine> interrupts = new List<Resources.InterruptLine>();
+        virtual public ICollection<Resources.InterruptLine> Interrupts { get { return interrupts; } }
+
         virtual public Thread CurrentThread { get { return currentThread; } }
+        virtual public Process CurrentProcess
+        {
+            get
+            {
+                if (CurrentThread == null)
+                    return null;
+                return CurrentThread.owning_process;
+            }
+        }
+
         virtual internal Scheduler CurrentScheduler
         {
             get { return currentScheduler; }

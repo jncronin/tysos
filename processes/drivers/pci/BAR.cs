@@ -52,6 +52,19 @@ namespace pci
             if (bar_no >= max_bar)
                 return null;
 
+            /* See if we have a valid bar override */
+            if(conf.bars != null && bar_no < conf.bars.Count)
+            {
+                BAROverride bar_override = conf.bars[bar_no];
+                switch(bar_override.Type)
+                {
+                    case 0:
+                        return pmems.AllocFixed(bar_override.Value, bar_override.Length, true);
+                    case 1:
+                        return ios.AllocFixed(bar_override.Value, bar_override.Length, true);
+                }
+            }
+
             /* If bar_no >= 1, read the previous BAR to ensure we're not
             trying to read half way into a 64-bit one */
             if(bar_no >= 1)
@@ -129,11 +142,21 @@ namespace pci
                         break;
                 }
 
-                tysos.PhysicalMemoryResource64 pmem = AllocPmemFixed(base_addr, length);
+                if (length == 0)
+                    return null;
+
+                tysos.PhysicalMemoryResource64 pmem = pmems.AllocFixed(base_addr, length, true);
                 if (pmem != null)
                     return pmem;
 
                 // TODO: allocate a chunk of physical address space for the device
+                pmem = pmems.Alloc(length, 0x1000, (bar & 0x7) != 0x4);
+                if(pmem == null)
+                {
+                    System.Diagnostics.Debugger.Log(0, "pci", "could not allocate physical memory for BAR");
+                    return null;
+                }
+                System.Diagnostics.Debugger.Log(0, "pci", "allocated " + pmem.ToString() + " for BAR " + bar_no.ToString());
                 throw new NotImplementedException();                
             }
             else
@@ -150,9 +173,12 @@ namespace pci
                 unchecked { length = ~length; length++; }
                 length &= 0xffffffffU;
 
-                tysos.x86_64.IOResource io = AllocIOFixed(base_addr, length);
+                tysos.x86_64.IOResource io = ios.AllocFixed(base_addr, length, true);
                 if (io != null)
                     return io;
+
+                if (length == 0)
+                    return null;
 
                 // TODO: allocate a chunk of IO space for the device
                 throw new NotImplementedException();

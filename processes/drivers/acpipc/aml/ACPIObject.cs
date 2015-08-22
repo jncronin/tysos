@@ -25,7 +25,7 @@ using System.Text;
 
 namespace acpipc.Aml
 {
-    class ACPIObject
+    public class ACPIObject
     {
         public ACPIName Name;
 
@@ -76,7 +76,7 @@ namespace acpipc.Aml
                 }
             }
             public ACPIName ObjectName = null;
-            public Namespace n;
+            internal Namespace n;
             public int Index = 0;
         }
 
@@ -138,6 +138,7 @@ namespace acpipc.Aml
         {
             public int RegionSpace;
             public ulong Offset, Length;
+            public ACPIName Device;
 
             public override string ToString()
             {
@@ -184,7 +185,7 @@ namespace acpipc.Aml
             }
         }
 
-        public ACPIObject EvaluateTo(DataType dest_type, IMachineInterface mi, Namespace.State s, Namespace n)
+        internal ACPIObject EvaluateTo(DataType dest_type, IMachineInterface mi, Namespace.State s, Namespace n)
         {
             if (this.Type == dest_type)
                 return this;
@@ -264,12 +265,12 @@ namespace acpipc.Aml
             throw new NotImplementedException("Convert " + ret.Type.ToString() + " to " + dest_type.ToString());
         }
 
-        public void Write(ACPIObject d, IMachineInterface mi, Namespace.State s, Namespace n)
+        internal void Write(ACPIObject d, IMachineInterface mi, Namespace.State s, Namespace n)
         {
             Write(d, 0, mi, s, n);
         }
 
-        public void Write(ACPIObject d, int Offset, IMachineInterface mi, Namespace.State s, Namespace n)
+        internal void Write(ACPIObject d, int Offset, IMachineInterface mi, Namespace.State s, Namespace n)
         {
             if (Type == DataType.Uninitialized ||
                 (Type == DataType.ObjectReference &&
@@ -407,6 +408,35 @@ namespace acpipc.Aml
                                         return;
                                     default:
                                         throw new NotImplementedException("Write: unsupported byte length: " + byte_length.ToString());
+                                }
+                            case 2:
+                                // PCI Configuration space
+                                {
+                                    // try and get the _ADR object for the current device
+                                    ACPIObject adr = n.Evaluate(ord.Device.ToString() + "._ADR", mi);
+                                    if (adr == null)
+                                        throw new Exception(ord.Device.ToString() + "._ADR failed");
+
+                                    uint bus = 0;
+                                    uint device = ((uint)adr.IntegerData >> 16) & 0xffffU;
+                                    uint func = (uint)adr.IntegerData & 0xffffU;
+
+                                    uint offset = (uint)ord.Offset + (uint)byte_offset;
+
+                                    switch(byte_length)
+                                    {
+                                        case 1:
+                                            mi.WritePCIByte(bus, device, func, offset, (byte)int_val);
+                                            return;
+                                        case 2:
+                                            mi.WritePCIWord(bus, device, func, offset, (ushort)int_val);
+                                            return;
+                                        case 4:
+                                            mi.WritePCIDWord(bus, device, func, offset, (uint)int_val);
+                                            return;
+                                        default:
+                                            throw new NotImplementedException("Write: unsupported byte length: " + byte_length.ToString());
+                                    }
                                 }
                             default:
                                 throw new NotImplementedException("Write: unsupported OpRegion type: " + ord.ToString());

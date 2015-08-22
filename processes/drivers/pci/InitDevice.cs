@@ -27,11 +27,17 @@ namespace pci
 {
     partial class hostbridge : tysos.lib.VirtualDirectoryServer
     {
-        internal List<tysos.VirtualMemoryResource64> vmems = new List<tysos.VirtualMemoryResource64>();
-        internal List<tysos.PhysicalMemoryResource64> pmems = new List<tysos.PhysicalMemoryResource64>();
-        internal List<tysos.x86_64.IOResource> ios = new List<tysos.x86_64.IOResource>();
+        internal tysos.Resources.PhysicalMemoryRangeManager pmems = new tysos.Resources.PhysicalMemoryRangeManager();
+        internal tysos.Resources.VirtualMemoryRangeManager vmems = new tysos.Resources.VirtualMemoryRangeManager();
+        internal tysos.x86_64.IORangeManager ios = new tysos.x86_64.IORangeManager();
 
         internal tysos.x86_64.IOResource CONFIG_ADDRESS, CONFIG_DATA;
+
+        string acpiname;
+        tysos.ServerObject acpi;
+        Dictionary<int, PRTEntry[]> prts = new Dictionary<int, PRTEntry[]>(new tysos.Program.MyGenericEqualityComparer<int>());
+
+        Dictionary<string, int> next_device_id = new Dictionary<string, int>(new tysos.Program.MyGenericEqualityComparer<string>());
 
         public hostbridge(tysos.lib.File.Property[] Properties)
         {
@@ -43,32 +49,49 @@ namespace pci
             System.Diagnostics.Debugger.Log(0, "pci", "hostbridge started with " + root.Count.ToString() + " properties");
 
             /* Extract the resources we have been given */
-            foreach (tysos.lib.File.Property p in root)
-            {
-                if (p.Name == "vmem")
-                {
-                    System.Diagnostics.Debugger.Log(0, "pci", "adding vmem area");
-                    vmems.Add(p.Value as tysos.VirtualMemoryResource64);
-                }
-                else if (p.Name == "pmem")
-                {
-                    System.Diagnostics.Debugger.Log(0, "pci", "adding pmem area");
-                    pmems.Add(p.Value as tysos.PhysicalMemoryResource64);
-                }
-                else if (p.Name == "io")
-                {
-                    System.Diagnostics.Debugger.Log(0, "pci", "adding io area");
-                    ios.Add(p.Value as tysos.x86_64.IOResource);
-                }
-            }
+            vmems.Init(root);
+            pmems.Init(root);
+            ios.Init(root);
+            acpiname = GetFirstProperty(root, "acpiname") as string;
+            tysos.Process p_acpipc = tysos.Syscalls.ProcessFunctions.GetProcessByName("acpipc");
+            if (p_acpipc != null)
+                acpi = p_acpipc.MessageServer;
 
             /* Get CONFIG_DATA and CONFIG_ADDRESS ports */
-            CONFIG_ADDRESS = AllocIOFixed(0xcf8, 4);
-            CONFIG_DATA = AllocIOFixed(0xcfc, 4);
+            CONFIG_ADDRESS = ios.AllocFixed(0xcf8, 4);
+            CONFIG_DATA = ios.AllocFixed(0xcfc, 4);
             if (CONFIG_ADDRESS == null)
                 throw new Exception("Unable to obtain CONFIG_ADDRESS");
             if (CONFIG_DATA == null)
                 throw new Exception("Unable to obtain CONFIG_DATA");
+
+            /* Evaluate _PRT if it exists */
+            if(acpi != null && acpiname != null)
+            {
+                acpipc.Aml.ACPIObject prt = acpi.Invoke("EvaluateObject",
+                    new object[] { acpiname + "._PRT" }, new Type[] { typeof(string) })
+                    as acpipc.Aml.ACPIObject;
+                if(prt != null && prt.Type == acpipc.Aml.ACPIObject.DataType.Package)
+                {
+                    System.Diagnostics.Debugger.Log(0, "pci", acpiname + "._PRT succeeded");
+                    foreach(var prtentry in (acpipc.Aml.ACPIObject[])prt.Data)
+                    {
+                        if(prtentry.Type == acpipc.Aml.ACPIObject.DataType.Package)
+                        {
+                            var prtobj = prt.Data as acpipc.Aml.ACPIObject[];
+                            int dev = (int)((prtobj[0].IntegerData >> 16) & 0xffffU);
+                            if (!prts.ContainsKey(dev))
+                                prts[dev] = new PRTEntry[4];
+
+                            int pin = (int)prtobj[1].IntegerData;
+
+                            System.Diagnostics.Debugger.Log(0, "pci", "PRT: dev: " + dev.ToString() + ", pin: " + pin.ToString() + ", source.Type: " + prtobj[2].Type.ToString() + ", sourceIndex: " + prtobj[3].IntegerData.ToString());
+                        }
+                    }
+                }
+                else
+                    System.Diagnostics.Debugger.Log(0, "pci", acpiname + "._PRT failed");
+            }
 
             /* Enumerate the devices on this bus */
             for(int dev = 0; dev < 32; dev++)
@@ -113,45 +136,46 @@ namespace pci
             if (details == null)
                 System.Diagnostics.Debugger.Log(0, "pci", "unknown device");
             else
+            {
                 System.Diagnostics.Debugger.Log(0, "pci", details.ToString());
 
-            uint header_type = (cacheline_latency_ht_bist >> 16) & 0xffU;
-            if((header_type & 0x7f) == 0)
-            {
-                /* It is a device.  Get BARs */
-                for(int i = 0; i < 6; i++)
+                if (details.DriverName != null)
                 {
-                    int bar_addr = 0x10 + i * 4;
-                    uint orig_bar = ReadConfig(bus, dev, func, bar_addr);
+                    /* Build a device node */
+                    List<tysos.lib.File.Property> props = new List<tysos.lib.File.Property>();
+                    props.Add(new tysos.lib.File.Property { Name = "driver", Value = details.DriverName });
+                    if (details.SubdriverName != null)
+                        props.Add(new tysos.lib.File.Property { Name = "subdriver", Value = details.SubdriverName });
+                    if (details.HumanDeviceName != null)
+                        props.Add(new tysos.lib.File.Property { Name = "name", Value = details.HumanDeviceName });
+                    if (details.HumanManufacturerName != null)
+                        props.Add(new tysos.lib.File.Property { Name = "manufacturer", Value = details.HumanManufacturerName });
+                    PCIConfiguration conf = new PCIConfiguration(CONFIG_ADDRESS,
+                        CONFIG_DATA, bus, dev, func, this, details.BAROverrides);
+                    props.Add(new tysos.lib.File.Property { Name = "pciconf", Value = conf });
 
-                    // Write all 1s to get the length of the region requested
-                    WriteConfig(bus, dev, func, bar_addr, 0xffffffffU);
-                    uint bar_len = ReadConfig(bus, dev, func, bar_addr);
-                    unchecked
+                    /* Generate a unique name for the device */
+                    int dev_no = 0;
+                    StringBuilder sb = new StringBuilder(details.DriverName);
+                    if (details.SubdriverName != null)
                     {
-                        if((orig_bar & 0x1) == 0)
-                        {
-                            // memory bar
-                            bar_len &= 0xfffffff0;
-                        }
-                        else
-                        {
-                            // io bar
-                            bar_len &= 0xfffffffc;
-                        }
-                        bar_len = ~bar_len;
-                        bar_len++;
+                        sb.Append("_");
+                        sb.Append(details.SubdriverName);
                     }
+                    string base_dev = sb.ToString();
+                    if (next_device_id.ContainsKey(base_dev))
+                        dev_no = next_device_id[base_dev];
+                    sb.Append("_");
+                    sb.Append(dev_no.ToString());
+                    next_device_id[base_dev] = dev_no + 1;
+                    string dev_name = sb.ToString();
 
-                    // Write the original value back
-                    WriteConfig(bus, dev, func, bar_addr, orig_bar);
-
-                    System.Diagnostics.Debugger.Log(0, "pci", "  " + orig_bar.ToString("X8") + ", " + bar_len.ToString("X8"));
+                    children[dev_name] = props;
                 }
             }
 
-
             /* If header type == 0x80, it is a multifunction device */
+            uint header_type = (cacheline_latency_ht_bist >> 16) & 0xffU;
             if (header_type == 0x80 && func == 0)
             {
                 for (int subfunc = 1; subfunc < 8; subfunc++)
@@ -184,5 +208,11 @@ namespace pci
             CONFIG_ADDRESS.Write(CONFIG_ADDRESS.Addr32, 4, address);
             CONFIG_DATA.Write(CONFIG_DATA.Addr32, 4, val);
         }
+    }
+
+    class PRTEntry
+    {
+        public acpipc.Aml.ACPIName Source;
+        public int SourceIndex;
     }
 }

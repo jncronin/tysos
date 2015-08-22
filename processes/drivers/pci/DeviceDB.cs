@@ -43,6 +43,8 @@ namespace pci
         public string HumanDeviceName;
         public string HumanManufacturerName;
         public string DriverName;
+        public string SubdriverName;
+        public IList<BAROverride> BAROverrides;
 
         public override string ToString()
         {
@@ -67,6 +69,13 @@ namespace pci
             sb.Append(")");
             return sb.ToString();
         }
+    }
+
+    class BAROverride
+    {
+        public ulong Value;
+        public ulong Length;
+        public int Type;        // 0 = memory, 1 = IO
     }
 
     partial class DeviceDB

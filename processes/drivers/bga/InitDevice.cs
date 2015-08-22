@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2011 by John Cronin
+﻿/* Copyright (C) 2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,56 +23,46 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace aml_interpreter
+namespace bga
 {
-    partial class AML
+    partial class bga : tysos.ServerObject
     {
-        ulong base_vaddr;
-        int offset;
+        tysos.lib.File.Property[] props;
+        pci.PCIConfiguration pci;
 
-        byte ReadByte()
+        public bga(tysos.lib.File.Property[] Properties)
         {
-            unsafe
-            {
-                byte ret = *(byte*)(base_vaddr + (ulong)offset);
-                offset += 1;
-                return ret;
-            }
-        }
-        ushort ReadWord()
-        {
-            unsafe
-            {
-                ushort ret = *(ushort*)(base_vaddr + (ulong)offset);
-                offset += 2;
-                return ret;
-            }
-        }
-        uint ReadDWord()
-        {
-            unsafe
-            {
-                uint ret = *(uint*)(base_vaddr + (ulong)offset);
-                offset += 4;
-                return ret;
-            }
-        }
-        ulong ReadQWord()
-        {
-            unsafe
-            {
-                ulong ret = *(ulong*)(base_vaddr + (ulong)offset);
-                offset += 8;
-                return ret;
-            }
+            props = Properties;
         }
 
-        int CurOffset()
-        { return offset; }
-        void AdjustOffset(int delta)
-        { offset += delta; }
+        public override bool InitServer()
+        {
+            System.Diagnostics.Debugger.Log(0, "bga", "BGA driver started");
 
-        internal void SetInput(ulong vaddr)
-        { base_vaddr = vaddr; }
+            // Interpret properties, looking for a pci conf entry
+            foreach(tysos.lib.File.Property prop in props)
+            {
+                if (prop.Name == "pciconf")
+                    pci = prop.Value as pci.PCIConfiguration;
+            }
+
+            if(pci == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "bga", "no pci configuration provided");
+                return false;
+            }
+
+            // Get BAR0
+            tysos.PhysicalMemoryResource64 fb = pci.GetBAR(0) as tysos.PhysicalMemoryResource64;
+            if(fb == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "bga", "no framebuffer found");
+                return false;
+            }
+
+            // Get a chunk of virtual address space
+
+            return true;
+        }
     }
 }

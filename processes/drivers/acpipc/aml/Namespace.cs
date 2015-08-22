@@ -30,6 +30,7 @@ namespace acpipc.Aml
         public class State
         {
             public ACPIName Scope;
+            public ACPIName CurrentDevice = null;
             public Dictionary<int, ACPIObject> Args;
             public Dictionary<int, ACPIObject> Locals;
             public ACPIObject Return;
@@ -106,10 +107,10 @@ namespace acpipc.Aml
             return ret;
         }
 
-        public bool ParseTermList(byte[] aml, ref int idx, int count, ACPIName scope)
+        public bool ParseTermList(byte[] aml, ref int idx, int count, ACPIName scope, ACPIName device_name)
         {
             ACPIObject retval;
-            State s = new State { Args = new Dictionary<int,ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()), Locals = new Dictionary<int,ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()), Scope = scope };
+            State s = new State { Args = new Dictionary<int,ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()), Locals = new Dictionary<int,ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()), Scope = scope, CurrentDevice = device_name };
             return ParseTermList(aml, ref idx, count, out retval, s);
         }
 
@@ -1552,9 +1553,18 @@ namespace acpipc.Aml
                 if (RegionLen.Type != ACPIObject.DataType.Integer)
                     throw new Exception("RegionLen does not evaluate to Integer");
 
+                ACPIName device = null;
+                if(RegionSpace == 0x2)
+                {
+                    if (s.CurrentDevice == null)
+                        throw new Exception("Defining PCI_Config OperationRegion but no current device");
+                    device = s.CurrentDevice.Clone();
+                }
+
                 ACPIObject r = new ACPIObject(ACPIObject.DataType.OpRegion, new ACPIObject.OpRegionData
                 {
                     RegionSpace = RegionSpace,
+                    Device = device,
                     Length = RegionLen.IntegerData,
                     Offset = RegionOffset.IntegerData
                 });
@@ -1829,7 +1839,7 @@ namespace acpipc.Aml
 
                 ACPIName old_scope = s.Scope.Clone();
                 int scope_end = pkg_length_offset + pkg_length;
-                bool ret = ParseTermList(aml, ref idx, scope_end - idx, ProcessorName.Clone());
+                bool ret = ParseTermList(aml, ref idx, scope_end - idx, ProcessorName.Clone(), s.CurrentDevice);
                 s.Scope.CloneFrom(old_scope);
 
                 Processors[ProcessorName] = p;
@@ -1984,9 +1994,23 @@ namespace acpipc.Aml
                 Objects[DeviceName] = d;
 
                 ACPIName old_scope = s.Scope.Clone();
+                ACPIName old_device = null;
+                if (s.CurrentDevice != null)
+                    old_device = s.CurrentDevice.Clone();
+
+                s.CurrentDevice = DeviceName;
                 int device_end = pkg_length_offset + pkg_length;
-                bool ret = ParseTermList(aml, ref idx, device_end - idx, DeviceName.Clone());
+                bool ret = ParseTermList(aml, ref idx, device_end - idx, DeviceName.Clone(), s.CurrentDevice);
+
                 s.Scope.CloneFrom(old_scope);
+                if (old_device != null)
+                {
+                    s.CurrentDevice.CloneFrom(old_device);
+                }
+                else
+                {
+                    s.CurrentDevice = null;
+                }
 
                 System.Diagnostics.Debugger.Log(0, "acpipc", "Found device: " + DeviceName.ToString());
                 Devices[DeviceName] = d;
@@ -2148,7 +2172,7 @@ namespace acpipc.Aml
                 ParseNameString(aml, ref idx, out Name, s))
             {
                 int scope_end = pkg_length_offset + pkg_length;
-                if (ParseTermList(aml, ref idx, scope_end - idx, Name))
+                if (ParseTermList(aml, ref idx, scope_end - idx, Name, s.CurrentDevice))
                 {
                     s.Scope.CloneFrom(old_scope);
                     return true;

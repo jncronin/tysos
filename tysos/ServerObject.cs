@@ -155,6 +155,9 @@ namespace tysos
 
         public virtual void MessageLoop()
         {
+            t = Syscalls.SchedulerFunctions.GetCurrentThread();
+            Syscalls.SchedulerFunctions.GetCurrentThread().owning_process.MessageServer = this;
+
             if(InitServer() == false)
             {
                 Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": InitServer failed\n");
@@ -162,8 +165,6 @@ namespace tysos
             }
 
             Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": entering message loop\n");
-            t = Syscalls.SchedulerFunctions.GetCurrentThread();
-            Syscalls.SchedulerFunctions.GetCurrentThread().owning_process.MessageServer = this;
 
             while(true)
             {
@@ -202,6 +203,16 @@ namespace tysos
         protected virtual void BackgroundProc()
         {
 
+        }
+
+        public static object GetFirstProperty(IEnumerable<lib.File.Property> props, string name)
+        {
+            foreach (var prop in props)
+            {
+                if (prop.Name == name)
+                    return prop.Value;
+            }
+            return null;
         }
     }
 }

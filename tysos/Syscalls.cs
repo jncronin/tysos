@@ -122,6 +122,51 @@ namespace tysos
             {
                 return Program.arch.CurrentCpu.CurrentThread;
             }
+
+            [libsupcs.Syscall]
+            public static ServerObject LoadServer(string name)
+            {
+                Process p = GetProcessByName(name);
+                if(p == null)
+                {
+                    if (Program.Vfs == null)
+                        return null;
+                    lib.MonoIOError err;
+                    Formatter.WriteLine("LoadServer: opening /modules/" + name, Program.arch.DebugOutput);
+                    lib.File f = lib.MonoIO.Open("/modules/" + name,
+                        System.IO.FileMode.Open, System.IO.FileAccess.Read,
+                        System.IO.FileShare.Read, System.IO.FileOptions.None,
+                        out err);
+                    if(f == null || f.Error != lib.MonoIOError.ERROR_SUCCESS)
+                        throw new Exception("failed to open /modules/" + name + ": " +
+                            f.Error.ToString());
+
+                    Formatter.WriteLine("LoadServer: creating process", Program.arch.DebugOutput);
+                    p = Process.CreateProcess(f, name, new object[] { });
+                    p.Start();
+                }
+                Formatter.WriteLine("LoadServer: waiting on message loop to start", Program.arch.DebugOutput);
+                while (p.MessageServer == null) ;
+                return p.MessageServer;
+            }
+
+            [libsupcs.Syscall]
+            public static ServerObject LoadServerInstance(string protocol, lib.File f)
+            {
+                Formatter.WriteLine("LoadServerInstance: loading server " + protocol, Program.arch.DebugOutput);
+
+                ServerObject factory = LoadServer(protocol);
+
+                Formatter.WriteLine("LoadServer: Invoking CreateFSHandler", Program.arch.DebugOutput);
+                ServerObject ret = factory.Invoke("CreateFSHandler",
+                    new object[] { f }, new Type[] { typeof(tysos.lib.File) })
+                    as ServerObject;
+
+                if (ret == null)
+                    throw new Exception("CreateFSHandler failed");
+
+                return ret;
+            }
         }
 
         public class SchedulerFunctions

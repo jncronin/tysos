@@ -40,7 +40,18 @@ namespace pci
             db_vd.Add(new DeviceDBKey { VendorID = 0x8086, DeviceID = 0x1237 }, new DeviceDBEntry { DriverName = "pci", HumanManufacturerName = "Intel", HumanDeviceName = "440FX - 82441FX PCI and Memory Controller" });
             db_vd.Add(new DeviceDBKey { VendorID = 0x8086, DeviceID = 0x2415 }, new DeviceDBEntry { DriverName = "ac97", HumanManufacturerName = "Intel", HumanDeviceName = "82801AA AC'97 Audio Controller" });
             db_vd.Add(new DeviceDBKey { VendorID = 0x8086, DeviceID = 0x7000 }, new DeviceDBEntry { DriverName = null, HumanManufacturerName = "Intel", HumanDeviceName = "82371SB PIIX3 ISA" });
-            db_vd.Add(new DeviceDBKey { VendorID = 0x8086, DeviceID = 0x7111 }, new DeviceDBEntry { DriverName = "pciide", HumanManufacturerName = "Intel", HumanDeviceName = "82371AB/EB/MB PIIX4 IDE" });
+            db_vd.Add(new DeviceDBKey { VendorID = 0x8086, DeviceID = 0x7111 }, new DeviceDBEntry
+            {
+                DriverName = "pciide",
+                HumanManufacturerName = "Intel",
+                HumanDeviceName = "82371AB/EB/MB PIIX4 IDE",
+                BAROverrides = new BAROverride[] {
+                    new BAROverride { Value = 0x1f0, Length = 8, Type = 1 },
+                    new BAROverride { Value = 0x3f6, Length = 1, Type = 1 },
+                    new BAROverride { Value = 0x170, Length = 8, Type = 1 },
+                    new BAROverride { Value = 0x376, Length = 1, Type = 1 }
+                }
+            });
             db_vd.Add(new DeviceDBKey { VendorID = 0x8086, DeviceID = 0x7113 }, new DeviceDBEntry { DriverName = null, HumanManufacturerName = "Intel", HumanDeviceName = "82371AB/EB/MB PIIX4 ACPI" });
 
             db_vd.Add(new DeviceDBKey { VendorID = 0x80ee, DeviceID = 0xbeef }, new DeviceDBEntry { DriverName = "bga", HumanManufacturerName = "Oracle", HumanDeviceName = "VirtualBox Graphics Adapter" });

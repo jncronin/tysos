@@ -36,7 +36,7 @@ namespace tysos
             return "TestResource";
         }
     }
-    
+
     public abstract class RangeResource
     {
         public abstract RangeResource Split(uint base_addr, uint length);
@@ -50,6 +50,9 @@ namespace tysos
         public abstract ulong Addr64 { get; }
         public abstract uint Length32 { get; }
         public abstract ulong Length64 { get; }
+
+        public virtual uint End32 { get { return Addr32 + Length32; } }
+        public virtual ulong End64 { get { return Addr64 + Length64; } }
 
         public abstract bool Intersects(uint base_addr, uint length);
         public abstract bool Intersects(ulong base_addr, ulong length);
@@ -73,7 +76,7 @@ namespace tysos
                 return null;
 
             /* Create a new resource of the appropriate subclass */
-            System.Reflection.ConstructorInfo ci = 
+            System.Reflection.ConstructorInfo ci =
                 this.GetType().GetConstructor(new Type[] { typeof(uint), typeof(uint) });
 
             RangeResource ret = ci.Invoke(new object[] { base_addr, length }) as RangeResource;
@@ -219,7 +222,7 @@ namespace tysos
 
         public override unsafe void Write(uint addr, uint length, uint val)
         {
-            switch(length)
+            switch (length)
             {
                 case 1:
                     *(byte*)addr = (byte)(val & 0xff);
@@ -255,7 +258,7 @@ namespace tysos
 
         public override unsafe uint Read(uint addr, uint length)
         {
-            switch(length)
+            switch (length)
             {
                 case 1:
                     return *(byte*)addr;
@@ -486,6 +489,51 @@ namespace tysos
                 Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
                 offset += Program.arch.PageSize;
             }
+        }
+    }
+}
+
+namespace tysos.Resources
+{
+    public abstract class InterruptLine
+    {
+        public delegate bool InterruptHandler();
+        public abstract bool RegisterHandler(InterruptHandler handler);
+    }
+
+    public abstract class CpuInterruptLine : InterruptLine
+    {
+        protected internal Cpu cpu;
+        protected internal int cpu_int_no;
+    }
+
+    public class SharedInterruptLine : InterruptLine
+    {
+        List<InterruptHandler> handlers = new List<InterruptHandler>();
+        protected InterruptLine shared_line;
+
+        public SharedInterruptLine(InterruptLine SharedLine)
+        { shared_line = SharedLine; }
+
+        public override bool RegisterHandler(InterruptHandler handler)
+        {
+            handlers.Add(handler);
+            if(handlers.Count == 1)
+            {
+                if (shared_line != null)
+                    shared_line.RegisterHandler(new InterruptHandler(Handler));
+            }
+            return true;
+        }
+
+        bool Handler()
+        {
+            foreach(InterruptHandler h in handlers)
+            {
+                if (h() == true)
+                    return true;
+            }
+            return false;
         }
     }
 }

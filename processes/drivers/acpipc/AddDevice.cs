@@ -250,7 +250,7 @@ namespace acpipc
 
                                 uint io_len = rs[idx + 7];
 
-                                props.Add(new File.Property { Name = "io", Value = AllocIOFixed(io_base, io_len) });
+                                props.Add(new File.Property { Name = "io", Value = ios.AllocFixed(io_base, io_len, true) });
                             }
 
                             break;
@@ -288,7 +288,7 @@ namespace acpipc
                             {
                                 ulong min = BitConverter.ToUInt32(rs, idx + 4);
                                 ulong length = BitConverter.ToUInt32(rs, idx + 8);
-                                props.Add(new File.Property { Name = "pmem", Value = AllocPmemFixed(min, length) });
+                                props.Add(new File.Property { Name = "pmem", Value = pmems.AllocFixed(min, length, true) });
                             }
                             break;
                         case 0x7:
@@ -341,10 +341,10 @@ namespace acpipc
                                 switch (res_type)
                                 {
                                     case 0:
-                                        props.Add(new File.Property { Name = "pmem", Value = AllocPmemFixed(min, length) });
+                                        props.Add(new File.Property { Name = "pmem", Value = pmems.AllocFixed(min, length, true) });
                                         break;
                                     case 1:
-                                        props.Add(new File.Property { Name = "io", Value = AllocIOFixed((uint)min, (uint)length) });
+                                        props.Add(new File.Property { Name = "io", Value = ios.AllocFixed((uint)min, (uint)length, true) });
                                         break;
                                 }
                             }

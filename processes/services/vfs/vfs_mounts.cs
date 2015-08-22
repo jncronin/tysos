@@ -27,33 +27,72 @@ namespace vfs
 {
     partial class vfs
     {
+        public bool Mount(string mount_path)
+        {
+            return Mount(mount_path, mount_path);
+        }
+
+        public bool Mount(string mount_path, string src)
+        {
+            /* Open source file */
+            tysos.lib.File f_src = OpenFile(src, System.IO.FileMode.Open,
+                System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
+                System.IO.FileOptions.None);
+            if (f_src == null || f_src.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
+            {
+                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: couldn't open source: " + src + "\n");
+                return false;
+            }
+
+            tysos.lib.File.Property driver = f_src.GetPropertyByName("driver");
+            if(driver == null)
+            {
+                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: no driver specified in properties of " + src + "\n");
+                return false;
+            }
+            string protocol = driver.Value as string;
+            if(protocol == null || protocol == "")
+            {
+                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: driver property of " + src + " is invalid\n");
+                return false;
+            }           
+
+            return Mount(mount_path, f_src, protocol);
+        }
+
         public bool Mount(string mount_path, string src, string protocol)
+        {
+            /* Open source file */
+            tysos.lib.File f_src = OpenFile(src, System.IO.FileMode.Open,
+                System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
+                System.IO.FileOptions.None);
+            if (f_src == null || f_src.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
+            {
+                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: couldn't open source: " + src + "\n");
+                return false;
+            }
+
+            return Mount(mount_path, f_src, protocol);
+        }
+
+        public bool Mount(string mount_path, tysos.lib.File f_src, string protocol)
         {
             if (mount_path == null)
             {
                 tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount_path is null\n");
+                CloseFile(f_src);
                 return false;
             }
 
             Path path = GetPath(mount_path);
 
             tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: device: " +
-                protocol + ", mount_point: " +
-                path.FullPath + ", src: " + src + "\n");
+                protocol + ", mount_point: " + path.FullPath);
 
             if (mounts.ContainsKey((PathPart)path))
             {
                 tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount point " + path.FullPath + " is already mounted\n");
-                return false;
-            }
-
-            /* Open source file */
-            tysos.lib.File f_src = OpenFile(src, System.IO.FileMode.Open,
-                System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
-                System.IO.FileOptions.None);
-            if(f_src == null || f_src.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
-            {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: couldn't open source: " + src + "\n");
+                CloseFile(f_src);
                 return false;
             }
 

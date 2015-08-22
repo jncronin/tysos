@@ -25,7 +25,7 @@ using System.Text;
 
 namespace acpipc.Aml
 {
-    class ACPIName
+    public class ACPIName
     {
         List<string> name = new List<string>();
         bool isnull = true;

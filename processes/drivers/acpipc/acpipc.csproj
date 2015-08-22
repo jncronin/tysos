@@ -33,6 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ACPIInterrupt.cs" />
     <Compile Include="AddDevice.cs" />
     <Compile Include="aml\ACPIName.cs" />
     <Compile Include="aml\ACPIObject.cs" />
@@ -42,8 +43,8 @@
     <Compile Include="aml\Namespace.cs" />
     <Compile Include="Factory.cs" />
     <Compile Include="InitDevice.cs" />
+    <Compile Include="ioapic\InitDevice.cs" />
     <Compile Include="MachineInterface.cs" />
-    <Compile Include="MemAlloc.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Table.cs" />
   </ItemGroup>

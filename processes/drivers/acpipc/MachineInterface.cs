@@ -36,42 +36,38 @@ namespace acpipc
 
         public byte ReadIOByte(ulong Addr)
         {
-            foreach (tysos.x86_64.IOResource io in a.ios)
-            {
-                if (Addr >= io.Addr64 && ((Addr + 1) <= (io.Addr64 + io.Length64)))
-                    return (byte)io.Read(Addr, 1);
-            }
-            throw new Exception("Invalid IO port: " + Addr.ToString("X"));
+            tysos.x86_64.IOResource io = a.ios.Contains(Addr, 1);
+            if(io != null)
+                return (byte)io.Read(Addr, 1);
+            else
+                throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
 
         public uint ReadIODWord(ulong Addr)
         {
-            foreach (tysos.x86_64.IOResource io in a.ios)
-            {
-                if (Addr >= io.Addr64 && ((Addr + 4) <= (io.Addr64 + io.Length64)))
-                    return (uint)io.Read(Addr, 4);
-            }
-            throw new Exception("Invalid IO port: " + Addr.ToString("X"));
+            tysos.x86_64.IOResource io = a.ios.Contains(Addr, 4);
+            if (io != null)
+                return (uint)io.Read(Addr, 4);
+            else
+                throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
 
         public ulong ReadIOQWord(ulong Addr)
         {
-            foreach (tysos.x86_64.IOResource io in a.ios)
-            {
-                if (Addr >= io.Addr64 && ((Addr + 8) <= (io.Addr64 + io.Length64)))
-                    return (ulong)io.Read(Addr, 8);
-            }
-            throw new Exception("Invalid IO port: " + Addr.ToString("X"));
+            tysos.x86_64.IOResource io = a.ios.Contains(Addr, 8);
+            if (io != null)
+                return io.Read(Addr, 8);
+            else
+                throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
 
         public ushort ReadIOWord(ulong Addr)
         {
-            foreach (tysos.x86_64.IOResource io in a.ios)
-            {
-                if (Addr >= io.Addr64 && ((Addr + 2) <= (io.Addr64 + io.Length64)))
-                    return (ushort)io.Read(Addr, 2);
-            }
-            throw new Exception("Invalid IO port: " + Addr.ToString("X"));
+            tysos.x86_64.IOResource io = a.ios.Contains(Addr, 2);
+            if (io != null)
+                return (ushort)io.Read(Addr, 2);
+            else
+                throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
 
         public byte ReadMemoryByte(ulong Addr)
@@ -96,38 +92,38 @@ namespace acpipc
 
         public void WriteIOByte(ulong Addr, byte v)
         {
-            foreach(tysos.x86_64.IOResource io in a.ios)
-            {
-                if (Addr >= io.Addr64 && ((Addr + 1) <= (io.Addr64 + io.Length64)))
-                    io.Write(Addr, 1, v);
-            }
+            tysos.x86_64.IOResource io = a.ios.Contains(Addr, 1);
+            if (io != null)
+                io.Write(Addr, 1, v);
+            else
+                throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
 
         public void WriteIODWord(ulong Addr, uint v)
         {
-            foreach (tysos.x86_64.IOResource io in a.ios)
-            {
-                if (Addr >= io.Addr64 && ((Addr + 4) <= (io.Addr64 + io.Length64)))
-                    io.Write(Addr, 4, v);
-            }
+            tysos.x86_64.IOResource io = a.ios.Contains(Addr, 4);
+            if (io != null)
+                io.Write(Addr, 1, 4);
+            else
+                throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
 
         public void WriteIOQWord(ulong Addr, ulong v)
         {
-            foreach (tysos.x86_64.IOResource io in a.ios)
-            {
-                if (Addr >= io.Addr64 && ((Addr + 8) <= (io.Addr64 + io.Length64)))
-                    io.Write(Addr, 8, v);
-            }
+            tysos.x86_64.IOResource io = a.ios.Contains(Addr, 8);
+            if (io != null)
+                io.Write(Addr, 8, v);
+            else
+                throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
 
         public void WriteIOWord(ulong Addr, ushort v)
         {
-            foreach (tysos.x86_64.IOResource io in a.ios)
-            {
-                if (Addr >= io.Addr64 && ((Addr + 2) <= (io.Addr64 + io.Length64)))
-                    io.Write(Addr, 2, v);
-            }
+            tysos.x86_64.IOResource io = a.ios.Contains(Addr, 2);
+            if (io != null)
+                io.Write(Addr, 2, v);
+            else
+                throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
 
         public void WriteMemoryByte(ulong Addr, byte v)
@@ -148,6 +144,62 @@ namespace acpipc
         public void WriteMemoryWord(ulong Addr, ushort v)
         {
             throw new NotImplementedException();
+        }
+
+        public void WritePCIDWord(uint bus, uint device, uint func, uint offset, uint val)
+        {
+            if ((offset & 0x3) != 0)
+                throw new Exception("WritePCIDWord: offset not aligned: " + offset.ToString());
+
+            uint addr = offset;
+            addr |= func << 8;
+            addr |= device << 11;
+            addr |= bus << 16;
+            addr |= 0x80000000U;
+
+            WriteIODWord(0xcf8, addr);
+            WriteIODWord(0xcfc, val);
+        }
+
+        public uint ReadPCIDWord(uint bus, uint device, uint func, uint offset)
+        {
+            if ((offset & 0x3) != 0)
+                throw new Exception("WritePCIDWord: offset not aligned: " + offset.ToString());
+
+            uint addr = offset;
+            addr |= func << 8;
+            addr |= device << 11;
+            addr |= bus << 16;
+            addr |= 0x80000000U;
+
+            WriteIODWord(0xcf8, addr);
+            return ReadIODWord(0xcfc);
+        }
+
+        public void WritePCIWord(uint bus, uint device, uint func, uint offset, ushort val)
+        {
+            uint offset_align = offset & 0xfffc;
+            int offset_shift = (int)(offset_align - offset) * 8;
+
+            uint align_val = ReadPCIDWord(bus, device, func, offset_align);
+            uint mask = 0xffffU << offset_shift;
+            align_val &= ~mask;
+            align_val |= ((uint)val) << offset_shift;
+
+            WritePCIDWord(bus, device, func, offset_align, align_val);
+        }
+
+        public void WritePCIByte(uint bus, uint device, uint func, uint offset, byte val)
+        {
+            uint offset_align = offset & 0xfffc;
+            int offset_shift = (int)(offset_align - offset) * 8;
+
+            uint align_val = ReadPCIDWord(bus, device, func, offset_align);
+            uint mask = 0xffU << offset_shift;
+            align_val &= ~mask;
+            align_val |= ((uint)val) << offset_shift;
+
+            WritePCIDWord(bus, device, func, offset_align, align_val);
         }
     }
 }

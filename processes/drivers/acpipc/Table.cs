@@ -172,6 +172,8 @@ namespace acpipc
                     s.Length = (int)s_length;
                     s.Type = (int)type;
 
+                    atbl.APICs.Add(s);
+
                     cur_addr += s_length;
                 }
 

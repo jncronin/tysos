@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4C1B5997-125E-49B7-9AE3-55D9D012901B}</ProjectGuid>
+    <ProjectGuid>{C0E11AA3-7AC2-4126-88A6-B8118E920E59}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>pci</RootNamespace>
-    <AssemblyName>pci</AssemblyName>
+    <RootNamespace>pciide</RootNamespace>
+    <AssemblyName>pciide</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -33,13 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="DeviceDB.cs" />
     <Compile Include="Factory.cs" />
     <Compile Include="InitDevice.cs" />
-    <Compile Include="PCIConfiguration.cs" />
-    <Compile Include="PCI_IDs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="BAR.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -49,13 +45,10 @@
       <Project>{97ad573f-2e77-4f43-9c2b-1050796471a9}</Project>
       <Name>tysos</Name>
     </ProjectReference>
-    <ProjectReference Include="..\acpipc\acpipc.csproj">
-      <Project>{6f2ea8ea-6505-4825-8155-573c2c621eaa}</Project>
-      <Name>acpipc</Name>
+    <ProjectReference Include="..\pci\pci.csproj">
+      <Project>{4c1b5997-125e-49b7-9ae3-55d9d012901b}</Project>
+      <Name>pci</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

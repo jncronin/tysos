@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2011 by John Cronin
+﻿/* Copyright (C) 2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,10 +23,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ACPI_PC
+namespace tysos.Messages
 {
-    class ACPI_dev : vfs.DirectoryFileSystemObject
+    public class Message
     {
-        public ACPI_dev(vfs.DirectoryFileSystemObject Parent) : base("dev", Parent) { }
+        public tysos.Event completed = new Event();
+
+        public const int MESSAGE_GENERIC = 0;
     }
 }

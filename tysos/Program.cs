@@ -203,7 +203,7 @@ namespace tysos
                 mods.Add(new tysos.lib.File.Property { Name = mod.name, Value = new VirtualMemoryResource64(vaddr, mod.length) });
             }
             List<tysos.lib.File.Property> modfs_props = new List<lib.File.Property>();
-            modfs_props.Add(new lib.File.Property { Name = "device", Value = "modfs" });
+            modfs_props.Add(new lib.File.Property { Name = "driver", Value = "modfs" });
             modfs_props.Add(new lib.File.Property { Name = "mods", Value = mods });
 
             /* Load the logger */
@@ -221,9 +221,14 @@ namespace tysos
             vfs.Start();
 
             /* Load and mount the root fs */
+            List<lib.File.Property> system_props = arch.SystemProperties;
+            List<Resources.InterruptLine> interrupts = new List<Resources.InterruptLine>();
+            // TODO: add interrupts for all cpus
+            interrupts.AddRange(arch.CurrentCpu.Interrupts);
+            system_props.Add(new lib.File.Property { Name = "interrupts", Value = interrupts });
             rootfs rootfs = new rootfs(new List<rootfs.rootfs_item>
             {
-                new rootfs.rootfs_item { Name = "system", Props = arch.SystemProperties },
+                new rootfs.rootfs_item { Name = "system", Props = system_props },
                 new rootfs.rootfs_item { Name = "modules", Props = modfs_props }
             });
             Process rootfs_p = Process.CreateProcess("rootfs",
@@ -231,12 +236,11 @@ namespace tysos
             rootfs_p.Start();
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/", rootfs },
                 new Type[] { typeof(string), typeof(ServerObject) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/modules", "/modules", "modfs" },
-                new Type[] { typeof(string), typeof(string), typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system", "/system", "acpipc" },
-                new Type[] { typeof(string), typeof(string), typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0", "/system/pci_hostbridge_0", "pci" },
-                new Type[] { typeof(string), typeof(string), typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/modules" }, new Type[] { typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system" }, new Type[] { typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0" }, new Type[] { typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/bga_0" }, new Type[] { typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0" }, new Type[] { typeof(string) });
 
             /* Load the modfs driver */
             Process modfs = LoadELFModule("modfs", mboot, stab, running_processes, 0x8000, new object[] { });
@@ -752,6 +756,8 @@ namespace tysos
         [libsupcs.MethodAlias("__log")]
         static void Log(int level, string category, string message)
         {
+            Formatter.Write(category, Program.arch.DebugOutput);
+            Formatter.Write(": ", Program.arch.DebugOutput);
             Formatter.WriteLine(message, Program.arch.DebugOutput);
         }
     }

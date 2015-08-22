@@ -210,7 +210,7 @@ namespace tysos.lib
 
         [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_4Open_Ru1I_P6u1SV8FileModeV10FileAccessV9FileShareV11FileOptionsRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
-        static lib.File Open(string name, System.IO.FileMode mode, System.IO.FileAccess access,
+        static internal lib.File Open(string name, System.IO.FileMode mode, System.IO.FileAccess access,
             System.IO.FileShare share, System.IO.FileOptions options, out MonoIOError error)
         {
             if (Program.Vfs == null)
