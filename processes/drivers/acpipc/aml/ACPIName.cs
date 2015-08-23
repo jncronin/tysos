@@ -25,7 +25,7 @@ using System.Text;
 
 namespace acpipc.Aml
 {
-    public class ACPIName
+    public class ACPIName : IEquatable<ACPIName>
     {
         List<string> name = new List<string>();
         bool isnull = true;
@@ -84,6 +84,8 @@ namespace acpipc.Aml
         {
             return name[idx];
         }
+
+        public int ElementCount { get { return name.Count; } }
 
         public override string ToString()
         {
@@ -148,6 +150,35 @@ namespace acpipc.Aml
             ACPIName n = this.Clone();
             n.name.RemoveAt(n.name.Count - 2);
             return n;
+        }
+
+        public bool Equals(ACPIName other)
+        {
+            if (other == null)
+                return false;
+            if (other.name.Count != name.Count)
+                return false;
+            for(int i = 0; i < name.Count; i++)
+            {
+                if (other.name[i].Equals(name[i]) == false)
+                    return false;
+            }
+            return true;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is ACPIName))
+                return false;
+            return Equals((ACPIName)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            int hc = 0;
+            for (int i = 0; i < name.Count; i++)
+                hc ^= name[i].GetHashCode();
+            return hc;
         }
     }
 }

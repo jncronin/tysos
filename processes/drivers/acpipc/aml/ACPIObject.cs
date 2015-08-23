@@ -29,6 +29,10 @@ namespace acpipc.Aml
     {
         public ACPIName Name;
 
+        public bool Initialized = false;
+        public bool Present = false;
+        public bool Functioning = false;
+
         public enum DataType
         {
             Uninitialized, Buffer, BufferField, DDBHandle,
@@ -107,6 +111,18 @@ namespace acpipc.Aml
         public class FieldUnitData : BaseFieldUnitData
         {
             public ACPIObject OpRegion;
+
+            public override string ToString()
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("FieldUnit: ");
+                sb.Append(((OpRegionData)OpRegion.Data).ToString());
+                sb.Append(": BitOffset: ");
+                sb.Append(BitOffset.ToString());
+                sb.Append(", BitLength: ");
+                sb.Append(BitLength.ToString());
+                return sb.ToString();
+            }
         }
 
         public class IndexFieldUnitData : BaseFieldUnitData
@@ -192,16 +208,20 @@ namespace acpipc.Aml
 
             /* First evaluate fields methods etc */
             ACPIObject ret = Evaluate(mi, s, n);
+            return ConvertTo(ret, dest_type);
+        }
 
-            if (ret.Type == dest_type)
-                return ret;
+        internal static ACPIObject ConvertTo(ACPIObject source, DataType dest_type)
+        { 
+            if (source.Type == dest_type)
+                return source;
 
             /* Then try to convert the data if required */
-            switch (ret.Type)
+            switch (source.Type)
             {
                 case DataType.String:
                     {
-                        string src = (string)ret.Data;
+                        string src = (string)source.Data;
                         switch (dest_type)
                         {
                             case DataType.Buffer:
@@ -211,12 +231,40 @@ namespace acpipc.Aml
                                         dst[i] = (byte)src[i];
                                     return new ACPIObject(DataType.Buffer, dst);
                                 }
+
+                            case DataType.Integer:
+                                {
+                                    ulong ret = 0;
+                                    int digits = 0;
+                                    foreach(char c in src)
+                                    {
+                                        if(digits == 16)
+                                            break;
+
+                                        ulong cur_digit = 0;
+
+                                        if (c >= '0' && c <= '9')
+                                            cur_digit = (ulong)(c - '0');
+                                        else if (c >= 'a' && c <= 'f')
+                                            cur_digit = (ulong)(c - 'a') + 0xa;
+                                        else if (c >= 'A' && c <= 'F')
+                                            cur_digit = (ulong)(c - 'A') + 0xa;
+                                        else
+                                            break;
+
+                                        ret <<= 4;
+                                        ret |= cur_digit;
+
+                                        digits++;
+                                    }
+                                    return new ACPIObject(DataType.Integer, digits);
+                                }
                         }
                     }
                     break;
                 case DataType.Integer:
                     {
-                        ulong src = ret.IntegerData;
+                        ulong src = source.IntegerData;
                         switch(dest_type)
                         {
                             case DataType.Buffer:
@@ -236,7 +284,7 @@ namespace acpipc.Aml
                     break;
                 case DataType.Buffer:
                     {
-                        byte[] src = (byte[])ret.Data;
+                        byte[] src = (byte[])source.Data;
                         switch(dest_type)
                         {
                             case DataType.Integer:
@@ -262,7 +310,7 @@ namespace acpipc.Aml
                     }
                     break;
             }
-            throw new NotImplementedException("Convert " + ret.Type.ToString() + " to " + dest_type.ToString());
+            throw new NotImplementedException("Convert " + source.Type.ToString() + " to " + dest_type.ToString());
         }
 
         internal void Write(ACPIObject d, IMachineInterface mi, Namespace.State s, Namespace n)
@@ -319,6 +367,9 @@ namespace acpipc.Aml
                             case DataType.FieldUnit:
                                 dst.Write(d, mi, s, n);
                                 return;
+                            case DataType.Integer:
+                                dst.Data = d.EvaluateTo(DataType.Integer, mi, s, n).IntegerData;
+                                return;
                             default:
                                 throw new NotSupportedException("Write: " + d.Type + " to ObjectReference(" + dst.Type + ")");
                         }
@@ -346,6 +397,7 @@ namespace acpipc.Aml
                         return;
                     }
                 case DataType.FieldUnit:
+                    if(Data is FieldUnitData)
                     {
                         FieldUnitData fud = Data as FieldUnitData;
                         ACPIObject op_region = fud.OpRegion;
@@ -413,7 +465,7 @@ namespace acpipc.Aml
                                 // PCI Configuration space
                                 {
                                     // try and get the _ADR object for the current device
-                                    ACPIObject adr = n.Evaluate(ord.Device.ToString() + "._ADR", mi);
+                                    ACPIObject adr = n.Evaluate(ord.Device.ToString() + "._ADR", mi).EvaluateTo(DataType.Integer, mi, s, n);
                                     if (adr == null)
                                         throw new Exception(ord.Device.ToString() + "._ADR failed");
 
@@ -442,6 +494,30 @@ namespace acpipc.Aml
                                 throw new NotImplementedException("Write: unsupported OpRegion type: " + ord.ToString());
                         }
                     }
+                    else if(Data is IndexFieldUnitData)
+                    {
+                        var ifud = Data as IndexFieldUnitData;
+
+                        /* Ensure the requested field index is byte aligned */
+                        int byte_offset = ifud.BitOffset / 8;
+                        int byte_length = ifud.BitLength / 8;
+
+                        if (ifud.BitOffset % 8 != 0)
+                            throw new NotImplementedException("Read: non-byte aligned offset (" + ifud.BitOffset.ToString() + ")");
+                        if (ifud.BitLength % 8 != 0)
+                            throw new NotImplementedException("Read: non-byte aligned length (" + ifud.BitLength.ToString() + ")");
+
+                        /* Get the data */
+                        ulong int_val = d.EvaluateTo(DataType.Integer, mi, s, n).IntegerData;
+
+                        /* Write to index port, write to data port */
+                        ifud.Index.Write((ulong)byte_offset, mi, s, n);
+                        ifud.Data.Write(int_val, mi, s, n);
+
+                        return;
+                    }
+                    else
+                        throw new NotSupportedException("Invalid FieldUnit data type: " + Data.ToString());
                 default:
                     throw new NotImplementedException("Write: " + Type.ToString());
             }
@@ -496,10 +572,118 @@ namespace acpipc.Aml
                     return this;
                 case DataType.FieldUnit:
                     if (Data is FieldUnitData)
-                        return DataAccess.ReadField(Data as FieldUnitData, mi);
+                    {
+                        FieldUnitData fud = Data as FieldUnitData;
+                        ACPIObject op_region = fud.OpRegion;
+                        if (op_region.Type != DataType.OpRegion)
+                            throw new Exception("Read from FieldUnit with invalid OpRegion type (" + op_region.Type.ToString() + ")");
+                        OpRegionData ord = op_region.Data as OpRegionData;
+
+                        /* Ensure the requested field index is within the opregion */
+                        int byte_offset = fud.BitOffset / 8;
+                        int byte_length = fud.BitLength / 8;
+
+                        if ((ulong)byte_offset + (ulong)byte_length > ord.Length)
+                            throw new Exception("Read: attempt to read to field beyond length of opregion (offset: " + byte_offset.ToString() + ", length: " + byte_length.ToString() + ", OpRegion.Length: " + ord.Length + ")");
+
+                        if (fud.BitOffset % 8 != 0)
+                            throw new NotImplementedException("Read: non-byte aligned offset (" + fud.BitOffset.ToString() + ")");
+                        if (fud.BitLength % 8 != 0)
+                            throw new NotImplementedException("Read: non-byte aligned length (" + fud.BitLength.ToString() + ")");
+
+                        /* Do the read depending on the op region type */
+                        switch (ord.RegionSpace)
+                        {
+                            case 0:
+                                // Memory
+                                switch (byte_length)
+                                {
+                                    case 1:
+                                        return mi.ReadMemoryByte(ord.Offset + (ulong)byte_offset);
+                                    case 2:
+                                        return mi.ReadMemoryWord(ord.Offset + (ulong)byte_offset);
+                                    case 4:
+                                        return mi.ReadMemoryDWord(ord.Offset + (ulong)byte_offset);
+                                    case 8:
+                                        return mi.ReadMemoryQWord(ord.Offset + (ulong)byte_offset);
+                                    default:
+                                        throw new NotImplementedException("Read: unsupported byte length: " + byte_length.ToString());
+                                }
+                            case 1:
+                                // IO
+                                switch (byte_length)
+                                {
+                                    case 1:
+                                        return mi.ReadIOByte(ord.Offset + (ulong)byte_offset);
+                                    case 2:
+                                        return mi.ReadIOWord(ord.Offset + (ulong)byte_offset);
+                                    case 4:
+                                        return mi.ReadIODWord(ord.Offset + (ulong)byte_offset);
+                                    case 8:
+                                        return mi.ReadIOQWord(ord.Offset + (ulong)byte_offset);
+                                    default:
+                                        throw new NotImplementedException("Read: unsupported byte length: " + byte_length.ToString());
+                                }
+                            case 2:
+                                // PCI Configuration space
+                                {
+                                    // try and get the _ADR object for the current device
+                                    ACPIObject adr = n.Evaluate(ord.Device.ToString() + "._ADR", mi).EvaluateTo(DataType.Integer, mi, s, n);
+                                    if (adr == null)
+                                        throw new Exception(ord.Device.ToString() + "._ADR failed");
+
+                                    uint bus = 0;
+                                    uint device = ((uint)adr.IntegerData >> 16) & 0xffffU;
+                                    uint func = (uint)adr.IntegerData & 0xffffU;
+
+                                    uint offset = (uint)ord.Offset + (uint)byte_offset;
+
+                                    System.Diagnostics.Debugger.Log(0, "acpipc", "Read from PCI conf space for: " + ord.Device.ToString() + ", _ADR: (" + adr.Type.ToString() + ") " + adr.IntegerData.ToString("X"));
+
+                                    switch (byte_length)
+                                    {
+                                        case 1:
+                                            return mi.ReadPCIByte(bus, device, func, offset);
+                                        case 2:
+                                            return mi.ReadPCIWord(bus, device, func, offset);
+                                        case 4:
+                                            return mi.ReadPCIDWord(bus, device, func, offset);
+                                        default:
+                                            throw new NotImplementedException("Read: unsupported byte length: " + byte_length.ToString());
+                                    }
+                                }
+                            default:
+                                throw new NotImplementedException("Read: unsupported OpRegion type: " + ord.ToString());
+                        }
+                    }
                     else if (Data is IndexFieldUnitData)
-                        return DataAccess.ReadIndexField(Data as IndexFieldUnitData, mi, s, n);
-                    throw new NotSupportedException("FieldUnit");
+                    {
+                        var ifud = Data as IndexFieldUnitData;
+
+                        /* Ensure the requested field index is byte aligned */
+                        int byte_offset = ifud.BitOffset / 8;
+                        int byte_length = ifud.BitLength / 8;
+
+                        if (ifud.BitOffset % 8 != 0)
+                            throw new NotImplementedException("Read: non-byte aligned offset (" + ifud.BitOffset.ToString() + ")");
+                        if (ifud.BitLength % 8 != 0)
+                            throw new NotImplementedException("Read: non-byte aligned length (" + ifud.BitLength.ToString() + ")");
+
+                        /* Write to index port, read from data port */
+                        ifud.Index.Write((ulong)byte_offset, mi, s, n);
+                        var ret = ifud.Data.Evaluate(mi, s, n);
+                        switch(byte_length)
+                        {
+                            case 1:
+                                ret.Data = ret.IntegerData & 0xffU;
+                                break;
+                            case 2:
+                                ret.Data = ret.IntegerData & 0xffffU;
+                                break;
+                        }
+                        return ret;
+                    }
+                    throw new NotSupportedException("Invalid FieldUnit data type: " + Data.ToString());
                 case DataType.Integer:
                     return this;
                 case DataType.Local:
@@ -507,13 +691,18 @@ namespace acpipc.Aml
                 case DataType.Method:
                     {
                         Namespace.State new_state = new Namespace.State();
-                        new_state.Args = new Dictionary<int, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>());
+                        if (s.IsMethodExec)
+                            new_state.Args = s.Args;
+                        else
+                            new_state.Args = new Dictionary<int, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>());
                         new_state.Locals = new Dictionary<int, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>());
                         ACPIObject ret;
                         new_state.Scope = Name;
 
                         MethodData md = Data as MethodData;
                         int midx = md.Offset;
+
+                        //System.Diagnostics.Debugger.Log(0, "acpipc", "Begin evaluating method: " + Name.ToString());
 
                         if (!n.ParseTermList(md.AML, ref midx, md.Length, out ret, new_state))
                             throw new Exception();
@@ -523,6 +712,7 @@ namespace acpipc.Aml
                 case DataType.Mutex:
                     return this;
                 case DataType.ObjectReference:
+                    //System.Diagnostics.Debugger.Log(0, "acpipc", "Begin evaluating object reference: " + ((ACPIObject.ObjRefData)Data).ToString());
                     return this;
                 case DataType.OpRegion:
                     return this;

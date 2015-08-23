@@ -87,7 +87,13 @@ namespace tymake
                 MakeState cur_s = this.parent;
                 while (cur_s != null)
                 {
-                    cur_s.AddRule(target, rule);
+                    if (wc)
+                    {
+                        cur_s.wildcards.Add(target);
+                        cur_s.Wildcards.Add(new Wildcard { mr = rule, target = target });
+                    }
+                    else
+                        cur_s.rules[target] = rule;
                     cur_s = cur_s.parent;
                 }
             }

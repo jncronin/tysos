@@ -47,7 +47,11 @@ namespace acpipc
         {
             tysos.x86_64.IOResource io = a.ios.Contains(Addr, 4);
             if (io != null)
-                return (uint)io.Read(Addr, 4);
+            {
+                var ret = (uint)io.Read(Addr, 4);
+                //System.Diagnostics.Debugger.Log(0, "acpipc", "ReadIODWord: " + ret.ToString("X8") + " from: " + Addr.ToString("X8"));
+                return ret;
+            }
             else
                 throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
@@ -103,7 +107,10 @@ namespace acpipc
         {
             tysos.x86_64.IOResource io = a.ios.Contains(Addr, 4);
             if (io != null)
-                io.Write(Addr, 1, 4);
+            {
+                //System.Diagnostics.Debugger.Log(0, "acpipc", "WriteIODWord: " + v.ToString("X8") + " to: " + Addr.ToString("X8"));
+                io.Write(Addr, 4, v);
+            }
             else
                 throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
@@ -173,7 +180,34 @@ namespace acpipc
             addr |= 0x80000000U;
 
             WriteIODWord(0xcf8, addr);
+
+            var ret = ReadIODWord(0xcfc);
+            //System.Diagnostics.Debugger.Log(0, "acpipc", "ReadPCIDWord: bus: " + bus.ToString() + ", device: " + device.ToString() + ", func: " + func.ToString() + ", offset: " + offset.ToString() + ", returns: " + ret.ToString("X8"));
             return ReadIODWord(0xcfc);
+        }
+
+        public ushort ReadPCIWord(uint bus, uint device, uint func, uint offset)
+        {
+            uint offset_align = offset & 0xfffc;
+            int offset_shift = (int)(offset_align - offset) * 8;
+
+            uint align_val = ReadPCIDWord(bus, device, func, offset_align);
+
+            var ret = (ushort)((align_val >> offset_shift) & 0xffffU);
+            //System.Diagnostics.Debugger.Log(0, "acpipc", "ReadPCIWord: bus: " + bus.ToString() + ", device: " + device.ToString() + ", func: " + func.ToString() + ", offset: " + offset.ToString() + ", returns: " + ret.ToString("X4"));
+            return ret;
+        }
+
+        public byte ReadPCIByte(uint bus, uint device, uint func, uint offset)
+        {
+            uint offset_align = offset & 0xfffc;
+            int offset_shift = (int)(offset_align - offset) * 8;
+
+            uint align_val = ReadPCIDWord(bus, device, func, offset_align);
+
+            var ret = (byte)((align_val >> offset_shift) & 0xffU);
+            //System.Diagnostics.Debugger.Log(0, "acpipc", "ReadPCIByte: bus: " + bus.ToString() + ", device: " + device.ToString() + ", func: " + func.ToString() + ", offset: " + offset.ToString() + ", returns: " + ret.ToString("X2"));
+            return ret;
         }
 
         public void WritePCIWord(uint bus, uint device, uint func, uint offset, ushort val)

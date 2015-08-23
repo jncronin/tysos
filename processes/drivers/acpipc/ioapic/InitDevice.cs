@@ -30,7 +30,7 @@ namespace acpipc.ioapic
     {
         tysos.lib.File.Property[] props;
 
-        uint gsibase, id;
+        internal uint gsibase, id;
         tysos.VirtualMemoryResource64 v_conf;
         tysos.PhysicalMemoryResource64 p_conf;
         internal List<tysos.Resources.InterruptLine> ints = new List<tysos.Resources.InterruptLine>();
@@ -169,12 +169,31 @@ namespace acpipc.ioapic
             /* Don't enable the ioapic entry yet - we do not know the trigger
             mode or polarity - these need to be provided by a separate call
             from the acpi driver (which does know these things) */
-            return false;
+            return true;
         }
 
         internal override void SetMode(bool is_level_trigger, bool is_low_active)
         {
             throw new NotImplementedException();
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("IOAPIC ");
+            sb.Append(apic.id.ToString());
+            sb.Append(" pin ");
+            sb.Append(ioapic_idx.ToString());
+            sb.Append(" gsi ");
+            sb.Append((apic.gsibase + (uint)ioapic_idx).ToString());
+
+            if(cpu_int != null)
+            {
+                sb.Append(" -> ");
+                sb.Append(cpu_int.ToString());
+            }
+
+            return sb.ToString();
         }
     }
 }

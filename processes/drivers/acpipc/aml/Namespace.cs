@@ -34,6 +34,8 @@ namespace acpipc.Aml
             public Dictionary<int, ACPIObject> Args;
             public Dictionary<int, ACPIObject> Locals;
             public ACPIObject Return;
+
+            public bool IsMethodExec = false;
         }
 
         IMachineInterface mi;
@@ -1171,10 +1173,38 @@ namespace acpipc.Aml
             {
                 Args = args,
                 Locals = new Dictionary<int, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()),
-                Scope = obj.Name
+                Scope = obj.Name,
+                IsMethodExec = true
             };
 
             return obj.Evaluate(mi, s, this);
+        }
+
+        public ACPIObject EvaluateTo(ACPIName name, IMachineInterface mi,
+            ACPIObject.DataType to_type)
+        {
+            return EvaluateTo(name, mi, new Dictionary<int, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()), to_type);
+        }
+
+        public ACPIObject EvaluateTo(ACPIName name, IMachineInterface mi,
+            Dictionary<int, ACPIObject> args, ACPIObject.DataType to_type)
+        {
+            /* Look for the specified object and evaluate it */
+            ACPIObject obj = FindObject(name, false);
+            if (obj == null)
+                return null;
+
+            State s = new State
+            {
+                Args = args,
+                Locals = new Dictionary<int, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>()),
+                Scope = obj.Name
+            };
+
+            var ret = obj.Evaluate(mi, s, this);
+            if (ret == null)
+                return null;
+            return ret.EvaluateTo(to_type, mi, s, this);
         }
 
         public ACPIObject FindObject(ACPIName name)
@@ -1990,15 +2020,15 @@ namespace acpipc.Aml
                 ParseNameString(aml, ref idx, out DeviceName, s))
             {
                 ACPIObject d = new ACPIObject(ACPIObject.DataType.Device, null);
-                d.Name = DeviceName;
-                Objects[DeviceName] = d;
+                d.Name = DeviceName.Clone();
+                Objects[d.Name] = d;
 
                 ACPIName old_scope = s.Scope.Clone();
                 ACPIName old_device = null;
                 if (s.CurrentDevice != null)
                     old_device = s.CurrentDevice.Clone();
 
-                s.CurrentDevice = DeviceName;
+                s.CurrentDevice = DeviceName.Clone();
                 int device_end = pkg_length_offset + pkg_length;
                 bool ret = ParseTermList(aml, ref idx, device_end - idx, DeviceName.Clone(), s.CurrentDevice);
 
@@ -2013,7 +2043,7 @@ namespace acpipc.Aml
                 }
 
                 System.Diagnostics.Debugger.Log(0, "acpipc", "Found device: " + DeviceName.ToString());
-                Devices[DeviceName] = d;
+                Devices[d.Name] = d;
 
                 if (ret)
                     return true;

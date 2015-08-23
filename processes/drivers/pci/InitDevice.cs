@@ -19,6 +19,8 @@
  * THE SOFTWARE.
  */
 
+using acpipc;
+using acpipc.Aml;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -33,9 +35,10 @@ namespace pci
 
         internal tysos.x86_64.IOResource CONFIG_ADDRESS, CONFIG_DATA;
 
-        string acpiname;
-        tysos.ServerObject acpi;
-        Dictionary<int, PRTEntry[]> prts = new Dictionary<int, PRTEntry[]>(new tysos.Program.MyGenericEqualityComparer<int>());
+        ACPIName acpiname;
+        IDictionary<ACPIName, ACPIConfiguration> acpiconf;
+        IDictionary<int, ACPIInterrupt[]> prts;
+        Dictionary<int, ACPIName> acpinames = new Dictionary<int, ACPIName>(new tysos.Program.MyGenericEqualityComparer<int>());
 
         Dictionary<string, int> next_device_id = new Dictionary<string, int>(new tysos.Program.MyGenericEqualityComparer<string>());
 
@@ -53,9 +56,7 @@ namespace pci
             pmems.Init(root);
             ios.Init(root);
             acpiname = GetFirstProperty(root, "acpiname") as string;
-            tysos.Process p_acpipc = tysos.Syscalls.ProcessFunctions.GetProcessByName("acpipc");
-            if (p_acpipc != null)
-                acpi = p_acpipc.MessageServer;
+            acpiconf = ACPIConfiguration.GetConfiguration(root);
 
             /* Get CONFIG_DATA and CONFIG_ADDRESS ports */
             CONFIG_ADDRESS = ios.AllocFixed(0xcf8, 4);
@@ -65,32 +66,24 @@ namespace pci
             if (CONFIG_DATA == null)
                 throw new Exception("Unable to obtain CONFIG_DATA");
 
-            /* Evaluate _PRT if it exists */
-            if(acpi != null && acpiname != null)
+            /* Get extra details from ACPI if available */
+            if (acpiname != null && acpiconf.ContainsKey(acpiname))
             {
-                acpipc.Aml.ACPIObject prt = acpi.Invoke("EvaluateObject",
-                    new object[] { acpiname + "._PRT" }, new Type[] { typeof(string) })
-                    as acpipc.Aml.ACPIObject;
-                if(prt != null && prt.Type == acpipc.Aml.ACPIObject.DataType.Package)
+                /* Get a list of subdevices */
+                IList<ACPIName> subdevs = acpiconf[acpiname].GetDevices(1);
+                foreach (var subdev in subdevs)
                 {
-                    System.Diagnostics.Debugger.Log(0, "pci", acpiname + "._PRT succeeded");
-                    foreach(var prtentry in (acpipc.Aml.ACPIObject[])prt.Data)
+                    System.Diagnostics.Debugger.Log(0, "pci", "acpi reported subdevice: " + subdev);
+                    var adr = acpiconf[acpiname].EvaluateObject(subdev + "._ADR", ACPIObject.DataType.Integer);
+                    if (adr != null)
                     {
-                        if(prtentry.Type == acpipc.Aml.ACPIObject.DataType.Package)
-                        {
-                            var prtobj = prt.Data as acpipc.Aml.ACPIObject[];
-                            int dev = (int)((prtobj[0].IntegerData >> 16) & 0xffffU);
-                            if (!prts.ContainsKey(dev))
-                                prts[dev] = new PRTEntry[4];
-
-                            int pin = (int)prtobj[1].IntegerData;
-
-                            System.Diagnostics.Debugger.Log(0, "pci", "PRT: dev: " + dev.ToString() + ", pin: " + pin.ToString() + ", source.Type: " + prtobj[2].Type.ToString() + ", sourceIndex: " + prtobj[3].IntegerData.ToString());
-                        }
+                        System.Diagnostics.Debugger.Log(0, "pci", "on device " + adr.IntegerData.ToString());
+                        acpinames[(int)adr.IntegerData] = subdev;
                     }
                 }
-                else
-                    System.Diagnostics.Debugger.Log(0, "pci", acpiname + "._PRT failed");
+
+                /* Evaluate _PRT object */
+                prts = acpiconf[acpiname].GetPRT();
             }
 
             /* Enumerate the devices on this bus */
@@ -154,6 +147,27 @@ namespace pci
                         CONFIG_DATA, bus, dev, func, this, details.BAROverrides);
                     props.Add(new tysos.lib.File.Property { Name = "pciconf", Value = conf });
 
+                    /* Is the device enumerated in ACPI too? */
+                    int dev_acpi = dev << 16 | func;
+                    int dev_acpi_all = dev << 16 | 0xffff;
+                    if (acpinames.ContainsKey(dev_acpi))
+                        props.Add(new tysos.lib.File.Property { Name = "acpiname", Value = acpinames[dev_acpi] });
+                    if (acpinames.ContainsKey(dev_acpi_all))
+                        props.Add(new tysos.lib.File.Property { Name = "acpiname", Value = acpinames[dev_acpi_all] });
+
+                    // Get interrupt pin number
+                    uint conf_3c = conf.ReadConfig(0x3c);
+                    uint pin = (conf_3c >> 8) & 0xffU;
+
+                    if (pin != 0)
+                    {
+                        int int_pin = (int)(pin - 1);
+                        if (prts.ContainsKey(dev_acpi))
+                            props.Add(new tysos.lib.File.Property { Name = "interrupt", Value = prts[dev_acpi][int_pin] });
+                        if (prts.ContainsKey(dev_acpi_all))
+                            props.Add(new tysos.lib.File.Property { Name = "interrupt", Value = prts[dev_acpi_all][int_pin] });
+                    }
+
                     /* Generate a unique name for the device */
                     int dev_no = 0;
                     StringBuilder sb = new StringBuilder(details.DriverName);
@@ -171,6 +185,11 @@ namespace pci
                     string dev_name = sb.ToString();
 
                     children[dev_name] = props;
+
+                    foreach(var prop in props)
+                    {
+                        System.Diagnostics.Debugger.Log(0, "pci", "  " + prop.Name + ": " + prop.Value.ToString());
+                    }
                 }
             }
 
@@ -208,11 +227,5 @@ namespace pci
             CONFIG_ADDRESS.Write(CONFIG_ADDRESS.Addr32, 4, address);
             CONFIG_DATA.Write(CONFIG_DATA.Addr32, 4, val);
         }
-    }
-
-    class PRTEntry
-    {
-        public acpipc.Aml.ACPIName Source;
-        public int SourceIndex;
     }
 }

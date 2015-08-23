@@ -42,10 +42,13 @@ namespace acpipc
 
         List<tysos.ServerObject> gsi_providers = new List<tysos.ServerObject>();
         List<InterruptSourceOverrideStructure> isos = new List<InterruptSourceOverrideStructure>();
-        ISAInterrupt[] isa_irqs = new ISAInterrupt[16];
+        ACPIInterrupt[] isa_irqs = new ACPIInterrupt[16];
+        Dictionary<int, PCIInterrupt> pci_ints = new Dictionary<int, PCIInterrupt>(
+            new tysos.Program.MyGenericEqualityComparer<int>());
+        List<string> lnks = new List<string>(); // PCI Interrupt Link objects
 
-        Aml.Namespace n;
-        MachineInterface mi;
+        internal Aml.Namespace n;
+        internal MachineInterface mi;
 
         public acpipc(tysos.lib.File.Property[] Properties)
         {
@@ -115,6 +118,16 @@ namespace acpipc
             for(int i = 0; i < 16; i++)
                 isa_irqs[i] = GenerateISAIRQ(i);
 
+            /* Dump VBox ACPI interface */
+            var vbox_idx = ios.AllocFixed(0x4048, 4);
+            var vbox_dat = ios.AllocFixed(0x404c, 4);
+            for(uint i = 0; i < 26; i++)
+            {
+                vbox_idx.Write(vbox_idx.Addr64, 4, i * 4);
+                var val = vbox_dat.Read(vbox_dat.Addr64, 4);
+                System.Diagnostics.Debugger.Log(0, "acpipc", "VBoxACPI: " + i.ToString() + ": " + val.ToString("X8"));
+            }
+
             /* Now allocate space for the DSDT */
             if(p_dsdt_addr == 0)
             {
@@ -173,13 +186,135 @@ namespace acpipc
                 System.Diagnostics.Debugger.Log(0, "acpipc", "SSDT parsed");
             }
 
+            /* Initialize the namespace
+
+            To do this we:
+            1) initialize the main namespace (\_SB_._INI)
+            2) run each device's _STA method.
+                - if _STA & 0x1 = 0,
+                    - if _STA & 0x8 = 0 remove device and children from namespace
+                    - else remove device (but still enumerate children)
+                - else, run _INI on device
+            3) tell ACPI we are using IOAPIC (\_PIC(1))
+            */
+
+            EvaluateObject("\\_SB_._INI");
+
+            /* We do the initialization this way to ensure we always initialize
+            root objects before children.  By definition parent objects have
+            shorter names than children, therefore we do all devices of length 1,
+            then 2 etc until all have been covered.
+
+            If we find a non-functional device (bit 3 not set), we at that stage
+            find all children of it and mark them as already initialized (so that
+            they are not parsed in the loop)
+            */
+
+            int num_to_parse = n.Devices.Count;
+            List<string> dev_names = new List<string>(n.Devices.Keys);
+            int depth = 1;
+
+            while(num_to_parse > 0)
+            {
+                for(int i = 0; i < dev_names.Count; i++)
+                {
+                    ACPIName dev_name = dev_names[i];
+                    if (dev_name == null)
+                        continue;
+                    if (dev_name.ElementCount != depth)
+                        continue;
+
+                    ACPIObject dev_obj = n.FindObject(dev_name);
+                    if (dev_obj.Initialized)
+                        continue;
+
+                    System.Diagnostics.Debugger.Log(0, "acpipc", "Executing " + dev_name + "._STA");
+
+                    // Run _STA on the device
+                    int sta_val = 0;
+                    var sta = n.EvaluateTo(dev_name + "._STA", mi, ACPIObject.DataType.Integer);
+                    if (sta == null)
+                        sta_val = 0xf;
+                    else
+                        sta_val = (int)sta.IntegerData;
+
+                    dev_obj.Present = ((sta_val & 0x1) != 0);
+                    dev_obj.Functioning = ((sta_val & 0x8) != 0);
+
+                    if (dev_obj.Present == false && dev_obj.Functioning == false)
+                    {
+                        // Do not run _INI, do not examine device children
+
+                        System.Diagnostics.Debugger.Log(0, "acpipc", "Device is not present or functioning.  Disabling children");
+
+                        for(int j = 0; j < dev_names.Count; j++)
+                        {
+                            ACPIName subdev_name = dev_names[j];
+                            if (subdev_name == null)
+                                continue;
+                            if (subdev_name.ElementCount <= dev_name.ElementCount)
+                                continue;
+                            bool is_subdev = true;
+                            for(int k = 0; k < dev_name.ElementCount; k++)
+                            {
+                                if(subdev_name.NameElement(k).Equals(dev_name.NameElement(k)) == false)
+                                {
+                                    is_subdev = false;
+                                    break;
+                                }
+                            }
+                            if(is_subdev)
+                            {
+                                System.Diagnostics.Debugger.Log(0, "acpipc", "Disabling child " + subdev_name);
+                                num_to_parse--;
+                                dev_names[j] = null;
+                            }
+                        }
+                    }
+                    else if(dev_obj.Present)
+                    {
+                        // Run _INI, examine children
+                        System.Diagnostics.Debugger.Log(0, "acpipc", "Executing " + dev_name + "._INI");
+                        n.Evaluate(dev_name + "._INI", mi);
+                        dev_obj.Initialized = true;
+                    }
+
+                    num_to_parse--;
+                }
+
+                depth++;
+            }
+
+            System.Diagnostics.Debugger.Log(0, "acpipc", "Executing \\_PIC");
+            EvaluateObject("\\_PIC", new ACPIObject[] { 1 });
+
+            var picm = n.EvaluateTo("\\PICM", mi, ACPIObject.DataType.Integer);
+            System.Diagnostics.Debugger.Log(0, "acpipc", "\\PICM: " + picm.IntegerData.ToString());
+
+            /* Generate a list of PCI Interrupt Links - we pass these as resources
+            to PCI devices */
+            foreach (KeyValuePair<string, Aml.ACPIObject> kvp in n.Devices)
+            {
+                if (kvp.Value.Initialized == false)
+                    continue;
+
+                var hid = n.EvaluateTo(kvp.Key + "._HID", mi, ACPIObject.DataType.Integer);
+                if (hid == null)
+                    continue;
+
+                if (hid.IntegerData == 0x0f0cd041U)
+                    lnks.Add(kvp.Key);
+            }
+
             /* Now extract a list of devices that have a _HID object.
             These are the only ones ACPI needs to enumerate, all others are
             enumerated by the respective bus enumerator */
-            foreach(KeyValuePair<string, Aml.ACPIObject> kvp in n.Devices)
+            foreach (KeyValuePair<string, Aml.ACPIObject> kvp in n.Devices)
             {
                 Aml.ACPIObject hid = n.FindObject(kvp.Key + "._HID", false);
                 if (hid == null)
+                    continue;
+                if (kvp.Value.Initialized == false)
                     continue;
                 s = new Aml.Namespace.State
                 {
@@ -213,11 +348,41 @@ namespace acpipc
             return true;
         }
 
-        public ACPIObject EvaluateObject(string name)
+        internal ACPIObject EvaluateObject(ACPIName name, IList<ACPIObject> args)
         {
-            return n.Evaluate(name, mi);
+            Dictionary<int, ACPIObject> d_args = new Dictionary<int, ACPIObject>(
+                new tysos.Program.MyGenericEqualityComparer<int>());
+            for (int i = 0; i < args.Count; i++)
+                d_args[i] = args[i];
+
+            var ret = n.Evaluate(name, mi, d_args);
+            if (ret == null)
+                System.Diagnostics.Debugger.Log(0, "acpipc", name + " returned null");
+            else
+                System.Diagnostics.Debugger.Log(0, "acpipc", name + " returned " + ret.Type.ToString());
+            return ret;
         }
 
+        internal ACPIObject EvaluateObject(ACPIName name)
+        {
+            return EvaluateObject(name, new ACPIObject[] { });
+        }
+
+        internal PCIInterrupt GeneratePCIIRQ(int gsi)
+        {
+            lock(pci_ints)
+            {
+                if (pci_ints.ContainsKey(gsi))
+                    return pci_ints[gsi];
+
+                GlobalSystemInterrupt gsi_obj = GetGSI(gsi);
+                if (gsi_obj == null)
+                    return null;
+                PCIInterrupt ret = new PCIInterrupt(gsi_obj);
+                pci_ints[gsi] = ret;
+                return ret;
+            }
+        }
 
         private ISAInterrupt GenerateISAIRQ(int i)
         {

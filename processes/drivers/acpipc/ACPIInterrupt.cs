@@ -31,43 +31,32 @@ namespace acpipc
         internal int gsi_num;
 
         internal abstract void SetMode(bool is_level_trigger, bool is_low_active);
-    }
 
-    /* A non-shared ISA interrupt */
-    class ISAInterrupt : tysos.Resources.InterruptLine
-    {
-        GlobalSystemInterrupt gsi;
-        internal bool is_level_trigger = false;
-        internal bool is_low_active = false;
-        internal int irq;
-
-        public ISAInterrupt(GlobalSystemInterrupt global_interrupt)
+        public override string ToString()
         {
-            gsi = global_interrupt;
-        }
-
-        public override bool RegisterHandler(InterruptHandler handler)
-        {
-            bool ret = gsi.RegisterHandler(handler);
-            if (ret == false)
-                return false;
-            gsi.SetMode(is_level_trigger, is_low_active);
-            return true;
+            return "GlobalSystemInterrupt " + gsi_num.ToString();
         }
     }
-    
-    /* A shared PCI interrupt */
-    class PCIInterrupt : tysos.Resources.SharedInterruptLine
+
+    public class ACPIInterrupt : tysos.Resources.SharedInterruptLine
     {
         GlobalSystemInterrupt gsi;
+        public int irq = -1;
 
         /* PCI interrupts are level sensitive, asserted low (see PCI spec para 2.2.6) */
         internal bool is_level_trigger = true;
         internal bool is_low_active = true;
 
-        public PCIInterrupt(GlobalSystemInterrupt global_interrupt) : base(global_interrupt)
+        internal ACPIInterrupt(GlobalSystemInterrupt global_interrupt) : base(global_interrupt)
         {
             gsi = global_interrupt;
+        }
+
+        internal ACPIInterrupt(GlobalSystemInterrupt global_interrupt, bool level_trigger, bool low_active) : base(global_interrupt)
+        {
+            gsi = global_interrupt;
+            is_level_trigger = level_trigger;
+            is_low_active = low_active;
         }
 
         public override bool RegisterHandler(InterruptHandler handler)
@@ -78,5 +67,39 @@ namespace acpipc
             gsi.SetMode(is_level_trigger, is_low_active);
             return true;
         }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("ACPIInterrupt");
+            if(irq != -1)
+            {
+                sb.Append(" (IRQ ");
+                sb.Append(irq.ToString());
+                sb.Append(")");
+            }
+            if(gsi != null)
+            {
+                sb.Append(" -> ");
+                sb.Append(gsi.ToString());
+            }
+            return sb.ToString();
+        }
+    }
+
+    /* A PCI interrupt */
+    public class PCIInterrupt : ACPIInterrupt
+    {
+        internal PCIInterrupt(GlobalSystemInterrupt global_interrupt)
+            : base(global_interrupt, true, true)
+        { }
+    }
+
+    /* An ISA interrupt */
+    public class ISAInterrupt : ACPIInterrupt
+    {
+        internal ISAInterrupt(GlobalSystemInterrupt global_interrupt)
+            : base(global_interrupt, false, false)
+        { }
     }
 }

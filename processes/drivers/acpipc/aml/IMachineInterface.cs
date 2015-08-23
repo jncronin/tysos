@@ -47,6 +47,10 @@ namespace acpipc.Aml
         void WriteIODWord(ulong Addr, uint v);
         void WriteIOQWord(ulong Addr, ulong v);
 
+        byte ReadPCIByte(uint bus, uint dev, uint func, uint offset);
+        ushort ReadPCIWord(uint bus, uint dev, uint func, uint offset);
+        uint ReadPCIDWord(uint bus, uint dev, uint func, uint offset);
+
         void WritePCIByte(uint bus, uint dev, uint func, uint offset, byte v);
         void WritePCIWord(uint bus, uint dev, uint func, uint offset, ushort v);
         void WritePCIDWord(uint bus, uint dev, uint func, uint offset, uint v);

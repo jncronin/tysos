@@ -133,6 +133,18 @@ namespace acpipc
             props.Add(new tysos.lib.File.Property { Name = "acpiid", Value = hid_str });
             props.Add(new tysos.lib.File.Property { Name = "acpiname", Value = name });
 
+            ACPIConfiguration dev_conf = new ACPIConfiguration(this, name);
+            props.Add(new tysos.lib.File.Property { Name = "acpiconf", Value = dev_conf });
+
+            if (tysos_driver == "pci")
+            {
+                foreach (var lnk in lnks)
+                {
+                    ACPIConfiguration lnk_conf = new ACPIConfiguration(this, lnk);
+                    props.Add(new File.Property { Name = "acpiconf", Value = lnk_conf });
+                }
+            }
+
             /* Get resources owned by the device */
             Aml.ACPIObject resources = n.Evaluate(name + "._CRS", mi);
             if (resources != null)
@@ -162,7 +174,7 @@ namespace acpipc
                 System.Diagnostics.Debugger.Log(0, "acpipc", "  " + prop.Name + ": " + prop.Value.ToString());
         }
 
-        private void InterpretResources(ACPIObject resources, List<File.Property> props)
+        public void InterpretResources(ACPIObject resources, List<File.Property> props)
         {
             /* The value of _CRS should be a Buffer, i.e. an array of type byte[] */
             if(resources.Type != ACPIObject.DataType.Buffer)
@@ -180,8 +192,6 @@ namespace acpipc
                     "_CRS output data is not of type byte[]");
                 return;
             }
-
-            //System.Diagnostics.Debugger.Log(0, "acpipc", "InterpretResources: valid _CRS buffer found, length " + rs.Length.ToString());
 
             int idx = 0;
             while (idx < rs.Length)
@@ -208,17 +218,33 @@ namespace acpipc
                             {
                                 uint irq_mask_1 = rs[idx + 1];
                                 uint irq_mask_2 = rs[idx + 2];
+                                uint flags = 0x1;       // active high edge triggered
+
+                                if (len == 3)
+                                    flags = rs[idx + 3];
+
+                                bool sharable = ((flags & 0x10) != 0);
+                                bool active_low = ((flags & 0x08) != 0);
+                                bool level_trigger = ((flags & 0x1) == 0);
 
                                 for(int i = 0; i < 8; i++)
                                 {
                                     if ((irq_mask_1 & 0x1) != 0)
-                                        props.Add(new File.Property { Name = "irq", Value = i });
+                                    {
+                                        ACPIInterrupt irq = AllocateIRQ(i, sharable, active_low, level_trigger);
+                                        if(irq != null)
+                                            props.Add(new File.Property { Name = "irq", Value = irq });
+                                    }
                                     irq_mask_1 >>= 1;
                                 }
                                 for(int i = 0; i < 8; i++)
                                 {
-                                    if((irq_mask_2 & 0x1) != 0)
-                                        props.Add(new File.Property { Name = "irq", Value = i + 8 });
+                                    if ((irq_mask_2 & 0x1) != 0)
+                                    {
+                                        ACPIInterrupt irq = AllocateIRQ(i + 8, sharable, active_low, level_trigger);
+                                        if(irq != null)
+                                            props.Add(new File.Property { Name = "irq", Value = irq });
+                                    }
                                     irq_mask_2 >>= 1;
                                 }
                             }
@@ -360,5 +386,19 @@ namespace acpipc
             }
         }
 
+        private ACPIInterrupt AllocateIRQ(int irq, bool sharable, bool active_low, bool level_trigger)
+        {
+            if (isa_irqs[irq] == null)
+                return null;
+
+            ACPIInterrupt irq_int = isa_irqs[irq];
+            irq_int.is_level_trigger = level_trigger;
+            irq_int.is_low_active = active_low;
+
+            if (sharable == false)
+                isa_irqs[irq] = null;
+
+            return irq_int;
+        }
     }
 }
