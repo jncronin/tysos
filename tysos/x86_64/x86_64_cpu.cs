@@ -69,8 +69,12 @@ namespace tysos.x86_64
             libsupcs.x86_64.Cpu.WrMsr(0xc0000101, gs);
 
             /* Expose the available interrupt lines */
-            for(int i = 32; i < 256; i++)
+            for(int i = 32; i < 255; i++)
             {
+                // Vectors 0x40 is used for the LAPIC timer, 0x60 for spurious vector
+                if (i == 0x40 || i == 0x60)
+                    continue;
+
                 x86_64_Interrupt interrupt = new x86_64_Interrupt();
                 interrupt.cpu = this;
                 interrupt.cpu_int_no = i;

@@ -42,6 +42,8 @@ namespace pci
 
         Dictionary<string, int> next_device_id = new Dictionary<string, int>(new tysos.Program.MyGenericEqualityComparer<string>());
 
+        internal Dictionary<int, acpipc.ACPIInterrupt> isa_irqs = new Dictionary<int, ACPIInterrupt>(new tysos.Program.MyGenericEqualityComparer<int>());
+
         public hostbridge(tysos.lib.File.Property[] Properties)
         {
             root = new List<tysos.lib.File.Property>(Properties);
@@ -57,6 +59,16 @@ namespace pci
             ios.Init(root);
             acpiname = GetFirstProperty(root, "acpiname") as string;
             acpiconf = ACPIConfiguration.GetConfiguration(root);
+            foreach(var res in root)
+            {
+                if(res.Name == "interrupt" && (res.Value is ACPIInterrupt))
+                {
+                    var acpi_int = res.Value as ACPIInterrupt;
+                    if (acpi_int.irq != -1)
+                        isa_irqs[acpi_int.irq] = acpi_int;
+                }
+            }
+            DeviceDB.InitDeviceDB(this);
 
             /* Get CONFIG_DATA and CONFIG_ADDRESS ports */
             CONFIG_ADDRESS = ios.AllocFixed(0xcf8, 4);
@@ -146,6 +158,21 @@ namespace pci
                     PCIConfiguration conf = new PCIConfiguration(CONFIG_ADDRESS,
                         CONFIG_DATA, bus, dev, func, this, details.BAROverrides);
                     props.Add(new tysos.lib.File.Property { Name = "pciconf", Value = conf });
+
+                    if(details.ExtraResources != null)
+                    {
+                        foreach(var res in details.ExtraResources)
+                        {
+                            if (res is tysos.Resources.InterruptLine)
+                                props.Add(new tysos.lib.File.Property { Name = "interrupt", Value = res });
+                            else if (res is tysos.PhysicalMemoryResource64)
+                                props.Add(new tysos.lib.File.Property { Name = "pmem", Value = res });
+                            else if (res is tysos.VirtualMemoryResource64)
+                                props.Add(new tysos.lib.File.Property { Name = "vmem", Value = res });
+                            else if (res is tysos.x86_64.IOResource)
+                                props.Add(new tysos.lib.File.Property { Name = "io", Value = res });
+                        }
+                    }
 
                     /* Is the device enumerated in ACPI too? */
                     int dev_acpi = dev << 16 | func;

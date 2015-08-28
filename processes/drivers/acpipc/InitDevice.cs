@@ -288,9 +288,6 @@ namespace acpipc
             System.Diagnostics.Debugger.Log(0, "acpipc", "Executing \\_PIC");
             EvaluateObject("\\_PIC", new ACPIObject[] { 1 });
 
-            var picm = n.EvaluateTo("\\PICM", mi, ACPIObject.DataType.Integer);
-            System.Diagnostics.Debugger.Log(0, "acpipc", "\\PICM: " + picm.IntegerData.ToString());
-
             /* Generate a list of PCI Interrupt Links - we pass these as resources
             to PCI devices */
             foreach (KeyValuePair<string, Aml.ACPIObject> kvp in n.Devices)

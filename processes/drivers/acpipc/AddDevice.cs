@@ -75,12 +75,12 @@ namespace acpipc
             else if (hid_str == "0303D041")
             {
                 // PNP0303  IBM enhanced keyboard (101/102-key, PS/2 mouse support)
-                tysos_driver = "ps2k";
+                tysos_driver = "ps2";
             }
             else if (hid_str == "030FD041")
             {
                 // PNP0F03  Microsoft PS/2-style Mouse
-                tysos_driver = "ps2m";
+                tysos_driver = "ps2";
             }
             else if (hid_str == "0000D041")
             {
@@ -136,12 +136,21 @@ namespace acpipc
             ACPIConfiguration dev_conf = new ACPIConfiguration(this, name);
             props.Add(new tysos.lib.File.Property { Name = "acpiconf", Value = dev_conf });
 
+            /* Add PCI specific information */
             if (tysos_driver == "pci")
             {
+                /* Pass PCI IRQ routing information */
                 foreach (var lnk in lnks)
                 {
                     ACPIConfiguration lnk_conf = new ACPIConfiguration(this, lnk);
                     props.Add(new File.Property { Name = "acpiconf", Value = lnk_conf });
+                }
+
+                /* Pass unassigned ISA IRQs */
+                foreach(var isa_irq in isa_irqs)
+                {
+                    if (isa_irq != null && isa_irq.irq != -1)
+                        props.Add(new File.Property { Name = "interrupt", Value = isa_irq });
                 }
             }
 
@@ -165,6 +174,10 @@ namespace acpipc
             sb.Append(dev_no.ToString());
             next_device_id[base_dev] = dev_no + 1;
             string dev_name = sb.ToString();
+
+            /* Link all PS/2 devices together */
+            if(tysos_driver == "ps2" && children.ContainsKey("ps2_0"))
+                props.AddRange(children["ps2_0"]);
 
             /* Create a file system node for the device */
             children[dev_name] = props;

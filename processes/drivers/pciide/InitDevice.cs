@@ -22,6 +22,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using tysos;
+using tysos.Resources;
 
 namespace pciide
 {
@@ -29,12 +31,13 @@ namespace pciide
     {
         pci.PCIConfiguration pciconf;
 
-        tysos.RangeResource[] command;
-        tysos.RangeResource[] control;
+        internal enum DriverType { PCINative, Legacy, Unknown };
+        DriverType dt;
 
-        public pciide(tysos.lib.File.Property[] Properties)
+        internal pciide(tysos.lib.File.Property[] Properties, DriverType type)
         {
             root = new List<tysos.lib.File.Property>(Properties);
+            dt = type;
         }
 
         public override bool InitServer()
@@ -48,72 +51,103 @@ namespace pciide
                 return false;
             }
 
-            /* Set the controller to native PCI mode if possible */
-            uint conf_8 = pciconf.ReadConfig(0x8);
-            uint progIF = (conf_8 >> 8) & 0xffU;
-            bool is_native = false;
-            System.Diagnostics.Debugger.Log(0, "pciide", "controller reports progIF as " + progIF.ToString("X8"));
-            if((progIF & 0x5) == 0x5)
+            if(dt == DriverType.Unknown)
             {
-                // already in native mode
-                is_native = true;
-            }
-            else
-            {
-                // not already in native PCI mode on both channels
-
-                if ((progIF & 0xa) != 0xa)
-                {
-                    // one or both channels is in a fixed mode and so can't be
-                    // programmed to native PCI mode
-                    is_native = false;
-                }
+                /* Get the type from PCI config space */
+                uint conf_8 = pciconf.ReadConfig(0x8);
+                uint progIF = (conf_8 >> 8) & 0xffU;
+                if ((progIF & 0x5) == 0x5)
+                    dt = DriverType.PCINative;
                 else
-                {
-                    // Attempt to program native mode
-
-                    conf_8 |= (0x5 << 8);
-
-                    System.Diagnostics.Debugger.Log(0, "pciide", "writing " + conf_8.ToString("X8") + " to control register");
-
-                    pciconf.WriteConfig(0x8, conf_8);
-
-                    // See if we succeeded
-                    conf_8 = pciconf.ReadConfig(0x8);
-                    progIF = (conf_8 >> 8) & 0xffU;
-
-                    is_native = (progIF & 0x5) == 0x5;
-                }
+                    dt = DriverType.Legacy;
             }
 
-            /* Enable the controller */
-            uint conf_4 = pciconf.ReadConfig(0x4);
-            conf_4 |= 0x3U;
-            pciconf.WriteConfig(0x4, conf_4);
+            /* Get IO port ranges */
+            var pri_cmd = pciconf.GetBAR(0);
+            var pri_ctrl = pciconf.GetBAR(1);
+            var sec_cmd = pciconf.GetBAR(2);
+            var sec_ctrl = pciconf.GetBAR(3);
 
-            /* Get the value of BARs */
-            for (int i = 0; i < 6; i++)
+            /* Get IRQ ports */
+            tysos.Resources.InterruptLine pri_int = null, sec_int = null;
+            switch (dt)
             {
-                tysos.RangeResource rr = pciconf.GetBAR(i);
-                if (rr == null)
-                    System.Diagnostics.Debugger.Log(0, "pciide", "BAR" + i.ToString() + ": null");
-                else
-                    System.Diagnostics.Debugger.Log(0, "pciide", "BAR" + i.ToString() + ": " + rr.ToString());
+                case DriverType.Legacy:
+                    foreach (var r in root)
+                    {
+                        if (r.Name == "interrupt" && (r.Value is tysos.Resources.InterruptLine))
+                        {
+                            var r_int = r.Value as tysos.Resources.InterruptLine;
+                            if (r_int.ShortName == "IRQ14")
+                                pri_int = r_int;
+                            else if (r_int.ShortName == "IRQ15")
+                                sec_int = r_int;
+                        }
+                    }
+                    break;
+
+                case DriverType.PCINative:
+                    foreach (var r in root)
+                    {
+                        if (r.Name == "interrupt" && (r.Value is tysos.Resources.InterruptLine))
+                        {
+                            var r_int = r.Value as tysos.Resources.InterruptLine;
+                            if (r_int.ShortName.StartsWith("PCI"))
+                            {
+                                pri_int = r_int;
+                                sec_int = r_int;
+                                break;
+                            }
+                        }
+                    }
+                    break;
             }
 
-            command = new tysos.RangeResource[2];
-            control = new tysos.RangeResource[2];
-
-            command[0] = pciconf.GetBAR(0);
-            control[0] = pciconf.GetBAR(1);
-            command[1] = pciconf.GetBAR(2);
-            control[1] = pciconf.GetBAR(3);
-
-            /* Get the value of IRQ line/pin */
-            uint conf_3c = pciconf.ReadConfig(0x3c);
-            System.Diagnostics.Debugger.Log(0, "pciide", "Conf 3c: " + conf_3c.ToString("X8"));
+            /* Create child devices */
+            if (pri_cmd.Length64 != 0 && pri_ctrl.Length64 != 0 && pri_int != null)
+                CreateChannel(0, pri_cmd, pri_ctrl, pri_int);
+            if (sec_cmd.Length64 != 0 && sec_ctrl.Length64 != 0 && sec_int != null)
+                CreateChannel(1, sec_cmd, sec_ctrl, sec_int);
 
             return true;
+        }
+
+        private void CreateChannel(int idx, RangeResource cmd, RangeResource ctrl, InterruptLine interrupt)
+        {
+            List<tysos.lib.File.Property> props = new List<tysos.lib.File.Property>();
+            string channel_name = "";
+            switch(idx)
+            {
+                case 0:
+                    channel_name = "Primary ";
+                    break;
+                case 1:
+                    channel_name = "Secondary ";
+                    break;
+                case 2:
+                    channel_name = "Tertiary ";
+                    break;
+                case 3:
+                    channel_name = "Quaternary ";
+                    break;
+            }
+
+            props.Add(new tysos.lib.File.Property { Name = "driver", Value = "ata" });
+            props.Add(new tysos.lib.File.Property { Name = "name", Value = channel_name + "ATA Channel" });
+            props.Add(new tysos.lib.File.Property { Name = "manufacturer", Value = "Generic" });
+            props.Add(new tysos.lib.File.Property { Name = "io", Value = cmd });
+            props.Add(new tysos.lib.File.Property { Name = "io", Value = ctrl });
+            props.Add(new tysos.lib.File.Property { Name = "interrupt", Value = interrupt });
+            props.Add(new tysos.lib.File.Property { Name = "channel", Value = idx });
+
+            children["ata_" + idx.ToString()] = props;
+
+            System.Diagnostics.Debugger.Log(0, "pciide", "Created ATA channel:");
+            foreach (var prop in props)
+            {
+                System.Diagnostics.Debugger.Log(0, "pciide", "  " + prop.Name + ": " + prop.Value.ToString());
+            }
+
         }
     }
 }

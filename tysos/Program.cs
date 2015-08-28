@@ -176,7 +176,8 @@ namespace tysos
 
             /* Start the scheduler */
             arch.CurrentCpu.CurrentScheduler = new Scheduler();
-            arch.SchedulerTimer.Callback = new Timer.TimerCallback(Scheduler.TimerProc);
+            if(GetCmdLine("ignore_timer") == false)
+                arch.SchedulerTimer.Callback = new Timer.TimerCallback(Scheduler.TimerProc);
 
             /* Store the process info */
             running_processes = new Dictionary<string, Process>(new MyGenericEqualityComparer<string>());
@@ -241,6 +242,7 @@ namespace tysos
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0" }, new Type[] { typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/bga_0" }, new Type[] { typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0" }, new Type[] { typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0/ata_0" }, new Type[] { typeof(string) });
 
             /* Load the modfs driver */
             Process modfs = LoadELFModule("modfs", mboot, stab, running_processes, 0x8000, new object[] { });
@@ -249,6 +251,7 @@ namespace tysos
 
 
             arch.EnableMultitasking();
+            Syscalls.SchedulerFunctions.Yield();
 
             while (true) ;
 

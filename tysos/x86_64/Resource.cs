@@ -88,8 +88,11 @@ namespace tysos.x86_64
 
     public class x86_64_Interrupt : Resources.CpuInterruptLine
     {
+        List<byte> handler_func;
+
         public unsafe override bool RegisterHandler(InterruptHandler handler)
         {
+            System.Diagnostics.Debugger.Log(0, "x86_64_Interrupt", ShortName + " RegisterHandler");
             /* Build a new interrupt handler which does:
 
             push rax
@@ -123,7 +126,7 @@ namespace tysos.x86_64
 
             List<byte> func = new List<byte>();
             func.AddRange(new byte[] { 0x9c, 0x50, 0x53, 0x51, 0x52, 0x56,
-            0x57, 0x55, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x42, 0x53,
+            0x57, 0x55, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53,
             0x41, 0x54, 0x41, 0x55, 0x41, 0x56, 0x41, 0x57, 0x48, 0x81,
             0xec, 0x80, 0x00, 0x00, 0x00, });
 
@@ -152,22 +155,25 @@ namespace tysos.x86_64
             ulong target = libsupcs.CastOperations.ReinterpretAsUlong(handler.Target);
             func.AddRange(BitConverter.GetBytes(target));
 
-            func.Add(0xe8);
-
-            uint meth = (uint)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(handler);
+            func.AddRange(new byte[] { 0x48, 0xb8 });
+            ulong meth = (ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(handler);
             func.AddRange(BitConverter.GetBytes(meth));
 
-            func.AddRange(new byte[] { 0x48, 0xa9, 0x01, 0x00, 0x00, 0x00,
-                0x74, 0x0f,
+            func.AddRange(new byte[] {
+                0xff, 0xd0,
+                0x48, 0xa9, 0x01, 0x00, 0x00, 0x00,
+                0x74, 0x16,
                 0x48, 0xbf
             });
 
             ulong cpu_ptr = libsupcs.CastOperations.ReinterpretAsUlong(cpu);
             func.AddRange(BitConverter.GetBytes(cpu_ptr));
 
-            func.Add(0xe8);
-            uint send_lapic = (uint)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(new SendLapicEOIDelegate(SendLapicEOI));
+            func.AddRange(new byte[] { 0x48, 0xb8 });
+            ulong send_lapic = (ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(new SendLapicEOIDelegate(SendLapicEOI));
             func.AddRange(BitConverter.GetBytes(send_lapic));
+
+            func.AddRange(new byte[] { 0xff, 0xd0 });
 
             func.AddRange(new byte[]
             {
@@ -212,6 +218,9 @@ namespace tysos.x86_64
 
             // TODO make Interrupts cpu-specific
             Program.arch.Interrupts.InstallHandler(cpu_int_no, func_ptr);
+
+            // Store the handler so it is not garbage collected
+            handler_func = func;
 
             return true;
         }

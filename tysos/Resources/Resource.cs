@@ -37,7 +37,7 @@ namespace tysos
         }
     }
 
-    public abstract class RangeResource
+    public abstract class RangeResource : Resource
     {
         public abstract RangeResource Split(uint base_addr, uint length);
         public abstract RangeResource Split(ulong base_addr, ulong length);
@@ -495,19 +495,31 @@ namespace tysos
 
 namespace tysos.Resources
 {
-    public abstract class InterruptLine
+    public abstract class InterruptLine : Resource
     {
         public delegate bool InterruptHandler();
         public abstract bool RegisterHandler(InterruptHandler handler);
+        public abstract string ShortName { get; }
     }
 
     public abstract class CpuInterruptLine : InterruptLine
     {
         protected internal Cpu cpu;
         protected internal int cpu_int_no;
+
+        public int CpuInterrupt { get { return cpu_int_no; } }
+        public int CpuID { get { return cpu.Id; } }
+
+        public override string ShortName
+        {
+            get
+            {
+                return "CPU" + cpu.Id.ToString() + "." + cpu_int_no.ToString();
+            }
+        }
     }
 
-    public class SharedInterruptLine : InterruptLine
+    public abstract class SharedInterruptLine : InterruptLine
     {
         List<InterruptHandler> handlers = new List<InterruptHandler>();
         protected InterruptLine shared_line;
@@ -517,6 +529,7 @@ namespace tysos.Resources
 
         public override bool RegisterHandler(InterruptHandler handler)
         {
+            System.Diagnostics.Debugger.Log(0, "SharedInterruptLine", ShortName + " RegisterHandler");
             handlers.Add(handler);
             if(handlers.Count == 1)
             {

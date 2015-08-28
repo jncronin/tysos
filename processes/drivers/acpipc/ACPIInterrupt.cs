@@ -61,6 +61,7 @@ namespace acpipc
 
         public override bool RegisterHandler(InterruptHandler handler)
         {
+            System.Diagnostics.Debugger.Log(0, "ACPIInterrupt", ShortName + " RegisterHandler");
             bool ret = base.RegisterHandler(handler);
             if (ret == false)
                 return false;
@@ -84,6 +85,17 @@ namespace acpipc
                 sb.Append(gsi.ToString());
             }
             return sb.ToString();
+        }
+
+        public override string ShortName
+        {
+            get
+            {
+                if (irq == -1)
+                    return "PCI";
+                else
+                    return "IRQ" + irq.ToString();
+            }
         }
     }
 

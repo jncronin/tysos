@@ -56,7 +56,13 @@ namespace pciide
 
             System.Diagnostics.Debugger.Log(0, "pciide", "subdriver " + subdriver_str + " not found");
 
-            pciide fs = new pciide(props);
+            pciide.DriverType dt = pciide.DriverType.Unknown;
+            if (subdriver_str == "legacy")
+                dt = pciide.DriverType.Legacy;
+            else if (subdriver_str == "pcinative")
+                dt = pciide.DriverType.PCINative;
+
+            pciide fs = new pciide(props, dt);
             tysos.Process p = tysos.Process.CreateProcess("pciide: " + src.Name,
                     new System.Threading.ThreadStart(fs.MessageLoop), new object[] { fs });
             p.Start();

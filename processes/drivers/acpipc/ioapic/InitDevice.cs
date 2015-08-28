@@ -30,7 +30,7 @@ namespace acpipc.ioapic
     {
         tysos.lib.File.Property[] props;
 
-        internal uint gsibase, id;
+        internal uint gsibase, id, redirs;
         tysos.VirtualMemoryResource64 v_conf;
         tysos.PhysicalMemoryResource64 p_conf;
         internal List<tysos.Resources.InterruptLine> ints = new List<tysos.Resources.InterruptLine>();
@@ -74,16 +74,25 @@ namespace acpipc.ioapic
                 return false;
             }
 
+
             /* Map our configuration space */
             p_conf.Map(v_conf);
 
+            /* Get number of pins */
+            uint ioapicver = ReadRegister(0x1);
+            redirs = ((ioapicver >> 16) & 0xffU) + 1;
+
+            System.Diagnostics.Debugger.Log(0, "ioapic", "Configuration: p_conf: " + p_conf.Addr64.ToString("X8") +
+                ", v_conf: " + v_conf.Addr64.ToString("X16") + ", gsibase: " + gsibase.ToString() +
+                ", ioapicid: " + id.ToString() + ", redirs: " + redirs.ToString());
+
             /* Build a list of free GSIs.  The standard IOAPIC has 24 pins. */
-            for(int i = 0; i < 24; i++)
+            for(uint i = 0; i < redirs; i++)
             {
                 IOAPICGSI gsi = new IOAPICGSI();
                 gsi.apic = this;
-                gsi.gsi_num = (int)gsibase + i;
-                gsi.ioapic_idx = i;
+                gsi.gsi_num = (int)(gsibase + i);
+                gsi.ioapic_idx = (int)i;
                 gsis[i] = gsi;
             }
 
@@ -135,6 +144,7 @@ namespace acpipc.ioapic
 
         public override bool RegisterHandler(InterruptHandler handler)
         {
+            System.Diagnostics.Debugger.Log(0, "IOAPICGSI", ShortName + " RegisterHandler");
             /* Get a free CPU interrupt */
             if (cpu_int == null)
             {
@@ -174,7 +184,31 @@ namespace acpipc.ioapic
 
         internal override void SetMode(bool is_level_trigger, bool is_low_active)
         {
-            throw new NotImplementedException();
+            int ioredtbl_idx = 0x10 + 2 * ioapic_idx;
+
+            /* Build the value to install in the entry.
+
+            Vector (bits 0-7) = cpu_int.cpu_int_no
+            Mode (bits 8-10) = 0 (fixed)
+            Dest mode (bit 11) = 0 (physical mode)
+            Polarity (bit 13) = is_low_active
+            Trigger (bit 15) = is_level_trigger
+            Mask (bit 16) = 0 (unmasked)
+            Destination (bits 56-59) = LAPIC ID of target processor */
+
+            ulong value = ((ulong)cpu_int.CpuInterrupt) & 0xffUL;
+            if (is_low_active) value |= 1UL << 13;
+            if (is_level_trigger) value |= 1UL << 15;
+            value |= (((ulong)cpu_int.CpuID) & 0xfUL) << 56;
+
+            uint val_1 = (uint)(value & 0xffffffffU);
+            uint val_2 = (uint)(value >> 32);
+
+            apic.WriteRegister(ioredtbl_idx, val_1);
+            apic.WriteRegister(ioredtbl_idx + 1, val_2);
+
+            System.Diagnostics.Debugger.Log(0, "IOAPICGSI", "Write  " + val_1.ToString("X8") + " to " + ioredtbl_idx.ToString("X8"));
+            System.Diagnostics.Debugger.Log(0, "IOAPICGSI", "Write  " + val_2.ToString("X8") + " to " + (ioredtbl_idx + 1).ToString("X8"));
         }
 
         public override string ToString()
@@ -194,6 +228,14 @@ namespace acpipc.ioapic
             }
 
             return sb.ToString();
+        }
+
+        public override string ShortName
+        {
+            get
+            {
+                return "IOAPIC" + apic.id.ToString() + "." + ioapic_idx.ToString();
+            }
         }
     }
 }

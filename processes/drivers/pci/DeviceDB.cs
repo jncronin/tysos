@@ -45,6 +45,7 @@ namespace pci
         public string DriverName;
         public string SubdriverName;
         public IList<BAROverride> BAROverrides;
+        public IList<tysos.Resource> ExtraResources;
 
         public override string ToString()
         {

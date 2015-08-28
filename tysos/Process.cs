@@ -107,6 +107,8 @@ namespace tysos
         internal Virtual_Regions.Region sse;
         internal Virtual_Regions.Region stack;
 
+        internal string name;
+
         public bool do_profile = false;
 
         internal List<Event> BlockingOn = new List<Event>();
@@ -122,6 +124,8 @@ namespace tysos
             t.saved_state = Program.arch.CreateTaskSwitchInfo();
             t.stack = vreg.AllocRegion(stack_size, 0x1000, name + "_Stack", 0x1000, Virtual_Regions.Region.RegionType.Stack, true);
             t.saved_state.Init(new UIntPtr(e_point), t.stack, new UIntPtr(stab.GetAddress("__exit")), parameters);
+
+            t.name = name;
 
             t.exit_address = stab.GetAddress("__exit");
 
