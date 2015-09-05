@@ -36,6 +36,8 @@ namespace tysos
         public bool Started { get { return started; } }
         public ServerObject MessageServer;
 
+        public bool MessagePending { get { if (ipc == null) return false; return ipc.PeekMessage() != null; } }
+
         internal string current_directory = "/";
         public string CurrentDirectory { get { return current_directory; } }
 

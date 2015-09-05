@@ -308,10 +308,11 @@ PCIOBJ = objfromexe(typroject(ROOT + "/processes/drivers/pci/pci.csproj"));
 BGAOBJ = objfromexe(typroject(ROOT + "/processes/drivers/bga/bga.csproj"));
 PCIIDEOBJ = objfromexe(typroject(ROOT + "/processes/drivers/pciide/pciide.csproj"));
 ATAOBJ = objfromexe(typroject(ROOT + "/processes/drivers/ata/ata.csproj"));
+DISKOBJ = objfromexe(typroject(ROOT + "/processes/drivers/disk/disk.csproj"));
 
 PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj"), DEBUGPRINTOBJ,
 	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ, PCIOBJ, BGAOBJ, PCIIDEOBJ,
-	ATAOBJ ];
+	ATAOBJ, DISKOBJ ];
 
 COREIMG = OUTDIR + "/core.img";
 XORRISO = "xorriso";

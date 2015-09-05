@@ -292,9 +292,15 @@ namespace tysos
             [libsupcs.Syscall]
             public static bool InitIPC()
             { return IPC.InitIPC(Program.arch.CurrentCpu.CurrentThread.owning_process); }
+
             [libsupcs.Syscall]
             public static IPCMessage ReadMessage()
             { if (Program.arch.CurrentCpu.CurrentThread.owning_process.ipc == null) return null; else return Program.arch.CurrentCpu.CurrentThread.owning_process.ipc.ReadMessage(); }
+
+            [libsupcs.Syscall]
+            public static IPCMessage PeekMessage()
+            { if (Program.arch.CurrentCpu.CurrentThread.owning_process.ipc == null) return null; else return Program.arch.CurrentCpu.CurrentThread.owning_process.ipc.PeekMessage(); }
+
             [libsupcs.Syscall]
             public static bool SendMessage(Process dest, IPCMessage message)
             {

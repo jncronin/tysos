@@ -65,6 +65,7 @@
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="BlockDevice.cs" />
     <Compile Include="GetFileSystemEntries.cs" />
     <Compile Include="vfs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

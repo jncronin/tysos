@@ -29,7 +29,7 @@ using System.Text;
 
 namespace tysos.Collections
 {
-    class LinkedList<T> : IList<T> where T : class
+    public class LinkedList<T> : IList<T> where T : class
     {
         internal protected class Node
         {
@@ -231,7 +231,7 @@ namespace tysos.Collections
         }
     }
 
-    class Queue<T> : LinkedList<T> where T : class 
+    public class Queue<T> : LinkedList<T> where T : class 
     {
         public virtual T GetFirst() { return GetFirst(true); }
         public virtual T GetFirst(bool remove)
@@ -248,7 +248,7 @@ namespace tysos.Collections
         }
     }
 
-    class DeltaQueue<T> : Queue<T> where T : class
+    public class DeltaQueue<T> : Queue<T> where T : class
     {
         protected class DeltaNode : LinkedList<T>.Node
         {

@@ -88,7 +88,8 @@ namespace tysos.x86_64
 
     public class x86_64_Interrupt : Resources.CpuInterruptLine
     {
-        List<byte> handler_func;
+        byte[] handler_func;
+        ulong func_ptr;
 
         public unsafe override bool RegisterHandler(InterruptHandler handler)
         {
@@ -214,13 +215,13 @@ namespace tysos.x86_64
             });
 
             byte[] arr_func = func.ToArray();
-            ulong func_ptr = (ulong)libsupcs.MemoryOperations.GetInternalArray(arr_func);
+            func_ptr = (ulong)libsupcs.MemoryOperations.GetInternalArray(arr_func);
 
             // TODO make Interrupts cpu-specific
             Program.arch.Interrupts.InstallHandler(cpu_int_no, func_ptr);
 
             // Store the handler so it is not garbage collected
-            handler_func = func;
+            handler_func = arr_func;
 
             return true;
         }

@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using tysos;
+using tysos.lib;
 using tysos.Resources;
 
 namespace ata
@@ -55,7 +56,7 @@ namespace ata
         const uint IDENTIFY_DRIVE = 0xec;
 
         /* Define device data */
-        class DeviceInfo
+        internal class DeviceInfo
         {
             public enum DeviceType { ATA, ATAPI, SATA, SATAPI };
             public DeviceType Type;
@@ -67,9 +68,32 @@ namespace ata
             public string SerialNumber, FirmwareRevision, ModelNumber;
 
             public int MaxPIO, MaxUDMA;
+
+            public int Id;
         }
 
         DeviceInfo[] Devices;
+
+        /* Command object */
+        internal class Cmd
+        {
+            public bool is_write;
+            public ulong sector_idx;
+            public ulong cur_sector;
+            public ulong sector_count;
+            public byte[] buf;
+            public int buf_offset;
+
+            public int cur_cmd_sector_count;
+            public int cur_cmd_sector_idx;
+
+            public DeviceInfo d;
+
+            public vfs.BlockEvent ev;
+        }
+
+        Cmd cur_cmd;
+        internal tysos.Collections.Queue<Cmd> cmds = new tysos.Collections.Queue<Cmd>();
 
         void Wait400ns()
         {
@@ -146,6 +170,8 @@ namespace ata
             StartupIdentifySent,
             ReadSent,
             WriteSent,
+            ReadCompleted,
+            WriteCompleted,
             Idle
         }
 
@@ -193,7 +219,64 @@ namespace ata
                             return;
                     }
                     break;
+                case State.ReadSent:
+                case State.WriteSent:
+                    if((Status & 0x1) != 0)
+                    {
+                        System.Diagnostics.Debugger.Log(0, "ata", "Error in state " + s.ToString() +
+                            ".  Error register: " + Error.ToString("X2"));
+                        if (s == State.ReadSent)
+                            cur_cmd.ev.Error = MonoIOError.ERROR_READ_FAULT;
+                        else
+                            cur_cmd.ev.Error = MonoIOError.ERROR_WRITE_FAULT;
 
+                        s = State.Idle;
+                        return;
+                    }
+
+                    /* No error - do read/write */
+                    cur_cmd.cur_cmd_sector_idx += 1;
+                    cur_cmd.ev.SectorsTransferred++;
+                    if (s == State.ReadSent)
+                    {
+                        for (int i = 0; i < 256; i++)
+                        {
+                            ushort val = (ushort)cmd.Read(cmd.Addr64 + DATA, 2);
+                            cur_cmd.buf[cur_cmd.buf_offset] = (byte)(val & 0xffU);
+                            cur_cmd.buf[cur_cmd.buf_offset + 1] = (byte)(val >> 8);
+                            cur_cmd.buf_offset += 2;
+                        }
+                    }
+                    else
+                    {
+                        for(int i = 0; i < 256; i++)
+                        {
+                            ushort val = cur_cmd.buf[cur_cmd.buf_offset];
+                            val |= (ushort)((ushort)cur_cmd.buf[cur_cmd.buf_offset + 1] << 8);
+                            cur_cmd.buf_offset += 2;
+                            cmd.Write(cmd.Addr64 + DATA, 2, val);
+                        }
+                    }
+
+                    if (cur_cmd.cur_cmd_sector_idx == cur_cmd.cur_cmd_sector_count)
+                    {
+                        /* The current command has finished, however we may need to
+                        execute another if sector_count > 256 */
+
+                        if (cur_cmd.sector_count != 0)
+                        {
+                            SendDeviceCommand(cur_cmd);
+                            break;
+                        }
+                    }
+
+                    /* The command has completed */
+                    cur_cmd.ev.Error = MonoIOError.ERROR_SUCCESS;
+                    cur_cmd.ev.Set();
+
+                    s = State.Idle;
+
+                    break;
             }
             System.Diagnostics.Debugger.Log(0, "ata", "Unhandled state: " + s.ToString() +
                 ", drive: " + drive.ToString() + ", status: " + Status.ToString("X2") +
@@ -283,6 +366,8 @@ namespace ata
                 }
             }
 
+            Devices[d].Id = d;
+
             /* Dump output */
             System.Diagnostics.Debugger.Log(0, "ata", ((d == 0) ? "MASTER: " : "SLAVE: ") +
                 "SerialNumber: " + Devices[d].SerialNumber +
@@ -293,6 +378,15 @@ namespace ata
                 ", MaxPIO: " + Devices[d].MaxPIO.ToString() +
                 ((Devices[d].MaxUDMA != -1) ? (", MaxUDMA: " + Devices[d].MaxUDMA.ToString()) : "") +
                 ((Devices[d].Lba48 == true) ? ", LBA48" : ""));
+
+            /* Generate child object */
+            string child_name = "device_" + d.ToString();
+            List<tysos.lib.File.Property> props = new List<File.Property>();
+            props.Add(new File.Property { Name = "serial", Value = Devices[d].SerialNumber });
+            props.Add(new File.Property { Name = "model", Value = Devices[d].SerialNumber });
+            props.Add(new File.Property { Name = "driver", Value = "disk" });
+            props.Add(new File.Property { Name = "blockdev", Value = new Drive(Devices[d], this) });
+            children.Add(child_name, props);
         }
 
         private string ReadString(ushort[] id, int idx, int wordlength)
@@ -318,6 +412,105 @@ namespace ata
             cmd.Write(cmd.Addr64 + DEVICE, 1, (uint)d << 4);
             Wait400ns();
             cmd.Write(cmd.Addr64 + COMMAND, 1, IDENTIFY_DRIVE);
+        }
+
+        public override void MessageLoop()
+        {
+            t = Syscalls.SchedulerFunctions.GetCurrentThread();
+            Syscalls.SchedulerFunctions.GetCurrentThread().owning_process.MessageServer = this;
+
+            if (InitServer() == false)
+            {
+                Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": InitServer failed\n");
+                return;
+            }
+
+            while (s != State.Idle) ;
+            Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": entering message loop\n");
+
+            while (true)
+            {
+                IPCMessage msg = null;
+                do
+                {
+                    msg = Syscalls.IPCFunctions.ReadMessage();
+
+                    if (msg != null)
+                        HandleMessage(msg);
+                } while (msg != null);
+
+                BackgroundProc();
+
+                /* Block on either new messages or having a non-empty command queue */
+                Syscalls.SchedulerFunctions.Block(new DelegateEvent(
+                    delegate ()
+                    {
+                        if (t.owning_process.MessagePending == true)
+                            return true;
+                        if (cmds.Count != 0)
+                            return true;
+                        return false;
+                    }));
+            }
+        }
+
+        protected override void BackgroundProc()
+        {
+            if (cur_cmd != null)
+                return;
+            if (s != State.Idle)
+                return;
+
+            Cmd next_cmd = cmds.GetFirst();
+            if (next_cmd == null)
+                return;
+
+            /* Send the command and update current state */
+            if (next_cmd.is_write)
+                s = State.WriteSent;
+            else
+                s = State.ReadSent;
+
+            cur_cmd = next_cmd;
+            drive = next_cmd.d.Id;
+
+            SendDeviceCommand(next_cmd);
+        }
+        
+        void SendDeviceCommand(Cmd next_cmd)
+        {
+            /* Build device command */
+            byte lba_1 = (byte)(next_cmd.cur_sector & 0xffU);
+            byte lba_2 = (byte)((next_cmd.cur_sector >> 8) & 0xffU);
+            byte lba_3 = (byte)((next_cmd.cur_sector >> 16) & 0xffU);
+            byte lba_4 = (byte)((next_cmd.cur_sector >> 24) & 0x0fU);
+
+            byte sector_count = (byte)(next_cmd.sector_count & 0xffU);
+            if(sector_count == 0)
+            {
+                next_cmd.cur_sector += 0x100;
+                next_cmd.sector_count -= 0x100;
+                next_cmd.cur_cmd_sector_count = 0x100;
+            }
+            else
+            {
+                next_cmd.cur_sector += sector_count;
+                next_cmd.sector_count -= sector_count;
+                next_cmd.cur_cmd_sector_count = sector_count;
+            }
+            next_cmd.cur_cmd_sector_idx = 0;
+
+            cmd.Write(cmd.Addr64 + DEVICE, 1, ((uint)drive << 4) | 0x40U | lba_4);
+            Wait400ns();
+            cmd.Write(cmd.Addr64 + LBALO, 1, lba_1);
+            cmd.Write(cmd.Addr64 + LBAMID, 1, lba_2);
+            cmd.Write(cmd.Addr64 + LBAHI, 1, lba_3);
+            cmd.Write(cmd.Addr64 + SECTOR_COUNT, 1, sector_count);
+
+            if (next_cmd.is_write)
+                cmd.Write(cmd.Addr64 + COMMAND, 1, 0x30U);
+            else
+                cmd.Write(cmd.Addr64 + COMMAND, 1, 0x20U);
         }
     }
 }

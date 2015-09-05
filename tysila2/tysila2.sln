@@ -81,6 +81,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "applications", "application
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ata", "..\processes\drivers\ata\ata.csproj", "{330493D1-054B-44BE-AADA-4236290D4FBF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "disk", "..\processes\drivers\disk\disk.csproj", "{F2908F7F-6573-4F06-80EE-3D932AE6DD23}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Compile BareBones|Any CPU = Compile BareBones|Any CPU
@@ -1868,6 +1870,70 @@ Global
 		{330493D1-054B-44BE-AADA-4236290D4FBF}.Release|Win32.Build.0 = Release|Any CPU
 		{330493D1-054B-44BE-AADA-4236290D4FBF}.Release|x86.ActiveCfg = Release|Any CPU
 		{330493D1-054B-44BE-AADA-4236290D4FBF}.Release|x86.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile BareBones|Any CPU.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile BareBones|Any CPU.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile BareBones|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile BareBones|Mixed Platforms.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile BareBones|Win32.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile BareBones|Win32.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile BareBones|x86.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile BareBones|x86.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile corlib|Any CPU.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile corlib|Any CPU.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile corlib|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile corlib|Mixed Platforms.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile corlib|Win32.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile corlib|Win32.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile corlib|x86.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile corlib|x86.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libsupcs|Any CPU.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libsupcs|Any CPU.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libsupcs|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libsupcs|Mixed Platforms.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libsupcs|Win32.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libsupcs|Win32.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libsupcs|x86.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libsupcs|x86.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libtysila|Any CPU.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libtysila|Any CPU.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libtysila|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libtysila|Mixed Platforms.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libtysila|Win32.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libtysila|Win32.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libtysila|x86.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile libtysila|x86.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile TestProcess|Any CPU.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile TestProcess|Any CPU.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile TestProcess|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile TestProcess|Mixed Platforms.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile TestProcess|Win32.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile TestProcess|Win32.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile TestProcess|x86.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Compile TestProcess|x86.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Debug|Win32.Build.0 = Debug|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Debug|x86.Build.0 = Debug|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Generate tloadkif|Any CPU.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Generate tloadkif|Any CPU.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Generate tloadkif|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Generate tloadkif|Mixed Platforms.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Generate tloadkif|Win32.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Generate tloadkif|Win32.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Generate tloadkif|x86.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Generate tloadkif|x86.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|Win32.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|Win32.Build.0 = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|x86.ActiveCfg = Release|Any CPU
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1888,5 +1954,6 @@ Global
 		{2EACC60A-A4E1-485F-AD53-59FD5A089B04} = {D2886F87-0DE4-44A4-9D5B-8FE471940687}
 		{286F2C15-F3A7-4650-B8FD-0CA0AACEDB5B} = {D2886F87-0DE4-44A4-9D5B-8FE471940687}
 		{330493D1-054B-44BE-AADA-4236290D4FBF} = {D4090900-16B2-42C8-9D26-D8A622AD0670}
+		{F2908F7F-6573-4F06-80EE-3D932AE6DD23} = {D4090900-16B2-42C8-9D26-D8A622AD0670}
 	EndGlobalSection
 EndGlobal
