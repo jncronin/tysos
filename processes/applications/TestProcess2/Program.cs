@@ -28,7 +28,7 @@ namespace TestProcess2
             tysos.Process other = tysos.Syscalls.ProcessFunctions.GetProcessByName("TestProcess");
             if (other == null)
             {
-                tysos.Syscalls.DebugFunctions.Write("TestProcess not found\n");
+                System.Diagnostics.Debugger.Log(0, null, "TestProcess not found\n");
                 return;
             }
 

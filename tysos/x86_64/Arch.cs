@@ -453,9 +453,6 @@ namespace tysos.x86_64
             Processors = new List<Cpu>();
             Processors.Add(Program.arch.CurrentCpu);
 
-            /* Initialize the interrupt map */
-            Program.imap = new x86_64.x86_64_InterruptMap();
-
             /* Set up the task switcher */
             Switcher = new tysos.x86_64.TaskSwitcher();
 
@@ -664,6 +661,15 @@ namespace tysos.x86_64
                 return 0;
             else
                 return ((x86_64.x86_64_cpu)Program.arch.CurrentCpu).CurrentLApic.Ticks;
+        }
+
+        internal override ulong GetMonotonicCount
+        {
+            [libsupcs.Profile(false)]
+            get
+            {
+                return libsupcs.x86_64.Cpu.Tsc;
+            }
         }
     }
 }

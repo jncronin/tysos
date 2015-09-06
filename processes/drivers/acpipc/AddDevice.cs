@@ -29,8 +29,8 @@ namespace acpipc
 {
     partial class acpipc
     {
-        private void AddDevice(string hid_str, string name, Aml.Namespace n,
-            Aml.IMachineInterface mi)
+        private void AddDevice(string hid_str, string name, Aml.ACPIObject obj,
+            Aml.Namespace n, Aml.IMachineInterface mi)
         {
             System.Diagnostics.Debugger.Log(0, "acpipc", name + ": " + hid_str);
 
@@ -116,10 +116,10 @@ namespace acpipc
                 tysos_driver = "isa";
                 tysos_subdriver = "dma";
             }
-            else if (hid_str == "cpu")
+            else if (hid_str == "cpu" || hid_str == "ACPI0007")
             {
                 // ACPI cpu object
-                tysos_driver = "cpu";
+                tysos_driver = "x86_64-cpu";
             }
 
             if (tysos_driver == null)
@@ -128,8 +128,6 @@ namespace acpipc
             /* Populate the device nodes properties */
             List<tysos.lib.File.Property> props = new List<tysos.lib.File.Property>();
             props.Add(new tysos.lib.File.Property { Name = "driver", Value = tysos_driver });
-            if (tysos_subdriver != null)
-                props.Add(new tysos.lib.File.Property { Name = "subdriver", Value = tysos_subdriver });
             props.Add(new tysos.lib.File.Property { Name = "acpiid", Value = hid_str });
             props.Add(new tysos.lib.File.Property { Name = "acpiname", Value = name });
 
@@ -154,12 +152,67 @@ namespace acpipc
                 }
             }
 
+            /* Add CPU specific information */
+            if(tysos_driver == "x86_64-cpu")
+            {
+                /* See ACPI 8.4
+                Get the ACPI ID of the processor so we can match this
+                with a processor in the MADT table.  This may be in two
+                forms: It can be a _UID object under the processor object,
+                or can be a field of the Processor object */
+
+                Aml.ACPIObject uid = n.Evaluate(name + "._UID", mi);
+                bool found = false;
+                bool enabled = true;
+                if(uid != null && uid.Type == ACPIObject.DataType.Integer)
+                {
+                    uint uid_val = (uint)uid.IntegerData;
+
+                    /* LAPIC structures don't contain UIDs and we don't
+                    support Local SAPICs or Local x2APICs yet */
+
+                    props.Add(new File.Property { Name = "acpiuid", Value = uid_val });
+                }
+                if(found == false && obj.Type == ACPIObject.DataType.Processor)
+                {
+                    /* Try parsing using ACPI ID instead */
+                    var pd = obj.Data as ACPIObject.ProcessorData;
+                    foreach(var lapic in lapics)
+                    {
+                        if(lapic.ACPIProcessorID == pd.ID)
+                        {
+                            if ((lapic.Flags & 0x1) == 0)
+                                enabled = false;
+                            props.Add(new File.Property { Name = "apicid", Value = lapic.APICID });
+                            tysos_subdriver = "lapic";
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (found == false || enabled == false)
+                    return;
+
+                if(obj.Type == ACPIObject.DataType.Processor)
+                {
+                    var pd = obj.Data as ACPIObject.ProcessorData;
+                    props.Add(new File.Property { Name = "acpiprocid", Value = pd.ID });
+                    if(pd.BlkLen != 0)
+                    {
+                        props.Add(new File.Property { Name = "io", Value = ios.AllocFixed(pd.BlkAddr, pd.BlkLen, true) });
+                    }
+                }
+            }
+
             /* Get resources owned by the device */
             Aml.ACPIObject resources = n.Evaluate(name + "._CRS", mi);
             if (resources != null)
                 InterpretResources(resources, props);
 
             /* Generate a unique name for the device */
+            if (tysos_subdriver != null)
+                props.Add(new tysos.lib.File.Property { Name = "subdriver", Value = tysos_subdriver });
             int dev_no = 0;
             StringBuilder sb = new StringBuilder(tysos_driver);
             if (tysos_subdriver != null)

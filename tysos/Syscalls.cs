@@ -37,9 +37,6 @@ namespace tysos
         {
             [libsupcs.Syscall]
             public static void InstallHandler(int interrupt_no, Delegate handler) { Program.arch.Interrupts.InstallHandler(interrupt_no, handler, 0); }
-
-            [libsupcs.Syscall]
-            public static InterruptMap GetInterruptMap() { return Program.imap; }
         }
 
         public class ProcessFunctions
@@ -256,7 +253,7 @@ namespace tysos
 
         public class DebugFunctions
         {
-            [libsupcs.Syscall]
+            /*[libsupcs.Syscall]
             public static void Write(char ch)
             { Program.arch.BootInfoOutput.Write(ch); Program.arch.BootInfoOutput.Flush(); }
             [libsupcs.Syscall]
@@ -284,7 +281,7 @@ namespace tysos
                     Program.arch.DebugOutput = new NullOutput();
                 else
                     Program.arch.DebugOutput = output;
-            }
+            }*/
         }
 
         public class IPCFunctions

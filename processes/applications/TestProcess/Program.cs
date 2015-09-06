@@ -37,7 +37,7 @@ namespace TestProcess
                     if (msg != null)
                     {
                         if (msg.Type == tysos.IPCMessage.TYPE_STRING)
-                            tysos.Syscalls.DebugFunctions.Write(msg.Message as string);
+                            System.Diagnostics.Debugger.Log(0, null, msg.Message as string);
                     }
                 } while (msg != null);
 

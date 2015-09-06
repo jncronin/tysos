@@ -31,7 +31,7 @@ namespace libtysila.x86_64.cil
             Encoder.EncoderState state, Assembler.MethodAttributes attrs)
         {
             /* Emit profiling code */
-            if (ass.Options.Profile)
+            if (attrs.profile)
             {
                 string s_mangled = Mangler2.MangleMethod(mtc, ass);
                 vara v_mangled = mtc.meth.m.StringTable.GetStringAddress(s_mangled, ass);

@@ -27,6 +27,7 @@ namespace tysos
 {
     class Formatter
     {
+        [libsupcs.Profile(false)]
         public static void Write(char ch, IDebugOutput s)
         {
             if (s != null)
@@ -35,6 +36,8 @@ namespace tysos
                 s.Flush();
             }
         }
+
+        [libsupcs.Profile(false)]
         public static void WriteLine(IDebugOutput s)
         {
             if (s != null)
@@ -43,6 +46,8 @@ namespace tysos
                 s.Flush();
             }
         }
+
+        [libsupcs.Profile(false)]
         public static void WriteLine(string str, IDebugOutput s)
         {
             if (s != null)
@@ -52,6 +57,8 @@ namespace tysos
                 s.Flush();
             }
         }
+
+        [libsupcs.Profile(false)]
         public static void Write(string str, IDebugOutput s)
         {
             if (s != null)
@@ -61,6 +68,8 @@ namespace tysos
                 s.Flush();
             }
         }
+
+        [libsupcs.Profile(false)]
         public static void Write(string fmt, IDebugOutput s, params object[] p)
         {
             if (s == null)
@@ -211,8 +220,12 @@ namespace tysos
             }
             s.Flush();
         }
+
+        [libsupcs.Profile(false)]
         public static void Write(ulong v, IDebugOutput s)
         { if(s != null) Write(v, null, s); }
+
+        [libsupcs.Profile(false)]
         public static void Write(ulong v, string fmt, IDebugOutput s)
         {
             if (s == null)
@@ -243,6 +256,7 @@ namespace tysos
 
         static byte[] digits = new byte[64];
 
+        [libsupcs.Profile(false)]
         private static void _Write(ulong v, int Base, IDebugOutput s, bool uppercase, int min_digits)
         {
             //byte[] digits = new byte[64];

@@ -40,20 +40,20 @@ namespace vfs
                 System.IO.FileOptions.None);
             if (f_src == null || f_src.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: couldn't open source: " + src + "\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: couldn't open source: " + src);
                 return false;
             }
 
             tysos.lib.File.Property driver = f_src.GetPropertyByName("driver");
             if(driver == null)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: no driver specified in properties of " + src + "\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: no driver specified in properties of " + src);
                 return false;
             }
             string protocol = driver.Value as string;
             if(protocol == null || protocol == "")
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: driver property of " + src + " is invalid\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: driver property of " + src + " is invalid");
                 return false;
             }           
 
@@ -68,7 +68,7 @@ namespace vfs
                 System.IO.FileOptions.None);
             if (f_src == null || f_src.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: couldn't open source: " + src + "\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: couldn't open source: " + src);
                 return false;
             }
 
@@ -79,19 +79,19 @@ namespace vfs
         {
             if (mount_path == null)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount_path is null\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: mount_path is null");
                 CloseFile(f_src);
                 return false;
             }
 
             Path path = GetPath(mount_path);
 
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: device: " +
+            System.Diagnostics.Debugger.Log(0, null, "Mount: device: " +
                 protocol + ", mount_point: " + path.FullPath);
 
             if (mounts.ContainsKey((PathPart)path))
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount point " + path.FullPath + " is already mounted\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: mount point " + path.FullPath + " is already mounted");
                 CloseFile(f_src);
                 return false;
             }
@@ -100,7 +100,7 @@ namespace vfs
             tysos.Process p = tysos.Syscalls.ProcessFunctions.GetProcessByName(protocol);
             if(p == null)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: driver " + protocol + " not running.  Starting it...\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: driver " + protocol + " not running.  Starting it...");
                 tysos.lib.File f = OpenFile("/modules/" + protocol, System.IO.FileMode.Open,
                     System.IO.FileAccess.Read, System.IO.FileShare.Read,
                     System.IO.FileOptions.None);
@@ -113,7 +113,7 @@ namespace vfs
             }
             else
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: driver " + protocol + " already running\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: driver " + protocol + " already running");
             }
 
             // TODO: create a special event class that waits for p.MessageServer to be non-null
@@ -128,7 +128,7 @@ namespace vfs
             if (fs == null)
                 throw new Exception("CreateFSHandler failed");
 
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mounting " + fs.GetType().FullName + " to " + path.FullPath + "\n");
+            System.Diagnostics.Debugger.Log(0, null, "Mount: mounting " + fs.GetType().FullName + " to " + path.FullPath);
 
             mounts[(PathPart)path] = fs;
 
@@ -139,7 +139,7 @@ namespace vfs
         {
             if (mount_path == null)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount_path is null\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: mount_path is null");
                 return false;
             }
 
@@ -147,12 +147,12 @@ namespace vfs
 
             if (mounts.ContainsKey((PathPart)p))
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mount point " + p.FullPath + " is already mounted\n");
+                System.Diagnostics.Debugger.Log(0, null, "Mount: mount point " + p.FullPath + " is already mounted");
                 return false;
             }
 
             mounts[(PathPart)p] = device;
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: Mount: mounting " + device.GetType().FullName + " to " + p.FullPath + "\n");
+            System.Diagnostics.Debugger.Log(0, null, "Mount: mounting " + device.GetType().FullName + " to " + p.FullPath);
 
             return true;
         }

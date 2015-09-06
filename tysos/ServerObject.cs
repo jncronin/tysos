@@ -160,11 +160,11 @@ namespace tysos
 
             if(InitServer() == false)
             {
-                Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": InitServer failed\n");
+                System.Diagnostics.Debugger.Log(0, null, "InitServer failed");
                 return;
             }
 
-            Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": entering message loop\n");
+            System.Diagnostics.Debugger.Log(0, null, "entering message loop");
 
             while(true)
             {
@@ -194,7 +194,7 @@ namespace tysos
             }
             else
             {
-                Syscalls.DebugFunctions.DebugWrite("ServerObject: unknown message type: " +
+                System.Diagnostics.Debugger.Log(0, null, "unknown message type: " +
                     msg.Type.ToString("X8") + "\n");
             }
             SourceThread = null;

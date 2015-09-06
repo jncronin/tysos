@@ -38,7 +38,7 @@ namespace vfs
              * and move on
              */
 
-            tysos.Syscalls.DebugFunctions.DebugWrite("vfs: GetFileSystemEntries(" +
+            System.Diagnostics.Debugger.Log(0, null, "vfs: GetFileSystemEntries(" +
                 path + ", " + path_with_pattern + ", " + attrs.ToString() + ", " +
                 mask.ToString() + ")\n");
 
@@ -61,13 +61,13 @@ namespace vfs
             // Get the children of the current node
             if(cur_dir_f == null || cur_dir_f.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("getFSE: cur_dir_f is null");
+                System.Diagnostics.Debugger.Log(0, null, "getFSE: cur_dir_f is null");
                 return;
             }
             tysos.lib.File.Property children = cur_dir_f.GetPropertyByName("Children");
             if(children == null)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("getFSE: GetPropertyByName(\"Children\") returned null");
+                System.Diagnostics.Debugger.Log(0, null, "getFSE: GetPropertyByName(\"Children\") returned null");
                 return;
             }
 
@@ -75,12 +75,12 @@ namespace vfs
             IList<string> children_list = children.Value as IList<string>;
             if(children_list == null)
             {
-                tysos.Syscalls.DebugFunctions.DebugWrite("getFSE: children.Value is not of type " +
+                System.Diagnostics.Debugger.Log(0, null, "getFSE: children.Value is not of type " +
                     "IList<string> (instead is " + children.Value.GetType().FullName + ")");
                 ulong v0 = libsupcs.CastOperations.ReinterpretAsUlong(children.Value);
                 ulong v1 = libsupcs.CastOperations.ReinterpretAsUlong(children.Value.GetType());
                 ulong v2 = libsupcs.CastOperations.ReinterpretAsUlong(typeof(IList<string>));
-                tysos.Syscalls.DebugFunctions.DebugWrite("getFSE: " + v1.ToString("X16") + " (" + v0.ToString("X16") + ") vs " + v2.ToString("X16"));
+                System.Diagnostics.Debugger.Log(0, null, "getFSE: " + v1.ToString("X16") + " (" + v0.ToString("X16") + ") vs " + v2.ToString("X16"));
                 return;
             }
             foreach(string child in children_list)
@@ -108,7 +108,7 @@ namespace vfs
                         System.IO.FileOptions.None);
                     if (child_dir == null || child_dir.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
                     {
-                        tysos.Syscalls.DebugFunctions.DebugWrite("getFSE: OpenFile(" + cur_child_path.ToString() + ") failed\n");
+                        System.Diagnostics.Debugger.Log(0, null, "getFSE: OpenFile(" + cur_child_path.ToString() + ") failed");
                         return;
                     }
                     int int_attrs = child_dir.IntProperties;

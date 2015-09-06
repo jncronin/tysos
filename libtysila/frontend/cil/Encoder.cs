@@ -131,7 +131,7 @@ namespace libtysila.frontend.cil
             ass.Enter(state, attrs, ret);
 
             /* Emit profiling code */
-            if (ass.Options.Profile)
+            if (attrs.profile)
             {
                 string s_mangled = Mangler2.MangleMethod(mtc, ass);
                 vara v_mangled = mtc.meth.m.StringTable.GetStringAddress(s_mangled, ass);

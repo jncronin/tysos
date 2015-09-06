@@ -121,7 +121,6 @@
     <Compile Include="gc\heap_tree2.cs" />
     <Compile Include="gc\simple_heap.cs" />
     <Compile Include="Interfaces\IFile.cs" />
-    <Compile Include="InterruptMap.cs" />
     <Compile Include="lib\Assembly.cs" />
     <Compile Include="lib\char-conversions.cs" />
     <Compile Include="lib\CompareInfo.cs" />
@@ -159,7 +158,6 @@
     <Compile Include="x86_64\gdb_stub.cs" />
     <Compile Include="x86_64\Hpet.cs" />
     <Compile Include="collections\Lists.cs" />
-    <Compile Include="x86_64\InterruptMap.cs" />
     <Compile Include="x86_64\PIT_8253.cs" />
     <Compile Include="Scheduler.cs" />
     <Compile Include="x86_64\Resource.cs" />

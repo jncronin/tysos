@@ -80,6 +80,7 @@ namespace libtysila
             Metadata m = meth.m;
 
             MethodAttributes attrs = new MethodAttributes(this);
+            attrs.profile = Options.Profile;
             ParseAttributes(m, mtc, attrs);
             attrs.mangled_name = Mangler2.MangleMethod(mtc, this);
 

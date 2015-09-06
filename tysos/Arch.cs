@@ -62,5 +62,7 @@ namespace tysos
         internal abstract long GetNow();
 
         internal abstract string AssemblerArchitecture { get; }
+
+        internal abstract ulong GetMonotonicCount { get; }
     }
 }

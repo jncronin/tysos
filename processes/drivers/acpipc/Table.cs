@@ -111,7 +111,7 @@ namespace acpipc
                     ", Flags: " + atbl.Flags.ToString("X8") + "\n");
 
                 uint cur_addr = 44;
-                while(cur_addr < length)
+                while (cur_addr < length)
                 {
                     APICStructure s;
 
@@ -121,13 +121,13 @@ namespace acpipc
                     if (type == 0)
                     {
                         LocalAPICStructure las = new LocalAPICStructure();
-                        las.APICProcessorID = (uint)table.Read(table.Addr64 + cur_addr + 2, 1);
+                        las.ACPIProcessorID = (uint)table.Read(table.Addr64 + cur_addr + 2, 1);
                         las.APICID = (uint)table.Read(table.Addr64 + cur_addr + 3, 1);
                         las.Flags = (uint)table.Read(table.Addr64 + cur_addr + 4, 4);
 
                         System.Diagnostics.Debugger.Log(0, "acpipc", "LocalAPICStructure: " +
-                            "APICProcessorID: " + las.APICProcessorID.ToString("X8") +
-                            ", APICID: " + las.APICProcessorID.ToString("X8") +
+                            "ACPIProcessorID: " + las.ACPIProcessorID.ToString("X8") +
+                            ", APICID: " + las.APICID.ToString("X8") +
                             ", Flags: " + las.Flags.ToString("X8") + "\n");
 
                         s = las;
@@ -179,7 +179,7 @@ namespace acpipc
 
                 ret = atbl;
             }
-            else if(sig_string == "SSDT")
+            else if (sig_string == "SSDT")
             {
                 ret = new Table();
 
@@ -195,7 +195,11 @@ namespace acpipc
                 a.ssdts.Add(ssdt_region);
             }
             else
+            {
+                System.Diagnostics.Debugger.Log(0, "acpipc", "ACPI table: " + sig_string);
+
                 ret = new Table();
+            }
 
             ret.signature = sig_string;
             ret.vmem = table;
@@ -239,7 +243,7 @@ namespace acpipc
 
     class LocalAPICStructure : APICStructure
     {
-        public uint APICProcessorID;
+        public uint ACPIProcessorID;
         public uint APICID;
         public uint Flags;
     }

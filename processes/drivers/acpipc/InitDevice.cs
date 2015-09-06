@@ -42,6 +42,8 @@ namespace acpipc
 
         List<tysos.ServerObject> gsi_providers = new List<tysos.ServerObject>();
         List<InterruptSourceOverrideStructure> isos = new List<InterruptSourceOverrideStructure>();
+        List<LocalAPICStructure> lapics = new List<LocalAPICStructure>();
+        
         ACPIInterrupt[] isa_irqs = new ACPIInterrupt[16];
         Dictionary<int, PCIInterrupt> pci_ints = new Dictionary<int, PCIInterrupt>(
             new tysos.Program.MyGenericEqualityComparer<int>());
@@ -63,7 +65,7 @@ namespace acpipc
             {
                 if(p.Name.StartsWith("table_"))
                 {
-                    tysos.Syscalls.DebugFunctions.DebugWrite("acpipc: adding table\n");
+                    System.Diagnostics.Debugger.Log(0, null, "adding table\n");
                     tables.Add(Table.InterpretTable(p.Value as tysos.VirtualMemoryResource64, this));                    
                 }
                 if(p.Name == "interrupts")
@@ -75,7 +77,7 @@ namespace acpipc
             pmems.Init(props);
             ios.Init(props);
 
-            tysos.Syscalls.DebugFunctions.DebugWrite("acpipc: finished parsing resources\n");
+            System.Diagnostics.Debugger.Log(0, null, "finished parsing resources\n");
 
             /* Execute drivers for any IOAPICs we've found */
             List<tysos.ServerObject> ioapics = new List<tysos.ServerObject>();
@@ -110,6 +112,8 @@ namespace acpipc
                         }
                         else if (apicstruct is InterruptSourceOverrideStructure)
                             isos.Add(apicstruct as InterruptSourceOverrideStructure);
+                        else if (apicstruct is LocalAPICStructure)
+                            lapics.Add(apicstruct as LocalAPICStructure);
                     }
                 }
             }
@@ -335,11 +339,11 @@ namespace acpipc
                         break;
                 }
 
-                AddDevice(hid_str, kvp.Key, n, mi);
+                AddDevice(hid_str, kvp.Key, kvp.Value, n, mi);
             }
             foreach(KeyValuePair<string, Aml.ACPIObject> kvp in n.Processors)
             {
-                AddDevice("cpu", kvp.Key, n, mi);
+                AddDevice("cpu", kvp.Key, kvp.Value, n, mi);
             }
 
             return true;

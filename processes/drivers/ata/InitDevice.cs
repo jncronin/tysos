@@ -266,17 +266,21 @@ namespace ata
                         if (cur_cmd.sector_count != 0)
                         {
                             SendDeviceCommand(cur_cmd);
-                            break;
+                            return;
+                        }
+                        else
+                        {
+                            /* The command has completed */
+                            cur_cmd.ev.Error = MonoIOError.ERROR_SUCCESS;
+                            cur_cmd.ev.Set();
+
+                            cur_cmd = null;
+                            s = State.Idle;
+                            return;
                         }
                     }
 
-                    /* The command has completed */
-                    cur_cmd.ev.Error = MonoIOError.ERROR_SUCCESS;
-                    cur_cmd.ev.Set();
-
-                    s = State.Idle;
-
-                    break;
+                    return;
             }
             System.Diagnostics.Debugger.Log(0, "ata", "Unhandled state: " + s.ToString() +
                 ", drive: " + drive.ToString() + ", status: " + Status.ToString("X2") +
@@ -421,12 +425,12 @@ namespace ata
 
             if (InitServer() == false)
             {
-                Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": InitServer failed\n");
+                System.Diagnostics.Debugger.Log(0, null, "InitServer failed");
                 return;
             }
 
             while (s != State.Idle) ;
-            Syscalls.DebugFunctions.DebugWrite(this.GetType().FullName + ": entering message loop\n");
+            System.Diagnostics.Debugger.Log(0, null, "entering message loop");
 
             while (true)
             {
@@ -461,9 +465,15 @@ namespace ata
             if (s != State.Idle)
                 return;
 
-            Cmd next_cmd = cmds.GetFirst();
+            Cmd next_cmd;
+            lock(cmds)
+            {
+                next_cmd = cmds.GetFirst();
+            }
             if (next_cmd == null)
                 return;
+
+            System.Diagnostics.Debugger.Log(0, "ata", "Processing " + (next_cmd.is_write ? "write" : "read") + " command");
 
             /* Send the command and update current state */
             if (next_cmd.is_write)
@@ -479,6 +489,10 @@ namespace ata
         
         void SendDeviceCommand(Cmd next_cmd)
         {
+            System.Diagnostics.Debugger.Log(0, "ata", "SendDeviceCommand: is_write: " + next_cmd.is_write.ToString() +
+                ", cur_sector: " + next_cmd.cur_sector.ToString() +
+                ", sector_count: " + next_cmd.sector_count.ToString() +
+                ", drive: " + drive.ToString());
             /* Build device command */
             byte lba_1 = (byte)(next_cmd.cur_sector & 0xffU);
             byte lba_2 = (byte)((next_cmd.cur_sector >> 8) & 0xffU);

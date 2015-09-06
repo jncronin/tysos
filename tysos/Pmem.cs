@@ -27,12 +27,12 @@ using System.Text;
 
 namespace tysos
 {
-    partial class Pmem
+    unsafe partial class Pmem
     {
         /** A Bitmap class storing free pages as '1' and non-free as '0' */
         public class Bitmap
         {
-            tysos.Collections.StaticULongArray bmp;
+            ulong* bmp;
 
             ulong _base_addr;
             ulong _page_size;
@@ -43,6 +43,8 @@ namespace tysos
 
             ulong _bmp_entries_in_bytes;
             ulong _bmp_entries_in_qwords;
+
+            ulong spinlock_addr;
 
             public Bitmap(ulong bmp_addr, ulong bmp_maxlength, ulong base_addr, ulong page_size, ulong max_addr)
             {
@@ -69,16 +71,21 @@ namespace tysos
                 _bmp_entries_in_qwords = pages / 64;
 
                 // Create the array and clear it
-                bmp = new tysos.Collections.StaticULongArray(bmp_addr, _bmp_entries_in_qwords);
-                bmp.Clear(0);
+                bmp = (ulong*)bmp_addr;
+
+                for(ulong i = 0; i < _bmp_entries_in_qwords; i++)
+                    bmp[i] = 0UL;
+
+                // Get some memory to use as a spinlock
+                spinlock_addr = gc.gc.Alloc(8);
+                *(ulong*)spinlock_addr = 0;
             }
 
             public void ReleasePage(ulong addr)
             {
-                lock (this)
-                {
-                    _ReleasePage(addr);
-                }
+                lib.Monitor.spinlockb(spinlock_addr);
+                _ReleasePage(addr);
+                lib.Monitor.spinunlockb(spinlock_addr);
             }
 
             void _ReleasePage(ulong addr)
@@ -102,10 +109,10 @@ namespace tysos
 
             public ulong GetPage(ulong addr)
             {
-                lock (this)
-                {
-                    return _GetPage(addr);
-                }
+                lib.Monitor.spinlockb(spinlock_addr);
+                ulong ret = _GetPage(addr);
+                lib.Monitor.spinunlockb(spinlock_addr);
+                return ret;
             }
 
             ulong _GetPage(ulong addr)
@@ -127,10 +134,10 @@ namespace tysos
 
             public ulong GetFreePage()
             {
-                lock (this)
-                {
-                    return _GetFreePage();
-                }
+                lib.Monitor.spinlockb(spinlock_addr);
+                ulong ret = _GetFreePage();
+                lib.Monitor.spinunlockb(spinlock_addr);
+                return ret;
             }
 
             ulong _GetFreePage()

@@ -26,13 +26,15 @@ using System.Runtime.CompilerServices;
 
 namespace tysos
 {
-    class VirtMem
+    unsafe class VirtMem
     {
         Pmem pmem;
         ulong temp_page_va;
         tysos.Collections.StaticULongArray pml4t;
         tysos.Collections.StaticULongArray paging_structures;
         tysos.Collections.StaticULongArray temp_page;
+
+        ulong* pstructs;
 
         public const ulong page_size = 0x1000;
         
@@ -81,6 +83,7 @@ namespace tysos
              */
 
             paging_structures = new tysos.Collections.StaticULongArray(0xffffff8000000000, 0x1000000000);
+            pstructs = (ulong*)(0xffffff8000000000);
 
             // Ensure we can access the temporary page we have been given
             if (!is_enabled(paging_structures[get_pml4t_entry_addr(_temp_page_va)]))
@@ -142,7 +145,143 @@ namespace tysos
 
         public ulong map_page(ulong vaddr) { return map_page(vaddr, alloc_page, true, false, false); }
         public ulong map_page(ulong vaddr, ulong paddr) { return map_page(vaddr, paddr, true, false, false); }
+
+        [libsupcs.Profile(false)]
         public ulong map_page(ulong vaddr, ulong paddr, bool writeable, bool cache_disable, bool write_through)
+        {
+            /* Optimised based on profiling concerns */
+
+            /* in the current 48 bit implementation of x86_64, only the first 48 bits of the address
+             * are used, the upper 16 bits need to be a sign-extension (i.e. equal to the 48th bit)
+             * The virtual region system should ensure this sign extension, but we need to chop off the sign
+             * extension to properly index into the tables */
+            ulong page_index = vaddr & canonical_only;
+
+            // Traverse the paging structures to map the page
+            ulong pml4t_entry_addr = (page_index >> 39) + 0xffffffe00;
+            ulong pdpt_entry_addr = (page_index >> 30) + 0xffffc0000;
+            ulong pd_entry_addr = (page_index >> 21) + 0xff8000000;
+            ulong pt_entry_addr = page_index >> 12;
+
+            // Create pages in the paging hierarchy as necessary
+            if ((pstructs[pml4t_entry_addr] & 0x1) == 0)
+            {
+                if (pmem == null)
+                {
+                    Program.arch.BootInfoOutput.Write("pmem invalid");
+                    libsupcs.OtherOperations.Halt();
+                }
+                //Formatter.Write("A", Program.arch.DebugOutput);
+                ulong p_page = pmem.BeginGetPage();
+                //Formatter.Write("1", Program.arch.DebugOutput);
+                pstructs[pml4t_entry_addr] = 0x3 | (p_page & paddr_mask);
+                //Formatter.Write("2", Program.arch.DebugOutput);
+                libsupcs.x86_64.Cpu.Invlpg((pdpt_entry_addr * 8 + pstruct_start) & page_mask);
+                //Formatter.Write("3", Program.arch.DebugOutput);
+                pmem.EndGetPage(p_page, (pdpt_entry_addr * 8 + pstruct_start) & page_mask);
+                //Formatter.Write("4", Program.arch.DebugOutput);
+                libsupcs.MemoryOperations.QuickClearAligned16((pdpt_entry_addr * 8 + pstruct_start) & page_mask, 0x1000);
+                //Formatter.Write("5", Program.arch.DebugOutput);
+            }
+
+            if ((pstructs[pdpt_entry_addr] & 0x1) == 0)
+            {
+                if (pmem == null)
+                {
+                    Program.arch.BootInfoOutput.Write("pmem invalid");
+                    libsupcs.OtherOperations.Halt();
+                }
+                //Formatter.Write("B", Program.arch.DebugOutput);
+                ulong p_page = pmem.BeginGetPage();
+                //Formatter.Write("1", Program.arch.DebugOutput);
+                pstructs[pdpt_entry_addr] = 0x3 | (p_page & paddr_mask);
+                //Formatter.Write("2", Program.arch.DebugOutput);
+                libsupcs.x86_64.Cpu.Invlpg((pd_entry_addr * 8 + pstruct_start) & page_mask);
+                //Formatter.Write("3", Program.arch.DebugOutput);
+                pmem.EndGetPage(p_page, (pd_entry_addr * 8 + pstruct_start) & page_mask);
+                //Formatter.Write("4", Program.arch.DebugOutput);
+                libsupcs.MemoryOperations.QuickClearAligned16((pd_entry_addr * 8 + pstruct_start) & page_mask, 0x1000);
+                //Formatter.Write("5", Program.arch.DebugOutput);
+            }
+
+            if ((pstructs[pd_entry_addr] & 0x1) == 0)
+            {
+                if (pmem == null)
+                {
+                    Program.arch.BootInfoOutput.Write("pmem invalid");
+                    libsupcs.OtherOperations.Halt();
+                }
+                //Formatter.Write("C", Program.arch.DebugOutput);
+                ulong p_page = pmem.BeginGetPage();
+                //Formatter.Write("1", Program.arch.DebugOutput);
+                pstructs[pd_entry_addr] = 0x3 | (p_page & paddr_mask);
+                //Formatter.Write("2", Program.arch.DebugOutput);
+                libsupcs.x86_64.Cpu.Invlpg((pt_entry_addr * 8 + pstruct_start) & page_mask);
+                //Formatter.Write("3", Program.arch.DebugOutput);
+                pmem.EndGetPage(p_page, (pt_entry_addr * 8 + pstruct_start) & page_mask);
+                //Formatter.Write("4", Program.arch.DebugOutput);
+                libsupcs.MemoryOperations.QuickClearAligned16((pt_entry_addr * 8 + pstruct_start) & page_mask, 0x1000);
+                //Formatter.Write("5", Program.arch.DebugOutput);
+            }
+
+            /* Set the attributes of the page */
+            ulong page_attrs = 0x1; // Present bit
+            if ((paddr != blank_page) && writeable)
+                page_attrs |= 0x2;
+            if (write_through)
+                page_attrs |= 0x8;
+            if (cache_disable)
+                page_attrs |= 0x10;
+
+            if (paddr == alloc_page)
+            {
+                // Allocate a page if there is not one already allocated, or we are requesting
+                //  a write to the blank page
+                if ((pstructs[pt_entry_addr] & 0x1) == 0 || 
+                    (writeable && ((pstructs[pt_entry_addr] & page_mask) == blank_page_paddr)))
+                {
+                    if (pmem == null)
+                    {
+                        Program.arch.BootInfoOutput.Write("pmem invalid");
+                        libsupcs.OtherOperations.Halt();
+                    }
+                    //Formatter.Write("D", Program.arch.DebugOutput);
+                    paddr = pmem.BeginGetPage();
+                    //Formatter.Write("1", Program.arch.DebugOutput);
+                    pstructs[pt_entry_addr] = page_attrs | (paddr & paddr_mask);
+                    //Formatter.Write("2", Program.arch.DebugOutput);
+                    libsupcs.x86_64.Cpu.Invlpg(vaddr & page_mask);
+                    //Formatter.Write("3", Program.arch.DebugOutput);
+                    pmem.EndGetPage(paddr, vaddr & page_mask);
+                    //Formatter.Write("4", Program.arch.DebugOutput);
+                    libsupcs.MemoryOperations.QuickClearAligned16(vaddr & page_mask, 0x1000);
+                    //Formatter.Write("5", Program.arch.DebugOutput);
+                    return paddr & paddr_mask;
+                }
+                else
+                {
+                    return pstructs[pt_entry_addr] & paddr_mask;
+                }
+            }
+            else if(paddr == blank_page)
+            {
+                pstructs[pt_entry_addr] = page_attrs | (blank_page_paddr & paddr_mask);
+                libsupcs.x86_64.Cpu.Invlpg(vaddr & page_mask);
+                return blank_page_paddr;
+            }
+            else
+            {
+                // Map the actual page
+                //Formatter.Write("E", Program.arch.DebugOutput);
+                pstructs[pt_entry_addr] = page_attrs | (paddr & paddr_mask);
+                //Formatter.Write("1", Program.arch.DebugOutput);
+                libsupcs.x86_64.Cpu.Invlpg(vaddr & page_mask);
+                //Formatter.Write("2", Program.arch.DebugOutput);
+                return paddr & paddr_mask;
+            }
+        }
+
+        public ulong map_page_old(ulong vaddr, ulong paddr, bool writeable, bool cache_disable, bool write_through)
         {
             /* in the current 48 bit implementation of x86_64, only the first 48 bits of the address
              * are used, the upper 16 bits need to be a sign-extension (i.e. equal to the 48th bit)
@@ -230,7 +369,7 @@ namespace tysos
             {
                 // Allocate a page if there is not one already allocated, or we are requesting
                 //  a write to the blank page
-                if (!is_enabled(paging_structures[pt_entry_addr]) || 
+                if (!is_enabled(paging_structures[pt_entry_addr]) ||
                     (writeable && ((paging_structures[pt_entry_addr] & page_mask) == blank_page_paddr)))
                 {
                     if (pmem == null)
@@ -256,7 +395,7 @@ namespace tysos
                     return paging_structures[pt_entry_addr] & paddr_mask;
                 }
             }
-            else if(paddr == blank_page)
+            else if (paddr == blank_page)
             {
                 paging_structures[pt_entry_addr] = page_attrs | (blank_page_paddr & paddr_mask);
                 libsupcs.x86_64.Cpu.Invlpg(vaddr & page_mask);
@@ -273,6 +412,7 @@ namespace tysos
                 return paddr & paddr_mask;
             }
         }
+
 
         bool is_enabled(ulong pte)
         {

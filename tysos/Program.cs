@@ -30,7 +30,6 @@ namespace tysos
     {
         internal static Environment env;
         internal static SymbolTable stab;
-        internal static InterruptMap imap;
         internal static Multiboot.Header mboot_header;
         internal static ServerObject Vfs, Logger, Gui;
 
@@ -43,6 +42,7 @@ namespace tysos
         internal static string[] kernel_cmd_line;
 
         [libsupcs.MethodAlias("kmain")]
+        [libsupcs.Profile(false)]
         static void KMain(Multiboot.Header mboot)
         {
             // Disable profiling until we have enabled the arch.DebugOutput port
@@ -68,6 +68,7 @@ namespace tysos
             gc.gc.Heap = gc.gc.HeapType.Startup;
             gc.simple_heap.Init(heap_start, mboot.heap_end);
 
+            log_lock = new object();
 
             /* Set up the default startup thread */
             StartupThread = new System.Threading.Thread(null_func);
@@ -83,6 +84,8 @@ namespace tysos
                     break;
             }
             arch.Init(chunk_vaddr, chunk_length, mboot);
+
+            do_profile = true;
 
             /* Parse the kernel command line */
             kernel_cmd_line = mboot.cmdline.Split(' ');
@@ -536,38 +539,39 @@ namespace tysos
         static int indent = 0;
         static bool do_profile = false;
 
-        [libsupcs.MethodAlias("__profile")]
+        [libsupcs.MethodAlias("profile")]
         [libsupcs.AlwaysCompile]
+        [libsupcs.Uninterruptible]
         [libsupcs.Profile(false)]
-        static void Profile(string meth_name)
+        static unsafe void Profile(string meth_name, char* c_str, int c_str_len,
+            int is_leave)
         {
-            indent++;
-
-            if (do_profile || ((Program.arch.CurrentCpu != null) && (Program.arch.CurrentCpu.CurrentThread != null) && (Program.arch.CurrentCpu.CurrentThread.do_profile == true)))
+            if (do_profile)
             {
-                for (int i = 0; i < indent; i++)
-                    Program.arch.DebugOutput.Write(' ');
-                Program.arch.DebugOutput.Write("Enter: ");
-                Program.arch.DebugOutput.Write(meth_name);
-                Program.arch.DebugOutput.Write('\n');
-            }
-        }
+                Formatter.Write("PROFILE: ", arch.DebugOutput);
 
-        [libsupcs.MethodAlias("__endprofile")]
-        [libsupcs.AlwaysCompile]
-        [libsupcs.Profile(false)]
-        static void EndProfile(string meth_name)
-        {
-            if (do_profile || ((Program.arch.CurrentCpu != null) && (Program.arch.CurrentCpu.CurrentThread != null) && (Program.arch.CurrentCpu.CurrentThread.do_profile == true)))
-            {
-                for (int i = 0; i < indent; i++)
-                    Program.arch.DebugOutput.Write(' ');
-                Program.arch.DebugOutput.Write("Leave: ");
-                Program.arch.DebugOutput.Write(meth_name);
-                Program.arch.DebugOutput.Write('\n');
-            }
+                if (is_leave == 0)
+                    indent++;
 
-            indent--;
+                for (int i = 0; i < indent; i++)
+                    Formatter.Write(" ", arch.DebugOutput);
+
+                if (is_leave == 0)
+                    Formatter.Write("ENTER: ", arch.DebugOutput);
+                else
+                    Formatter.Write("LEAVE: ", arch.DebugOutput);
+
+                // Do this to avoid any calls to Length/Item on System.String
+                for(int i = 0; i < c_str_len; i++)
+                    Formatter.Write(c_str[i], arch.DebugOutput);
+
+                Formatter.Write(" @ ", arch.DebugOutput);
+                Formatter.Write(arch.GetMonotonicCount, arch.DebugOutput);
+                Formatter.WriteLine(arch.DebugOutput);
+
+                if (is_leave == 1)
+                    indent--;
+            }
         }
 
         static int next_obj_id = 0x1000;
@@ -757,12 +761,24 @@ namespace tysos
             throw new Exception("Request for address of " + name + ": not yet supported");
         }
 
+        static object log_lock;
         [libsupcs.MethodAlias("__log")]
+        [libsupcs.Uninterruptible]
         static void Log(int level, string category, string message)
         {
-            Formatter.Write(category, Program.arch.DebugOutput);
-            Formatter.Write(": ", Program.arch.DebugOutput);
-            Formatter.WriteLine(message, Program.arch.DebugOutput);
+            if (category == null && arch.CurrentCpu != null && arch.CurrentCpu.CurrentProcess != null)
+                category = arch.CurrentCpu.CurrentProcess.name;
+            if (category == null && arch.CurrentCpu != null && arch.CurrentCpu.CurrentThread != null)
+                category = arch.CurrentCpu.CurrentThread.name;
+            if (category == null)
+                category = "unknown";
+
+            Formatter.Write("[", arch.DebugOutput);
+            Formatter.Write(arch.GetMonotonicCount, arch.DebugOutput);
+            Formatter.Write("] ", arch.DebugOutput);
+            Formatter.Write(category, arch.DebugOutput);
+            Formatter.Write(": ", arch.DebugOutput);
+            Formatter.WriteLine(message, arch.DebugOutput);
         }
     }
 }

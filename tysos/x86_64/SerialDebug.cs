@@ -55,7 +55,9 @@ namespace tysos.x86_64
             return (byte)(libsupcs.IoOperations.PortInb(port + 5) & 0x20);
         }
 
+        [libsupcs.Profile(false)]
         public void Write(char ch) { write(ch); }
+
         [libsupcs.Profile(false)]
         public static void write(char ch)
         {
@@ -71,8 +73,12 @@ namespace tysos.x86_64
                 libsupcs.IoOperations.PortOut(port, (byte)ch);
         }
 
+        [libsupcs.Profile(false)]
         public virtual void Write(string s) { writeString(s); }
+
+        [libsupcs.Profile(false)]
         public void WriteString(string s) { writeString(s); }
+
         [libsupcs.Profile(false)]
         public static void writeString(string s)
         {
@@ -80,6 +86,7 @@ namespace tysos.x86_64
                 write(s[i]);
         }
 
+        [libsupcs.Profile(false)]
         public void Flush() { }
     }
 }

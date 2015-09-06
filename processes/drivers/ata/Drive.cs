@@ -43,6 +43,7 @@ namespace ata
 
         public override BlockEvent ReadAsync(long sector_idx, long sector_count, byte[] buf, int buf_offset)
         {
+            System.Diagnostics.Debugger.Log(0, "ata", "Drive: ReadAsync(" + sector_idx.ToString() + ", " + sector_count.ToString() + ", , )");
             ata.Cmd c = new ata.Cmd();
             c.is_write = false;
             c.sector_idx = (ulong)sector_idx;
@@ -57,6 +58,8 @@ namespace ata
             {
                 a.cmds.Add(c);
             }
+
+            System.Diagnostics.Debugger.Log(0, "ata", "Drive: ReadAsync returning");
 
             return c.ev;
         }
