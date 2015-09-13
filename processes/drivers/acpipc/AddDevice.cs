@@ -31,104 +31,122 @@ namespace acpipc
     {
         private void AddDevice(string hid_str, string name, Aml.ACPIObject obj,
             Aml.Namespace n, Aml.IMachineInterface mi)
+        { AddDevice(new string[] { hid_str }, name, obj, n, mi); }
+        private void AddDevice(IEnumerable<string> hid_strs, string name, Aml.ACPIObject obj,
+            Aml.Namespace n, Aml.IMachineInterface mi)
         {
-            System.Diagnostics.Debugger.Log(0, "acpipc", name + ": " + hid_str);
+            StringBuilder sb = new StringBuilder();
+            int cnt = 0;
+            foreach(var hid_str in hid_strs)
+            {
+                if (cnt != 0)
+                    sb.Append(", ");
+                sb.Append(hid_str);
+                cnt++;
+            }
+            System.Diagnostics.Debugger.Log(0, "acpipc", name + ": " + sb.ToString());
 
             /* This is a mapping of PNP IDs/ACPI IDs to tysos device driver names */
             string tysos_driver = "unknown";
             string tysos_subdriver = null;
 
-            if (hid_str == "0A0CD041")
+            foreach (var hid_str in hid_strs)
             {
-                // PNP0C0A  ACPI control method battery
-                tysos_driver = "acpipc";
-                tysos_subdriver = "bat";
-            }
-            else if (hid_str == "030AD041")
-            {
-                // PNP0A03 PCI bus
-                tysos_driver = "pci";
-                tysos_subdriver = "hostbridge";
-            }
-            else if (hid_str == "0001D041")
-            {
-                // PNP0100  AT system timer
-                tysos_driver = "isa";
-                tysos_subdriver = "pit";
-            }
-            else if (hid_str == "0F0CD041")
-            {
-                // PNP0C0F  PCI interrupt link device
-                tysos_driver = null;
-            }
-            else if (hid_str == "ACPI0003")
-            {
-                // ACPI0003 ACPI Power source device
-                tysos_driver = "acpipc";
-                tysos_subdriver = "power";
-            }
-            else if (hid_str == "0301D041")
-            {
-                // PNP0103  HPET
-                tysos_driver = "hpet";
-            }
-            else if (hid_str == "0303D041")
-            {
-                // PNP0303  IBM enhanced keyboard (101/102-key, PS/2 mouse support)
-                tysos_driver = "ps2";
-            }
-            else if (hid_str == "030FD041")
-            {
-                // PNP0F03  Microsoft PS/2-style Mouse
-                tysos_driver = "ps2";
-            }
-            else if (hid_str == "0000D041")
-            {
-                // PNP0000  AT programmable interrupt controller
-                tysos_driver = null;
-            }
-            else if (hid_str == "000BD041")
-            {
-                // PNP0B00  AT real-time clock
-                tysos_driver = "isa";
-                tysos_subdriver = "rtc";
-            }
-            else if (hid_str == "0105D041")
-            {
-                // PNP0501  16550A-compatible COM port
-                tysos_driver = "isa";
-                tysos_subdriver = "serial";
-            }
-            else if (hid_str == "0007D041")
-            {
-                // PNP0700  PC standard floppy disk controller
-                tysos_driver = "fdc";
-            }
-            else if (name == "0004D041")
-            {
-                // PNP0400  Standard LPT printer port
-                tysos_driver = "isa";
-                tysos_subdriver = "lpt";
-            }
-            else if (hid_str == "0002D041")
-            {
-                // PNP0200  AT DMA controller
-                tysos_driver = "isa";
-                tysos_subdriver = "dma";
-            }
-            else if (hid_str == "cpu" || hid_str == "ACPI0007")
-            {
-                // ACPI cpu object
-                tysos_driver = "x86_64-cpu";
-            }
+                if (hid_str == "0A0CD041")
+                {
+                    // PNP0C0A  ACPI control method battery
+                    tysos_driver = "acpipc";
+                    tysos_subdriver = "bat";
+                }
+                else if (hid_str == "030AD041")
+                {
+                    // PNP0A03 PCI bus
+                    tysos_driver = "pci";
+                    tysos_subdriver = "hostbridge";
+                }
+                else if (hid_str == "0001D041")
+                {
+                    // PNP0100  AT system timer
+                    tysos_driver = "isa";
+                    tysos_subdriver = "pit";
+                }
+                else if (hid_str == "0F0CD041")
+                {
+                    // PNP0C0F  PCI interrupt link device
+                    tysos_driver = null;
+                }
+                else if (hid_str == "ACPI0003")
+                {
+                    // ACPI0003 ACPI Power source device
+                    tysos_driver = "acpipc";
+                    tysos_subdriver = "power";
+                }
+                else if (hid_str == "0301D041")
+                {
+                    // PNP0103  HPET
+                    tysos_driver = "hpet";
+                }
+                else if (hid_str == "0303D041")
+                {
+                    // PNP0303  IBM enhanced keyboard (101/102-key, PS/2 mouse support)
+                    tysos_driver = "ps2";
+                }
+                else if (hid_str == "030FD041")
+                {
+                    // PNP0F03  Microsoft PS/2-style Mouse
+                    tysos_driver = "ps2";
+                }
+                else if (hid_str == "0000D041")
+                {
+                    // PNP0000  AT programmable interrupt controller
+                    tysos_driver = null;
+                }
+                else if (hid_str == "000BD041")
+                {
+                    // PNP0B00  AT real-time clock
+                    tysos_driver = "isa";
+                    tysos_subdriver = "rtc";
+                }
+                else if (hid_str == "0105D041")
+                {
+                    // PNP0501  16550A-compatible COM port
+                    tysos_driver = "isa";
+                    tysos_subdriver = "serial";
+                }
+                else if (hid_str == "0007D041")
+                {
+                    // PNP0700  PC standard floppy disk controller
+                    tysos_driver = "fdc";
+                }
+                else if (name == "0004D041")
+                {
+                    // PNP0400  Standard LPT printer port
+                    tysos_driver = "isa";
+                    tysos_subdriver = "lpt";
+                }
+                else if (hid_str == "0002D041")
+                {
+                    // PNP0200  AT DMA controller
+                    tysos_driver = "isa";
+                    tysos_subdriver = "dma";
+                }
+                else if (hid_str == "cpu" || hid_str == "ACPI0007")
+                {
+                    // ACPI cpu object
+                    tysos_driver = "x86_64-cpu";
+                }
 
-            if (tysos_driver == null)
-                return;
+                if (tysos_driver == null)
+                    return;
+                if (tysos_driver != "unknown")
+                    break;
+            }
 
             /* Populate the device nodes properties */
             List<tysos.lib.File.Property> props = new List<tysos.lib.File.Property>();
             props.Add(new tysos.lib.File.Property { Name = "driver", Value = tysos_driver });
-            props.Add(new tysos.lib.File.Property { Name = "acpiid", Value = hid_str });
+            foreach(var hid_str in hid_strs)
+                props.Add(new tysos.lib.File.Property { Name = "acpiid", Value = hid_str });
             props.Add(new tysos.lib.File.Property { Name = "acpiname", Value = name });
 
             ACPIConfiguration dev_conf = new ACPIConfiguration(this, name);
@@ -214,7 +232,7 @@ namespace acpipc
             if (tysos_subdriver != null)
                 props.Add(new tysos.lib.File.Property { Name = "subdriver", Value = tysos_subdriver });
             int dev_no = 0;
-            StringBuilder sb = new StringBuilder(tysos_driver);
+            sb = new StringBuilder(tysos_driver);
             if (tysos_subdriver != null)
             {
                 sb.Append("_");

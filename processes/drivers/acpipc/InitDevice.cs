@@ -312,6 +312,7 @@ namespace acpipc
             enumerated by the respective bus enumerator */
             foreach (KeyValuePair<string, Aml.ACPIObject> kvp in n.Devices)
             {
+                List<string> hid_strs = new List<string>();
                 Aml.ACPIObject hid = n.FindObject(kvp.Key + "._HID", false);
                 if (hid == null)
                     continue;
@@ -337,6 +338,43 @@ namespace acpipc
                     default:
                         hid_str = hid_ret.Type.ToString() + ": " + hid_ret.Data.ToString();
                         break;
+                }
+                hid_strs.Add(hid_str);
+
+                /* Also add all compatible IDs */
+                Aml.ACPIObject cid = n.Evaluate(kvp.Key + "._CID", mi);
+                if(cid != null)
+                {
+                    switch(cid.Type)
+                    {
+                        case ACPIObject.DataType.Integer:
+                            hid_strs.Add(cid.IntegerData.ToString("X8"));
+                            break;
+                        case ACPIObject.DataType.String:
+                            hid_strs.Add(cid.Data as string);
+                            break;
+                        case ACPIObject.DataType.Package:
+                            var pd = cid.Data as Aml.ACPIObject[];
+                            foreach(var icid in pd)
+                            {
+                                switch(icid.Type)
+                                {
+                                    case ACPIObject.DataType.Integer:
+                                        hid_strs.Add(icid.IntegerData.ToString("X8"));
+                                        break;
+                                    case ACPIObject.DataType.String:
+                                        hid_strs.Add(icid.Data as string);
+                                        break;
+                                    default:
+                                        hid_strs.Add(icid.Type.ToString() + ": " + icid.Data.ToString());
+                                        break;
+                                }
+                            }
+                            break;
+                        default:
+                            hid_strs.Add(cid.Type.ToString() + ": " + cid.Data.ToString());
+                            break;
+                    }
                 }
 
                 AddDevice(hid_str, kvp.Key, kvp.Value, n, mi);
