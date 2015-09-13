@@ -377,7 +377,7 @@ namespace acpipc
                     }
                 }
 
-                AddDevice(hid_str, kvp.Key, kvp.Value, n, mi);
+                AddDevice(hid_strs, kvp.Key, kvp.Value, n, mi);
             }
             foreach(KeyValuePair<string, Aml.ACPIObject> kvp in n.Processors)
             {
