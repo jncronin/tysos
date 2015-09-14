@@ -81,6 +81,53 @@ namespace acpipc
                 f.ACPI_DISABLE = (byte)table.Read(table.Addr64 + 53, 1);
                 f.S4BIOS_REQ = (byte)table.Read(table.Addr64 + 54, 1);
                 f.PSTATE_CNT = (byte)table.Read(table.Addr64 + 55, 1);
+                f.PM1_EVT_LEN = (uint)table.Read(table.Addr64 + 88, 1);
+                f.PM1_CNT_LEN = (uint)table.Read(table.Addr64 + 89, 1);
+                f.PM2_CNT_LEN = (uint)table.Read(table.Addr64 + 90, 1);
+                f.PM_TMR_LEN = (uint)table.Read(table.Addr64 + 91, 1);
+                f.GPE0_BLK_LEN = (uint)table.Read(table.Addr64 + 92, 1);
+                f.GPE1_BLK_LEN = (uint)table.Read(table.Addr64 + 93, 1);
+                f.GPE1_BASE = (uint)table.Read(table.Addr64 + 94, 1);
+
+                f.PM1a_EVT_BLK = new GAS((uint)table.Read(table.Addr64 + 56, 4), f.PM1_EVT_LEN * 8, a);
+                f.PM1b_EVT_BLK = new GAS((uint)table.Read(table.Addr64 + 60, 4), f.PM1_EVT_LEN * 8, a);
+                f.PM1a_CNT_BLK = new GAS((uint)table.Read(table.Addr64 + 64, 4), f.PM1_CNT_LEN * 8, a);
+                f.PM1b_CNT_BLK = new GAS((uint)table.Read(table.Addr64 + 68, 4), f.PM1_CNT_LEN * 8, a);
+                f.PM2_CNT_BLK = new GAS((uint)table.Read(table.Addr64 + 72, 4), f.PM2_CNT_LEN * 8, a);
+                f.PM_TMR_BLK = new GAS((uint)table.Read(table.Addr64 + 76, 4), f.PM_TMR_LEN * 8, a);
+                f.GPE0_BLK = new GAS((uint)table.Read(table.Addr64 + 76, 4), f.GPE0_BLK_LEN * 8, a);
+                f.GPE1_BLK = new GAS((uint)table.Read(table.Addr64 + 76, 4), f.GPE1_BLK_LEN * 8, a);
+
+                if (table.Read(table.Addr64 + 152, 8) != 0)
+                    f.PM1a_EVT_BLK = new GAS(table, 148, a);
+                if (table.Read(table.Addr64 + 164, 8) != 0)
+                    f.PM1b_EVT_BLK = new GAS(table, 160, a);
+                if (table.Read(table.Addr64 + 176, 8) != 0)
+                    f.PM1a_CNT_BLK = new GAS(table, 172, a);
+                if (table.Read(table.Addr64 + 188, 8) != 0)
+                    f.PM1b_CNT_BLK = new GAS(table, 184, a);
+                if (table.Read(table.Addr64 + 200, 8) != 0)
+                    f.PM2_CNT_BLK = new GAS(table, 196, a);
+                if (table.Read(table.Addr64 + 212, 8) != 0)
+                    f.PM_TMR_BLK = new GAS(table, 208, a);
+                if (table.Read(table.Addr64 + 224, 8) != 0)
+                    f.GPE0_BLK = new GAS(table, 220, a);
+                if (table.Read(table.Addr64 + 236, 8) != 0)
+                    f.GPE1_BLK = new GAS(table, 232, a);
+
+                f.PM1_EVT = new RegGroup(f.PM1a_EVT_BLK, f.PM1b_EVT_BLK);
+                f.PM1_CNT = new RegGroup(f.PM1a_CNT_BLK, f.PM1b_CNT_BLK);
+
+                f.PM1_STS = new SplitReg(f.PM1_EVT, 0, f.PM1a_EVT_BLK.BitWidth / 2);
+                f.PM1_EN = new SplitReg(f.PM1_EVT, f.PM1a_EVT_BLK.BitWidth / 2,
+                    f.PM1a_EVT_BLK.BitWidth / 2);
+
+                f.GPE0_STS = new SplitReg(f.GPE0_BLK, 0, (int)f.GPE0_BLK_LEN * 4);
+                f.GPE0_EN = new SplitReg(f.GPE0_BLK, (int)f.GPE0_BLK_LEN * 4,
+                    (int)f.GPE0_BLK_LEN * 4);
+                f.GPE1_STS = new SplitReg(f.GPE1_BLK, 0, (int)f.GPE1_BLK_LEN * 4);
+                f.GPE1_EN = new SplitReg(f.GPE1_BLK, (int)f.GPE1_BLK_LEN * 4,
+                    (int)f.GPE1_BLK_LEN * 4);
 
                 f.IAPC_BOOT_ARCH = (ushort)table.Read(table.Addr64 + 109, 2);
                 f.Flags = (uint)table.Read(table.Addr64 + 112, 4);
@@ -97,6 +144,7 @@ namespace acpipc
                 a.dsdt_len = 36;    // changed later after the DSDT is loaded
 
                 ret = f;
+                a.fadt = f;
             }
             else if (sig_string == "APIC")
             {
@@ -220,11 +268,37 @@ namespace acpipc
         public byte S4BIOS_REQ;
         public byte PSTATE_CNT;
 
-        // TODO PM/GPE blocks
+        public uint PM1_EVT_LEN;
+        public uint PM1_CNT_LEN;
+        public uint PM2_CNT_LEN;
+        public uint PM_TMR_LEN;
+        public uint GPE0_BLK_LEN;
+        public uint GPE1_BLK_LEN;
+        public uint GPE1_BASE;
+        public uint CST_CNT;
+
+        public GAS PM1a_EVT_BLK;
+        public GAS PM1b_EVT_BLK;
+        public GAS PM1a_CNT_BLK;
+        public GAS PM1b_CNT_BLK;
+        public GAS PM2_CNT_BLK;
+        public GAS PM_TMR_BLK;
+        public GAS GPE0_BLK;
+        public GAS GPE1_BLK;
+
+        public RegGroup PM1_EVT;
+        public RegGroup PM1_CNT;
+
+        public SplitReg PM1_STS;
+        public SplitReg PM1_EN;
+
+        public SplitReg GPE0_STS;
+        public SplitReg GPE0_EN;
+        public SplitReg GPE1_STS;
+        public SplitReg GPE1_EN;
 
         public ushort IAPC_BOOT_ARCH;
         public uint Flags;
-        
     }
 
     class APIC : Table

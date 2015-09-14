@@ -1162,6 +1162,16 @@ namespace acpipc.Aml
         }
 
         public ACPIObject Evaluate(ACPIName name, IMachineInterface mi,
+            IEnumerable<ACPIObject> args)
+        {
+            Dictionary<int, ACPIObject> d_args = new Dictionary<int, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<int>());
+            int idx = 0;
+            foreach (var arg in args)
+                d_args[idx++] = arg;
+            return Evaluate(name, mi, d_args);
+        }
+
+        public ACPIObject Evaluate(ACPIName name, IMachineInterface mi,
             Dictionary<int, ACPIObject> args)
         {
             /* Look for the specified object and evaluate it */

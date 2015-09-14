@@ -499,6 +499,8 @@ namespace tysos.Resources
     {
         public delegate bool InterruptHandler();
         public abstract bool RegisterHandler(InterruptHandler handler);
+        public virtual void Enable() { }
+        public virtual void Disable() { }
         public abstract string ShortName { get; }
     }
 
@@ -522,7 +524,11 @@ namespace tysos.Resources
     public abstract class SharedInterruptLine : InterruptLine
     {
         List<InterruptHandler> handlers = new List<InterruptHandler>();
+        List<Thread> handler_threads = new List<Thread>();
         protected InterruptLine shared_line;
+
+        int spurious = 0;
+        const int SPURIOUS_LIMIT = 100;
 
         public SharedInterruptLine(InterruptLine SharedLine)
         { shared_line = SharedLine; }
@@ -531,6 +537,7 @@ namespace tysos.Resources
         {
             System.Diagnostics.Debugger.Log(0, "SharedInterruptLine", ShortName + " RegisterHandler");
             handlers.Add(handler);
+            handler_threads.Add(Program.arch.CurrentCpu.CurrentThread);
             if(handlers.Count == 1)
             {
                 if (shared_line != null)
@@ -544,9 +551,35 @@ namespace tysos.Resources
             foreach(InterruptHandler h in handlers)
             {
                 if (h() == true)
+                {
+                    if (spurious > 0)
+                        spurious--;
+                    else
+                        spurious = 0;   // handle multiple accesses creating negative number
+
                     return true;
+                }
             }
-            return false;
+
+            StringBuilder sb = new StringBuilder("ERROR: Spurious interrupt - not handled.  ");
+            sb.Append("Potential culprits: ");
+            for(int i = 0; i < handler_threads.Count; i++)
+            {
+                if (i != 0)
+                    sb.Append(", ");
+                sb.Append(handler_threads[i].ProcessName);
+            }
+
+            spurious++;
+
+            if(spurious > SPURIOUS_LIMIT)
+            {
+                sb.Append(" - disabling interrupt line");
+                shared_line.Disable();
+            }
+
+            System.Diagnostics.Debugger.Log(0, this.ToString(), sb.ToString());
+            return true;
         }
     }
 }

@@ -83,6 +83,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ata", "..\processes\drivers
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "disk", "..\processes\drivers\disk\disk.csproj", "{F2908F7F-6573-4F06-80EE-3D932AE6DD23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "framebuffer", "..\processes\drivers\framebuffer\framebuffer.csproj", "{397B00E7-CF29-40A0-904A-20AF5E6C9599}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Compile BareBones|Any CPU = Compile BareBones|Any CPU
@@ -1407,9 +1409,7 @@ Global
 		{4C4DE76D-AE44-4AF6-B973-65EFF1F0DB7F}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{4C4DE76D-AE44-4AF6-B973-65EFF1F0DB7F}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{4C4DE76D-AE44-4AF6-B973-65EFF1F0DB7F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{4C4DE76D-AE44-4AF6-B973-65EFF1F0DB7F}.Debug|Win32.Build.0 = Debug|Win32
 		{4C4DE76D-AE44-4AF6-B973-65EFF1F0DB7F}.Debug|x86.ActiveCfg = Debug|Win32
-		{4C4DE76D-AE44-4AF6-B973-65EFF1F0DB7F}.Debug|x86.Build.0 = Debug|Win32
 		{4C4DE76D-AE44-4AF6-B973-65EFF1F0DB7F}.Generate tloadkif|Any CPU.ActiveCfg = Release|Win32
 		{4C4DE76D-AE44-4AF6-B973-65EFF1F0DB7F}.Generate tloadkif|Mixed Platforms.ActiveCfg = Release|Win32
 		{4C4DE76D-AE44-4AF6-B973-65EFF1F0DB7F}.Generate tloadkif|Win32.ActiveCfg = Release|Win32
@@ -1934,6 +1934,70 @@ Global
 		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|Win32.Build.0 = Release|Any CPU
 		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|x86.ActiveCfg = Release|Any CPU
 		{F2908F7F-6573-4F06-80EE-3D932AE6DD23}.Release|x86.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile BareBones|Any CPU.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile BareBones|Any CPU.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile BareBones|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile BareBones|Mixed Platforms.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile BareBones|Win32.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile BareBones|Win32.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile BareBones|x86.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile BareBones|x86.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile corlib|Any CPU.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile corlib|Any CPU.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile corlib|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile corlib|Mixed Platforms.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile corlib|Win32.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile corlib|Win32.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile corlib|x86.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile corlib|x86.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libsupcs|Any CPU.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libsupcs|Any CPU.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libsupcs|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libsupcs|Mixed Platforms.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libsupcs|Win32.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libsupcs|Win32.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libsupcs|x86.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libsupcs|x86.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libtysila|Any CPU.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libtysila|Any CPU.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libtysila|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libtysila|Mixed Platforms.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libtysila|Win32.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libtysila|Win32.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libtysila|x86.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile libtysila|x86.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile TestProcess|Any CPU.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile TestProcess|Any CPU.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile TestProcess|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile TestProcess|Mixed Platforms.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile TestProcess|Win32.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile TestProcess|Win32.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile TestProcess|x86.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Compile TestProcess|x86.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Debug|Win32.Build.0 = Debug|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Debug|x86.Build.0 = Debug|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Generate tloadkif|Any CPU.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Generate tloadkif|Any CPU.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Generate tloadkif|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Generate tloadkif|Mixed Platforms.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Generate tloadkif|Win32.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Generate tloadkif|Win32.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Generate tloadkif|x86.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Generate tloadkif|x86.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Release|Any CPU.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Release|Win32.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Release|Win32.Build.0 = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Release|x86.ActiveCfg = Release|Any CPU
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1955,5 +2019,6 @@ Global
 		{286F2C15-F3A7-4650-B8FD-0CA0AACEDB5B} = {D2886F87-0DE4-44A4-9D5B-8FE471940687}
 		{330493D1-054B-44BE-AADA-4236290D4FBF} = {D4090900-16B2-42C8-9D26-D8A622AD0670}
 		{F2908F7F-6573-4F06-80EE-3D932AE6DD23} = {D4090900-16B2-42C8-9D26-D8A622AD0670}
+		{397B00E7-CF29-40A0-904A-20AF5E6C9599} = {D4090900-16B2-42C8-9D26-D8A622AD0670}
 	EndGlobalSection
 EndGlobal

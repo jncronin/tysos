@@ -111,6 +111,17 @@ namespace tysos
 
         internal string name;
 
+        public string ProcessName { get
+            {
+                if (owning_process != null && owning_process.name != null)
+                    return owning_process.name;
+                else if (name != null)
+                    return name;
+                else
+                    return "Unnamed thread";
+            }
+        }
+
         public bool do_profile = false;
 
         internal List<Event> BlockingOn = new List<Event>();

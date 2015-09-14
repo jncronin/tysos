@@ -42,6 +42,10 @@ static struct cfg_module *first = NULL;
 static struct cfg_module *cur = NULL;
 static struct cfg_module *last = NULL;
 
+int v_width = 1024;
+int v_height = 768;
+int v_bpp = 32;
+
 struct cfg_module *cfg_iterate_modules()
 {
 	if(cur == NULL)
@@ -99,10 +103,18 @@ EFI_STATUS parse_cfg_file()
 		CFG_STR("path", "", CFGF_NODEFAULT),
 		CFG_END()
 	};
+
+	cfg_opt_t video_opts[] = {
+		CFG_STR("width", "1024", CFGF_NONE),
+		CFG_STR("height", "768", CFGF_NONE),
+		CFG_STR("bpp", "32", CFGF_NONE),
+		CFG_END()
+	};
 	
 	cfg_opt_t opts[] = {
 		CFG_SEC("kernel", kernel_opts, CFGF_NONE),
 		CFG_SEC("module", module_opts, CFGF_MULTI),
+		CFG_SEC("video", video_opts, CFGF_NONE),
 		CFG_END()
 	};
 	cfg_t *cfg = NULL;
@@ -150,6 +162,17 @@ EFI_STATUS parse_cfg_file()
 
 		add(module_name, module_path);
 	}
+	
+	cfg_t *video_cfg = cfg_getsec(cfg, "video");
+	if (video_cfg != NULL)
+	{
+		v_width = atoi(cfg_getstr(video_cfg, "width"));
+		v_height = atoi(cfg_getstr(video_cfg, "height"));
+		v_bpp = atoi(cfg_getstr(video_cfg, "bpp"));
+		printf("video: width: %i, height: %i, bpp: %i",
+			v_width, v_height, v_bpp);
+	}
+
 	printf("end of configuration\n");
 
 	return EFI_SUCCESS;

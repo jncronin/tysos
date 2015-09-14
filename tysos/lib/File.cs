@@ -318,6 +318,7 @@ namespace tysos.lib
         protected Dictionary<string, List<File.Property>> children;
         protected List<File.Property> root;
         protected string name;
+        protected bool is_dir = true;
 
         public VirtualDirectoryServer(string Name,
             List<File.Property> Root,
@@ -341,12 +342,17 @@ namespace tysos.lib
         {
             if (path.Count == 0)
             {
-                List<string> c = new List<string>(children.Keys);
-                return new tysos.lib.VirtualDirectory(this, "", c);
+                if (is_dir)
+                {
+                    List<string> c = new List<string>(children.Keys);
+                    return new tysos.lib.VirtualDirectory(this, "", c);
+                }
+                else
+                    return new VirtualPropertyFile(this, "");
             }
 
             // only one level
-            if (path.Count != 1)
+            if (path.Count != 1 || is_dir == false)
                 return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
 
             if (children.ContainsKey(path[0]))
@@ -370,6 +376,20 @@ namespace tysos.lib
         {
             f.Error = MonoIOError.ERROR_WRITE_FAULT;
             return 0;
+        }
+    }
+
+    public class VirtualFileServer : VirtualDirectoryServer
+    {
+        public VirtualFileServer(string Name,
+            List<File.Property> Root) : base(Name, Root, null)
+        {
+            is_dir = false;
+        }
+
+        public VirtualFileServer() : base()
+        {
+            is_dir = false;
         }
     }
 }

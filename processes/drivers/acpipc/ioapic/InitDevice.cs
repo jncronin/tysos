@@ -182,6 +182,24 @@ namespace acpipc.ioapic
             return true;
         }
 
+        public override void Enable()
+        {
+            int ioredtbl_idx = 0x10 + 2 * ioapic_idx;
+            uint cur_val = apic.ReadRegister(ioredtbl_idx);
+            cur_val &= ~(1U << 16);
+            apic.WriteRegister(ioredtbl_idx, cur_val);
+            System.Diagnostics.Debugger.Log(0, "IOAPICGSI", this.ToString() + " enabled");
+        }
+
+        public override void Disable()
+        {
+            int ioredtbl_idx = 0x10 + 2 * ioapic_idx;
+            uint cur_val = apic.ReadRegister(ioredtbl_idx);
+            cur_val |= (1U << 16);
+            apic.WriteRegister(ioredtbl_idx, cur_val);
+            System.Diagnostics.Debugger.Log(0, "IOAPICGSI", this.ToString() + " disabled");
+        }
+
         internal override void SetMode(bool is_level_trigger, bool is_low_active)
         {
             int ioredtbl_idx = 0x10 + 2 * ioapic_idx;

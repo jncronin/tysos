@@ -230,17 +230,46 @@ namespace tysos
             // TODO: add interrupts for all cpus
             interrupts.AddRange(arch.CurrentCpu.Interrupts);
             system_props.Add(new lib.File.Property { Name = "interrupts", Value = interrupts });
-            rootfs rootfs = new rootfs(new List<rootfs.rootfs_item>
+            List<rootfs.rootfs_item> rootfs_items = new List<rootfs.rootfs_item>
             {
                 new rootfs.rootfs_item { Name = "system", Props = system_props },
                 new rootfs.rootfs_item { Name = "modules", Props = modfs_props }
-            });
+            };
+
+            /* Add a basic framebuffer device if set up by bootloader */
+            if (mboot.fb_base != 0)
+            {
+                List<lib.File.Property> fb_props = new List<lib.File.Property>();
+                fb_props.Add(new lib.File.Property { Name = "driver", Value = "framebuffer" });
+                ulong fb_length = mboot.fb_stride * mboot.fb_h * mboot.fb_bpp / 8;
+                if ((fb_length & 0xfffUL) != 0)
+                {
+                    fb_length += 0x1000UL;
+                    fb_length &= ~0xfffUL;
+                }
+                fb_props.Add(new lib.File.Property { Name = "pmem", Value = new PhysicalMemoryResource64(mboot.fb_base, fb_length) });
+                fb_props.Add(new lib.File.Property { Name = "height", Value = mboot.fb_h });
+                fb_props.Add(new lib.File.Property { Name = "width", Value = mboot.fb_w });
+                fb_props.Add(new lib.File.Property { Name = "stride", Value = mboot.fb_stride });
+                fb_props.Add(new lib.File.Property { Name = "bpp", Value = mboot.fb_bpp });
+                fb_props.Add(new lib.File.Property { Name = "pformat", Value = (int)mboot.fb_pixelformat });
+
+                fb_props.Add(new lib.File.Property
+                {
+                    Name = "vmem",
+                    Value = new VirtualMemoryResource64(arch.VirtualRegions.Alloc(fb_length, 0x1000, "framebuffer"), fb_length)
+                });
+                rootfs_items.Add(new rootfs.rootfs_item { Name = "framebuffer", Props = fb_props });
+            }
+
+            rootfs rootfs = new rootfs(rootfs_items);
             Process rootfs_p = Process.CreateProcess("rootfs",
                 new System.Threading.ThreadStart(rootfs.MessageLoop), new object[] { rootfs });
             rootfs_p.Start();
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/", rootfs },
                 new Type[] { typeof(string), typeof(ServerObject) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/modules" }, new Type[] { typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/framebuffer" }, new Type[] { typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system" }, new Type[] { typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0" }, new Type[] { typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/bga_0" }, new Type[] { typeof(string) });

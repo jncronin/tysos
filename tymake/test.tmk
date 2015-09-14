@@ -233,7 +233,8 @@ rulefor "%.efi.o" inputs { "%.s" } depends { "test.tmk" } {
 }
 
 EFILIBC = EFILIBCDIR + "/libefilibc.a";
-rulefor EFILIBC inputs { EFILIBCDIR + "/abort.efi.o", EFILIBCDIR + "/atof.efi.o", EFILIBCDIR + "/console.efi.o", EFILIBCDIR + "/data.efi.o",
+rulefor EFILIBC inputs { EFILIBCDIR + "/abort.efi.o", EFILIBCDIR + "/atof.efi.o", 
+	EFILIBCDIR + "/atoi.efi.o", EFILIBCDIR + "/console.efi.o", EFILIBCDIR + "/data.efi.o",
 	EFILIBCDIR + "/efilibc.efi.o", EFILIBCDIR + "/file.efi.o", EFILIBCDIR + "/malloc.efi.o", EFILIBCDIR + "/misc.efi.o", EFILIBCDIR + "/printf.efi.o",
 	EFILIBCDIR + "/scanf.efi.o", EFILIBCDIR + "/serial.efi.o", EFILIBCDIR + "/string.efi.o", EFILIBCDIR + "/strtod.efi.o", EFILIBCDIR + "/strtol.efi.o",
 	EFILIBCDIR + "/strtoll.efi.o", EFILIBCDIR + "/strtoull.efi.o" } depends { "test.tmk" } {
@@ -309,10 +310,11 @@ BGAOBJ = objfromexe(typroject(ROOT + "/processes/drivers/bga/bga.csproj"));
 PCIIDEOBJ = objfromexe(typroject(ROOT + "/processes/drivers/pciide/pciide.csproj"));
 ATAOBJ = objfromexe(typroject(ROOT + "/processes/drivers/ata/ata.csproj"));
 DISKOBJ = objfromexe(typroject(ROOT + "/processes/drivers/disk/disk.csproj"));
+FRAMEBUFFEROBJ = objfromexe(typroject(ROOT + "/processes/drivers/framebuffer/framebuffer.csproj"));
 
 PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj"), DEBUGPRINTOBJ,
 	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ, PCIOBJ, BGAOBJ, PCIIDEOBJ,
-	ATAOBJ, DISKOBJ ];
+	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ ];
 
 COREIMG = OUTDIR + "/core.img";
 XORRISO = "xorriso";

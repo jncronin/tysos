@@ -57,6 +57,12 @@ EFI_PHYSICAL_ADDRESS sym_tab_paddr, sym_tab_size, sym_tab_entsize, str_tab_paddr
 UINTPTR kernel_low;
 UINTPTR kernel_high;
 
+extern int v_width;
+extern int v_height;
+extern int v_bpp;
+
+extern EFI_GUID GraphicsOutputProtocol;
+
 void (*trampoline_func)(uint64_t target, uint64_t cr3, uint64_t _mbheader, uint64_t halt_func,
 	uint64_t kernel_stack);
 extern char trampoline, trampoline_end;
@@ -429,6 +435,96 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 #endif
 	mbheader->machine_minor_type = UEFI;
 	mbheader->virt_bda = (uint64_t)(uintptr_t)ST;
+
+	/* Try and set a video mode */
+	printf("Setting video mode %ix%ix%i\n", v_width, v_height, v_bpp);
+	EFI_GRAPHICS_OUTPUT_PROTOCOL *gop_handle = NULL;
+	int v_set = 0;
+	Status = BS->OpenProtocol(ST->ConsoleOutHandle, &GraphicsOutputProtocol,
+		(void**)&gop_handle, ImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+	if (Status == EFI_UNSUPPORTED)
+	{
+		/* ConsoleOut does not support GOP - try and find all GOP devices */
+		UINTN gop_handles_n;
+		EFI_HANDLE *gop_handles;
+		Status = BS->LocateHandleBuffer(ByProtocol, &GraphicsOutputProtocol,
+			NULL, &gop_handles_n, &gop_handles);
+		if (Status == EFI_SUCCESS)
+		{
+			for (UINTN gop_handle_i = 0; gop_handle_i < gop_handles_n; gop_handle_i++)
+			{
+				Status = BS->OpenProtocol(gop_handles[gop_handle_i],
+					&GraphicsOutputProtocol, (void **)&gop_handle, ImageHandle,
+					NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+				if (Status == EFI_SUCCESS)
+					break;
+			}
+		}
+		BS->FreePool(gop_handles);
+	}
+	if (gop_handle)
+	{
+		UINT32 maxmode = gop_handle->Mode->MaxMode;
+		for (UINT32 mode_i = 0; mode_i < maxmode; mode_i++)
+		{
+			EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mod_info;
+			UINTN mod_info_sz;
+			Status = gop_handle->QueryMode(gop_handle, mode_i, &mod_info_sz,
+				&mod_info);
+			v_set = 1;
+			if (Status == EFI_SUCCESS)
+			{
+				/* See if the current mode information fits our requirements */
+				if (mod_info->PixelFormat == PixelBltOnly)
+					v_set = 0;
+				if (mod_info->HorizontalResolution != (UINT32)v_width)
+					v_set = 0;
+				if (mod_info->VerticalResolution != (UINT32)v_height)
+					v_set = 0;
+				if (v_bpp != 32)
+					v_set = 0;
+				if (mod_info->PixelFormat != PixelBlueGreenRedReserved8BitPerColor &&
+					mod_info->PixelFormat != PixelRedGreenBlueReserved8BitPerColor)
+					v_set = 0;			
+			}
+			BS->FreePool(mod_info);
+
+			if (v_set)
+			{
+				Status = gop_handle->SetMode(gop_handle, mode_i);
+				if (Status == EFI_SUCCESS)
+				{
+					init_serial();
+					efilibc_register_stderr_fwrite(debug_serial_fwrite, NULL);
+					efilibc_register_stdout_fwrite(debug_serial_fwrite, NULL);
+
+					switch (gop_handle->Mode->Info->PixelFormat)
+					{
+					case	 PixelBlueGreenRedReserved8BitPerColor:
+						mbheader->fb_pixelformat = 2;
+						break;
+					case	 PixelRedGreenBlueReserved8BitPerColor:
+						mbheader->fb_pixelformat = 1;
+						break;
+					default:
+						break;
+					}
+					mbheader->fb_bpp = 32;
+					mbheader->fb_w = gop_handle->Mode->Info->HorizontalResolution;
+					mbheader->fb_h = gop_handle->Mode->Info->VerticalResolution;
+					mbheader->fb_stride = gop_handle->Mode->Info->PixelsPerScanLine;
+					mbheader->fb_base = (uint64_t)gop_handle->Mode->FrameBufferBase;
+
+					printf("Set video mode %ix%ix%i @ %x\n",
+						mbheader->fb_w, mbheader->fb_h, mbheader->fb_bpp,
+						mbheader->fb_base);
+
+					break;
+				}
+			}
+		}
+	}
+
 
 	//press_key();
 

@@ -34,6 +34,7 @@ char *getenv(const char *name);
 void exit(int status);
 double strtod(const char *nptr, char **endptr);
 double atof(const char *nptr);
+int atoi(const char *nptr);
 long int strtol(const char *nptr, char **endptr, int base);
 unsigned long int strtoul(const char *nptr, char **endptr, int base);
 long long int strtoll(const char *nptr, char **endptr, int base);

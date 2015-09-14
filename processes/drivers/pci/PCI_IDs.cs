@@ -62,7 +62,8 @@ namespace pci
 
             db_vd.Add(new DeviceDBKey { VendorID = 0x8086, DeviceID = 0x7113 }, new DeviceDBEntry { DriverName = null, HumanManufacturerName = "Intel", HumanDeviceName = "82371AB/EB/MB PIIX4 ACPI" });
 
-            db_vd.Add(new DeviceDBKey { VendorID = 0x80ee, DeviceID = 0xbeef }, new DeviceDBEntry { DriverName = "bga", HumanManufacturerName = "Oracle", HumanDeviceName = "VirtualBox Graphics Adapter" });
+            db_vd.Add(new DeviceDBKey { VendorID = 0x80ee, DeviceID = 0xbeef }, new DeviceDBEntry { DriverName = "bga", HumanManufacturerName = "Oracle", HumanDeviceName = "VirtualBox Graphics Adapter",
+                ExtraResources = new tysos.Resource[] { hb.ios.AllocFixed(0x1ce, 2, true), hb.ios.AllocFixed(0x1cf, 2, true), hb.vmems.Alloc(0x2000000) } });
 
             db_vd.Add(new DeviceDBKey { VendorID = 0x1022, DeviceID = 0x2000 }, new DeviceDBEntry { DriverName = "pcnet32", HumanManufacturerName = "AMD", HumanDeviceName = "79c970 [PCnet32 LANCE]" });
 

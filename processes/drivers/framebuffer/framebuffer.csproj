@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6F2EA8EA-6505-4825-8155-573C2C621EAA}</ProjectGuid>
+    <ProjectGuid>{397B00E7-CF29-40A0-904A-20AF5E6C9599}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>acpipc</RootNamespace>
-    <AssemblyName>acpipc</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <RootNamespace>framebuffer</RootNamespace>
+    <AssemblyName>framebuffer</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -33,22 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ACPIConfiguration.cs" />
-    <Compile Include="ACPIInterrupt.cs" />
-    <Compile Include="AddDevice.cs" />
-    <Compile Include="aml\ACPIName.cs" />
-    <Compile Include="aml\ACPIObject.cs" />
-    <Compile Include="aml\DataAccess.cs" />
-    <Compile Include="aml\DefBlockHeader.cs" />
-    <Compile Include="aml\IMachineInterface.cs" />
-    <Compile Include="aml\Namespace.cs" />
     <Compile Include="Factory.cs" />
-    <Compile Include="GenericAddressStructure.cs" />
     <Compile Include="InitDevice.cs" />
-    <Compile Include="ioapic\InitDevice.cs" />
-    <Compile Include="MachineInterface.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Table.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -58,13 +45,6 @@
       <Project>{97ad573f-2e77-4f43-9c2b-1050796471a9}</Project>
       <Name>tysos</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\services\vfs\vfs.csproj">
-      <Project>{47ead363-6c7f-48a4-b119-357740437369}</Project>
-      <Name>vfs</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

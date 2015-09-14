@@ -34,6 +34,7 @@ namespace acpipc
         internal List<tysos.Resources.InterruptLine> cpu_interrupts = new List<tysos.Resources.InterruptLine>();
 
         List<Table> tables = new List<Table>();
+        internal FADT fadt;
         tysos.lib.File.Property[] props;
         internal ulong p_dsdt_addr, dsdt_len;
         internal List<tysos.VirtualMemoryResource64> ssdts = new List<tysos.VirtualMemoryResource64>();
@@ -51,6 +52,8 @@ namespace acpipc
 
         internal Aml.Namespace n;
         internal MachineInterface mi;
+
+        //internal tysos.x86_64.IOResource 
 
         public acpipc(tysos.lib.File.Property[] Properties)
         {
@@ -123,14 +126,14 @@ namespace acpipc
                 isa_irqs[i] = GenerateISAIRQ(i);
 
             /* Dump VBox ACPI interface */
-            var vbox_idx = ios.AllocFixed(0x4048, 4);
+            /*var vbox_idx = ios.AllocFixed(0x4048, 4);
             var vbox_dat = ios.AllocFixed(0x404c, 4);
             for(uint i = 0; i < 26; i++)
             {
                 vbox_idx.Write(vbox_idx.Addr64, 4, i * 4);
                 var val = vbox_dat.Read(vbox_dat.Addr64, 4);
                 System.Diagnostics.Debugger.Log(0, "acpipc", "VBoxACPI: " + i.ToString() + ": " + val.ToString("X8"));
-            }
+            }*/
 
             /* Now allocate space for the DSDT */
             if(p_dsdt_addr == 0)
@@ -384,7 +387,137 @@ namespace acpipc
                 AddDevice("cpu", kvp.Key, kvp.Value, n, mi);
             }
 
+            /* Take command of hardware resources */
+            if (fadt != null)
+            {
+                System.Diagnostics.Debugger.Log(0, null, "FADT: " +
+                    "PM1a_EVT_BLK: " + fadt.PM1a_EVT_BLK.ToString() +
+                    ", PM1a_CNT_BLK: " + fadt.PM1a_CNT_BLK.ToString() +
+                    ", PM1b_EVT_BLK: " + fadt.PM1b_EVT_BLK.ToString() +
+                    ", PM1b_CNT_BLK: " + fadt.PM1b_CNT_BLK.ToString() +
+                    ", PM2_CNT_BLK: " + fadt.PM2_CNT_BLK.ToString() +
+                    ", PM_TMR_BLK: " + fadt.PM_TMR_BLK.ToString() +
+                    ", GPE0_BLK: " + fadt.GPE0_BLK.ToString() +
+                    ", GPE1_BLK: " + fadt.GPE1_BLK.ToString());
+
+                var sci = isa_irqs[fadt.SCI_INT];
+                if (sci != null)
+                {
+                    System.Diagnostics.Debugger.Log(0, null, "SCI_INT mapped to " + sci.ToString());
+                    sci.RegisterHandler(new tysos.Resources.InterruptLine.InterruptHandler(SCIInt));
+                }
+
+                /* Set ACPI mode */
+                var smi_cmd = ios.AllocFixed(fadt.SMI_CMD, 1, true);
+                if (smi_cmd != null)
+                {
+                    if ((fadt.PM1_CNT.Read() & 0x1) != 0)
+                    {
+                        System.Diagnostics.Debugger.Log(0, null, "Already in ACPI mode");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debugger.Log(0, null, "Setting ACPI mode");
+                        smi_cmd.Write(smi_cmd.Addr64, 1, fadt.ACPI_ENABLE);
+                        while ((fadt.PM1_CNT.Read() & 0x1) == 0) ;
+                        System.Diagnostics.Debugger.Log(0, null, "Set ACPI mode");
+                    }
+                }
+
+                /* Say that we handle fixed power and sleep button events */
+                fadt.PM1_EN.Write((1UL << 8) | (1UL << 9));
+            }
+
             return true;
+        }
+
+        bool SCIInt()
+        {
+            System.Diagnostics.Debugger.Log(0, null, "SCIINT");
+            bool ret = false;
+
+            /* Check PM1 status register */
+            ulong pm1_sts = fadt.PM1_STS.Read();
+            if ((pm1_sts & (1UL << 8)) != 0)
+            {
+                HandleFixedPowerButtonEvent();
+                ret = true;
+            }
+            if((pm1_sts & (1UL << 9)) != 0)
+            {
+                HandleFixedSleepButtonEvent();
+                ret = true;
+            }
+
+            /* Check GPE0 status register */
+            ulong gpe0_sts = fadt.GPE0_STS.Read();
+            ulong gpe1_sts = fadt.GPE1_STS.Read();
+
+            return ret;
+        }
+
+        private void HandleFixedPowerButtonEvent()
+        {
+            System.Diagnostics.Debugger.Log(0, null, "POWER BUTTON");
+
+            /* Write 1 to the register to clear it (see 4.7.3.1.1) */
+            fadt.PM1_STS.Write(1UL << 8);
+
+            /* Shutdown routine (see 15.1.7):
+                \_PTS(5)
+                Execute OS shutdown stuff (flush disk caches etc)
+                \_GTS(5)
+
+                Write SLP_TYPa (from \_S5) with SLP_ENa set to PM1a_CNT
+                Write SLP_TYPb (from \_S5) with SLP_ENb set to PM1b_CNT
+            */
+
+            var s5 = n.Evaluate("\\_S5_", mi);
+            if (s5 == null)
+            {
+                System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned null");
+                return;
+            }
+            if(s5.Type != ACPIObject.DataType.Package)
+            {
+                System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned invalid type: " + s5.Type.ToString());
+                return;
+            }
+            var pdat = s5.Data as ACPIObject[];
+            if(pdat == null)
+            {
+                System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned invalid data type: " + s5.Data.GetType().ToString());
+                return;
+            }
+            if(pdat.Length < 2)
+            {
+                System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned too short a package (" + pdat.Length.ToString() + " items)");
+                return;
+            }
+            
+            // SLP_TYPx values are 3 bits long
+            var slp_typa = pdat[0].IntegerData & 0x7UL;
+            var slp_typb = pdat[1].IntegerData & 0x7UL;
+
+            // build the new value for PM1x with SLP_TYP at bit 10 and SLP_EN (bit 13) set
+            var pm1a_val = (slp_typa << 10) | (1UL << 13);
+            var pm1b_val = (slp_typb << 10) | (1UL << 13);
+
+            System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned " + slp_typa.ToString("X") + " and " + slp_typb.ToString());
+
+            n.Evaluate("\\_PTS", mi, new ACPIObject[] { 5 });
+            n.Evaluate("\\_GTS", mi, new ACPIObject[] { 5 });
+
+            fadt.PM1a_CNT_BLK.Write(pm1a_val);
+            fadt.PM1b_CNT_BLK.Write(pm1b_val);
+        }
+
+        private void HandleFixedSleepButtonEvent()
+        {
+            System.Diagnostics.Debugger.Log(0, null, "SLEEP BUTTON");
+
+            /* Write 1 to the register to clear it (see 4.7.3.1.1) */
+            fadt.PM1_STS.Write(1UL << 9);
         }
 
         internal ACPIObject EvaluateObject(ACPIName name, IList<ACPIObject> args)

@@ -168,6 +168,11 @@ namespace acpipc
                     if (isa_irq != null && isa_irq.irq != -1)
                         props.Add(new File.Property { Name = "interrupt", Value = isa_irq });
                 }
+
+                /* Pass a reasonable chunk of the address space */
+                var vmem = vmems.Alloc(0x1000000000UL, 0x1000UL);
+                if (vmem != null)
+                    props.Add(new File.Property { Name = "vmem", Value = vmem });
             }
 
             /* Add CPU specific information */
