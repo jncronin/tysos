@@ -45,12 +45,32 @@ namespace libtysila4.target
                 new GenericEqualityComparer<int>());
 
         protected internal abstract int GetCondCode(MCInst i);
-        protected internal abstract bool IsMove(MCInst i);
+        protected internal abstract bool IsMoveVreg(MCInst i);
+        protected internal abstract bool IsMoveMreg(MCInst i);
         protected internal abstract ir.Param GetMoveSrc(MCInst i);
         protected internal abstract ir.Param GetMoveDest(MCInst i);
         protected internal abstract bool IsBranch(MCInst i);
         protected internal abstract ir.Param GetBranchDest(MCInst i);
         protected internal abstract void SetBranchDest(MCInst i, ir.Param d);
+
+        protected internal virtual bool NeedsMregLiveness(MCInst i)
+        {
+            if (i.p.Length == 0)
+                return false;
+            if (i.p[0].t == ir.Opcode.vl_str)
+            {
+                switch (i.p[0].v)
+                {
+                    case Generic.g_precall:
+                    case Generic.g_postcall:
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        protected internal abstract MCInst SaveRegister(Reg r);
+        protected internal abstract MCInst RestoreRegister(Reg r);
 
         public string name;
         public int ptype;
@@ -258,6 +278,16 @@ namespace libtysila4.target
                 return;
             }
 
+            switch(irnode.oc)
+            {
+                case ir.Opcode.oc_enter:
+                    if (irnode.mcinsts == null)
+                        irnode.mcinsts = new List<MCInst>();
+                    irnode.mcinsts.Add(new MCInst { p = new ir.Param[] { new ir.Param { t = ir.Opcode.vl_str, v = Generic.g_setupstack } } });
+                    irnode.mcinsts.Add(new MCInst { p = new ir.Param[] { new ir.Param { t = ir.Opcode.vl_str, v = Generic.g_savecalleepreserves } } });
+                    irnode.is_mc = true;
+                    return;
+            }
             throw new Exception("Unable to lower " + irnode.ToString());
         }
 
@@ -274,7 +304,7 @@ namespace libtysila4.target
             public int id;
             public int type;
             public int size;
-            public int mask;
+            public ulong mask;
             public int stack_loc;
 
             public override string ToString()

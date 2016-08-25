@@ -47,11 +47,14 @@
     <Compile Include="ir\StackTracePass.cs" />
     <Compile Include="ir\Trie.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="target\CalleePreserves.cs" />
     <Compile Include="target\HashTable.cs" />
     <Compile Include="target\Liveness.cs" />
     <Compile Include="target\MCGraph.cs" />
     <Compile Include="target\MCInst.cs" />
+    <Compile Include="target\PreserveRegistersAroundCall.cs" />
     <Compile Include="target\RegAlloc.cs" />
+    <Compile Include="target\RemoveUnnecessaryMoves.cs" />
     <Compile Include="target\SSA.cs" />
     <Compile Include="target\Target.cs" />
     <Compile Include="target\Targets.cs" />

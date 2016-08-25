@@ -62,6 +62,9 @@ namespace libtysila4.ir
                 List<Opcode> cur_ir_code = new List<Opcode>();
                 ir_code.Add(cur_ir_code);
                 int start_idx = 0;
+
+                if (bb.Count > 0 && cg.Starts.Contains(bb[0]))
+                    cur_ir_code.Add(new Opcode { oc = Opcode.oc_enter });
                 while (start_idx < bb.Count)
                 {
                     // Build the longest stretch of simple opcodes from

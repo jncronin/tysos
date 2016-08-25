@@ -32,6 +32,15 @@ namespace libtysila4.target.x86
             irnode.is_mc = true;
             irnode.mcinsts = new List<MCInst>();
 
+            // Insert node where we can save callee save registers
+            irnode.mcinsts.Add(new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = ir.Opcode.vl_str, v = target.Generic.g_precall }
+                }
+            });
+
             /* Parameters are:
                 0: call
                 1: call site
@@ -102,6 +111,15 @@ namespace libtysila4.target.x86
                 ps[2] = new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Use };
                 irnode.mcinsts.Add(new MCInst { p = ps });
             }
+
+            // Insert node where we can restore callee save registers
+            irnode.mcinsts.Add(new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = ir.Opcode.vl_str, v = target.Generic.g_postcall }
+                }
+            });
         }
 
         void LowerReturn(Opcode irnode)
@@ -128,6 +146,13 @@ namespace libtysila4.target.x86
             }
 
             /* Epilogue */
+            irnode.mcinsts.Add(new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = Opcode.vl_str, v = Generic.g_restorecalleepreserves }
+                }
+            });
             irnode.mcinsts.Add(new MCInst
             {
                 p = new Param[]

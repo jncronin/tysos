@@ -461,7 +461,7 @@ namespace libtysila4.target
 
                 foreach(var I in mcn.all_insts_rev)
                 {
-                    if(t.IsMove(I))
+                    if(t.IsMoveVreg(I))
                     {
                         // live <- live\use(I)
                         foreach(var p in I.p)

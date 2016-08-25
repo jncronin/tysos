@@ -76,6 +76,25 @@ namespace libtysila4.util
             b[ul_idx] &= ~(1UL << bit_idx);
         }
 
+        internal void Intersect(ulong v)
+        {
+            if (b.Count == 0)
+                return;
+            if (b.Count > 1)
+                b.RemoveRange(1, b.Count - 1);
+            b[0] = b[0] & v;
+            recalc_set_count();
+        }
+
+        public void Union(ulong v)
+        {
+            if (b.Count == 0)
+                b.Add(v);
+            else
+                b[0] |= v;
+            recalc_set_count();
+        }
+
         public void unset(Set other) { AndNot(other); }
         public void set(Set other) { Union(other); }
 

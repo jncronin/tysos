@@ -42,12 +42,39 @@ namespace libtysila4.target.x86
                 case Opcode.oc_ret:
                     LowerReturn(irnode);
                     return;
+                case Opcode.oc_enter:
+                    LowerEnter(irnode, ref next_temp_reg);
+                    return;
 
             }
             base.MCLower(irnode, ref next_temp_reg);
         }
 
-        protected internal override bool IsMove(MCInst i)
+        private void LowerEnter(Opcode irnode, ref int next_temp_reg)
+        {
+            irnode.mcinsts = new List<MCInst>();
+            irnode.mcinsts.Add(new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = Opcode.vl_str, str = "push", v = x86_push },
+                    new Param { t = Opcode.vl_mreg, mreg = r_ebp }
+                }
+            });
+            irnode.mcinsts.Add(new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = Opcode.vl_str, str = "mov", v = x86_mov },
+                    new Param { t = Opcode.vl_mreg, mreg = r_ebp },
+                    new Param { t = Opcode.vl_mreg, mreg = r_esp }
+                }
+            });
+
+            base.MCLower(irnode, ref next_temp_reg);
+        }
+
+        protected internal override bool IsMoveVreg(MCInst i)
         {
             if (i.p != null && i.p.Length > 0 &&
                 i.p[0].t == Opcode.vl_str &&
@@ -57,16 +84,27 @@ namespace libtysila4.target.x86
             return false;
         }
 
+        protected internal override bool IsMoveMreg(MCInst i)
+        {
+            if (i.p != null && i.p.Length > 0 &&
+                i.p[0].t == Opcode.vl_str &&
+                i.p[0].v == x86_mov &&
+                i.p[1].t == Opcode.vl_mreg &&
+                i.p[2].t == Opcode.vl_mreg)
+                return true;
+            return false;
+        }
+
         protected internal override Param GetMoveDest(MCInst i)
         {
-            if (!IsMove(i))
+            if (!IsMoveVreg(i) && !IsMoveMreg(i))
                 throw new NotSupportedException();
             return i.p[1];
         }
 
         protected internal override Param GetMoveSrc(MCInst i)
         {
-            if (!IsMove(i))
+            if (!IsMoveVreg(i) && !IsMoveMreg(i))
                 throw new NotSupportedException();
             return i.p[2];
         }
@@ -107,6 +145,32 @@ namespace libtysila4.target.x86
                 return i.p[2];
             else
                 return i.p[1];
+        }
+
+        protected internal override MCInst SaveRegister(Reg r)
+        {
+            MCInst ret = new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = Opcode.vl_str, str = "push", v = x86_push },
+                    new Param { t = Opcode.vl_mreg, mreg = r }
+                }
+            };
+            return ret;
+        }
+
+        protected internal override MCInst RestoreRegister(Reg r)
+        {
+            MCInst ret = new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = Opcode.vl_str, str = "pop", v = x86_pop },
+                    new Param { t = Opcode.vl_mreg, mreg = r }
+                }
+            };
+            return ret;
         }
     }
 }

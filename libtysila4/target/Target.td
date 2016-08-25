@@ -10,6 +10,11 @@ include "cc.td";
 // Some generic instructions
 intmap("libtysila4.target", "Generic", "g", "insts", "init_instrs", [
 	"phi",
+	"precall",
+	"postcall",
+	"setupstack",
+	"savecalleepreserves",
+	"restorecalleepreserves"
 ]);
 
 // Include machine specific definitions here
@@ -35,6 +40,8 @@ function dump_target(object target_def)
 		print("\t\t\ttarget." + n + "." + n + "_Assembler.init_" + cc[0] + "();\n");
 	}
 	print("\t\t\ttarget." + n + "." + n + "_Assembler.init_retcc_map();\n");
+	print("\t\t\ttarget." + n + "." + n + "_Assembler.init_cc_caller_preserves_map();\n");
+	print("\t\t\ttarget." + n + "." + n + "_Assembler.init_cc_callee_preserves_map();\n");
 	print("\t\t\tvar " + n + " = new " + n + "." +
 		n + "_Assembler();\n");
 	print("\t\t\t" + n + ".name = \"" + n + "\";\n");

@@ -38,7 +38,8 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"bcc",
 	"call",
 	"ret",
-	"pop"
+	"pop",
+	"push"
 ]);
 
 gprmem = [ vl_stack32, vl_lv32, vl_arg32 ];
@@ -109,6 +110,10 @@ instr(name, oc_null, [], [],
 multiinstr(name, oc_null, [ gprmemimm ], [],
 	[	[ "x86_pop", "$u0" ]
 ], [ ], [ ], 0);
+multiinstr(name, oc_null, [ gprmemimm ], [],
+	[	[ "x86_push", "$u0" ]
+], [ ], [ ], 0);
+
 
 // Calling conventions
 // SysV
@@ -116,7 +121,11 @@ cc_sysv = cc(nspace, assembler, "sysv",
 [
 	[ ct_int32, [ stack ] ],
 	[ ct_int64, [ stack ] ]
-]);
+],
+eaxreg | ecxreg | edxreg,			// caller preserves
+ebxreg | esireg | edireg			// callee preserves
+);
+
 cc_ret_sysv = cc(nspace, assembler, "ret_sysv",
 [
 	[ ct_int32, [ eax ] ],

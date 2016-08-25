@@ -86,6 +86,57 @@ namespace libtysila4.target
             }
         }
 
+        public static void MRegLivenessAnalysis(graph.Graph g, object target)
+        {
+            var t = Target.targets[target as string];
+
+            foreach (var n in g.LinearStream)
+            {
+                var mcn = n.c as MCNode;
+                mcn.live_in.Clear();
+                mcn.live_out.Clear();
+            }
+
+            bool changes_made = false;
+            do
+            {
+                changes_made = false;
+
+                for (int i = g.LinearStream.Count - 1; i >= 0; i--)
+                {
+                    var n = g.LinearStream[i];
+                    var mcn = n.c as MCNode;
+
+                    util.Set cur = mcn.live_in.Clone();
+
+                    foreach(var I in mcn.all_insts_rev)
+                    {
+                        if(t.NeedsMregLiveness(I))
+                            I.mreg_live_out = cur.Clone();
+
+                        foreach(var p in I.p)
+                        {
+                            if (p.IsMreg && p.IsDef)
+                                cur.unset(p.mreg.id);
+                        }
+                        foreach(var p in I.p)
+                        {
+                            if (p.IsMreg && p.IsUse)
+                                cur.set(p.mreg.id);
+                        }
+
+                        if (t.NeedsMregLiveness(I))
+                            I.mreg_live_in = cur.Clone();
+                    }
+
+
+                    if (!cur.Equals(mcn.live_in))
+                        changes_made = true;
+                    mcn.live_in = cur;
+                }
+            } while (changes_made);
+        }
+
         public static void LivenessAnalysis(graph.Graph g)
         {
             // Appel 10.4 (p214) adjusted to go backwards for efficiency

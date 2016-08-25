@@ -166,6 +166,9 @@ namespace libtysila4.ir
         public UseDefType ud = UseDefType.Unknown;
 
         public bool IsStack { get { return t == Opcode.vl_stack || t == Opcode.vl_stack32 || t == Opcode.vl_stack64; } }
+        public bool IsMreg { get { return t == Opcode.vl_mreg; } }
+        public bool IsUse { get { return ud == UseDefType.Use; } }
+        public bool IsDef { get { return ud == UseDefType.Def; } }
 
         /** <summary>Decorate the current type to include bitness</summary> */
         public int DecoratedType(target.Target tgt)

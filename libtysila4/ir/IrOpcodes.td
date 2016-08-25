@@ -35,7 +35,8 @@ intmap("libtysila4.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"ret",
 	"cmp",
 	"br",
-	"brif"
+	"brif",
+	"enter"
 ]);
 
 intmap("libtysila4.ir", "Opcode", "cc", "cc_names", "init_cc", [
