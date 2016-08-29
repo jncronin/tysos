@@ -28,13 +28,11 @@ namespace libtysila4.target
 {
     public class PreserveRegistersAroundCall
     {
-        public static graph.Graph PreserveRegistersAroundCallPass(graph.Graph input, object target)
+        public static graph.Graph PreserveRegistersAroundCallPass(graph.Graph input, Target t)
         {
-            var t = Target.targets[target as string];
             var cc = "sysv";
 
-            // TODO: make cc_ dictionaries be part of Target
-            var caller_preserves = x86.x86_Assembler.cc_caller_preserves_map[cc];
+            var caller_preserves = t.cc_caller_preserves_map[cc];
 
             /* store the set of registers pushed by the last
             precall for use at the postcall */

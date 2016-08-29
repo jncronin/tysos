@@ -147,7 +147,7 @@ namespace libsupcs
     public sealed class ISRAttribute : System.Attribute
     { }
 
-    [global::System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Enum, Inherited = false, AllowMultiple = true)]
+    [global::System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Enum | System.AttributeTargets.Field, Inherited = false, AllowMultiple = true)]
     public sealed class OutputCHeaderAttribute : System.Attribute
     { }
 

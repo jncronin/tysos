@@ -3,12 +3,14 @@ namespace IfElse
 	[libsupcs.NoBaseClass]
 	class Program
 	{
-		static void Main()
+		static int Main()
 		{
+			int a;
 			if(Get2() > Get3())
-				DoA();
+				a = DoA();
 			else
-				DoB();
+				a = DoB();
+			return a;
 		}
 
 		static int Get2()
@@ -21,12 +23,14 @@ namespace IfElse
 			return 3;
 		}
 
-		static void DoA()
+		static int DoA()
 		{
+			return 42;
 		}
 
-		static void DoB()
+		static int DoB()
 		{
+			return 47;
 		}
 	}
 }

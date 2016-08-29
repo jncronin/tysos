@@ -48,20 +48,23 @@ export function simple_map(string namespace, string class, string map_name, stri
 	print("\tpartial class " + class + "\n");
 	print("\t{\n");
 
-	if(do_string == 1)
+	if(to_type != "")
 	{
-		print("\t\tpublic static System.Collections.Generic.Dictionary<string, " + to_type + "> " + map_name + " = ");
-		print("new System.Collections.Generic.Dictionary<string, " + to_type + ">");
-		print("(new libtysila4.GenericEqualityComparer<string>());\n");
-	}
-	else
-	{
-		print("\t\tpublic static System.Collections.Generic.Dictionary<int, " + to_type + "> " + map_name + " = ");
-		print("new System.Collections.Generic.Dictionary<int, " + to_type + ">");
-		print("(new libtysila4.GenericEqualityComparer<int>());\n");
+		if(do_string == 1)
+		{
+			print("\t\tpublic System.Collections.Generic.Dictionary<string, " + to_type + "> " + map_name + " = ");
+			print("new System.Collections.Generic.Dictionary<string, " + to_type + ">");
+			print("(new libtysila4.GenericEqualityComparer<string>());\n");
+		}
+		else
+		{
+			print("\t\tpublic System.Collections.Generic.Dictionary<int, " + to_type + "> " + map_name + " = ");
+			print("new System.Collections.Generic.Dictionary<int, " + to_type + ">");
+			print("(new libtysila4.GenericEqualityComparer<int>());\n");
+		}
 	}
 
-	print("\t\tinternal static void " + init_func + "()\n");
+	print("\t\tinternal void " + init_func + "()\n");
 	print("\t\t{\n");
 
 	foreach(entry in entries)

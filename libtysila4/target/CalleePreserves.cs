@@ -28,11 +28,8 @@ namespace libtysila4.target
 {
     public class CalleePreserves
     {
-        public static graph.Graph CalleePreservesPass(graph.Graph input, object target)
+        public static graph.Graph CalleePreservesPass(graph.Graph input, Target t)
         {
-            var t = Target.targets[target as string];
-
-
             /* First get a set of all defined registers */
             util.Set mreg_defs = new Set();
             foreach (var n in input.LinearStream)
@@ -51,8 +48,7 @@ namespace libtysila4.target
 
             var cc = "sysv";
 
-            // TODO: make cc_ dictionaries be part of Target
-            var callee_preserves = x86.x86_Assembler.cc_callee_preserves_map[cc];
+            var callee_preserves = t.cc_callee_preserves_map[cc];
 
             mreg_defs.Intersect(callee_preserves);
 

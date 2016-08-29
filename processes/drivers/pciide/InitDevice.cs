@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using tysos;
+using tysos.lib;
 using tysos.Resources;
 
 namespace pciide
@@ -108,6 +109,9 @@ namespace pciide
                 CreateChannel(0, pri_cmd, pri_ctrl, pri_int);
             if (sec_cmd.Length64 != 0 && sec_ctrl.Length64 != 0 && sec_int != null)
                 CreateChannel(1, sec_cmd, sec_ctrl, sec_int);
+
+            root.Add(new File.Property { Name = "class", Value = "bus" });
+            Tags.Add("class");
 
             return true;
         }

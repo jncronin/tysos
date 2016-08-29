@@ -28,10 +28,8 @@ namespace libtysila4.target
 {
     public class RemoveUnnecessaryMoves
     {
-        public static graph.Graph RemoveUnnecessaryMovesPass(graph.Graph input, object target)
+        public static graph.Graph RemoveUnnecessaryMovesPass(graph.Graph input, Target t)
         {
-            var t = Target.targets[target as string];
-
             foreach (var n in input.LinearStream)
             {
                 var mcn = n.c as MCNode;

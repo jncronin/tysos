@@ -164,7 +164,7 @@ namespace acpipc
 
                     int pin = (int)prtobj[1].IntegerData;
 
-                    StringBuilder sb = new StringBuilder();
+                    /*StringBuilder sb = new StringBuilder();
                     sb.Append("_PRT: ");
                     for (int i = 0; i < prtobj.Length; i++)
                     {
@@ -178,7 +178,7 @@ namespace acpipc
                     }
                     System.Diagnostics.Debugger.Log(0, "pci", sb.ToString());
 
-                    System.Diagnostics.Debugger.Log(0, "pci", "PRT: dev: " + dev.ToString() + ", pin: " + pin.ToString() + ", source.Type: " + prtobj[2].Type.ToString() + ", sourceIndex: " + prtobj[3].IntegerData.ToString());
+                    System.Diagnostics.Debugger.Log(0, "pci", "PRT: dev: " + dev.ToString() + ", pin: " + pin.ToString() + ", source.Type: " + prtobj[2].Type.ToString() + ", sourceIndex: " + prtobj[3].IntegerData.ToString());*/
 
                     if (prtobj[2].Type == ACPIObject.DataType.ObjectReference)
                     {

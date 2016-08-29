@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2013 by John Cronin
+﻿/* Copyright (C) 2013-2016 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,9 @@ namespace binary_library
         ulong SetMask { get; }
         string Name { get; }
         int Type { get; }
+        int BitLength { get; }
+        bool IsSigned { get; }
+        int BitOffset { get; }
 
         long Evaluate(IRelocation reloc);
         long GetCurrentValue(IRelocation reloc);

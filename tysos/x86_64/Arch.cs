@@ -33,6 +33,9 @@ namespace tysos.x86_64
         ulong vmem_temppage_va;
         ulong vga_fb_va;
 
+        ulong buf_cur;
+        ulong buf_end;
+
         ulong init_exit_address;
 
         const ulong heap_small_start = 0xffff800000000000;
@@ -542,6 +545,31 @@ namespace tysos.x86_64
                     i++;
             }
 
+            /* Now find some space to use as a buffer */
+            ulong buf_len = 0x400000;
+            ulong buf_addr = ulong.MaxValue;
+            foreach(var r in free_regions)
+            {
+                if(buf_len <= r.length && r.start + buf_len <= 0x100000000UL)
+                {
+                    buf_addr = r.start;
+                    r.start += buf_len;
+                    r.length -= buf_len;
+                    break;
+                }
+            }
+            if(buf_addr != ulong.MaxValue)
+            {
+                buf_cur = buf_addr;
+                buf_end = buf_addr + buf_len;
+
+                Formatter.Write("x86_64: device physical buffer set up at ", DebugOutput);
+                Formatter.Write(buf_addr, "X", DebugOutput);
+                Formatter.Write(" - ", DebugOutput);
+                Formatter.Write(buf_end, "X", DebugOutput);
+                Formatter.WriteLine(DebugOutput);
+            }
+
             PhysMem.SetFreeRegions(free_regions);
         }
 
@@ -670,6 +698,23 @@ namespace tysos.x86_64
             {
                 return libsupcs.x86_64.Cpu.Tsc;
             }
+        }
+
+        internal override ulong GetBuffer(ulong len)
+        {
+            // align len on a page size
+            if((len & 0xfffUL) != 0)
+            {
+                len &= ~0xfffUL;
+                len += 0x1000UL;
+            }
+
+            if (buf_cur + len > buf_end)
+                return 0;
+
+            ulong ret = buf_cur;
+            buf_cur += len;
+            return ret;
         }
     }
 }

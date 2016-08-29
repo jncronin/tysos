@@ -34,6 +34,8 @@ namespace tysos
         internal Virtual_Regions VirtualRegions;
         internal List<Cpu> Processors;
 
+        internal virtual ulong GetBuffer(ulong len) { return 0; }
+
         public IDebugOutput DebugOutput;
         public IDebugOutput BootInfoOutput;
 

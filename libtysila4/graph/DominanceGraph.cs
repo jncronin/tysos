@@ -38,7 +38,7 @@ namespace libtysila4.graph
             new Dictionary<int, int>(
                 new GenericEqualityComparer<int>());
 
-        public static graph.Graph GenerateDominanceGraph(graph.Graph input)
+        public static graph.Graph GenerateDominanceGraph(graph.Graph input, target.Target t)
         {
             var dg = new DominanceGraph();
 

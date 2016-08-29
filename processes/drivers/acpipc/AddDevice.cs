@@ -74,6 +74,21 @@ namespace acpipc
                 {
                     // PNP0C0F  PCI interrupt link device
                     tysos_driver = null;
+
+                    /* Dump its IRQ linkage */
+                    Aml.ACPIObject lnk_res = n.Evaluate(name + "._CRS", mi);
+                    if (lnk_res != null)
+                    {
+                        List<File.Property> lnk_props = new List<File.Property>();
+                        InterpretResources(lnk_res, lnk_props);
+                        foreach(var lnk_prop in lnk_props)
+                        {
+                            if(lnk_prop.Name == "interrupt")
+                            {
+                                System.Diagnostics.Debugger.Log(0, "acpipc", name + " -> " + lnk_prop.Value.ToString());
+                            }
+                        }
+                    }
                 }
                 else if (hid_str == "ACPI0003")
                 {
@@ -322,7 +337,7 @@ namespace acpipc
                                     {
                                         ACPIInterrupt irq = AllocateIRQ(i, sharable, active_low, level_trigger);
                                         if(irq != null)
-                                            props.Add(new File.Property { Name = "irq", Value = irq });
+                                            props.Add(new File.Property { Name = "interrupt", Value = irq });
                                     }
                                     irq_mask_1 >>= 1;
                                 }
@@ -332,7 +347,7 @@ namespace acpipc
                                     {
                                         ACPIInterrupt irq = AllocateIRQ(i + 8, sharable, active_low, level_trigger);
                                         if(irq != null)
-                                            props.Add(new File.Property { Name = "irq", Value = irq });
+                                            props.Add(new File.Property { Name = "interrupt", Value = irq });
                                     }
                                     irq_mask_2 >>= 1;
                                 }

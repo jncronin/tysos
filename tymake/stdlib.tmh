@@ -40,7 +40,14 @@ if(!defined(STDLIB_TMH))
 	{
 		foreach(_path_split in _path_splits)
 		{
-			_test = _path_split + "/" + path;
+			if(_path_split == "")
+			{
+				_test = path;
+			}
+			else
+			{
+				_test = _path_split + "/" + path;
+			}
 
 			foreach(_ext in _exts)
 			{
@@ -85,6 +92,7 @@ if(!defined(STDLIB_TMH))
 	{
 		_path_splits = PATH.split(PATH_SPLIT);
 		_path_splits.add("");
+		_path_splits.add("/");
 
 		_exts = [ "" ];
 		_exts.addrange(EXEC_EXTENSIONS);

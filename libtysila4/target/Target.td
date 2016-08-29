@@ -34,14 +34,10 @@ function dump_target(object target_def)
 	{
 		print("\t\t\ttarget." + n + "." + n + "_Assembler.init_" + cc[0] + "();\n");
 	}
-	print("\t\t\ttarget." + n + "." + n + "_Assembler.init_cc_map();\n");
 	foreach(cc in target_def.retcc)
 	{
 		print("\t\t\ttarget." + n + "." + n + "_Assembler.init_" + cc[0] + "();\n");
 	}
-	print("\t\t\ttarget." + n + "." + n + "_Assembler.init_retcc_map();\n");
-	print("\t\t\ttarget." + n + "." + n + "_Assembler.init_cc_caller_preserves_map();\n");
-	print("\t\t\ttarget." + n + "." + n + "_Assembler.init_cc_callee_preserves_map();\n");
 	print("\t\t\tvar " + n + " = new " + n + "." +
 		n + "_Assembler();\n");
 	print("\t\t\t" + n + ".name = \"" + n + "\";\n");
@@ -112,6 +108,23 @@ foreach(target_def in target_defs)
 	{
 		print("\t\tpublic Target.Reg r_" + reg.name + ";\n");
 	}
+
+	/* Add an init_cc function */
+	print("\t\t\n");
+	print("\t\tvoid init_ccs()\n");
+	print("\t\t{\n");
+	print("\t\t\tinit_cc_callee_preserves_map();");
+	print("\t\t\tinit_cc_caller_preserves_map();");
+	print("\t\t\tinit_cc_map();");
+	print("\t\t\tinit_retcc_map();");
+	print("\t\t}\n");
+
+	/* Add constructor */
+	print("\t\t\n");
+	print("\t\tinternal " + target_def.assembler + "()\n");
+	print("\t\t{\n");
+	print("\t\t\tinit_ccs();\n");
+	print("\t\t}\n");
 
 	print("\t}\n");
 	print("}\n");

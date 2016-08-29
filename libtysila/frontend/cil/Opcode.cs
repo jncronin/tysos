@@ -224,6 +224,24 @@ namespace libtysila.frontend.cil
             tysila = 0xFD
         };
 
+        public enum SimpleOpcode
+        {
+            none,
+            add,
+            sub,
+            mul,
+            div,
+            ldc,
+            ldloc,
+            stloc,
+            ldarg,
+            starg,
+            ldelem,
+            stelem,
+            br,
+            brif
+        }
+
         public enum DoubleOpcodes
         {
             arglist = 0x00,
@@ -285,6 +303,7 @@ namespace libtysila.frontend.cil
 
         public SingleOpcodes opcode1;
         public DoubleOpcodes opcode2;
+        public SimpleOpcode sop;
         public bool directly_modifies_stack = false;
         public int opcode
         {

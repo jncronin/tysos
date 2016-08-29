@@ -104,6 +104,9 @@ namespace pci
                 CheckDevice(0, dev, 0);
             }
 
+            root.Add(new tysos.lib.File.Property { Name = "class", Value = "bus" });
+            Tags.Add("class");
+
             return true;
         }
 

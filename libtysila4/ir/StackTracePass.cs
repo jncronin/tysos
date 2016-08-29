@@ -27,7 +27,7 @@ namespace libtysila4.ir
 {
     public class StackTracePass
     {
-        public static graph.Graph TraceStackPass(graph.Graph g)
+        public static graph.Graph TraceStackPass(graph.Graph g, target.Target t)
         {
             IrGraph ir = g as IrGraph;
 

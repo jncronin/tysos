@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2013 by John Cronin
+﻿/* Copyright (C) 2013-2016 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,8 @@ namespace binary_library
         protected string architecture = "";
         protected string os = "";
         protected string binary_type = "";
+        protected string epoint = "";
+        protected bool is_exec = false;
         protected List<ISection> sections = new List<ISection>();
         protected List<ISymbol> symbols = new List<ISymbol>();
         protected List<IRelocation> relocs = new List<IRelocation>();
@@ -93,6 +95,32 @@ namespace binary_library
             }
         }
 
+        public virtual string EntryPoint
+        {
+            get
+            {
+                return epoint;
+            }
+            set
+            {
+                if (value == null)
+                    throw new ArgumentNullException();
+                epoint = value;
+            }
+        }
+
+        public virtual bool IsExecutable
+        {
+            get
+            {
+                return is_exec;
+            }
+            set
+            {
+                is_exec = value;
+            }
+        }
+
         public string NameTriple
         {
             get
@@ -105,7 +133,7 @@ namespace binary_library
 
         public virtual void Write()
         {
-            System.IO.BinaryWriter w = new System.IO.BinaryWriter(new System.IO.FileStream(filename, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write));
+            System.IO.BinaryWriter w = new System.IO.BinaryWriter(new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write));
             Write(w);
             w.Close();
         }
@@ -177,9 +205,11 @@ namespace binary_library
 
         public virtual ISymbol CreateSymbol() { return new Symbol(); }
         public virtual ISection CreateSection() { return new GeneralSection(this); }
+        public virtual ISection CreateContentsSection() { return new ContentsSection(this); }
         public virtual IRelocation CreateRelocation() { return new Relocation(); }
 
         public virtual ISection GetGlobalSection() { return null; }
+        public virtual ISection GetCommonSection() { return null; }
 
         public static IBinaryFile CreateBinaryFile(string file_type)
         {

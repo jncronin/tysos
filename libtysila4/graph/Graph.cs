@@ -37,6 +37,8 @@ namespace libtysila4.graph
         public List<List<int>> bbs_before = new List<List<int>>();
         public List<List<int>> bbs_after = new List<List<int>>();
 
+        public cil.CilGraph cg = null;
+
         public DominanceGraph DominanceGraph;
 
         public int BBCount { get { return bb_starts.Count; } }
@@ -58,14 +60,10 @@ namespace libtysila4.graph
             }
         }
 
-        public delegate Graph PassDelegate(Graph InputGraph);
-        public delegate Graph PassDelegate2(Graph InputGraph, object p);
+        public delegate Graph PassDelegate(Graph InputGraph, target.Target t);
 
-        public Graph RunPass(PassDelegate pass)
-        { return pass(this); }
-
-        public Graph RunPass(PassDelegate2 pass, object p)
-        { return pass(this, p); }
+        public Graph RunPass(PassDelegate pass, target.Target t)
+        { return pass(this, t); }
 
         public void RefreshBasicBlocks()
         {
@@ -143,6 +141,39 @@ namespace libtysila4.graph
                 foreach (var next in last.Next)
                     cbbs_after.Add(next.bb);
                 bbs_after.Add(cbbs_after);
+            }
+        }
+    }
+
+    public class AssembledCodeGraph : Graph
+    {
+        public Graph g;
+        public binary_library.IBinaryFile bf;
+        public binary_library.ISection text_section;
+
+        public override string LinearStreamString
+        {
+            get
+            {
+                var Code = text_section.Data;
+                int i = 0;
+                StringBuilder sb = new StringBuilder();
+                foreach(var b in Code)
+                {
+                    if(i == 8)
+                    {
+                        sb.Append(Environment.NewLine);
+                        i = 0;
+                    }
+                    if (i > 0)
+                        sb.Append(" ");
+                    sb.Append("0x");
+                    sb.Append(b.ToString("X2"));
+                    i++;
+                }
+                if (i != 0)
+                    sb.Append(Environment.NewLine);
+                return sb.ToString();
             }
         }
     }

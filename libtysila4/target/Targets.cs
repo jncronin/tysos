@@ -28,7 +28,7 @@ namespace libtysila4.target
 {
     public abstract partial class Target
     {
-        internal static Dictionary<string, Target> targets =
+        public static Dictionary<string, Target> targets =
             new Dictionary<string, Target>(
                 new libtysila4.GenericEqualityComparer<string>());
 
@@ -44,6 +44,19 @@ namespace libtysila4.target
             new Dictionary<int, string>(
                 new GenericEqualityComparer<int>());
 
+        public Dictionary<string, ulong> cc_callee_preserves_map
+            = new Dictionary<string, ulong>(
+                new GenericEqualityComparer<string>());
+        public Dictionary<string, ulong> cc_caller_preserves_map
+            = new Dictionary<string, ulong>(
+                new GenericEqualityComparer<string>());
+        public Dictionary<string, Dictionary<int, int[]>> cc_map
+            = new Dictionary<string, Dictionary<int, int[]>>(
+                new GenericEqualityComparer<string>());
+        public Dictionary<string, Dictionary<int, int[]>> retcc_map
+            = new Dictionary<string, Dictionary<int, int[]>>(
+                new GenericEqualityComparer<string>());
+
         protected internal abstract int GetCondCode(MCInst i);
         protected internal abstract bool IsMoveVreg(MCInst i);
         protected internal abstract bool IsMoveMreg(MCInst i);
@@ -52,6 +65,16 @@ namespace libtysila4.target
         protected internal abstract bool IsBranch(MCInst i);
         protected internal abstract ir.Param GetBranchDest(MCInst i);
         protected internal abstract void SetBranchDest(MCInst i, ir.Param d);
+        protected internal abstract Reg GetLVLocation(int lv_loc, int lv_size);
+        protected internal abstract MCInst[] SetupStack(int lv_size);
+
+        public binary_library.IBinaryFile bf;
+        public binary_library.ISection text_section;
+
+        public virtual IEnumerable<graph.Graph.PassDelegate> GetOutputMCPasses()
+        {
+            return new graph.Graph.PassDelegate[0];
+        }
 
         protected internal virtual bool NeedsMregLiveness(MCInst i)
         {
@@ -82,14 +105,13 @@ namespace libtysila4.target
                 stack should be used.</summary>*/
         public virtual int GetRegStackLoc(int stack_loc, int ct) { return -1; }
 
-        public static graph.Graph MCLowerPass(graph.Graph input, object p)
+        public static graph.Graph MCLowerPass(graph.Graph input, Target t)
         {
-            // Get machine target
-            var t = targets[p as string];
-
             // Lower graph nodes to linear machine code
             graph.Graph ret = new graph.Graph();
             var ig = input as ir.IrGraph;
+
+            ret.cg = ig.cg;
 
             foreach (var ir_node in ig.LinearStream)
                 t.MCLower(ir_node.c as ir.Opcode, ref input.next_vreg_id);
@@ -298,6 +320,30 @@ namespace libtysila4.target
             init_rtmap();
         }
 
+        public class ContentsReg : Reg, IEquatable<Reg>
+        {
+            public Reg basereg;
+            public long disp;
+
+            public override string ToString()
+            {
+                if (disp == 0)
+                    return "[" + basereg.ToString() + "]";
+                else
+                    return "[" + basereg.ToString() + " + " + disp.ToString() + "]";
+            }
+
+            public override bool Equals(Reg other)
+            {
+                var cr = other as ContentsReg;
+                if (cr == null)
+                    return false;
+                if (basereg.Equals(cr.basereg) == false)
+                    return false;
+                return disp == cr.disp;
+            }
+        }
+
         public class Reg : IEquatable<Reg>
         {
             public string name;
@@ -315,7 +361,7 @@ namespace libtysila4.target
                     return name;
             }
 
-            public bool Equals(Reg other)
+            public virtual bool Equals(Reg other)
             {
                 if (other.type != type)
                     return false;
@@ -337,6 +383,21 @@ namespace libtysila4.target
             throw new NotSupportedException("Architecture does not support ct: " + ct.ToString());
         }
 
+        internal int GetSize(int ptype, uint token)
+        {
+            if (ptype == 0x11)
+                throw new NotImplementedException();
+            else
+            {
+                return GetCTSize(ir.Opcode.GetCTFromType(ptype));
+            }
+        }
+
+        protected internal virtual int GetPointerSize()
+        {
+            return GetCTSize(ptype);
+        }
+
         internal int GetCTSize(int ct)
         {
             switch (ct)
@@ -347,7 +408,7 @@ namespace libtysila4.target
                     return 8;
                 case ir.Opcode.ct_object:
                 case ir.Opcode.ct_ref:
-                    return GetCTSize(ir.Opcode.GetCTFromType(ptype));
+                    return GetCTSize(ptype);
                 case ir.Opcode.ct_float:
                     return 8;
                 default:

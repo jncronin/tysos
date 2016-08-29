@@ -89,6 +89,8 @@ namespace tysos.x86_64
                 /* The entry point to the thread */
                 *--p_st = (ulong)entry_address;
 
+                Formatter.WriteLine("Thread.Init(" + ((ulong)entry_address).ToString("X") + ")", Program.arch.DebugOutput);
+
                 if (parameters.Length > 6)
                     throw new NotImplementedException("x86_64 switcher: only <= 6 parameters of type INTEGER supported");
 

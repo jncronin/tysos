@@ -43,6 +43,9 @@ namespace tysos
     {
         protected Thread t = null;
         protected Thread SourceThread = null;
+        protected InvokeEvent CurrentInvokeEvent = null;
+        public string MountPath = null;
+        public List<string> Tags = new List<string>();
 
         // cache of previously called methods
         Dictionary<string, System.Reflection.MethodInfo> members =
@@ -74,6 +77,25 @@ namespace tysos
             public string MethodName;
             public object[] Parameters;
             public Type[] ParamTypes;
+
+            public bool EventSetsOnReturn = true; /** <summary>If unset, the event will not be signalled automatically when the Invoked method returns</summary> */
+
+            public delegate object ObjectDelegate(object o, object retval);
+            protected ObjectDelegate CallOnSet;
+            protected object CallbackObject;
+
+            public InvokeEvent(ObjectDelegate callOnSet, object callbackObject)
+            {
+                CallOnSet = callOnSet;
+                CallbackObject = callbackObject;
+            }
+
+            public override void Set()
+            {
+                base.Set();
+                if (CallOnSet != null)
+                    CallOnSet(CallbackObject, ReturnValue);
+            }
         }
 
         public virtual InvokeEvent InvokeAsync(string name, object[] p)
@@ -81,10 +103,14 @@ namespace tysos
             Type[] ts = new Type[p.Length];
             for (int i = 0; i < p.Length; i++)
                 ts[i] = p[i].GetType();
-            return InvokeAsync(name, p, ts);
+            return InvokeAsync(name, p, ts, null, null);
         }
 
         public virtual InvokeEvent InvokeAsync(string name, object[] p, Type[] ts)
+        { return InvokeAsync(name, p, ts, null, null); }
+
+        public virtual InvokeEvent InvokeAsync(string name, object[] p, Type[] ts,
+            InvokeEvent.ObjectDelegate callback, object callback_obj)
         {
             // Wait for us to enter the message loop
             while (t == null) ;
@@ -92,7 +118,7 @@ namespace tysos
             if (Syscalls.SchedulerFunctions.GetCurrentThread() == t)
             {
                 // If we are running on the current thread of the target object then just call it
-                InvokeEvent e = new InvokeEvent();
+                InvokeEvent e = new InvokeEvent(callback, callback_obj);
                 e.ReturnValue = InvokeInternal(name, p, ts);
                 e.Set();
                 return e;
@@ -100,13 +126,18 @@ namespace tysos
             else
             {
                 // Else, send a message to the target thread to run it
-                return InvokeRemoteAsync(t.owning_process, name, p, ts);
+                return InvokeRemoteAsync(t.owning_process, name, p, ts, callback, callback_obj);
             }
         }
 
         public static InvokeEvent InvokeRemoteAsync(Process proc, string name, object[] p, Type[] ts)
+        { return InvokeRemoteAsync(proc, name, p, ts, null, null); }
+
+        public static InvokeEvent InvokeRemoteAsync(Process proc, string name, object[] p, Type[] ts,
+            InvokeEvent.ObjectDelegate callback, object callback_obj)
         {
-            InvokeEvent e = new InvokeEvent { Parameters = p, MethodName = name, ParamTypes = ts };
+            InvokeEvent e = new InvokeEvent(callback, callback_obj)
+                { Parameters = p, MethodName = name, ParamTypes = ts };
             Syscalls.IPCFunctions.SendMessage(proc, new IPCMessage { Message = e, Type = tysos.Messages.Message.MESSAGE_GENERIC });
             return e;
         }
@@ -164,6 +195,14 @@ namespace tysos
                 return;
             }
 
+            foreach (string tag in Tags)
+            {
+                while (Syscalls.ProcessFunctions.GetSpecialProcess(Syscalls.ProcessFunctions.SpecialProcessType.Vfs) == null) ;
+                Syscalls.ProcessFunctions.GetSpecialProcess(Syscalls.ProcessFunctions.SpecialProcessType.Vfs).InvokeAsync(
+                    "RegisterTag", new object[] { tag, MountPath },
+                    new Type[] { typeof(string), typeof(string) });
+            }
+
             System.Diagnostics.Debugger.Log(0, null, "entering message loop");
 
             while(true)
@@ -189,8 +228,12 @@ namespace tysos
             if(msg.Type == Messages.Message.MESSAGE_GENERIC)
             {
                 InvokeEvent e = msg.Message as InvokeEvent;
+                CurrentInvokeEvent = e;
                 e.ReturnValue = InvokeInternal(e.MethodName, e.Parameters, e.ParamTypes);
-                e.Set();
+                CurrentInvokeEvent = null;
+
+                if(e.EventSetsOnReturn)
+                    e.Set();
             }
             else
             {

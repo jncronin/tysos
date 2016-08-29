@@ -30,16 +30,24 @@ x86_def.ct_map = simple_map(nspace, assembler, "ct_map", "init_ctmap", [
 ]);
 
 intmap(nspace, assembler, name, "insts", "init_instrs", [
-	"mov",
-	"cmp",
-	"set",
-	"movsx",
-	"br",
-	"bcc",
-	"call",
+	"mov_rm32_r32",
+	"mov_r32_rm32",
+	"mov_rm32_imm32",
+	"cmp_rm32_r32",
+	"cmp_r32_rm32",
+	"cmp_rm32_imm32",
+	"set_rm32",
+	"movsxbd",
+	"jmp_rel32",
+	"jcc_rel32",
+	"call_rel32",
 	"ret",
-	"pop",
-	"push"
+	"pop_r32",
+	"pop_rm32",
+	"push_r32",
+	"push_rm32",
+	"push_imm32",
+	"sub_rm32_imm32"
 ]);
 
 gprmem = [ vl_stack32, vl_lv32, vl_arg32 ];
@@ -48,58 +56,58 @@ imm = [ vl_c32, vl_c ];
 gprmemimm = [ vl_stack32, vl_lv32, vl_arg32, vl_c32, vl_c ];
 
 multiinstr(name, oc_store, [ gprmem ], [ gpr ], [
-	[ "x86_mov", "$d0", "$u0" ]
+	[ "x86_mov_r32_rm32", "$d0", "$u0" ]
 ], [ IntRegs ], [ Gprs ], 0);
 
 multiinstr(name, oc_store, [ gpr ], [ gprmem ], [
-	[ "x86_mov", "$d0", "$u0" ]
+	[ "x86_mov_rm32_r32", "$d0", "$u0" ]
 ], [ Gprs ], [ IntRegs ], 0);
 
 multiinstr(name, oc_store, [ imm ], [ gprmem ], [
-	[ "x86_mov", "$d0", "$u0" ]
+	[ "x86_mov_rm32_imm32", "$d0", "$u0" ]
 ], [ ], [ IntRegs ], 0);
 
-multiinstr(name, oc_store, [ vl_st_lv_arg_32 ], [ vl_st_lv_arg_32, vl_st_lv_arg_32 ],
-	[	[ "x86_mov", "$d0", "$u0" ],
-		[ "x86_mov", "$d1", "$u0" ]
+multiinstr(name, oc_store, [ gpr ], [ gprmem, gprmem ],
+	[	[ "x86_mov_rm32_r32", "$d0", "$u0" ],
+		[ "x86_mov_rm32_r32", "$d1", "$u0" ]
 ], [ IntRegs ], [ IntRegs, IntRegs ], 0);
 
 instr(name, oc_nop, [], [], [], [], [], 0);
 
 multiinstr(name, oc_cmp, [ gpr, gprmem ], [ gpr ],
-	[	[ "x86_cmp", "$u0", "$u1" ],
-		[ "x86_set", "$cc", "$td0" ],
-		[ "x86_movsx", "$d0", "$tu0" ]
+	[	[ "x86_cmp_r32_rm32", "$u0", "$u1" ],
+		[ "x86_set_rm32", "$cc", "$td0" ],
+		[ "x86_movsxbd", "$d0", "$tu0" ]
 ], [ Gprs, IntRegs ], [ Gprs ], 0);
 
 multiinstr(name, oc_cmp, [ gprmem, gpr ], [ gpr ],
-	[	[ "x86_cmp", "$u0", "$u1" ],
-		[ "x86_set", "$cc", "$td0" ],
-		[ "x86_movsx", "$d0", "$tu0" ]
+	[	[ "x86_cmp_rm32_r32", "$u0", "$u1" ],
+		[ "x86_set_rm32", "$cc", "$td0" ],
+		[ "x86_movsxbd", "$d0", "$tu0" ]
 ], [ IntRegs, Gprs ], [ Gprs ], 0);
 
 multiinstr(name, oc_brif, [ gpr, gprmem ], [ ],
-	[	[ "x86_cmp", "$u0", "$u1" ],
-		[ "x86_bcc", "$cc", "$br1" ]
+	[	[ "x86_cmp_r32_rm32", "$u0", "$u1" ],
+		[ "x86_jcc_rel32", "$cc", "$br1" ]
 ], [ Gprs, IntRegs ], [ ], 0);
 
 multiinstr(name, oc_brif, [ gprmem, gpr ], [ ],
-	[	[ "x86_cmp", "$u0", "$u1" ],
-		[ "x86_bcc", "$cc", "$br1" ]
+	[	[ "x86_cmp_rm32_r32", "$u0", "$u1" ],
+		[ "x86_jcc_rel32", "$cc", "$br1" ]
 ], [ IntRegs, Gprs ], [ ], 0);
 
 multiinstr(name, oc_brif, [ imm, gprmem ], [ ],
-	[	[ "x86_cmp", "$u1", "$u0" ],
-		[ "x86_bcc", "$icc", "$br1" ]
+	[	[ "x86_cmp_rm32_imm32", "$u1", "$u0" ],
+		[ "x86_jcc_rel32", "$icc", "$br1" ]
 ], [ 0, IntRegs ], [ ], 0);
 
 multiinstr(name, oc_brif, [ gprmem, imm ], [ ],
-	[	[ "x86_cmp", "$u0", "$u1" ],
-		[ "x86_bcc", "$cc", "$br1" ]
+	[	[ "x86_cmp_rm32_imm32", "$u0", "$u1" ],
+		[ "x86_jcc_rel32", "$cc", "$br1" ]
 ], [ IntRegs, 0 ], [ ], 0);
 
 instr(name, oc_br, [], [],
-	[	[ "x86_br", "$br0" ]
+	[	[ "x86_jmp_rel32", "$br0" ]
 ], [ IntRegs, IntRegs ], [ IntRegs ], 0);
 
 /* These are used programatically and shouldn't automatically
@@ -107,11 +115,11 @@ instr(name, oc_br, [], [],
 instr(name, oc_null, [], [],
 	[	[ "x86_ret" ]
 ], [], [], 0);
-multiinstr(name, oc_null, [ gprmemimm ], [],
-	[	[ "x86_pop", "$u0" ]
+multiinstr(name, oc_null, [ gprmem ], [],
+	[	[ "x86_pop_rm32", "$u0" ]
 ], [ ], [ ], 0);
-multiinstr(name, oc_null, [ gprmemimm ], [],
-	[	[ "x86_push", "$u0" ]
+multiinstr(name, oc_null, [ gprmem ], [],
+	[	[ "x86_push_rm32", "$u0" ]
 ], [ ], [ ], 0);
 
 

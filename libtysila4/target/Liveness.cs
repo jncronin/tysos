@@ -28,10 +28,11 @@ namespace libtysila4.target
 {
     public class Liveness
     {
-        public static void DoGenKill(graph.Graph g)
+        public static Graph DoGenKill(graph.Graph g, Target t)
         {
             foreach (var n in g.LinearStream)
                 DoGenKill(n.c as MCNode);
+            return g;
         }
 
         private static void DoGenKill(MCNode mcn)
@@ -86,10 +87,8 @@ namespace libtysila4.target
             }
         }
 
-        public static void MRegLivenessAnalysis(graph.Graph g, object target)
+        public static Graph MRegLivenessAnalysis(graph.Graph g, Target t)
         {
-            var t = Target.targets[target as string];
-
             foreach (var n in g.LinearStream)
             {
                 var mcn = n.c as MCNode;
@@ -135,9 +134,11 @@ namespace libtysila4.target
                     mcn.live_in = cur;
                 }
             } while (changes_made);
+
+            return g;
         }
 
-        public static void LivenessAnalysis(graph.Graph g)
+        public static Graph LivenessAnalysis(graph.Graph g, Target t)
         {
             // Appel 10.4 (p214) adjusted to go backwards for efficiency
 
@@ -179,6 +180,8 @@ namespace libtysila4.target
                         changes_made = true;
                 }
             } while (changes_made);
+
+            return g;
         }
     }
 }

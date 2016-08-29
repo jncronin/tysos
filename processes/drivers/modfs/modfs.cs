@@ -89,7 +89,10 @@ namespace modfs
         {
             if(path.Count == 0)
             {
-                return new tysos.lib.VirtualDirectory(this, "", children);
+                var ret = new tysos.lib.VirtualDirectory(this, "", children,
+                    new tysos.lib.File.Property[] {
+                        new tysos.lib.File.Property { Name = "class", Value = "fs" }
+                    });
             }
 
             // modfs has only one level

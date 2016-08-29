@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2008 - 2011 by John Cronin
+﻿/* Copyright (C) 2008 - 2015 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using tysos.Messages;
 
 namespace vfs
 {
-    partial class vfs : tysos.ServerObject
+    public partial class vfs : tysos.ServerObject
     {
         static Dictionary<PathPart, tysos.ServerObject> mounts =
             new Dictionary<PathPart, tysos.ServerObject>(new tysos.Program.MyGenericEqualityComparer<PathPart>());
@@ -34,6 +33,7 @@ namespace vfs
         static void Main()
         {
             vfs v = new vfs();
+            v.CallbackSignature = new Type[] { typeof(string) };
             tysos.Syscalls.ProcessFunctions.RegisterSpecialProcess(v, tysos.Syscalls.ProcessFunctions.SpecialProcessType.Vfs);
             v.MessageLoop();
         }
@@ -173,6 +173,15 @@ namespace vfs
 
             return hc;
         }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            AppendTo(sb);
+            if (sb.Length == 0)
+                return "/";
+            return sb.ToString();
+        }
     }
 
     public class Path
@@ -214,89 +223,5 @@ namespace vfs
             }
             return new PathPart { path = pp };
         }
-    }
-
-    public abstract class FileSystemObject
-    {
-        protected internal FileSystemObject parent = null;
-        protected internal string name = "";
-
-        public virtual string Name { get { return name; } }
-        public virtual IList<FileSystemObject> Children { get { return null; } }
-        public virtual FileSystemObject Parent { get { return parent; } }
-
-        internal VersionedList<tysos.lib.File.Property> props =
-            new VersionedList<tysos.lib.File.Property>();
-
-        protected internal virtual ICollection<tysos.lib.File.Property> Properties { get { return props; } }
-        protected internal virtual tysos.lib.File.Property GetPropertyByName(string name)
-        {
-            foreach(tysos.lib.File.Property p in props)
-            {
-                if (p.Name == name)
-                    return p;
-            }
-            return null;
-        }
-
-        public abstract tysos.IFile Open(System.IO.FileAccess access, out tysos.lib.MonoIOError error);
-
-        protected internal FileSystemObject(string _name, DirectoryFileSystemObject Parent) { parent = Parent; name = _name; }
-
-        public virtual string FullPath
-        {
-            get
-            {
-                List<string> members = new List<string>();
-
-                FileSystemObject cur = this;
-                while (cur.parent != null)
-                {
-                    members.Insert(0, cur.name);
-                    cur = cur.parent;
-                }
-
-                StringBuilder sb = new StringBuilder();
-                sb.Append("/");
-                for (int i = 0; i < members.Count; i++)
-                {
-                    if (i != 0)
-                        sb.Append("/");
-                    sb.Append(members[i]);
-                }
-
-                return sb.ToString();
-            }
-        }
-
-        public virtual int IntAttributes
-        {
-            get
-            {
-                int attrs = 0;
-
-                if (Children != null)
-                    attrs |= (int)System.IO.FileAttributes.Directory;
-
-                if (attrs == 0x0)
-                    attrs = (int)System.IO.FileAttributes.Normal;
-
-                return attrs;
-            }
-        }
-    }
-
-    public class DirectoryFileSystemObject : FileSystemObject
-    {
-        protected internal List<FileSystemObject> children = new List<FileSystemObject>();
-        public override IList<FileSystemObject> Children { get { return children; } }
-
-        public override tysos.IFile Open(System.IO.FileAccess access, out tysos.lib.MonoIOError error)
-        {
-            error = tysos.lib.MonoIOError.ERROR_ACCESS_DENIED;
-            return null;
-        }
-
-        public DirectoryFileSystemObject(string _name, DirectoryFileSystemObject Parent) : base(_name, Parent) { }
     }
 }

@@ -30,9 +30,9 @@ namespace libtysila4.target
 {
     public class RegAlloc
     {
-        public static graph.Graph RegAllocPass(graph.Graph input, object target)
+        public static graph.Graph RegAllocPass(graph.Graph input, Target t)
         {
-            RegAlloc r = new RegAlloc(input, Target.targets[target as string]);
+            RegAlloc r = new RegAlloc(input, t);
             r.K = 6;        // TODO: make unique per arch
 
             // TODO - make unique per arch
@@ -108,8 +108,8 @@ namespace libtysila4.target
                 is to update the gen/kill lists whenever we update the
                 code, thus all we need to do is the liveness analysis
                 on each pass.  */
-                Liveness.DoGenKill(g);
-                Liveness.LivenessAnalysis(g);
+                Liveness.DoGenKill(g, t);
+                Liveness.LivenessAnalysis(g, t);
 
                 /* Give each instruction (rather than block) a unique index */
                 RelabelInsts();

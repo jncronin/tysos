@@ -20,6 +20,8 @@
  */
 
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace tysila4
 {
@@ -77,24 +79,64 @@ namespace tysila4
                 long code_size = meth.ReadUInt(4);
                 long lvar_sig_tok = meth.ReadUInt(8);
 
-                var cg = libtysila4.cil.CilGraph.ReadCilStream(meth,
+                var t = libtysila4.target.Target.targets["x86"];
+                var bf = new binary_library.elf.ElfFile(binary_library.Bitness.Bits32);
+                t.bf = bf;
+                bf.Init();
+                bf.Architecture = "x86";
+                var text_sect = bf.CreateContentsSection();
+                text_sect.IsAlloc = true;
+                text_sect.IsExecutable = true;
+                text_sect.IsWriteable = false;
+                text_sect.Name = ".text";
+                t.text_section = text_sect;
+                t.bf.AddSection(text_sect);
+
+                var passes = new List<libtysila4.graph.Graph.PassDelegate>
+                {
+                    libtysila4.ir.IrGraph.LowerCilGraph,
+                    libtysila4.ir.StackTracePass.TraceStackPass,
+                    libtysila4.target.Target.MCLowerPass,
+                    libtysila4.graph.DominanceGraph.GenerateDominanceGraph,
+                    libtysila4.target.SSA.ConvertToSSAPass,
+                    libtysila4.target.Liveness.DoGenKill,
+                    libtysila4.target.Liveness.LivenessAnalysis,
+                    libtysila4.target.RegAlloc.RegAllocPass,
+                    libtysila4.target.Liveness.MRegLivenessAnalysis,
+                    libtysila4.target.PreserveRegistersAroundCall.PreserveRegistersAroundCallPass,
+                    libtysila4.target.RemoveUnnecessaryMoves.RemoveUnnecessaryMovesPass,
+                    libtysila4.target.CalleePreserves.CalleePreservesPass,
+                    libtysila4.target.AllocateLocalVars.AllocateLocalVarsPass,
+                    libtysila4.target.MangleCallsites.MangleCallsitesPass,
+                };
+                passes.AddRange(t.GetOutputMCPasses());
+
+                libtysila4.graph.Graph cg = libtysila4.cil.CilGraph.ReadCilStream(meth,
                     m, 1, fat_hdr_len, (int)code_size, lvar_sig_tok);
-                var ig = cg.RunPass(libtysila4.ir.IrGraph.LowerCilGraph);
-                ig = ig.RunPass(libtysila4.ir.StackTracePass.TraceStackPass);
-                var mc = ig.RunPass(libtysila4.target.Target.MCLowerPass,
-                    "x86");
 
-                var mc_text = mc.LinearStreamString;
+                List<libtysila4.graph.Graph> graphs = new List<libtysila4.graph.Graph>();
+                StringBuilder sb = new StringBuilder();
+                graphs.Add(cg);
+                foreach(var pass in passes)
+                {
+                    sb.Append("Graph before " + pass.Method.Name + ":" + System.Environment.NewLine);
+                    sb.Append(cg.LinearStreamString);
+                    sb.Append(Environment.NewLine);
+                    sb.Append(Environment.NewLine);
 
-                mc.RunPass(libtysila4.graph.DominanceGraph.GenerateDominanceGraph);
-                var ssa = mc.RunPass(libtysila4.target.SSA.ConvertToSSAPass);
+                    cg = cg.RunPass(pass, t);
+                    graphs.Add(cg);
+                }
 
-                libtysila4.target.Liveness.DoGenKill(ssa);
-                libtysila4.target.Liveness.LivenessAnalysis(ssa);
+                // TODO: fix up phis
 
-                mc = mc.RunPass(libtysila4.target.RegAlloc.RegAllocPass,
-                    "x86");
-                throw new NotImplementedException();
+                sb.Append("Final graph:" + Environment.NewLine);
+                sb.Append(cg.LinearStreamString);
+                var sb_text = sb.ToString();
+
+                bf.Filename = "output.o";
+                bf.Write();
+                //throw new NotImplementedException();
             }
             else
                 throw new Exception("Invalid method header type");

@@ -220,6 +220,10 @@ namespace tysos
     {
         internal VirtualMemoryResource32(uint addr, uint length) : base(addr, length) { }
 
+        internal RangeResource mapped_to;
+
+        public RangeResource MappedTo { get { return mapped_to; } }
+
         public override unsafe void Write(uint addr, uint length, uint val)
         {
             switch (length)
@@ -293,11 +297,23 @@ namespace tysos
                 throw new Exception("region is too big for byte array");
             return libsupcs.TysosArrayType.CreateByteArray((byte*)a, (int)l);
         }
+
+        public override string ToString()
+        {
+            if (mapped_to == null)
+                return base.ToString();
+            else
+                return base.ToString() + " mapped to " + mapped_to.ToString();
+        }
     }
 
     public class VirtualMemoryResource64 : RangeResource64
     {
         internal VirtualMemoryResource64(ulong addr, ulong length) : base(addr, length) { }
+
+        internal RangeResource mapped_to;
+
+        public RangeResource MappedTo { get { return mapped_to; } }
 
         public override unsafe void Write(uint addr, uint length, uint val)
         {
@@ -372,6 +388,40 @@ namespace tysos
                 throw new Exception("region is too big for byte array");
             return libsupcs.TysosArrayType.CreateByteArray((byte*)a, (int)l);
         }
+
+        public void Map(PhysicalMemoryResource64 pmem)
+        {
+            pmem.Map(this);
+        }
+
+        public void Map()
+        {
+            ulong buf = Program.arch.GetBuffer(Length64);
+            if (buf == 0)
+            {
+                if (Length64 == 0x1000)
+                {
+                    // Try using standard page mapping instead
+                    ulong pmemaddr = Program.arch.VirtMem.map_page(Addr64);
+                    mapped_to = new PhysicalMemoryResource64(pmemaddr, 0x1000);
+                }
+                else
+                    throw new Exception("GetBuffer failed");
+            }
+            else
+            {
+                PhysicalMemoryResource64 pmem = new PhysicalMemoryResource64(buf, Length64);
+                pmem.Map(this);
+            }
+        }
+
+        public override string ToString()
+        {
+            if (mapped_to == null)
+                return base.ToString();
+            else
+                return base.ToString() + " mapped to " + mapped_to.ToString();
+        }
     }
 
     public class PhysicalMemoryResource32 : RangeResource32
@@ -413,6 +463,8 @@ namespace tysos
                 Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
                 offset += Program.arch.PageSize;
             }
+
+            vmem.mapped_to = this;
         }
 
         public void Map(VirtualMemoryResource64 vmem)
@@ -430,6 +482,8 @@ namespace tysos
                 Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
                 offset += Program.arch.PageSize;
             }
+
+            vmem.mapped_to = this;
         }
     }
 
@@ -472,6 +526,8 @@ namespace tysos
                 Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
                 offset += Program.arch.PageSize;
             }
+
+            vmem.mapped_to = this;
         }
 
         public void Map(VirtualMemoryResource64 vmem)
@@ -489,6 +545,8 @@ namespace tysos
                 Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
                 offset += Program.arch.PageSize;
             }
+
+            vmem.mapped_to = this;
         }
     }
 }

@@ -31,7 +31,7 @@ namespace tysos
         internal static Environment env;
         internal static SymbolTable stab;
         internal static Multiboot.Header mboot_header;
-        internal static ServerObject Vfs, Logger, Gui;
+        internal static ServerObject Vfs, Logger, Gui, Net;
 
         internal static Dictionary<string, Process> running_processes;
 
@@ -224,6 +224,14 @@ namespace tysos
             Process vfs = LoadELFModule("vfs", mboot, stab, running_processes, 0x8000, new object[] { });
             vfs.Start();
 
+            /* Load the gui */
+            Process gui = LoadELFModule("gui", mboot, stab, running_processes, 0x8000, new object[] { });
+            gui.Start();
+
+            /* Load the network subsystem */
+            Process net = LoadELFModule("net", mboot, stab, running_processes, 0x8000, new object[] { });
+            net.Start();
+
             /* Load and mount the root fs */
             List<lib.File.Property> system_props = arch.SystemProperties;
             List<Resources.InterruptLine> interrupts = new List<Resources.InterruptLine>();
@@ -272,16 +280,18 @@ namespace tysos
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/framebuffer" }, new Type[] { typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system" }, new Type[] { typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0" }, new Type[] { typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/bga_0" }, new Type[] { typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pcnet32_0" }, new Type[] { typeof(string) });
+            /*ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/bga_0" }, new Type[] { typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0" }, new Type[] { typeof(string) });
             ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0/ata_0" }, new Type[] { typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0/ata_0/device_0" }, new Type[] { typeof(string) });
+            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0/ata_0/device_0" }, new Type[] { typeof(string) });*/
 
             /* Load the modfs driver */
             Process modfs = LoadELFModule("modfs", mboot, stab, running_processes, 0x8000, new object[] { });
             modfs.Start();
 
-
+            if (do_debug)
+                System.Diagnostics.Debugger.Break();
 
             arch.EnableMultitasking();
             Syscalls.SchedulerFunctions.Yield();
@@ -294,10 +304,6 @@ namespace tysos
             libsupcs.OtherOperations.Halt();
 
 
-            /* Load the gui */
-            Process gui = LoadELFProgram("gui", mboot, stab, running_processes, 0x8000);
-            gui.startup_thread.priority++;      // Elevate the priority of the gui
-
             /* Load the ACPI setup program */
             LoadELFProgram("ACPI_PC", mboot, stab, running_processes, 0x10000);
 
@@ -309,6 +315,8 @@ namespace tysos
 
             /* Dump the current virtual region table */
             arch.VirtualRegions.Dump(arch.DebugOutput);
+
+
 
             /* Start the processes */
             Formatter.WriteLine("Going multitasking...", arch.BootInfoOutput);

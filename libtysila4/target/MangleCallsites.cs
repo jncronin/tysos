@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2013-2016 by John Cronin
+﻿/* Copyright (C) 2016 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,32 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using libtysila4.util;
 
-namespace binary_library
+
+namespace libtysila4.target
 {
-    public enum SymbolType { Local, Global, Weak, Undefined };
-    public enum SymbolObjectType { Object, Function, Unknown };
-    
-    public interface ISymbol
+    public class MangleCallsites
     {
-        ISection DefinedIn { get; set; }
-        SymbolType Type { get; set; }
-        SymbolObjectType ObjectType { get; set; }
-        ulong Offset { get; set; }
-        long Size { get; set; }
-        string Name { get; set; }
+        public static graph.Graph MangleCallsitesPass(graph.Graph g, Target t)
+        {
+            foreach(var n in g.LinearStream)
+            {
+                var mcn = n.c as MCNode;
+
+                foreach(var I in mcn.all_insts)
+                {
+                    foreach(var p in I.p)
+                    {
+                        if(p.t == ir.Opcode.vl_call_target)
+                        {
+                            p.t = ir.Opcode.vl_str;
+                            p.str = g.cg._m.MangleMethod((int)p.v, (int)p.v2);                        }
+                    }
+                }
+            }
+
+            return g;
+        }
     }
 }

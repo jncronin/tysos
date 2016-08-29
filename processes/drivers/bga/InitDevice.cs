@@ -107,6 +107,7 @@ namespace bga
 
             /* Identify ourselves as a framebuffer device */
             root.Add(new tysos.lib.File.Property { Name = "class", Value = "framebuffer" });
+            Tags.Add("class");
 
             return true;
         }

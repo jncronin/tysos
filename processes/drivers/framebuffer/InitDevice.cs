@@ -37,7 +37,7 @@ namespace framebuffer
 
         internal framebuffer(tysos.lib.File.Property[] Properties)
         {
-            root = new List<tysos.lib.File.Property>(Properties);
+            root.AddRange(Properties);
         }
 
         public override bool InitServer()
@@ -96,6 +96,7 @@ namespace framebuffer
             }
 
             root.Add(new File.Property { Name = "class", Value = "framebuffer" });
+            Tags.Add("class");
 
             return true;
         }

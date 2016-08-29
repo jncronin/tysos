@@ -30,7 +30,7 @@ namespace libtysila4.target
 {
     public class SSA
     {
-        public static graph.Graph ConvertToSSAPass(graph.Graph input)
+        public static graph.Graph ConvertToSSAPass(graph.Graph input, Target t)
         {
             /* Determine all defined variables */
             Dictionary<int, util.Set> defsites =

@@ -67,7 +67,7 @@ namespace libtysila4.target.x86
             for (int i = 0; i < pcount; i++)
             {
                 Param[] ps = new Param[3];
-                ps[0] = new Param { t = Opcode.vl_str, str = "mov", v = x86_mov };
+                ps[0] = new Param { t = Opcode.vl_str, str = "mov", v = x86_mov_rm32_r32 };
                 ps[1] = new Param { t = Opcode.vl_mreg, mreg = reglocs[i] };
                 ps[2] = irnode.uses[i + 1];
                 irnode.mcinsts.Add(new MCInst { p = ps });
@@ -88,7 +88,7 @@ namespace libtysila4.target.x86
             {
                 pscall = new Param[]
                 {
-                    new Param { t = Opcode.vl_str, str = "call", v = x86_call },
+                    new Param { t = Opcode.vl_str, str = "call", v = x86_call_rel32 },
                     csite,
                     new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Def }
                 };
@@ -97,7 +97,7 @@ namespace libtysila4.target.x86
             {
                 pscall = new Param[]
                 {
-                    new Param { t = Opcode.vl_str, str = "call", v = x86_call },
+                    new Param { t = Opcode.vl_str, str = "call", v = x86_call_rel32 },
                     csite,
                 };
             }
@@ -106,7 +106,7 @@ namespace libtysila4.target.x86
             if(retreg != null)
             { 
                 Param[] ps = new Param[3];
-                ps[0] = new Param { t = Opcode.vl_str, str = "mov", v = x86_mov };
+                ps[0] = new Param { t = Opcode.vl_str, str = "mov", v = x86_mov_rm32_r32 };
                 ps[1] = irnode.defs[0];
                 ps[2] = new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Use };
                 irnode.mcinsts.Add(new MCInst { p = ps });
@@ -139,7 +139,7 @@ namespace libtysila4.target.x86
                 var retloc = retcc[rettype.ct][0];
                 retreg = this.regs[retloc];
                 Param[] ps = new Param[3];
-                ps[0] = new Param { t = Opcode.vl_str, str = "mov", v = x86_mov };
+                ps[0] = new Param { t = Opcode.vl_str, str = "mov", v = x86_mov_r32_rm32 };
                 ps[1] = new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Def };
                 ps[2] = irnode.uses[1];
                 irnode.mcinsts.Add(new MCInst { p = ps });
@@ -157,7 +157,7 @@ namespace libtysila4.target.x86
             {
                 p = new Param[]
                 {
-                    new Param { t = Opcode.vl_str, str = "mov", v = x86_mov },
+                    new Param { t = Opcode.vl_str, str = "mov", v = x86_mov_r32_rm32 },
                     new Param { t = Opcode.vl_mreg, mreg = r_esp },
                     new Param { t = Opcode.vl_mreg, mreg = r_ebp }
                 }
@@ -166,7 +166,7 @@ namespace libtysila4.target.x86
             {
                 p = new Param[]
                 {
-                    new Param { t = Opcode.vl_str, str = "pop", v = x86_pop },
+                    new Param { t = Opcode.vl_str, str = "pop", v = x86_pop_r32 },
                     new Param { t = Opcode.vl_mreg, mreg = r_ebp }
                 }
             });

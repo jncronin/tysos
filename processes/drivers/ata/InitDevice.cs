@@ -151,6 +151,9 @@ namespace ata
             if (s == State.Init)
                 StateMachine((uint)ctrl.Read(ctrl.Addr64, 1), (uint)cmd.Read(cmd.Addr64 + ERROR, 1));
 
+            root.Add(new File.Property { Name = "class", Value = "bus" });
+            Tags.Add("class");
+
             return true;
         }
 
@@ -324,7 +327,7 @@ namespace ata
             for (int i = 0; i < 256; i++)
             {
                 id[i] = (ushort)cmd.Read(cmd.Addr64 + DATA, 2);
-                System.Diagnostics.Debugger.Log(0, "ata", "Device " + d.ToString() + " idx " + i.ToString() + ": " + id[i].ToString("X4"));
+                //System.Diagnostics.Debugger.Log(0, "ata", "Device " + d.ToString() + " idx " + i.ToString() + ": " + id[i].ToString("X4"));
             }
 
             /* Get some info about it */

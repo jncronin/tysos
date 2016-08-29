@@ -42,7 +42,7 @@ namespace tysos
         public class ProcessFunctions
         {
             public enum SpecialProcessType
-            { Vfs, Gui, Logger };
+            { Vfs, Gui, Logger, Net };
 
             [libsupcs.Syscall]
             public static bool RegisterSpecialProcess(ServerObject o, SpecialProcessType proc_type)
@@ -60,6 +60,10 @@ namespace tysos
                     case SpecialProcessType.Logger:
                         Program.Logger = o;
                         break;
+
+                    case SpecialProcessType.Net:
+                        Program.Net = o;
+                        break;
                 }
                 return false;
             }
@@ -75,6 +79,8 @@ namespace tysos
                         return Program.Logger;
                     case SpecialProcessType.Vfs:
                         return Program.Vfs;
+                    case SpecialProcessType.Net:
+                        return Program.Net;
                     default:
                         return null;
                 }

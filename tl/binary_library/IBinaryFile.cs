@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2013 by John Cronin
+﻿/* Copyright (C) 2013-2016 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,9 +38,9 @@ namespace binary_library
         string OS { get; set; }
         string BinaryType { get; set; }
         string NameTriple { get; }
+        string EntryPoint { get; set; }
         Bitness Bitness { get; set; }
-
-        IProgramHeader ProgramHeader { get; }
+        bool IsExecutable { get; set; }
 
         void Init();
         void Write();
@@ -51,7 +51,9 @@ namespace binary_library
         int AddSection(ISection section);
         void RemoveSection(int idx);
         ISection GetGlobalSection();
+        ISection GetCommonSection();
         ISection CreateSection();
+        ISection CreateContentsSection();
         ISection FindSection(string name);
         ISection FindSection(System.Text.RegularExpressions.Regex r);
 

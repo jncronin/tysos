@@ -428,6 +428,9 @@ namespace acpipc
                 fadt.PM1_EN.Write((1UL << 8) | (1UL << 9));
             }
 
+            root.Add(new File.Property { Name = "class", Value = "bus" });
+            Tags.Add("class");
+
             return true;
         }
 

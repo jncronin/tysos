@@ -52,6 +52,15 @@ namespace pci
             };
             if (hb.isa_irqs.ContainsKey(14)) pciide_legacy.ExtraResources.Add(hb.isa_irqs[14]);
             if (hb.isa_irqs.ContainsKey(15)) pciide_legacy.ExtraResources.Add(hb.isa_irqs[15]);
+
+            DeviceDBEntry pcnet32 = new DeviceDBEntry()
+            {
+                DriverName = "pcnet32",
+                HumanManufacturerName = "AMD",
+                HumanDeviceName = "79c970 [PCnet32 LANCE]",
+
+                ExtraResources = new List<tysos.Resource> { hb.vmems.Alloc(0x10000) }
+            };
             
             // Device database
 
@@ -65,8 +74,8 @@ namespace pci
             db_vd.Add(new DeviceDBKey { VendorID = 0x80ee, DeviceID = 0xbeef }, new DeviceDBEntry { DriverName = "bga", HumanManufacturerName = "Oracle", HumanDeviceName = "VirtualBox Graphics Adapter",
                 ExtraResources = new tysos.Resource[] { hb.ios.AllocFixed(0x1ce, 2, true), hb.ios.AllocFixed(0x1cf, 2, true), hb.vmems.Alloc(0x2000000) } });
 
-            db_vd.Add(new DeviceDBKey { VendorID = 0x1022, DeviceID = 0x2000 }, new DeviceDBEntry { DriverName = "pcnet32", HumanManufacturerName = "AMD", HumanDeviceName = "79c970 [PCnet32 LANCE]" });
-
+            db_vd.Add(new DeviceDBKey { VendorID = 0x1022, DeviceID = 0x2000 }, pcnet32 );
+            db_vd.Add(new DeviceDBKey { VendorID = 0x1022, DeviceID = 0x2001 }, pcnet32 );
 
             // The following match on vendor ID, device ID and revision ID
 

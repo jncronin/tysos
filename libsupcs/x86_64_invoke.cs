@@ -58,6 +58,11 @@ namespace libsupcs.x86_64
 
                 for (int i = 0; i < p_length; i++)
                 {
+                    if(parameters[i] == null)
+                    {
+                        plocs[i] = 0;
+                        continue;
+                    }
                     TysosType p_type = TysosType.ReinterpretAsType(**(void***)CastOperations.ReinterpretAsPointer(parameters[i]));
                     if (p_type.IsBoxed)
                     {
@@ -102,7 +107,7 @@ namespace libsupcs.x86_64
                 (plocs == null) ? null : MemoryOperations.GetInternalArray(plocs));
 
             // See if we have to box the return type
-            if (rettype.IsValueType)
+            if (rettype != null && rettype.IsValueType)
             {
                 if (rettype.IsEnum)
                     rettype = rettype.GetUnboxedType();

@@ -130,7 +130,11 @@ namespace vfs
 
             System.Diagnostics.Debugger.Log(0, null, "Mount: mounting " + fs.GetType().FullName + " to " + path.FullPath);
 
+            fs.MountPath = path.FullPath;
             mounts[(PathPart)path] = fs;
+
+            //foreach (var tag in fs.Tags)
+            //    RegisterTag(tag, fs.MountPath);
 
             return true;
         }
@@ -151,8 +155,12 @@ namespace vfs
                 return false;
             }
 
+            device.MountPath = p.FullPath;
             mounts[(PathPart)p] = device;
             System.Diagnostics.Debugger.Log(0, null, "Mount: mounting " + device.GetType().FullName + " to " + p.FullPath);
+
+            //foreach (var tag in device.Tags)
+            //    RegisterTag(tag, device.MountPath);
 
             return true;
         }

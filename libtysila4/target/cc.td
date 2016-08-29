@@ -52,16 +52,16 @@ export function cc_map(string namespace, string class, array entries)
 	}
 	simple_map(namespace, class, "cc_caller_preserves_map",
 		"init_cc_caller_preserves_map", caller,
-		1, "ulong");
+		1, "");
 	simple_map(namespace, class, "cc_callee_preserves_map",
 		"init_cc_callee_preserves_map", callee,
-		1, "ulong");
+		1, "");
 	return simple_map(namespace, class, "cc_map", "init_cc_map", entries,
-		1, "System.Collections.Generic.Dictionary<int, int[]>");
+		1, "");
 }
 
 export function retcc_map(string namespace, string class, array entries)
 {
 	return simple_map(namespace, class, "retcc_map", "init_retcc_map", entries,
-		1, "System.Collections.Generic.Dictionary<int, int[]>");
+		1, "");
 }

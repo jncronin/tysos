@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using libtysila4.graph;
 using libtysila4.ir;
 
 namespace libtysila4.target.x86
@@ -57,7 +58,7 @@ namespace libtysila4.target.x86
             {
                 p = new Param[]
                 {
-                    new Param { t = Opcode.vl_str, str = "push", v = x86_push },
+                    new Param { t = Opcode.vl_str, str = "push", v = x86_push_r32 },
                     new Param { t = Opcode.vl_mreg, mreg = r_ebp }
                 }
             });
@@ -65,7 +66,7 @@ namespace libtysila4.target.x86
             {
                 p = new Param[]
                 {
-                    new Param { t = Opcode.vl_str, str = "mov", v = x86_mov },
+                    new Param { t = Opcode.vl_str, str = "mov", v = x86_mov_r32_rm32 },
                     new Param { t = Opcode.vl_mreg, mreg = r_ebp },
                     new Param { t = Opcode.vl_mreg, mreg = r_esp }
                 }
@@ -78,7 +79,8 @@ namespace libtysila4.target.x86
         {
             if (i.p != null && i.p.Length > 0 &&
                 i.p[0].t == Opcode.vl_str &&
-                i.p[0].v == x86_mov &&
+                (i.p[0].v == x86_mov_rm32_r32 ||
+                i.p[0].v == x86_mov_r32_rm32) &&
                 i.p[1].IsStack && i.p[2].IsStack)
                 return true;
             return false;
@@ -88,7 +90,8 @@ namespace libtysila4.target.x86
         {
             if (i.p != null && i.p.Length > 0 &&
                 i.p[0].t == Opcode.vl_str &&
-                i.p[0].v == x86_mov &&
+                (i.p[0].v == x86_mov_rm32_r32 ||
+                i.p[0].v == x86_mov_r32_rm32) &&
                 i.p[1].t == Opcode.vl_mreg &&
                 i.p[2].t == Opcode.vl_mreg)
                 return true;
@@ -121,8 +124,8 @@ namespace libtysila4.target.x86
         {
             if (i.p != null && i.p.Length > 0 &&
                 i.p[0].t == Opcode.vl_str &&
-                (i.p[0].v == x86_br ||
-                i.p[0].v == x86_bcc))
+                (i.p[0].v == x86_jmp_rel32 ||
+                i.p[0].v == x86_jcc_rel32))
                 return true;
             return false;
         }
@@ -131,7 +134,7 @@ namespace libtysila4.target.x86
         {
             if (!IsBranch(i))
                 throw new NotSupportedException();
-            if (i.p[0].v == x86_bcc)
+            if (i.p[0].v == x86_jcc_rel32)
                 i.p[2] = d;
             else
                 i.p[1] = d;
@@ -141,7 +144,7 @@ namespace libtysila4.target.x86
         {
             if (!IsBranch(i))
                 throw new NotSupportedException();
-            if (i.p[0].v == x86_bcc)
+            if (i.p[0].v == x86_jcc_rel32)
                 return i.p[2];
             else
                 return i.p[1];
@@ -153,7 +156,7 @@ namespace libtysila4.target.x86
             {
                 p = new Param[]
                 {
-                    new Param { t = Opcode.vl_str, str = "push", v = x86_push },
+                    new Param { t = Opcode.vl_str, str = "push", v = x86_push_r32 },
                     new Param { t = Opcode.vl_mreg, mreg = r }
                 }
             };
@@ -166,11 +169,45 @@ namespace libtysila4.target.x86
             {
                 p = new Param[]
                 {
-                    new Param { t = Opcode.vl_str, str = "pop", v = x86_pop },
+                    new Param { t = Opcode.vl_str, str = "pop", v = x86_pop_r32 },
                     new Param { t = Opcode.vl_mreg, mreg = r }
                 }
             };
             return ret;
+        }
+
+        protected internal override Reg GetLVLocation(int lv_loc, int lv_size)
+        {
+            var disp = -lv_size + lv_loc;
+            return new ContentsReg
+            {
+                basereg = r_ebp,
+                disp = disp
+            };
+        }
+
+        protected internal override MCInst[] SetupStack(int lv_size)
+        {
+            if (lv_size == 0)
+                return new MCInst[0];
+            else
+                return new MCInst[]
+                {
+                    new MCInst { p = new Param[]
+                    {
+                        new Param { t = Opcode.vl_str, str = "sub", v = x86_sub_rm32_imm32 },
+                        new Param { t = Opcode.vl_mreg, mreg = r_esp },
+                        new Param { t = Opcode.vl_c, v = lv_size }
+                    } }
+                };
+        }
+
+        public override IEnumerable<Graph.PassDelegate> GetOutputMCPasses()
+        {
+            return new Graph.PassDelegate[]
+            {
+                Assemble.AssemblePass,
+            };
         }
     }
 }

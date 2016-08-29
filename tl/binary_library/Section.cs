@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2013 by John Cronin
+﻿/* Copyright (C) 2013-2016 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -219,7 +219,7 @@ namespace binary_library
 
     class ContentsSection : BaseSection
     {
-        protected byte[] data = new byte[0];
+        protected List<byte> data = new List<byte>();
 
         public ContentsSection(IBinaryFile binary_file) : base(binary_file) { }
 
@@ -245,12 +245,15 @@ namespace binary_library
         {
             get
             {
-                return base.Length;
+                return data.Count;
             }
             set
             {
+                if (value > data.Count)
+                    data.RemoveRange((int)value, data.Count - (int)value);
+                while (data.Count < value)
+                    data.Add(0);
                 base.Length = value;
-                data = new byte[length];
             }
         }
 
@@ -343,6 +346,8 @@ namespace binary_library
     {
         string _name;
         public DummySection(string name, IBinaryFile binary_file) : base(binary_file) { _name = name; }
+
+        List<ISymbol> syms = new List<ISymbol>();
 
         public override string Name
         {
@@ -447,22 +452,23 @@ namespace binary_library
 
         public override int AddSymbol(ISymbol sym)
         {
-            return 0;
+            syms.Add(sym);
+            return syms.Count - 1;
         }
 
         public override int GetSymbolCount()
         {
-            return 0;
+            return syms.Count;
         }
 
         public override ISymbol GetSymbol(int idx)
         {
-            throw new NotImplementedException();
+            return syms[idx];
         }
 
         public override void RemoveSymbol(int idx)
         {
-            throw new NotImplementedException();
+            syms.RemoveAt(idx);
         }
     }
 }

@@ -204,6 +204,9 @@ namespace disk
                     System.Diagnostics.Debugger.Log(0, "disk", "  " + prop.Name + ": " + prop.Value.ToString());
             }
 
+            root.Add(new File.Property { Name = "class", Value = "block" });
+            Tags.Add("class");
+
             return true;
         }
 

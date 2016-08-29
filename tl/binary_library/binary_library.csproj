@@ -42,8 +42,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BinaryFile.cs" />
+    <Compile Include="binary\binary.cs" />
+    <Compile Include="binary\hex.cs" />
     <Compile Include="elf\ElfFile.cs" />
     <Compile Include="elf\ElfRelocations.cs" />
+    <Compile Include="elf\Hash.cs" />
+    <Compile Include="elf\x86Relocs.cs" />
+    <Compile Include="elf\JCARelocs.cs" />
     <Compile Include="ListReader.cs" />
     <Compile Include="Relocation.cs" />
     <Compile Include="Section.cs" />

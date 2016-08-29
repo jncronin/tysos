@@ -59,6 +59,7 @@ if (TARGET == "x86_64")
 	XRANLIB = find("x86_64-elf-ranlib", "cross ranlib for x86_64-elf", XRANLIB);
 	YASMFLAGS = "-felf64";
 	TYSILAARCH = "x86_64s-elf64-tysos";
+	TLARCH = "x86_64-elf-tyobj";
 	LDFLAGS = "-fno-use-linker-plugin -Ttext 0x40000000 -nostdlib";
 	TYSOS_CPU_OBJ = [ tycobj("x86_64/cpu.o"), tycobj("x86_64/halt.o"), tycobj("x86_64/exceptions.o"), tycobj("x86_64/switcher.o") ];
 	LIBSUPCS_CPU_OBJ = [ ROOT + "/libsupcs/x86_64_arith.o", ROOT + "/libsupcs/x86_64_cpu.o", ROOT + "/libsupcs/x86_64_Invoke.o" ];
@@ -73,6 +74,7 @@ else if (TARGET == "x86")
 	XAR = find("i586-elf-gcc", "cross archiver for i586-elf", XAR);
 	YASMFLAGS = "-felf";
 	TYSILAARCH = "i586-elf-tysos";
+	TLARCH = "x86-elf-tyobj";
 	USE_GRUB = 1;
 
 	x86_yasm();
@@ -87,6 +89,7 @@ else
 	print("Unknown architecture: " + TARGET + "\n");
 	exit();
 }
+TL ?= find("tl", "Tysos linker", TL);
 
 if(USE_UEFI)
 {
@@ -105,6 +108,10 @@ print("--------------------------------\n");
 function objfromexe(string exe)
 {
 	return dir(exe) + "/" + basefname(exe) + ".obj";
+}
+function tobjfromexe(string exe)
+{
+	return dir(exe) + "/" + basefname(exe) + ".to";
 }
 
 TYSILAPROJ = ROOT + "/tysila2/tysila2.csproj";
@@ -193,6 +200,9 @@ rulefor "%.obj" inputs { "%.exe" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
 }
 rulefor "%.obj" inputs { "%.dll" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
 	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR -L$TYSOSDIR $_RULE_INPUT");
+}
+rulefor "%.to" inputs { "%.obj" } depends { TL, "test.tmk" } {
+	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
 }
 
 /* Rule for linking the kernel */
@@ -299,22 +309,25 @@ ISOIMAGE = OUTDIR + "/tysos.iso";
 GRUBCFG = OUTDIR + "/grub.cfg";
 
 // Processes
-DEBUGPRINTOBJ = objfromexe(typroject(ROOT + "/testsuite/debugprint/debugprint.csproj"));
-VFSOBJ = objfromexe(typroject(ROOT + "/processes/services/vfs/vfs.csproj"));
-ACPIPCOBJ = objfromexe(typroject(ROOT + "/processes/drivers/acpipc/acpipc.csproj"));
-LOGGEROBJ = objfromexe(typroject(ROOT + "/processes/services/logger/logger.csproj"));
-MODFSOBJ = objfromexe(typroject(ROOT + "/processes/drivers/modfs/modfs.csproj"));
-FSDUMPOBJ = objfromexe(typroject(ROOT + "/testsuite/fsdump/fsdump.csproj"));
-PCIOBJ = objfromexe(typroject(ROOT + "/processes/drivers/pci/pci.csproj"));
-BGAOBJ = objfromexe(typroject(ROOT + "/processes/drivers/bga/bga.csproj"));
-PCIIDEOBJ = objfromexe(typroject(ROOT + "/processes/drivers/pciide/pciide.csproj"));
-ATAOBJ = objfromexe(typroject(ROOT + "/processes/drivers/ata/ata.csproj"));
-DISKOBJ = objfromexe(typroject(ROOT + "/processes/drivers/disk/disk.csproj"));
-FRAMEBUFFEROBJ = objfromexe(typroject(ROOT + "/processes/drivers/framebuffer/framebuffer.csproj"));
+DEBUGPRINTOBJ = tobjfromexe(typroject(ROOT + "/testsuite/debugprint/debugprint.csproj"));
+VFSOBJ = tobjfromexe(typroject(ROOT + "/processes/services/vfs/vfs.csproj"));
+ACPIPCOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/acpipc/acpipc.csproj"));
+LOGGEROBJ = tobjfromexe(typroject(ROOT + "/processes/services/logger/logger.csproj"));
+MODFSOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/modfs/modfs.csproj"));
+FSDUMPOBJ = tobjfromexe(typroject(ROOT + "/testsuite/fsdump/fsdump.csproj"));
+PCIOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pci/pci.csproj"));
+BGAOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/bga/bga.csproj"));
+PCIIDEOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pciide/pciide.csproj"));
+ATAOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/ata/ata.csproj"));
+DISKOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/disk/disk.csproj"));
+FRAMEBUFFEROBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/framebuffer/framebuffer.csproj"));
+GUIOBJ = tobjfromexe(typroject(ROOT + "/processes/services/gui/gui.csproj"));
+NETOBJ = tobjfromexe(typroject(ROOT + "/processes/services/net/net.csproj"));
+PCNET32OBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pcnet32/pcnet32.csproj"));
 
 PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj"), DEBUGPRINTOBJ,
 	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ, PCIOBJ, BGAOBJ, PCIIDEOBJ,
-	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ ];
+	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ, GUIOBJ, NETOBJ, PCNET32OBJ ];
 
 COREIMG = OUTDIR + "/core.img";
 XORRISO = "xorriso";

@@ -69,6 +69,8 @@ namespace tysos
             public UInt32 st_info_other_shndx;
             public UInt64 st_value;
             public UInt64 st_size;
+
+            public uint st_shndx { get { return st_info_other_shndx >> 16; } }
         }
 
         internal struct Elf64_Phdr
@@ -249,6 +251,13 @@ namespace tysos
 
             ulong start = 0;
            
+            ulong hash_addr = 0;
+            ulong hash_len = 0;
+
+            /* Map sections to their load address */
+            Dictionary<uint, ulong> sect_map = new Dictionary<uint, ulong>(
+                new Program.MyGenericEqualityComparer<uint>());
+
             for(uint i = 0; i < e_shnum; i++)
             {
                 Elf64_Shdr* cur_shdr = (Elf64_Shdr*)sect_header;
@@ -288,72 +297,126 @@ namespace tysos
                         /* SHT_NOBITS */
                         libsupcs.MemoryOperations.MemSet((void*)sect_addr, 0, (int)cur_shdr->sh_size);
                     }
+
+                    if(sect_name == ".hash")
+                    {
+                        hash_addr = sect_addr;
+                        hash_len = cur_shdr->sh_size;
+                    }
+
+                    sect_map[i] = sect_addr;
                 }
 
                 sect_header += e_shentsize;
             }
 
-            /* Iterate through defined symbols, loading them into the symbol table */
-            sect_header = binary + ehdr->e_shoff;
-            for (uint i = 0; i < e_shnum; i++)
+            if (hash_addr != 0 && hash_len != 0)
             {
-                Elf64_Shdr* cur_shdr = (Elf64_Shdr*)sect_header;
+                Formatter.WriteLine("elf: hash table loaded to 0x" + hash_addr.ToString("X"), Program.arch.DebugOutput);
 
-                if(cur_shdr->sh_type == 0x2)
+                // identify symbol table location
+                sect_header = binary + ehdr->e_shoff;
+                ulong sym_tab = 0;
+                ulong sym_entsize = 0;
+                ulong sym_strtab = 0;
+
+                for (uint i = 0; i < e_shnum; i++)
                 {
-                    /* SHT_SYMTAB */
-                    ulong offset = cur_shdr->sh_info * cur_shdr->sh_entsize;
-                    while(offset < cur_shdr->sh_size)
+                    Elf64_Shdr* cur_shdr = (Elf64_Shdr*)sect_header;
+
+                    if (cur_shdr->sh_type == 0x2)
                     {
-                        Elf64_Sym* cur_sym = (Elf64_Sym*)(binary + cur_shdr->sh_offset + offset);
+                        /* SHT_SYMTAB */
+                        sym_tab = binary + cur_shdr->sh_offset;
+                        sym_entsize = cur_shdr->sh_entsize;
 
-                        bool is_vis = false;
-                        bool is_weak = false;
+                        Elf64_Shdr* sym_strtab_sh = (Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * cur_shdr->sh_link);
+                        sym_strtab = binary + sym_strtab_sh->sh_offset;
 
-                        uint st_bind = (cur_sym->st_info_other_shndx >> 4) & 0xf;
-
-                        if(st_bind == 1)
-                        {
-                            // STB_GLOBAL
-                            is_vis = true;
-                        }
-                        else if(st_bind == 2)
-                        {
-                            // STB_WEAK
-                            is_vis = true;
-                            is_weak = true;
-                        }
-
-                        if (is_vis)
-                        {
-                            ulong sym_name_addr = binary +
-                                ((Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * cur_shdr->sh_link))->sh_offset +
-                                cur_sym->st_name;
-                            string sym_name = new string((sbyte*)sym_name_addr);
-
-                            uint st_shndx = (cur_sym->st_info_other_shndx >> 16) & 0xffff;
-                            
-                            if(st_shndx != 0)
-                            {
-                                if(is_weak == false || stab.GetAddress(sym_name) == 0)
-                                {
-                                    ulong sym_addr = ((Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * st_shndx))->sh_addr +
-                                        cur_sym->st_value;
-
-                                    if (sym_name == "_start")
-                                        start = sym_addr;
-                                    else
-                                        stab.Add(sym_name, sym_addr, cur_sym->st_size);
-                                }
-                            }
-                        }
-
-
-                        offset += cur_shdr->sh_entsize;
+                        break;
                     }
+
+                    sect_header += e_shentsize;
                 }
 
-                sect_header += e_shentsize;
+                if(sym_tab != 0)
+                {
+                    Formatter.WriteLine("elf: sym_tab: 0x" + sym_tab.ToString("X") +
+                        ", sym_entsize: " + sym_entsize.ToString() +
+                        ", sym_strtab: 0x" + sym_strtab.ToString("X"),
+                        Program.arch.DebugOutput);
+
+                    ElfHashTable h = new ElfHashTable(hash_addr, 
+                        sym_tab, sym_entsize, sym_strtab, sect_map);
+                    stab.symbol_providers.Add(h);
+
+                    start = h.GetAddress("_start");
+                }
+            }
+            else
+            {
+                /* Iterate through defined symbols, loading them into the symbol table */
+                sect_header = binary + ehdr->e_shoff;
+                for (uint i = 0; i < e_shnum; i++)
+                {
+                    Elf64_Shdr* cur_shdr = (Elf64_Shdr*)sect_header;
+
+                    if (cur_shdr->sh_type == 0x2)
+                    {
+                        /* SHT_SYMTAB */
+                        ulong offset = cur_shdr->sh_info * cur_shdr->sh_entsize;
+                        while (offset < cur_shdr->sh_size)
+                        {
+                            Elf64_Sym* cur_sym = (Elf64_Sym*)(binary + cur_shdr->sh_offset + offset);
+
+                            bool is_vis = false;
+                            bool is_weak = false;
+
+                            uint st_bind = (cur_sym->st_info_other_shndx >> 4) & 0xf;
+
+                            if (st_bind == 1)
+                            {
+                                // STB_GLOBAL
+                                is_vis = true;
+                            }
+                            else if (st_bind == 2)
+                            {
+                                // STB_WEAK
+                                is_vis = true;
+                                is_weak = true;
+                            }
+
+                            if (is_vis)
+                            {
+                                ulong sym_name_addr = binary +
+                                    ((Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * cur_shdr->sh_link))->sh_offset +
+                                    cur_sym->st_name;
+                                string sym_name = new string((sbyte*)sym_name_addr);
+
+                                uint st_shndx = (cur_sym->st_info_other_shndx >> 16) & 0xffff;
+
+                                if (st_shndx != 0)
+                                {
+                                    if (is_weak == false || stab.GetAddress(sym_name) == 0)
+                                    {
+                                        ulong sym_addr = ((Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * st_shndx))->sh_addr +
+                                            cur_sym->st_value;
+
+                                        if (sym_name == "_start")
+                                            start = sym_addr;
+                                        else
+                                            stab.Add(sym_name, sym_addr, cur_sym->st_size);
+                                    }
+                                }
+                            }
+
+
+                            offset += cur_shdr->sh_entsize;
+                        }
+                    }
+
+                    sect_header += e_shentsize;
+                }
             }
 
             /* Iterate through relocations, fixing them up as we go */
@@ -840,9 +903,9 @@ namespace tysos
                     Formatter.WriteLine(sb.ToString(), Program.arch.DebugOutput);
 
                     ulong hash_addr = tyhash_start + ht_offset;
-                    ElfHashTable htable2 = new ElfHashTable(hash_addr, bitness, binary + sym_tab->sh_offset, sym_tab->sh_entsize,
+                    /*ElfHashTable htable2 = new ElfHashTable(hash_addr, bitness, binary + sym_tab->sh_offset, sym_tab->sh_entsize,
                         binary + str_tab->sh_offset, symbol_adjust);
-                    stab.symbol_providers.Add(htable2);
+                    stab.symbol_providers.Add(htable2);*/
                     return;
                 }
             }
@@ -856,9 +919,9 @@ namespace tysos
                 LoadSymbols2(stab, binary, symbol_adjust);
                 return;
             }
-            ElfHashTable htable = new ElfHashTable(dyn_entries.hash_vaddr, 1, binary + sym_tab->sh_offset, sym_tab->sh_entsize,
+            /*ElfHashTable htable = new ElfHashTable(dyn_entries.hash_vaddr, 1, binary + sym_tab->sh_offset, sym_tab->sh_entsize,
                 binary + str_tab->sh_offset, symbol_adjust);
-            stab.symbol_providers.Add(htable);
+            stab.symbol_providers.Add(htable);*/
         }
 
         public static void LoadSymbols2(SymbolTable stab, ulong binary, ulong symbol_adjust)
@@ -961,66 +1024,35 @@ namespace tysos
             }
         }
 
-        class ElfHashTable : SymbolTable.SymbolProvider
+        unsafe class ElfHashTable : SymbolTable.SymbolProvider
         {
-            ulong nbucket, nchain;
-            Collections.StaticULongArray bucket_l;
-            Collections.StaticULongArray chain_l;
-            Collections.StaticUIntArray bucket_i;
-            Collections.StaticUIntArray chain_i;
+            uint nbucket, nchain;
+            uint* bucket;
+            uint* chain;
 
             ulong sym_tab_start;
             ulong sym_tab_entsize;
             ulong sym_name_tab_start;
-            ulong symbol_adjust;
-            int bitness;
+            Dictionary<uint, ulong> symbol_adjust;
 
-            public ElfHashTable(ulong elfhash_addr, int _bitness, ulong _sym_tab_start,
-                ulong _sym_tab_entsize, ulong _sym_tab_name_start, ulong _symbol_adjust)
+            public ElfHashTable(ulong elfhash_addr, ulong _sym_tab_start,
+                ulong _sym_tab_entsize, ulong _sym_tab_name_start, Dictionary<uint, ulong> _symbol_adjust)
             {
-                bitness = _bitness;
                 sym_tab_start = _sym_tab_start;
                 sym_tab_entsize = _sym_tab_entsize;
                 sym_name_tab_start = _sym_tab_name_start;
                 symbol_adjust = _symbol_adjust;
 
-                unsafe
-                {
-                    switch (bitness)
-                    {
-                        case 0:
-                            nbucket = (ulong)*(int*)(elfhash_addr);
-                            nchain = (ulong)*(int*)(elfhash_addr + 4);
-                            bucket_i = new Collections.StaticUIntArray(elfhash_addr + 8, nbucket);
-                            chain_i = new Collections.StaticUIntArray(elfhash_addr + 8 + 4 * nbucket, nchain);
-                            break;
-                        case 1:
-                            nbucket = (ulong)*(long*)(elfhash_addr);
-                            nchain = (ulong)*(long*)(elfhash_addr + 8);
-                            bucket_l = new Collections.StaticULongArray(elfhash_addr + 16, nbucket);
-                            chain_l = new Collections.StaticULongArray(elfhash_addr + 16 + 8 * nbucket, nchain);
-                            break;
-                    }
-                }
+                nbucket = *(uint*)(elfhash_addr);
+                nchain = *(uint*)(elfhash_addr + 4);
+                bucket = (uint*)(elfhash_addr + 8);
+                chain = (uint*)(elfhash_addr + 8 + 4 * nbucket);
             }
 
             protected internal override ulong GetAddress(string s)
             {
-                switch (bitness)
-                {
-                    case 0:
-                        return GetAddress32(s);
-                    case 1:
-                        return GetAddress64(s);
-                    default:
-                        throw new Exception("Invalid bitness type");
-                }
-            }
-
-            protected unsafe internal ulong GetAddress64(string s)
-            {
                 uint hash = HashFunction(s);
-                ulong cur_sym_idx = bucket_l[hash % nbucket];
+                uint cur_sym_idx = bucket[hash % nbucket];
 
                 while (cur_sym_idx != 0)
                 {
@@ -1029,29 +1061,18 @@ namespace tysos
                     string sym_name = new string((sbyte*)name_addr);
 
                     if (s.Equals(sym_name))
-                        return cur_sym->st_value + symbol_adjust;
+                    {
+                        var shndx = cur_sym->st_shndx;
+                        if (shndx == 0)  // undefined symbol
+                            return 0;
+                        var ret = cur_sym->st_value + symbol_adjust[cur_sym->st_shndx];
+                        /*Formatter.WriteLine("elfhash: symbol: " + s +
+                            " found at 0x" + ret.ToString("X"),
+                            Program.arch.DebugOutput);*/
+                        return ret;
+                    }
 
-                    cur_sym_idx = chain_l[cur_sym_idx];
-                }
-
-                return 0;
-            }
-
-            protected unsafe internal ulong GetAddress32(string s)
-            {
-                uint hash = HashFunction(s);
-                uint cur_sym_idx = bucket_i[hash % nbucket];
-
-                while (cur_sym_idx != 0)
-                {
-                    Elf64_Sym* cur_sym = (Elf64_Sym*)(sym_tab_start + cur_sym_idx * sym_tab_entsize);
-                    ulong name_addr = sym_name_tab_start + (ulong)cur_sym->st_name;
-                    string sym_name = new string((sbyte*)name_addr);
-
-                    if (s.Equals(sym_name))
-                        return cur_sym->st_value + symbol_adjust;
-
-                    cur_sym_idx = chain_i[cur_sym_idx];
+                    cur_sym_idx = chain[cur_sym_idx];
                 }
 
                 return 0;

@@ -235,10 +235,15 @@ namespace tysos.lib
     public class VirtualDirectory : VirtualPropertyFile
     {
         public VirtualDirectory(ServerObject device, string name,
-            List<string> children) : base(device, name)
+            List<string> children) : this(device, name, children, new Property[] { })
+        { }
+
+        public VirtualDirectory(ServerObject device, string name,
+            List<string> children, IEnumerable<Property> props) : base(device, name)
         {
             intProperties = (int)System.IO.FileAttributes.Directory;
             base.Props.Add(new Property { Name = "Children", Value = children });
+            Props.AddRange(props);
         }
     }
 
@@ -327,6 +332,7 @@ namespace tysos.lib
             children = Children;
             root = Root;
             name = Name;
+            root.Add(new File.Property { Name = "server", Value = this });
         }
 
         public VirtualDirectoryServer()
@@ -334,6 +340,7 @@ namespace tysos.lib
             children = new Dictionary<string, List<File.Property>>(new Program.MyGenericEqualityComparer<string>());
             root = new List<File.Property>();
             name = "";
+            root.Add(new File.Property { Name = "server", Value = this });
         }
 
         public tysos.lib.File Open(IList<string> path, System.IO.FileMode mode,
@@ -345,10 +352,10 @@ namespace tysos.lib
                 if (is_dir)
                 {
                     List<string> c = new List<string>(children.Keys);
-                    return new tysos.lib.VirtualDirectory(this, "", c);
+                    return new tysos.lib.VirtualDirectory(this, "", c, root);
                 }
                 else
-                    return new VirtualPropertyFile(this, "");
+                    return new VirtualPropertyFile(this, "", root);
             }
 
             // only one level
