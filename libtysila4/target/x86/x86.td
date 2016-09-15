@@ -39,6 +39,7 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"mov_lab_r32",
 	"mov_r32_rm32sib",
 	"mov_r32_rm32disp",
+	"mov_r32_rm32sibscaledisp",
 	"cmp_rm32_r32",
 	"cmp_r32_rm32",
 	"cmp_rm32_imm32",
@@ -145,6 +146,11 @@ multiinstr(name, oc_ldind, [ gpr, gpr ], [ gpr ],
 multiinstr(name, oc_ldind, [ gpr, imm ], [ gpr ],
 	[	[ "x86_mov_r32_rm32disp", "$d0", "$u0", "$u1" ],
 ], [ Gprs, 0 ], [ Gprs ], 0);
+
+multiinstr(name, oc_ldind, [ gpr, gpr, imm, imm ], [ gpr ],
+	[	[ "x86_mov_r32_rm32sibscaledisp", "$d0", "$u0", "$u1", "$u2", "$u3" ],
+], [ Gprs, Gprs, 0, 0 ], [ Gprs ], 0);
+
 
 /* These define a temporary internal register so that we can
 	handle the times when the destination is not the same as the

@@ -283,7 +283,7 @@ namespace libtysila4.target.x86
                         case x86_mov_r32_lab:
                             {
                                 Code.Add(0x8b);
-                                Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), 5, 0, -1, -1, 0, 0, false));
+                                Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), 5, 0, -1, 0, 0, false));
                                 var reloc = bf.CreateRelocation();
                                 reloc.DefinedIn = text_section;
                                 reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
@@ -301,7 +301,7 @@ namespace libtysila4.target.x86
                         case x86_mov_lab_r32:
                             {
                                 Code.Add(0x89);
-                                Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), 5, 0, -1, -1, 0, 0, false));
+                                Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), 5, 0, -1,  0, 0, false));
                                 var reloc = bf.CreateRelocation();
                                 reloc.DefinedIn = text_section;
                                 reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
@@ -324,12 +324,17 @@ namespace libtysila4.target.x86
 
                         case x86_mov_r32_rm32sib:
                             Code.Add(0x8b);
-                            Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), 4, 0, GetRM(I.p[3].mreg), GetR(I.p[2].mreg)));
+                            Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[3].mreg), 0, GetR(I.p[2].mreg)));
                             break;
 
                         case x86_mov_r32_rm32disp:
                             Code.Add(0x8b);
-                            Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, -1, (int)I.p[3].v));
+                            Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
+                            break;
+
+                        case x86_mov_r32_rm32sibscaledisp:
+                            Code.Add(0x8b);
+                            Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
                             break;
 
                         default:
@@ -376,14 +381,14 @@ namespace libtysila4.target.x86
             int r_val = GetR(r);
             int rm_val, mod_val, disp_len, disp_val;
             GetModRM(rm, out rm_val, out mod_val, out disp_len, out disp_val);
-            return ModRMSIB(r_val, rm_val, mod_val, -1, -1, disp_len, disp_val, rm.Equals(r_ebp));
+            return ModRMSIB(r_val, rm_val, mod_val, -1, disp_len, disp_val, rm.Equals(r_ebp));
         }
 
         private IEnumerable<byte> ModRMSIB(int r, Target.Reg rm)
         {
             int rm_val, mod_val, disp_len, disp_val;
             GetModRM(rm, out rm_val, out mod_val, out disp_len, out disp_val);
-            return ModRMSIB(r, rm_val, mod_val, -1, -1, disp_len, disp_val, rm.Equals(r_ebp));
+            return ModRMSIB(r, rm_val, mod_val, -1, disp_len, disp_val, rm.Equals(r_ebp));
         }
         /* private IEnumerable<byte> ModRM(Reg r, Reg rm)
         {
@@ -527,8 +532,8 @@ namespace libtysila4.target.x86
         } */
 
         private IEnumerable<byte> ModRMSIB(int r, int rm, int mod,
-            int index = -1, int scale = -1, int disp_len = 0,
-            int disp = 0, bool rm_is_ebp = true)
+            int index = -1, int disp_len = 0,
+            int disp = 0, bool rm_is_ebp = true, int scale = -1)
         {
             /* catch the case where we're trying to do something to esp
                 or ebp without an sib byte */

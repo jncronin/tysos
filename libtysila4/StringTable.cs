@@ -27,6 +27,10 @@ namespace libtysila4
 {
     public class StringTable
     {
+        public metadata.TypeSpec StringObject;
+        public int string_obj_len = 0;
+        public int length_offset = 0;
+
         public string GetStringTableName()
         {
             return Label;
@@ -38,20 +42,28 @@ namespace libtysila4
                 return str_addrs[s];
             else
             {
+                var ptr_size = t.GetCTSize(ir.Opcode.ct_object);
+                while (str_tab.Count % ptr_size != 0)
+                    str_tab.Add(0);
+
                 int ret = str_tab.Count;
                 str_addrs.Add(s, ret);
 
-                // build the System.String object
-                // TODO
-                /*Metadata.TypeDefRow tdr = Metadata.GetTypeDef("mscorlib", "System", "String", ass);
-                Layout l = Layout.GetLayout(new Assembler.TypeToCompile { _ass = ass, type = tdr, tsig = new Signature.Param(BaseType_Type.String) }, ass, false);
-                byte[] sso = new byte[ass.GetStringFieldOffset(Assembler.StringFields.data_offset)];
-                int l_offset = l.GetField("Int32 length", false).offset;
-                ass.SetByteArray(sso, l_offset, s.Length);
-                int objid_offset = l.GetField("Int32 __object_id", false).offset;
-                ass.SetByteArray(sso, objid_offset, ass.next_object_id.Increment);*/
+                //int string_obj_len = layout.Layout.GetTypeSize(StringObject,
+                //    t, false);
+                //int string_type_offset = 
 
-                //str_tab.AddRange(sso);
+                int i = 0;
+                for (; i < length_offset; i++)
+                    str_tab.Add(0);
+                int len = s.Length;
+                str_tab.Add((byte)(len & 0xff));
+                str_tab.Add((byte)((len >> 8) & 0xff));
+                str_tab.Add((byte)((len >> 16) & 0xff));
+                str_tab.Add((byte)((len >> 24) & 0xff));
+                i += 4;
+                for (; i < string_obj_len; i++)
+                    str_tab.Add(0);
 
                 foreach (char c in s)
                 {
@@ -70,33 +82,58 @@ namespace libtysila4
 
         private string Label;
 
-        public StringTable(string mod_name)
-        { Label = mod_name; }
-
-        /* public void WriteToOutput(IOutputFile of, Assembler ass)
+        public StringTable(string mod_name, libtysila.AssemblyLoader al,
+            target.Target t)
         {
-            lock (of)
+            Label = mod_name + "_StringTable";
+
+            var corlib = al.GetAssembly("mscorlib");
+            StringObject = new metadata.TypeSpec
             {
-                int str_tab_start = of.GetRodata().Count;
+                m = corlib,
+                tdrow = corlib.GetTypeDefRow("String", "System")
+            };
+            var fs_len = corlib.GetFieldDefRow("length", StringObject);
+            length_offset = layout.Layout.GetFieldOffset(StringObject, fs_len,
+                t);
+            var fs_start = corlib.GetFieldDefRow("start_char", StringObject);
+            string_obj_len = layout.Layout.GetFieldOffset(StringObject, fs_start,
+                t);
+        }
 
-                of.AlignRodata(ass.GetSizeOfPointer());
-                of.AddRodataSymbol(of.GetRodata().Count, Label, false);
-                foreach (byte b in str_tab)
-                    of.GetRodata().Add(b);
+        public void WriteToOutput(binary_library.IBinaryFile of,
+            metadata.MetadataStream ms, target.Target t)
+        {
+            var rd = of.GetRDataSection();
+            rd.Align(t.GetCTSize(ir.Opcode.ct_object));
 
-                if (ass._options.EnableRTTI)
-                {
-                    // Patch in the relocations to the System.String VTables
+            var stab_lab = of.CreateSymbol();
+            stab_lab.DefinedIn = rd;
+            stab_lab.Name = Label;
+            stab_lab.ObjectType = binary_library.SymbolObjectType.Object;
+            stab_lab.Offset = (ulong)rd.Data.Count;
+            rd.AddSymbol(stab_lab);
 
-                    Assembler.TypeToCompile str_ttc = new Assembler.TypeToCompile { _ass = ass, tsig = new Signature.Param(BaseType_Type.String), type = Metadata.GetTypeDef(new Signature.BaseType(BaseType_Type.String), ass) };
-                    Layout l = Layout.GetTypeInfoLayout(str_ttc, ass, false, false);
-                    string str_ti = l.typeinfo_object_name;
-                    int vtbl_offset = l.FixedLayout[Layout.ID_VTableStructure].Offset;
+            foreach (byte b in str_tab)
+                rd.Data.Add(b);
 
-                    foreach (KeyValuePair<string, int> kvp in str_addrs)
-                        of.AddRodataRelocation(str_tab_start + kvp.Value + ass.GetStringFieldOffset(Assembler.StringFields.vtbl), ass.GetStringTypeInfoObjectName(), ass.DataToDataRelocType(), vtbl_offset);
-                }
+            int stab_base = rd.Data.Count;
+
+            var str_lab = of.CreateSymbol();
+            str_lab.DefinedIn = null;
+            str_lab.Name = StringObject.m.MangleType(StringObject);
+            str_lab.ObjectType = binary_library.SymbolObjectType.Object;
+
+            foreach(var str_addr in str_addrs.Values)
+            {
+                var reloc = of.CreateRelocation();
+                reloc.DefinedIn = rd;
+                reloc.Type = t.GetDataToDataReloc();
+                reloc.Addend = 0;
+                reloc.References = str_lab;
+                reloc.Offset = (ulong)(str_addr + stab_base);
+                of.AddRelocation(reloc);
             }
-        } */
+        }
     }
 }

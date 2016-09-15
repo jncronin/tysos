@@ -69,6 +69,7 @@ namespace libtysila4.target
         protected internal abstract Reg GetLVLocation(int lv_loc, int lv_size);
         protected internal abstract MCInst[] SetupStack(int lv_size);
         protected internal abstract MCInst[] CreateMove(Reg src, Reg dest);
+        protected internal abstract binary_library.IRelocationType GetDataToDataReloc();
 
         public binary_library.IBinaryFile bf;
         public binary_library.ISection text_section;

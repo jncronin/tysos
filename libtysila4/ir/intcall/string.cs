@@ -36,7 +36,7 @@ namespace libtysila4.ir.intcall
                 int length
                 then the string */
 
-            int len_offset = t.GetCTSize(Opcode.ct_intptr);
+            int len_offset = t.st.length_offset;
 
             /* Encode as:
                 def <- ldind string, offset
@@ -68,12 +68,10 @@ namespace libtysila4.ir.intcall
                 int length
                 then the string */
 
-            int str_offset = t.GetCTSize(Opcode.ct_intptr) +
-                t.GetCTSize(Opcode.ct_int32);
+            int str_offset = t.st.string_obj_len;
 
             /* Encode as:
-                temp <- mul length, 2
-                def <- ldind string, temp
+                def <- ldind string, idx, 2, str_offset
             */
 
             var g = start.n.g;
@@ -81,30 +79,12 @@ namespace libtysila4.ir.intcall
 
             res.ct = Opcode.ct_int32;
 
-            /* Re-encode both inputs to be st0 as they
-            are used in separate instructions */
-            var length = new Param
-            {
-                ct = Opcode.ct_int32,
-                t = Opcode.vl_stack,
-                v = 0
-            };
-
-            var str = new Param
-            {
-                ct = Opcode.ct_int32,
-                t = Opcode.vl_stack,
-                v = 0
-            };
-
-            var temp = new Param
+            var poffset = new Param
             {
                 ct = Opcode.ct_intptr,
-                t = Opcode.vl_stack,
-                v = g.next_vreg_id++,
-                stack_abs = true
+                t = Opcode.vl_c32,
+                v = str_offset
             };
-
             var number2 = new Param
             {
                 ct = Opcode.ct_intptr,
@@ -114,8 +94,7 @@ namespace libtysila4.ir.intcall
 
             Opcode[] ret = new Opcode[]
             {
-                new Opcode { oc = Opcode.oc_mul, defs = new Param[] { temp }, uses = new Param[] { length, number2 } },
-                new Opcode { oc = Opcode.oc_ldind, defs = new Param[] { res }, uses = new Param[] { str, temp } }
+                new Opcode { oc = Opcode.oc_ldind, defs = new Param[] { res }, uses = new Param[] { uses[2], uses[1], number2, poffset } }
             };
             return ret;
         }

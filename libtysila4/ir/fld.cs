@@ -46,7 +46,7 @@ namespace libtysila4.ir
             {
                 case cil.Opcode.SingleOpcodes.ldsfld:
                     {
-                        var sfldoffset = layout.Layout.GetStaticFieldOffset(ts, fs, t);
+                        var sfldoffset = layout.Layout.GetFieldOffset(ts, fs, t, true);
                         var sfldlabel = ts.m.MangleType(ts) + "S";
 
                         var fsig = fs.m.GetIntEntry(metadata.MetadataStream.tid_Field,
@@ -74,7 +74,7 @@ namespace libtysila4.ir
 
                 case cil.Opcode.SingleOpcodes.ldsflda:
                     {
-                        var sfldoffset = layout.Layout.GetStaticFieldOffset(ts, fs, t);
+                        var sfldoffset = layout.Layout.GetFieldOffset(ts, fs, t, true);
                         var sfldlabel = ts.m.MangleType(ts) + "S";
 
                         var r = new Opcode
@@ -119,7 +119,7 @@ namespace libtysila4.ir
             {
                 case cil.Opcode.SingleOpcodes.stsfld:
                     {
-                        var sfldoffset = layout.Layout.GetStaticFieldOffset(ts, fs, t);
+                        var sfldoffset = layout.Layout.GetFieldOffset(ts, fs, t, true);
                         var sfldlabel = ts.m.MangleType(ts) + "S";
 
                         var r = new Opcode

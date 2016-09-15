@@ -276,6 +276,14 @@ namespace libtysila4.util
             return true;
         }
 
+        public override int GetHashCode()
+        {
+            int hc = 0;
+            foreach (var u in b)
+                hc = (hc << 4) ^ u.GetHashCode();
+            return hc;
+        }
+
         public void Clear()
         {
             for (int i = 0; i < b.Count; i++)

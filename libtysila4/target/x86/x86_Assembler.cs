@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using binary_library;
 using libtysila4.graph;
 using libtysila4.ir;
 
@@ -229,6 +230,11 @@ namespace libtysila4.target.x86
             {
                 Assemble.AssemblePass,
             };
+        }
+
+        protected internal override IRelocationType GetDataToDataReloc()
+        {
+            return new binary_library.elf.ElfFile.Rel_386_32();
         }
     }
 }
