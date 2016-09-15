@@ -123,5 +123,66 @@ namespace libtysila4.layout
 
             return cur_offset;
         }
+
+        public static void OutputStaticFields(metadata.TypeSpec ts,
+            target.Target t, binary_library.IBinaryFile of)
+        {
+            var os = of.GetDataSection();
+            os.Align(t.GetCTSize(ir.Opcode.ct_object));
+
+            ulong offset = (ulong)os.Data.Count;
+
+            int cur_offset = 0;
+
+            /* Iterate through methods looking for requested
+                one */
+            var first_fdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
+                ts.tdrow, 4);
+            var last_fdef = ts.m.GetLastFieldDef(ts.tdrow);
+
+            for (uint fdef_row = first_fdef; fdef_row < last_fdef; fdef_row++)
+            {
+                // Ensure field is static or not as required
+                var flags = ts.m.GetIntEntry(MetadataStream.tid_Field,
+                    (int)fdef_row, 0);
+                if ((flags & 0x10) == 0x10)
+                {
+                    // Increment by type size
+                    var fsig = ts.m.GetIntEntry(MetadataStream.tid_Field,
+                        (int)fdef_row, 2);
+
+                    var sig_idx = ts.m.GetFieldSigTypeIndex((int)fsig);
+                    int ft;
+                    uint ft_tok;
+                    ft = ts.m.GetType(ref sig_idx, out ft_tok);
+                    var ft_size = t.GetSize(ft, ft_tok);
+
+                    /* See if there is any data defined as an rva */
+                    var rva = ts.m.fieldrvas[(int)fdef_row];
+                    if (rva != 0)
+                        throw new NotImplementedException();
+
+                    for (int i = 0; i < ft_size; i++)
+                        os.Data.Add(0);
+
+                    cur_offset += ft_size;
+                }
+            }
+
+            if (cur_offset > 0)
+            {
+                /* Add symbol */
+
+                var sym = of.CreateSymbol();
+                sym.Name = ts.m.MangleType(ts) + "S";
+                sym.DefinedIn = os;
+                sym.Offset = offset;
+                sym.Type = binary_library.SymbolType.Global;
+                sym.ObjectType = binary_library.SymbolObjectType.Object;
+                os.AddSymbol(sym);
+
+                sym.Size = os.Data.Count - (int)offset;
+            }
+        }
     }
 }

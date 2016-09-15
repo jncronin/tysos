@@ -21,24 +21,121 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace tysila4
 {
     class Program
     {
+        /* Boiler plate */
+        const string year = "2009 - 2016";
+        const string authors = "John Cronin <jncronin@tysos.org>";
+        const string website = "http://www.tysos.org";
+        const string nl = "\n";
+        public static string bplate = "tysila " + libtysila4.libtysila.VersionString + " (" + website + ")" + nl +
+            "Copyright (C) " + year + " " + authors + nl +
+            "This is free software.  Please see the source for copying conditions.  There is no warranty, " +
+            "not even for merchantability or fitness for a particular purpose";
+
+        static string comment = nl + "tysila" + nl + "ver: " + libtysila4.libtysila.VersionString + nl;
+
+        public static List<string> search_dirs = new List<string> {
+            "",
+            ".",
+            Path.GetDirectoryName(System.Reflection.Assembly.GetAssembly(typeof(Program)).Location),
+            DirectoryDelimiter
+        };
+
+        public static string DirectoryDelimiter
+        {
+            get
+            {
+                if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    return "/";
+                else
+                    return "\\";
+            }
+        }
+
         static void Main(string[] args)
         {
             //var fname = "D:\\tysos\\branches\\tysila3\\libsupcs\\bin\\Release\\libsupcs.dll";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\test_002\bin\Release\test_002.exe";
-            var fname = @"D:\tysos\branches\tysila3\testsuite\ifelse\ifelse.exe";
-            var f = new System.IO.FileStream(fname,
-                System.IO.FileMode.Open, System.IO.FileAccess.Read);
+            //var fname = @"D:\tysos\branches\tysila3\testsuite\ifelse\ifelse.exe";
+            var fname = @"kernel.exe";
 
-            metadata.PEFile p = new metadata.PEFile();
-            var m = p.Parse(f);
+            libtysila4.libtysila.AssemblyLoader al = new libtysila4.libtysila.AssemblyLoader(
+                new FileSystemFileLoader());
 
-            for(int t = 0; t < m.GetTableCount(); t++)
+            var m = al.GetAssembly(fname);
+
+            var t = libtysila4.target.Target.targets["x86"];
+            var bf = new binary_library.elf.ElfFile(binary_library.Bitness.Bits32);
+            t.bf = bf;
+            bf.Init();
+            bf.Architecture = "x86";
+            var st = new libtysila4.StringTable(
+                m.GetStringEntry(metadata.MetadataStream.tid_Module,
+                1, 1), al, t);
+            t.st = st;
+
+            /* for now, just assemble all methods */
+            StringBuilder debug = new StringBuilder();
+            for(int i = 1; i <= m.table_rows[metadata.MetadataStream.tid_MethodDef]; i++)
+            {
+                libtysila4.libtysila.AssembleMethod(i, 0, m, bf, t, debug);
+            }
+            string d = debug.ToString();
+
+            StreamWriter sw = new StreamWriter("debug.txt");
+            sw.Write(d);
+            sw.Close();
+
+            /* and all static fields */
+            for(int i = 1; i <= m.table_rows[metadata.MetadataStream.tid_TypeDef]; i++)
+            {
+                metadata.TypeSpec ts;
+                m.GetTypeDefRow(metadata.MetadataStream.tid_TypeDef, i, out ts);
+                libtysila4.layout.Layout.OutputStaticFields(ts,
+                    t, bf);
+            }
+
+            /* String table */
+            st.WriteToOutput(bf, m, t);
+
+            /* add alias for entry point */
+            if(m.entry_point_token != 0)
+            {
+                int tid, row;
+                m.InterpretToken(m.entry_point_token, out tid, out row);
+                if(tid == metadata.MetadataStream.tid_MethodDef)
+                {
+                    metadata.TypeSpec ts;
+                    metadata.MethodSpec ms;
+                    if(m.GetMethodDefRow(tid, row, out ts, out ms))
+                    {
+                        var mname = m.MangleMethod(ms);
+                        var msym = bf.FindSymbol(mname);
+                        if(msym != null)
+                        {
+                            var newsym = bf.CreateSymbol();
+                            newsym.Name = "kmain";
+                            newsym.DefinedIn = msym.DefinedIn;
+                            newsym.ObjectType = msym.ObjectType;
+                            newsym.Offset = msym.Offset;
+                            newsym.Size = msym.Size;
+                            newsym.Type = msym.Type;
+                            newsym.DefinedIn.AddSymbol(newsym);
+                        }
+                    }
+                }
+            }
+
+            bf.Filename = "output.o";
+            bf.Write();
+
+            /*for(int t = 0; t < m.GetTableCount(); t++)
             {
                 Console.WriteLine("Table " + t.ToString("X2"));
 
@@ -60,9 +157,9 @@ namespace tysila4
                     Console.WriteLine();
                 }
                 Console.WriteLine();
-            }
+            }*/
 
-            var meth = m.GetRVA(m.GetIntEntry(6, 1, 0));
+            /*var meth = m.GetRVA(m.GetIntEntry(6, 1, 0));
 
             var flags = meth.ReadByte(0);
             if ((flags & 0x3) == 0x2)
@@ -139,7 +236,7 @@ namespace tysila4
                 //throw new NotImplementedException();
             }
             else
-                throw new Exception("Invalid method header type");
+                throw new Exception("Invalid method header type");*/
         }
     }
 }

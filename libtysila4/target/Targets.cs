@@ -359,7 +359,7 @@ namespace libtysila4.target
             str_offset &= 0x00ffffffU;
 
             // Get offset within string table
-            var st_offset = st.GetStringAddress(m.GetString((int)str_offset),
+            var st_offset = st.GetStringAddress(m.GetUserString((int)str_offset),
                 this);
 
             irnode.mcinsts = new List<MCInst>();

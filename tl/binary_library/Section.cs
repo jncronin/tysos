@@ -159,6 +159,9 @@ namespace binary_library
         {
             throw new NotImplementedException();
         }
+
+        public virtual void Align(int aval)
+        { }
     }
 
     class GeneralSection : BaseSection
@@ -267,6 +270,12 @@ namespace binary_library
             {
                 is_executable = value;
             }
+        }
+
+        public override void Align(int aval)
+        {
+            while (data.Count % aval != 0)
+                data.Add(0);
         }
     }
 

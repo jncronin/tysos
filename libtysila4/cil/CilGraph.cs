@@ -282,7 +282,15 @@ namespace libtysila4.cil
                     foreach (int before in befores)
                     {
                         var bn = ret.offset_map[before].n;
-                        bn.AddNext(n);
+                        var bcn = bn.c as CilNode;
+
+                        // Ensure the default fall-through for conditional branches goes
+                        //  first
+                        if (bcn.il_offset_after == il_offset)
+                            bn.SetDefaultNext(n);
+                        else
+                            bn.AddNext(n);
+
                         n.AddPrev(bn);
                     }
                 }

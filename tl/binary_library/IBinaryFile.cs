@@ -46,6 +46,11 @@ namespace binary_library
         void Write();
         void Read();
 
+        ISection GetTextSection();
+        ISection GetDataSection();
+        ISection GetRDataSection();
+        ISection GetBSSSection();
+
         int GetSectionCount();
         ISection GetSection(int idx);
         int AddSection(ISection section);

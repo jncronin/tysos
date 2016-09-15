@@ -40,6 +40,8 @@ intmap("libtysila4.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"conv",
 	"stind",
 	"ldind",
+	"ldindzb",
+	"ldindzw",
 	"ldstr",
 	"ldlabcontents",
 	"ldlabaddr",

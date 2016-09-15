@@ -42,5 +42,7 @@ namespace binary_library
         int GetSymbolCount();
         ISymbol GetSymbol(int idx);
         void RemoveSymbol(int idx);
+
+        void Align(int aval);
     }
 }

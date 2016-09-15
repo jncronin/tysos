@@ -43,6 +43,9 @@ namespace libtysila4.graph
         public abstract IEnumerable<BaseNode> Prev { get; }
         public abstract IEnumerable<BaseNode> Next { get; }
 
+        public virtual void SetDefaultNext(BaseNode node)
+        { AddNext(node); }
+
         public abstract void AddNext(BaseNode node);
         public abstract void RemoveNext(BaseNode node);
         public abstract void AddPrev(BaseNode node);
@@ -106,5 +109,10 @@ namespace libtysila4.graph
         public override int PrevCount { get { return p.Count; } }
         public override BaseNode Next1 { get { return n[0]; } }
         public override BaseNode Prev1 { get { return p[0]; } }
+
+        public override void SetDefaultNext(BaseNode node)
+        {
+            n.Insert(0, node);
+        }
     }
 }

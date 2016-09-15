@@ -1,4 +1,7 @@
 global sthrow
+weak _Zu1O_7#2Ector_Rv_P1u1t
+weak _Zu1S
+weak __cxa_pure_virtual
 
 extern kmain
 
@@ -19,4 +22,20 @@ sthrow:
 	xchg bx, bx
 	hlt
 	jmp sthrow
+
+
+
+_Zu1O_7#2Ector_Rv_P1u1t:
+	ret
+
+__cxa_pure_virtual:
+	ret
+
+section .data
+_Zu1S:
+	dd 0, 0, 0			; TIPtr, IFacePtr, Extends
+	dd __cxa_pure_virtual
+	dd __cxa_pure_virtual
+	dd __cxa_pure_virtual
+	dd __cxa_pure_virtual
 

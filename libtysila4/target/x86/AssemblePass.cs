@@ -106,8 +106,15 @@ namespace libtysila4.target.x86
                             Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
                             break;
                         case x86_add_r32_rm32:
-                            Code.Add(0x03);
-                            Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                            {
+                                var dreg = I.p[1].mreg;
+                                var sreg = I.p[2].mreg;
+                                if (dreg.Equals(sreg))
+                                    sreg = I.p[3].mreg;
+
+                                Code.Add(0x03);
+                                Code.AddRange(ModRMSIB(dreg, sreg));
+                            }
                             break;
                         case x86_call_rel32:
                             {
@@ -268,8 +275,8 @@ namespace libtysila4.target.x86
                                 Code.AddRange(ModRMSIB(0, I.p[1].mreg));
                                 var reloc = bf.CreateRelocation();
                                 reloc.DefinedIn = text_section;
-                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
-                                reloc.Addend = -4 + I.p[2].v;
+                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
+                                reloc.Addend = I.p[2].v;
                                 reloc.References = bf.CreateSymbol();
                                 reloc.References.DefinedIn = null;
                                 reloc.References.Name = I.p[2].str;
@@ -286,8 +293,8 @@ namespace libtysila4.target.x86
                                 Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), 5, 0, -1, 0, 0, false));
                                 var reloc = bf.CreateRelocation();
                                 reloc.DefinedIn = text_section;
-                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
-                                reloc.Addend = -4 + I.p[2].v;
+                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
+                                reloc.Addend = I.p[2].v;
                                 reloc.References = bf.CreateSymbol();
                                 reloc.References.DefinedIn = null;
                                 reloc.References.Name = I.p[2].str;
@@ -304,8 +311,8 @@ namespace libtysila4.target.x86
                                 Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), 5, 0, -1,  0, 0, false));
                                 var reloc = bf.CreateRelocation();
                                 reloc.DefinedIn = text_section;
-                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
-                                reloc.Addend = -4 + I.p[1].v;
+                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
+                                reloc.Addend = I.p[1].v;
                                 reloc.References = bf.CreateSymbol();
                                 reloc.References.DefinedIn = null;
                                 reloc.References.Name = I.p[1].str;
@@ -334,6 +341,18 @@ namespace libtysila4.target.x86
 
                         case x86_mov_r32_rm32sibscaledisp:
                             Code.Add(0x8b);
+                            Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
+                            break;
+
+                        case x86_movzxb_r32_rm32sibscaledisp:
+                            Code.Add(0x0f);
+                            Code.Add(0xb6);
+                            Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
+                            break;
+
+                        case x86_movzxw_r32_rm32sibscaledisp:
+                            Code.Add(0x0f);
+                            Code.Add(0xb7);
                             Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
                             break;
 

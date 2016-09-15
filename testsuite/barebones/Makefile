@@ -1,7 +1,10 @@
 TYBUILD=../../tybuild/bin/Release/tybuild.exe
 TYSILA=../../tysila2/bin/Release/tysila2.exe
 YASM=yasm
-GCC=i586-elf-gcc
+GCC=i686-elf-gcc
+
+#KERNEL_OBJ=kernel.o
+KERNEL_OBJ=output.o
 
 all: barebones.iso
 
@@ -14,17 +17,14 @@ kernel.o: kernel.exe $(TYSILA)
 loader.o: loader.asm
 	$(YASM) -felf -o loader.o loader.asm
 
-kernel.bin: kernel.o loader.o linker.ld
-	$(GCC) -fno-use-linker-plugin -nostdlib -Wl,-z,max-page-size=0x1000 -o kernel.bin -Wl,-T,linker.ld loader.o kernel.o
+kernel.bin: $(KERNEL_OBJ) loader.o linker.ld
+	$(GCC) -fno-use-linker-plugin -nostdlib -Wl,-z,max-page-size=0x1000 -o kernel.bin -Wl,-T,linker.ld loader.o $(KERNEL_OBJ)
 
 barebones.iso: kernel.bin grub.cfg grub_prefix.cfg
 	mkdir -p iso/boot/grub
 	cp grub.cfg iso/boot/grub
 	cp kernel.bin iso
-	grub-mkimage -o core.img -c grub_prefix.cfg -O i386-pc biosdisk multiboot configfile normal iso9660
-	cat /usr/local/lib/grub/i386-pc/cdboot.img core.img > iso/boot/grub/eltorito.img
-	xorriso -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o barebones.iso iso
-	rm core.img
+	grub-mkrescue -o myos.iso iso
 
 clean:
 	rm -rf *.o *.exe iso

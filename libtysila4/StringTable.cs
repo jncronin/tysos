@@ -112,12 +112,13 @@ namespace libtysila4
             stab_lab.Name = Label;
             stab_lab.ObjectType = binary_library.SymbolObjectType.Object;
             stab_lab.Offset = (ulong)rd.Data.Count;
+            stab_lab.Type = binary_library.SymbolType.Global;
             rd.AddSymbol(stab_lab);
+
+            int stab_base = rd.Data.Count;
 
             foreach (byte b in str_tab)
                 rd.Data.Add(b);
-
-            int stab_base = rd.Data.Count;
 
             var str_lab = of.CreateSymbol();
             str_lab.DefinedIn = null;
@@ -134,6 +135,8 @@ namespace libtysila4
                 reloc.Offset = (ulong)(str_addr + stab_base);
                 of.AddRelocation(reloc);
             }
+
+            stab_lab.Size = rd.Data.Count - (int)stab_lab.Offset;
         }
     }
 }

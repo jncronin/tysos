@@ -217,7 +217,7 @@ namespace libtysila4.cil
                     return 2;
                 case Opcode.SingleOpcodes.ldloc_3:
                 case Opcode.SingleOpcodes.stloc_3:
-                    return 2;
+                    return 3;
                 case Opcode.SingleOpcodes.ldloc_s:
                 case Opcode.SingleOpcodes.stloc_s:
                     return inline_int;

@@ -34,6 +34,8 @@ namespace binary_library.elf
         public bool CreateHashSection = false;
         public bool CreateDynamicSection = false;
 
+        bool use_rela = true;
+
         public ElfFile(Bitness b)
         {
             switch(b)
@@ -226,11 +228,26 @@ namespace binary_library.elf
                 {
                     reloc_sect_idx = new SectionHeader();
                     reloc_sect_idx.index = osects.Count;
-                    reloc_sect_idx.sh_name = AllocateString(".rela" + reloc.DefinedIn.Name, shstrtab);
+                    if (use_rela)
+                    {
+                        reloc_sect_idx.sh_name = AllocateString(".rela" + reloc.DefinedIn.Name, shstrtab);
+                        if (ec == ElfClass.ELFCLASS32)
+                            reloc_sect_idx.sh_entsize = 12;
+                        else
+                            reloc_sect_idx.sh_entsize = 24;
+                        reloc_sect_idx.sh_type = 4;
+                    }
+                    else
+                    {
+                        reloc_sect_idx.sh_name = AllocateString(".rel" + reloc.DefinedIn.Name, shstrtab);
+                        if (ec == ElfClass.ELFCLASS32)
+                            reloc_sect_idx.sh_entsize = 8;
+                        else
+                            reloc_sect_idx.sh_entsize = 16;
+                        reloc_sect_idx.sh_type = 9;
+                    }
                     reloc_sect_idx.sh_link = symtab_idx;
                     reloc_sect_idx.sh_info = osect_map[reloc.DefinedIn];
-                    reloc_sect_idx.sh_entsize = 12;
-                    reloc_sect_idx.sh_type = 4;
                     if (Bitness == Bitness.Bits64)
                         reloc_sect_idx.sh_entsize = 24;
                     osects.Add(reloc_sect_idx);
@@ -256,6 +273,20 @@ namespace binary_library.elf
                 er.r_offset = reloc.Offset;
                 er.r_type = reloc.Type.Type;
                 elfrelocs[reloc.DefinedIn].Add(er);
+
+                /* If using REL relocations, put addend in original
+                section */
+                if(use_rela == false)
+                {
+                    var s = reloc.DefinedIn;
+                    var size = reloc.Type.Length;
+
+                    for(int i = 0; i < size; i++)
+                    {
+                        var cur_offset = (int)reloc.Offset + i;
+                        s.Data[cur_offset] = (byte)((reloc.Addend >> (i * 8)) & 0xff);
+                    }
+                }
             }
 
             // Write out file header
@@ -631,6 +662,13 @@ namespace binary_library.elf
                 base.Architecture = value;
                 e_machine = RMachineTypes[value];
                 ed = RDataTypes[value];
+
+                switch(e_machine)
+                {
+                    case EM_386:
+                        use_rela = false;
+                        break;
+                }
             }
         }
 
@@ -1244,7 +1282,8 @@ namespace binary_library.elf
             w.Write((uint)r.r_offset);
             uint r_info = ((uint)r.r_sym << 8) + ((uint)r.r_type & 0xffU);
             w.Write(r_info);
-            w.Write((uint)r.r_addend);
+            if(use_rela)
+                w.Write((uint)r.r_addend);
         }
 
         private void WriteElf64Relocation(ElfRelocation r, System.IO.BinaryWriter w)
@@ -1252,7 +1291,8 @@ namespace binary_library.elf
             w.Write(r.r_offset);
             ulong r_info = ((ulong)r.r_sym << 32) + ((ulong)r.r_type & 0xffffffffUL);
             w.Write(r_info);
-            w.Write(r.r_addend);
+            if(use_rela)
+                w.Write(r.r_addend);
         }
 
         private void WriteElf32Symbol(ElfSymbol sym, System.IO.BinaryWriter w)
@@ -1330,6 +1370,13 @@ namespace binary_library.elf
         public override ISection GetCommonSection()
         {
             return CommonSection;
+        }
+
+        public override ISection GetRDataSection()
+        {
+            var r = base.GetRDataSection();
+            r.Name = ".rodata";
+            return r;
         }
     }
 }

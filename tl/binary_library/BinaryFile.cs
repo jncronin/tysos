@@ -37,6 +37,8 @@ namespace binary_library
         protected List<ISymbol> symbols = new List<ISymbol>();
         protected List<IRelocation> relocs = new List<IRelocation>();
 
+        protected ISection text, data, rdata, bss;
+
         public abstract Bitness Bitness { get; set; }
 
         public virtual string Filename
@@ -252,6 +254,53 @@ namespace binary_library
                     return o as IBinaryFile;
             }
 
+            return null;
+        }
+
+        public virtual ISection GetTextSection()
+        {
+            if (text == null)
+            {
+                text = new ContentsSection(this);
+                text.Name = ".text";
+                text.IsAlloc = true;
+                text.IsWriteable = false;
+                text.IsExecutable = true;
+                AddSection(text);
+            }
+            return text;
+        }
+
+        public virtual ISection GetDataSection()
+        {
+            if (data == null)
+            {
+                data = new ContentsSection(this);
+                data.Name = ".data";
+                data.IsAlloc = true;
+                data.IsWriteable = true;
+                data.IsExecutable = false;
+                AddSection(data);
+            }
+            return data;
+        }
+
+        public virtual ISection GetRDataSection()
+        {
+            if (rdata == null)
+            {
+                rdata = new ContentsSection(this);
+                rdata.Name = ".rdata";
+                rdata.IsAlloc = true;
+                rdata.IsWriteable = false;
+                rdata.IsExecutable = false;
+                AddSection(rdata);
+            }
+            return rdata;
+        }
+
+        public virtual ISection GetBSSSection()
+        {
             return null;
         }
     }

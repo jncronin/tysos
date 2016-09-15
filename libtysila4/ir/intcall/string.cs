@@ -71,7 +71,7 @@ namespace libtysila4.ir.intcall
             int str_offset = t.st.string_obj_len;
 
             /* Encode as:
-                def <- ldind string, idx, 2, str_offset
+                def <- ldindzw string, idx, 2, str_offset
             */
 
             var g = start.n.g;
@@ -94,7 +94,7 @@ namespace libtysila4.ir.intcall
 
             Opcode[] ret = new Opcode[]
             {
-                new Opcode { oc = Opcode.oc_ldind, defs = new Param[] { res }, uses = new Param[] { uses[2], uses[1], number2, poffset } }
+                new Opcode { oc = Opcode.oc_ldindzw, defs = new Param[] { res }, uses = new Param[] { uses[1], uses[2], number2, poffset } }
             };
             return ret;
         }

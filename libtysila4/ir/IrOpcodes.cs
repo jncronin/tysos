@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila4\ir\IrOpcodes.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 17:10:33 on 15 September 2016
+ * It was generated at 22:02:09 on 15 September 2016
  * from D:\tysos\branches\tysila3\libtysila4\ir\IrOpcodes.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -74,11 +74,13 @@ namespace libtysila4.ir
 		public const int oc_conv = 31;
 		public const int oc_stind = 32;
 		public const int oc_ldind = 33;
-		public const int oc_ldstr = 34;
-		public const int oc_ldlabcontents = 35;
-		public const int oc_ldlabaddr = 36;
-		public const int oc_stlabcontents = 37;
-		public const int oc_swap = 38;
+		public const int oc_ldindzb = 34;
+		public const int oc_ldindzw = 35;
+		public const int oc_ldstr = 36;
+		public const int oc_ldlabcontents = 37;
+		public const int oc_ldlabaddr = 38;
+		public const int oc_stlabcontents = 39;
+		public const int oc_swap = 40;
 		
 		internal static void init_oc()
 		{
@@ -98,11 +100,13 @@ namespace libtysila4.ir
 			oc_names[31] = "conv";
 			oc_names[32] = "stind";
 			oc_names[33] = "ldind";
-			oc_names[34] = "ldstr";
-			oc_names[35] = "ldlabcontents";
-			oc_names[36] = "ldlabaddr";
-			oc_names[37] = "stlabcontents";
-			oc_names[38] = "swap";
+			oc_names[34] = "ldindzb";
+			oc_names[35] = "ldindzw";
+			oc_names[36] = "ldstr";
+			oc_names[37] = "ldlabcontents";
+			oc_names[38] = "ldlabaddr";
+			oc_names[39] = "stlabcontents";
+			oc_names[40] = "swap";
 		}
 	}
 }
@@ -111,33 +115,33 @@ namespace libtysila4.ir
 {
 	partial class Opcode
 	{
-		public const int cc_always = 39;
-		public const int cc_never = 40;
-		public const int cc_eq = 41;
-		public const int cc_ne = 42;
-		public const int cc_gt = 43;
-		public const int cc_ge = 44;
-		public const int cc_lt = 45;
-		public const int cc_le = 46;
-		public const int cc_a = 47;
-		public const int cc_ae = 48;
-		public const int cc_b = 49;
-		public const int cc_be = 50;
+		public const int cc_always = 41;
+		public const int cc_never = 42;
+		public const int cc_eq = 43;
+		public const int cc_ne = 44;
+		public const int cc_gt = 45;
+		public const int cc_ge = 46;
+		public const int cc_lt = 47;
+		public const int cc_le = 48;
+		public const int cc_a = 49;
+		public const int cc_ae = 50;
+		public const int cc_b = 51;
+		public const int cc_be = 52;
 		
 		internal static void init_cc()
 		{
-			cc_names[39] = "always";
-			cc_names[40] = "never";
-			cc_names[41] = "eq";
-			cc_names[42] = "ne";
-			cc_names[43] = "gt";
-			cc_names[44] = "ge";
-			cc_names[45] = "lt";
-			cc_names[46] = "le";
-			cc_names[47] = "a";
-			cc_names[48] = "ae";
-			cc_names[49] = "b";
-			cc_names[50] = "be";
+			cc_names[41] = "always";
+			cc_names[42] = "never";
+			cc_names[43] = "eq";
+			cc_names[44] = "ne";
+			cc_names[45] = "gt";
+			cc_names[46] = "ge";
+			cc_names[47] = "lt";
+			cc_names[48] = "le";
+			cc_names[49] = "a";
+			cc_names[50] = "ae";
+			cc_names[51] = "b";
+			cc_names[52] = "be";
 		}
 	}
 }
@@ -168,23 +172,23 @@ namespace libtysila4.ir
 {
 	partial class Opcode
 	{
-		public const int ct_unknown = 51;
-		public const int ct_int32 = 52;
-		public const int ct_int64 = 53;
-		public const int ct_intptr = 54;
-		public const int ct_float = 55;
-		public const int ct_object = 56;
-		public const int ct_ref = 57;
+		public const int ct_unknown = 53;
+		public const int ct_int32 = 54;
+		public const int ct_int64 = 55;
+		public const int ct_intptr = 56;
+		public const int ct_float = 57;
+		public const int ct_object = 58;
+		public const int ct_ref = 59;
 		
 		internal static void init_ct()
 		{
-			ct_names[51] = "unknown";
-			ct_names[52] = "int32";
-			ct_names[53] = "int64";
-			ct_names[54] = "intptr";
-			ct_names[55] = "float";
-			ct_names[56] = "object";
-			ct_names[57] = "ref";
+			ct_names[53] = "unknown";
+			ct_names[54] = "int32";
+			ct_names[55] = "int64";
+			ct_names[56] = "intptr";
+			ct_names[57] = "float";
+			ct_names[58] = "object";
+			ct_names[59] = "ref";
 		}
 	}
 }
