@@ -22,33 +22,34 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using libtysila4.util;
+using libtysila4.cil;
 
-
-namespace libtysila4.target
+namespace libtysila4.ir
 {
-    public class MangleCallsites
+    partial class IrGraph
     {
-        public static graph.Graph MangleCallsitesPass(graph.Graph g, Target t)
+        static Opcode[] binnumops(CilNode start, target.Target t)
         {
-            foreach(var n in g.LinearStream)
-            {
-                var mcn = n.c as MCNode;
+            int oc = 0;
 
-                foreach(var I in mcn.all_insts)
-                {
-                    foreach(var p in I.p)
-                    {
-                        if(p.t == ir.Opcode.vl_call_target)
-                        {
-                            p.t = ir.Opcode.vl_str;
-                            p.str = p.m.MangleMethod((int)p.v, (int)p.v2);
-                        }
-                    }
-                }
+            switch(start.opcode.opcode1)
+            {
+                case cil.Opcode.SingleOpcodes.add:
+                    oc = Opcode.oc_add;
+                    break;
+                case cil.Opcode.SingleOpcodes.sub:
+                    oc = Opcode.oc_sub;
+                    break;
             }
 
-            return g;
+            Opcode r = new Opcode
+            {
+                oc = oc,
+                uses = new Param[] { new Param { t = Opcode.vl_stack, v = 1 }, new Param { t = Opcode.vl_stack, v = 0 } },
+                defs = new Param[] { new Param { t = Opcode.vl_stack, v = 0 } }
+            };
+
+            return new Opcode[] { r };
         }
     }
 }

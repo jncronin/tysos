@@ -22,33 +22,34 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using libtysila4.util;
+using libtysila4.cil;
 
-
-namespace libtysila4.target
+namespace libtysila4.ir.intcall
 {
-    public class MangleCallsites
+    partial class intcall
     {
-        public static graph.Graph MangleCallsitesPass(graph.Graph g, Target t)
+        delegate Opcode[] intcall_delegate(Param[] defs, Param[] uses,
+            cil.CilNode start, target.Target t);
+
+        static Dictionary<string, intcall_delegate> intcalls =
+            new Dictionary<string, intcall_delegate>(
+                new GenericEqualityComparer<string>());
+
+        internal static Opcode[] do_intcall(string mname,
+            Param[] defs, Param[] uses,
+            cil.CilNode start, target.Target t)
         {
-            foreach(var n in g.LinearStream)
-            {
-                var mcn = n.c as MCNode;
+            intcall_delegate i;
+            if (intcalls.TryGetValue(mname, out i))
+                return i(defs, uses, start, t);
+            else
+                return null;
+        }
 
-                foreach(var I in mcn.all_insts)
-                {
-                    foreach(var p in I.p)
-                    {
-                        if(p.t == ir.Opcode.vl_call_target)
-                        {
-                            p.t = ir.Opcode.vl_str;
-                            p.str = p.m.MangleMethod((int)p.v, (int)p.v2);
-                        }
-                    }
-                }
-            }
-
-            return g;
+        static intcall()
+        {
+            intcalls["_Zu1S_9get_Chars_Rc_P2u1ti"] = str_getChars;
+            intcalls["_Zu1S_10get_Length_Ri_P1u1t"] = str_getLength;
         }
     }
 }

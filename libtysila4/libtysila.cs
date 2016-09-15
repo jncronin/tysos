@@ -21,34 +21,41 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
-using libtysila4.util;
 
-
-namespace libtysila4.target
+namespace libtysila4
 {
-    public class MangleCallsites
+    public partial class libtysila
     {
-        public static graph.Graph MangleCallsitesPass(graph.Graph g, Target t)
+        public static int MajorVersion { get { return 0; } }
+        public static int MinorVersion { get { return 4; } }
+        public static int BuildVersion { get { return 0; } }
+        public static string VersionString
         {
-            foreach(var n in g.LinearStream)
+            get
             {
-                var mcn = n.c as MCNode;
+                return MajorVersion.ToString() + "." +
+                    MinorVersion.ToString() + "." +
+                    BuildVersion.ToString();
+            }
+        }
 
-                foreach(var I in mcn.all_insts)
-                {
-                    foreach(var p in I.p)
-                    {
-                        if(p.t == ir.Opcode.vl_call_target)
-                        {
-                            p.t = ir.Opcode.vl_str;
-                            p.str = p.m.MangleMethod((int)p.v, (int)p.v2);
-                        }
-                    }
-                }
+        public class AssemblyLoader : metadata.AssemblyLoader
+        {
+            FileLoader f;
+
+            public AssemblyLoader(FileLoader fl)
+            {
+                f = fl;
             }
 
-            return g;
+            public override Stream LoadAssembly(string name)
+            {
+                var flr = f.LoadFile(name);
+                return flr.Stream;
+            }
         }
     }
 }

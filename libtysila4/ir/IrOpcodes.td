@@ -36,7 +36,15 @@ intmap("libtysila4.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"cmp",
 	"br",
 	"brif",
-	"enter"
+	"enter",
+	"conv",
+	"stind",
+	"ldind",
+	"ldstr",
+	"ldlabcontents",
+	"ldlabaddr",
+	"stlabcontents",
+	"swap",
 ]);
 
 intmap("libtysila4.ir", "Opcode", "cc", "cc_names", "init_cc", [
@@ -138,6 +146,10 @@ function oc_pushes_map_handler(array oc, string h)
 
 multimap("libtysila4.ir", "Opcode", "oc_pushes_map", "init_oc_pushes_map", [
 	[ [ "call" ], "get_call_rettype" ],
-	[ [ "store" ], "get_store_pushtype" ]
+	[ [ "store" ], "get_store_pushtype" ],
+	[ [ "add" ], "get_binnumop_pushtype" ],
+	[ [ "sub" ], "get_binnumop_pushtype" ],
+	[ [ "conv" ], "get_conv_pushtype" ],
+	[ [ "ldstr" ] , "get_object_pushtype" ],
 ], funcref oc_pushes_map_handler(array, string));
 

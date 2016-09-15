@@ -29,7 +29,7 @@ namespace libtysila4.ir
     {
         internal static int GetCTFromType(int type)
         {
-            switch(type)
+            switch (type)
             {
                 case 0x02:
                 case 0x03:
@@ -76,8 +76,8 @@ namespace libtysila4.ir
                     throw new NotImplementedException();
             }
         }
-        
-        static int get_call_rettype(Opcode n)
+
+        static int get_call_rettype(Opcode n, target.Target t)
         {
             // Determine the return type from the method signature
             var cs = n.uses[0];
@@ -93,12 +93,12 @@ namespace libtysila4.ir
             return ct;
         }
 
-        static int get_store_pushtype(Opcode n)
+        static int get_store_pushtype(Opcode n, target.Target t)
         {
             // Determine from the type of operand 1
             var o1 = n.uses[0];
 
-            switch(o1.t)
+            switch (o1.t)
             {
                 case vl_stack32:
                 case vl_arg32:
@@ -113,10 +113,105 @@ namespace libtysila4.ir
                 case vl_lv:
                 case vl_c:
                     return o1.ct;
-                    
+
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        static int get_binnumop_pushtype(Opcode n, target.Target t)
+        {
+            var a = n.uses[0].ct;
+            var b = n.uses[1].ct;
+
+            switch(a)
+            {
+                case ct_int32:
+                    switch(b)
+                    {
+                        case ct_int32:
+                            return ct_int32;
+                        case ct_intptr:
+                            return ct_intptr;
+                        case ct_ref:
+                            if (n.oc == oc_add)
+                                return ct_ref;
+                            break;
+                    }
+                    break;
+                case ct_int64:
+                    switch(b)
+                    {
+                        case ct_int64:
+                            return ct_int64;
+                    }
+                    break;
+                case ct_intptr:
+                    switch(b)
+                    {
+                        case ct_int32:
+                            return ct_intptr;
+                        case ct_intptr:
+                            return ct_intptr;
+                        case ct_ref:
+                            if (n.oc == oc_add)
+                                return ct_ref;
+                            break;
+                    }
+                    break;
+                case ct_float:
+                    switch(b)
+                    {
+                        case ct_float:
+                            return ct_float;
+                    }
+                    break;
+                case ct_ref:
+                    switch(b)
+                    {
+                        case ct_int32:
+                            if (n.oc == oc_add || n.oc == oc_sub)
+                                return ct_ref;
+                            break;
+                        case ct_intptr:
+                            if (n.oc == oc_add || n.oc == oc_sub)
+                                return ct_ref;
+                            break;
+                        case ct_ref:
+                            if (n.oc == oc_sub)
+                                return ct_intptr;
+                            break;
+                    }
+                    break;
+            }
+            throw new NotSupportedException("Invalid opcode:" + n.ToString());
+        }
+
+        static int get_conv_pushtype(Opcode n, target.Target t)
+        {
+            var dt = n.uses[1].v;
+            switch(dt)
+            {
+                case 1:
+                case 2:
+                case 4:
+                case -1:
+                case -2:
+                case -4:
+                    return ct_int32;
+                case 8:
+                case -8:
+                    return ct_int64;
+                case 14:
+                case 18:
+                    return ct_float;
+            }
+            throw new NotSupportedException("Invalid opcode: " + n.ToString());
+        }
+
+        static int get_object_pushtype(Opcode n, target.Target t)
+        {
+            return ct_intptr;
         }
     }
 }

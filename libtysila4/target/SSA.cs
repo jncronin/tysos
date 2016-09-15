@@ -89,7 +89,7 @@ namespace libtysila4.target
                             int preds = input.LinearStream[y].PrevCount;
                             MCInst phi = new MCInst();
                             phi.p = new ir.Param[preds + 2];
-                            phi.p[0] = new ir.Param { t = ir.Opcode.vl_str, v = target.Generic.g_phi };
+                            phi.p[0] = new ir.Param { t = ir.Opcode.vl_str, v = target.Generic.g_phi, str = "phi" };
                             phi.p[1] = new ir.Param { t = var_locs[a].t, v = a, ud = ir.Param.UseDefType.Def };
                             for (int i = 0; i < preds; i++)
                                 phi.p[2 + i] = new ir.Param { t = var_locs[a].t, v = a, ud = ir.Param.UseDefType.Def };

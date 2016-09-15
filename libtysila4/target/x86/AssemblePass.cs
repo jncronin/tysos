@@ -66,30 +66,48 @@ namespace libtysila4.target.x86
                     {
                         case x86_push_rm32:
                             Code.Add(0xff);
-                            Code.AddRange(ModRM(6, I.p[1].mreg));
+                            Code.AddRange(ModRMSIB(6, I.p[1].mreg));
                             break;
                         case x86_push_r32:
                             Code.Add(PlusRD(0x50, I.p[1].mreg));
                             break;
                         case x86_pop_rm32:
                             Code.Add(0x8f);
-                            Code.AddRange(ModRM(0, I.p[1].mreg));
+                            Code.AddRange(ModRMSIB(0, I.p[1].mreg));
                             break;
                         case x86_pop_r32:
                             Code.Add(PlusRD(0x58, I.p[1].mreg));
                             break;
                         case x86_mov_r32_rm32:
                             Code.Add(0x8b);
-                            Code.AddRange(ModRM(I.p[1].mreg, I.p[2].mreg));
+                            Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                             break;
                         case x86_mov_rm32_r32:
                             Code.Add(0x89);
-                            Code.AddRange(ModRM(I.p[2].mreg, I.p[1].mreg));
+                            Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                            break;
+                        case x86_mov_rm32_imm32:
+                            Code.Add(0xc7);
+                            Code.AddRange(ModRMSIB(0, I.p[1].mreg));
+                            AddImm32(Code, I.p[2].v);
+                            break;
+                        case x86_add_rm32_imm32:
+                            Code.Add(0x81);
+                            Code.AddRange(ModRMSIB(0, I.p[1].mreg));
+                            AddImm32(Code, I.p[2].v);
                             break;
                         case x86_sub_rm32_imm32:
                             Code.Add(0x81);
-                            Code.AddRange(ModRM(5, I.p[1].mreg));
+                            Code.AddRange(ModRMSIB(5, I.p[1].mreg));
                             AddImm32(Code, I.p[2].v);
+                            break;
+                        case x86_sub_r32_rm32:
+                            Code.Add(0x2b);
+                            Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                            break;
+                        case x86_add_r32_rm32:
+                            Code.Add(0x03);
+                            Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
                             break;
                         case x86_call_rel32:
                             {
@@ -109,11 +127,11 @@ namespace libtysila4.target.x86
                             break;
                         case x86_cmp_rm32_r32:
                             Code.Add(0x39);
-                            Code.AddRange(ModRM(I.p[2].mreg, I.p[1].mreg));
+                            Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
                             break;
                         case x86_cmp_r32_rm32:
                             Code.Add(0x3b);
-                            Code.AddRange(ModRM(I.p[1].mreg, I.p[2].mreg));
+                            Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                             break;
                         case x86_cmp_rm32_imm32:
                             if (I.p[1].mreg == r_eax)
@@ -121,7 +139,7 @@ namespace libtysila4.target.x86
                             else
                             {
                                 Code.Add(0x81);
-                                Code.AddRange(ModRM(7, I.p[1].mreg));
+                                Code.AddRange(ModRMSIB(7, I.p[1].mreg));
                             }
                             AddImm32(Code, I.p[2].v);
                             break;
@@ -164,13 +182,18 @@ namespace libtysila4.target.x86
                                     case ir.Opcode.cc_always:
                                         throw new NotImplementedException();
                                 }
-                                Code.AddRange(ModRM(2, I.p[2].mreg));
+                                Code.AddRange(ModRMSIB(2, I.p[2].mreg));
                             }
                             break;
                         case x86_movsxbd:
                             Code.Add(0x0f);
                             Code.Add(0xbe);
-                            Code.AddRange(ModRM(I.p[2].mreg, I.p[1].mreg));
+                            Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                            break;
+                        case x86_movzxbd:
+                            Code.Add(0x0f);
+                            Code.Add(0xb6);
+                            Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
                             break;
                         case x86_jcc_rel32:
                             if (I.p[1].v != ir.Opcode.cc_never)
@@ -226,6 +249,88 @@ namespace libtysila4.target.x86
                         case x86_ret:
                             Code.Add(0xc3);
                             break;
+                        case x86_mov_crm8_r32:
+                            Code.Add(0x88);
+                            Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), GetRM(I.p[1].mreg), 0));
+                            break;
+                        case x86_mov_crm16_r32:
+                            Code.Add(0x67); // CHECK
+                            Code.Add(0x89);
+                            Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), GetRM(I.p[1].mreg), 0));
+                            break;
+                        case x86_mov_crm32_r32:
+                            Code.Add(0x89);
+                            Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), GetRM(I.p[1].mreg), 0));
+                            break;
+                        case Generic.g_loadaddress:
+                            {
+                                Code.Add(0xc7);
+                                Code.AddRange(ModRMSIB(0, I.p[1].mreg));
+                                var reloc = bf.CreateRelocation();
+                                reloc.DefinedIn = text_section;
+                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
+                                reloc.Addend = -4 + I.p[2].v;
+                                reloc.References = bf.CreateSymbol();
+                                reloc.References.DefinedIn = null;
+                                reloc.References.Name = I.p[2].str;
+                                reloc.References.ObjectType = binary_library.SymbolObjectType.Function;
+                                reloc.Offset = (ulong)Code.Count;
+                                bf.AddRelocation(reloc);
+                                AddImm32(Code, 0);
+                            }
+                            break;
+
+                        case x86_mov_r32_lab:
+                            {
+                                Code.Add(0x8b);
+                                Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), 5, 0, -1, -1, 0, 0, false));
+                                var reloc = bf.CreateRelocation();
+                                reloc.DefinedIn = text_section;
+                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
+                                reloc.Addend = -4 + I.p[2].v;
+                                reloc.References = bf.CreateSymbol();
+                                reloc.References.DefinedIn = null;
+                                reloc.References.Name = I.p[2].str;
+                                reloc.References.ObjectType = binary_library.SymbolObjectType.Object;
+                                reloc.Offset = (ulong)Code.Count;
+                                bf.AddRelocation(reloc);
+                                AddImm32(Code, 0);
+                            }
+                            break;
+
+                        case x86_mov_lab_r32:
+                            {
+                                Code.Add(0x89);
+                                Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), 5, 0, -1, -1, 0, 0, false));
+                                var reloc = bf.CreateRelocation();
+                                reloc.DefinedIn = text_section;
+                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
+                                reloc.Addend = -4 + I.p[1].v;
+                                reloc.References = bf.CreateSymbol();
+                                reloc.References.DefinedIn = null;
+                                reloc.References.Name = I.p[1].str;
+                                reloc.References.ObjectType = binary_library.SymbolObjectType.Object;
+                                reloc.Offset = (ulong)Code.Count;
+                                bf.AddRelocation(reloc);
+                                AddImm32(Code, 0);
+                            }
+                            break;
+
+                        case x86_imul_r32_rm32_imm32:
+                            Code.Add(0x69);
+                            Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                            AddImm32(Code, I.p[3].v);
+                            break;
+
+                        case x86_mov_r32_rm32sib:
+                            Code.Add(0x8b);
+                            Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), 4, 0, GetRM(I.p[3].mreg), GetR(I.p[2].mreg)));
+                            break;
+
+                        case x86_mov_r32_rm32disp:
+                            Code.Add(0x8b);
+                            Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, -1, (int)I.p[3].v));
+                            break;
 
                         default:
                             throw new NotImplementedException();
@@ -266,13 +371,27 @@ namespace libtysila4.target.x86
             c.Add((byte)((v >> 24) & 0xff));
         }
 
-        private IEnumerable<byte> ModRM(Reg r, Reg rm)
+        private IEnumerable<byte> ModRMSIB(Reg r, Reg rm)
+        {
+            int r_val = GetR(r);
+            int rm_val, mod_val, disp_len, disp_val;
+            GetModRM(rm, out rm_val, out mod_val, out disp_len, out disp_val);
+            return ModRMSIB(r_val, rm_val, mod_val, -1, -1, disp_len, disp_val, rm.Equals(r_ebp));
+        }
+
+        private IEnumerable<byte> ModRMSIB(int r, Target.Reg rm)
+        {
+            int rm_val, mod_val, disp_len, disp_val;
+            GetModRM(rm, out rm_val, out mod_val, out disp_len, out disp_val);
+            return ModRMSIB(r, rm_val, mod_val, -1, -1, disp_len, disp_val, rm.Equals(r_ebp));
+        }
+        /* private IEnumerable<byte> ModRM(Reg r, Reg rm)
         {
             int r_val = GetR(r);
             int rm_val, mod_val, disp_len, disp_val;
             GetModRM(rm, out rm_val, out mod_val, out disp_len, out disp_val);
             return ModRM(r_val, rm_val, mod_val, disp_len, disp_val);
-        }
+        } */
 
         private int GetR(Reg r)
         {
@@ -318,12 +437,12 @@ namespace libtysila4.target.x86
             throw new NotSupportedException();
         }
 
-        private IEnumerable<byte> ModRM(int r, Target.Reg rm)
+        /* private IEnumerable<byte> ModRM(int r, Target.Reg rm)
         {
             int rm_val, mod_val, disp_len, disp_val;
             GetModRM(rm, out rm_val, out mod_val, out disp_len, out disp_val);
             return ModRM(r, rm_val, mod_val, disp_len, disp_val);
-        }
+        } */
 
         private void GetModRM(Reg rm, out int rm_val, out int mod_val, out int disp_len, out int disp_val)
         {
@@ -400,9 +519,97 @@ namespace libtysila4.target.x86
             throw new NotSupportedException();
         }
 
-        private IEnumerable<byte> ModRM(int r, int rm, int mod, int disp_len = 0, int disp = 0)
+        /* private IEnumerable<byte> ModRM(int r, int rm, int mod, int disp_len = 0, int disp = 0)
         {
             yield return (byte)(mod << 6 | r << 3 | rm);
+            for (int i = 0; i < disp_len; i++)
+                yield return (byte)(disp >> (8 * i));
+        } */
+
+        private IEnumerable<byte> ModRMSIB(int r, int rm, int mod,
+            int index = -1, int scale = -1, int disp_len = 0,
+            int disp = 0, bool rm_is_ebp = true)
+        {
+            /* catch the case where we're trying to do something to esp
+                or ebp without an sib byte */
+
+            int _base = -1;
+            int ss = -1;
+            bool has_sib = false;
+
+            if (index >= 0)
+            {
+                _base = rm;
+                has_sib = true;
+                rm = 4;
+                if (mod == 3)
+                    throw new NotSupportedException("SIB addressing with mod == 3");
+                if (scale == -1)
+                    scale = 1;
+            }
+            else if (rm == 4 && mod != 3)
+            {
+                _base = 4;
+                index = 4;
+                has_sib = true;
+            }
+            else if(rm == 5 && mod == 0 && rm_is_ebp)
+            {
+                _base = 5;
+                index = 4;
+                ss = 0;
+                if (disp_len == 0)
+                {
+                    disp = 0;
+                    disp_len = 1;
+                }
+                has_sib = true;
+            }
+
+            if(disp_len == -1 && mod == 2)
+            {
+                if (disp == 0)
+                    disp_len = 0;
+                else if (disp >= sbyte.MinValue && disp <= sbyte.MaxValue)
+                    disp_len = 1;
+                else
+                    disp_len = 4;
+            }
+
+            if (disp_len == 1)
+                mod = 1;
+            else if (disp_len == 4)
+                mod = 2;
+
+            yield return (byte)(mod << 6 | r << 3 | rm);
+
+            if(has_sib)
+            {
+                if(ss == -1)
+                {
+                    switch(scale)
+                    {
+                        case -1:
+                        case 1:
+                            ss = 0;
+                            break;
+                        case 2:
+                            ss = 1;
+                            break;
+                        case 4:
+                            ss = 2;
+                            break;
+                        case 8:
+                            ss = 4;
+                            break;
+                        default:
+                            throw new NotSupportedException("Invalid SIB scale: " + scale.ToString());
+                    }
+                }
+
+                yield return (byte)(ss << 6 | index << 3 | _base);
+            }
+
             for (int i = 0; i < disp_len; i++)
                 yield return (byte)(disp >> (8 * i));
         }

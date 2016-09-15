@@ -40,9 +40,9 @@ namespace libtysila4.target
 
             int[] lv_locs = new int[lv_count];
             int cur_loc = 0;
+            uint token;
             for(int i = 0; i < lv_count; i++)
             {
-                uint token;
                 int type = g.cg._m.GetType(ref idx, out token);
                 int t_size = t.GetSize(type, token);
                 lv_locs[i] = cur_loc;
@@ -53,6 +53,47 @@ namespace libtysila4.target
                 int diff = cur_loc % t.GetPointerSize();
                 if (diff != 0)
                     cur_loc = cur_loc - diff + t.GetPointerSize();
+            }
+
+            /* Do the same for local args */
+            int la_count = g.cg._m.GetMethodDefSigParamCountIncludeThis(
+                g.cg._mdef_sig);
+            int[] la_locs = new int[la_count];
+            int la_count2 = g.cg._m.GetMethodDefSigParamCount(
+                g.cg._mdef_sig);
+            int laidx = 0;
+            if(la_count != la_count2)
+            {
+                var this_size = t.GetCTSize(ir.Opcode.ct_object);
+                la_locs[laidx++] = cur_loc;
+                cur_loc += this_size;
+            }
+            idx = g.cg._m.GetMethodDefSigRetTypeIndex(
+                g.cg._mdef_sig);
+            // pass by rettype
+            g.cg._m.GetType(ref idx, out token);
+
+            var cc = t.cc_map["sysv"];
+            int stack_loc = 0;
+            var la_phys_locs = t.GetRegLocs(new ir.Param
+            {
+                m = g.cg._m,
+                v2 = g.cg._mdef_sig
+            }, ref stack_loc, cc);
+            g.incoming_args = la_phys_locs;
+
+            for(int i = 0; i < la_count2; i++)
+            {
+                var mreg = la_phys_locs[i];
+                if (mreg.type == Target.rt_stack)
+                    la_locs[laidx++] = -1 - mreg.stack_loc;
+                else
+                {
+                    var type = g.cg._m.GetType(ref idx, out token);
+                    var la_size = t.GetSize(type, token);
+                    la_locs[laidx++] = cur_loc;
+                    cur_loc += la_size;
+                }
             }
 
             /* Iterate through code, changing as required */
@@ -72,6 +113,23 @@ namespace libtysila4.target
                             mcn.insts.Insert(i, inst);
                             i++;
                         }
+
+                        for(int j = 0; j < la_count2; j++)
+                        {
+                            var dest = la_locs[j];
+                            var src = la_phys_locs[j];
+
+                            if(src.type != Target.rt_stack)
+                            {
+                                var moves = t.CreateMove(src, t.GetLVLocation(dest, cur_loc));
+                                foreach(var move in moves)
+                                {
+                                    mcn.insts.Insert(i, move);
+                                    i++;
+                                }
+                            }
+                        }
+
                         i--;
                     }
                     else
@@ -82,6 +140,11 @@ namespace libtysila4.target
                             {
                                 p.t = ir.Opcode.vl_mreg;
                                 p.mreg = t.GetLVLocation(lv_locs[(int)p.v], cur_loc);
+                            }
+                            else if(p.IsLA)
+                            {
+                                p.t = ir.Opcode.vl_mreg;
+                                p.mreg = t.GetLVLocation(la_locs[(int)p.v], cur_loc);
                             }
                         }
                     }

@@ -14,7 +14,8 @@ intmap("libtysila4.target", "Generic", "g", "insts", "init_instrs", [
 	"postcall",
 	"setupstack",
 	"savecalleepreserves",
-	"restorecalleepreserves"
+	"restorecalleepreserves",
+	"loadaddress"
 ]);
 
 // Include machine specific definitions here

@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila4\ir\IrOpcodes.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 18:10:58 on 29 August 2016
+ * It was generated at 15:22:20 on 15 September 2016
  * from D:\tysos\branches\tysila3\libtysila4\ir\IrOpcodes.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -71,6 +71,14 @@ namespace libtysila4.ir
 		public const int oc_br = 28;
 		public const int oc_brif = 29;
 		public const int oc_enter = 30;
+		public const int oc_conv = 31;
+		public const int oc_stind = 32;
+		public const int oc_ldind = 33;
+		public const int oc_ldstr = 34;
+		public const int oc_ldlabcontents = 35;
+		public const int oc_ldlabaddr = 36;
+		public const int oc_stlabcontents = 37;
+		public const int oc_swap = 38;
 		
 		internal static void init_oc()
 		{
@@ -87,6 +95,14 @@ namespace libtysila4.ir
 			oc_names[28] = "br";
 			oc_names[29] = "brif";
 			oc_names[30] = "enter";
+			oc_names[31] = "conv";
+			oc_names[32] = "stind";
+			oc_names[33] = "ldind";
+			oc_names[34] = "ldstr";
+			oc_names[35] = "ldlabcontents";
+			oc_names[36] = "ldlabaddr";
+			oc_names[37] = "stlabcontents";
+			oc_names[38] = "swap";
 		}
 	}
 }
@@ -95,33 +111,33 @@ namespace libtysila4.ir
 {
 	partial class Opcode
 	{
-		public const int cc_always = 31;
-		public const int cc_never = 32;
-		public const int cc_eq = 33;
-		public const int cc_ne = 34;
-		public const int cc_gt = 35;
-		public const int cc_ge = 36;
-		public const int cc_lt = 37;
-		public const int cc_le = 38;
-		public const int cc_a = 39;
-		public const int cc_ae = 40;
-		public const int cc_b = 41;
-		public const int cc_be = 42;
+		public const int cc_always = 39;
+		public const int cc_never = 40;
+		public const int cc_eq = 41;
+		public const int cc_ne = 42;
+		public const int cc_gt = 43;
+		public const int cc_ge = 44;
+		public const int cc_lt = 45;
+		public const int cc_le = 46;
+		public const int cc_a = 47;
+		public const int cc_ae = 48;
+		public const int cc_b = 49;
+		public const int cc_be = 50;
 		
 		internal static void init_cc()
 		{
-			cc_names[31] = "always";
-			cc_names[32] = "never";
-			cc_names[33] = "eq";
-			cc_names[34] = "ne";
-			cc_names[35] = "gt";
-			cc_names[36] = "ge";
-			cc_names[37] = "lt";
-			cc_names[38] = "le";
-			cc_names[39] = "a";
-			cc_names[40] = "ae";
-			cc_names[41] = "b";
-			cc_names[42] = "be";
+			cc_names[39] = "always";
+			cc_names[40] = "never";
+			cc_names[41] = "eq";
+			cc_names[42] = "ne";
+			cc_names[43] = "gt";
+			cc_names[44] = "ge";
+			cc_names[45] = "lt";
+			cc_names[46] = "le";
+			cc_names[47] = "a";
+			cc_names[48] = "ae";
+			cc_names[49] = "b";
+			cc_names[50] = "be";
 		}
 	}
 }
@@ -152,23 +168,23 @@ namespace libtysila4.ir
 {
 	partial class Opcode
 	{
-		public const int ct_unknown = 43;
-		public const int ct_int32 = 44;
-		public const int ct_int64 = 45;
-		public const int ct_intptr = 46;
-		public const int ct_float = 47;
-		public const int ct_object = 48;
-		public const int ct_ref = 49;
+		public const int ct_unknown = 51;
+		public const int ct_int32 = 52;
+		public const int ct_int64 = 53;
+		public const int ct_intptr = 54;
+		public const int ct_float = 55;
+		public const int ct_object = 56;
+		public const int ct_ref = 57;
 		
 		internal static void init_ct()
 		{
-			ct_names[43] = "unknown";
-			ct_names[44] = "int32";
-			ct_names[45] = "int64";
-			ct_names[46] = "intptr";
-			ct_names[47] = "float";
-			ct_names[48] = "object";
-			ct_names[49] = "ref";
+			ct_names[51] = "unknown";
+			ct_names[52] = "int32";
+			ct_names[53] = "int64";
+			ct_names[54] = "intptr";
+			ct_names[55] = "float";
+			ct_names[56] = "object";
+			ct_names[57] = "ref";
 		}
 	}
 }
@@ -230,6 +246,10 @@ namespace libtysila4.ir
 		{
 			oc_pushes_map[oc_call] = get_call_rettype;
 			oc_pushes_map[oc_store] = get_store_pushtype;
+			oc_pushes_map[oc_add] = get_binnumop_pushtype;
+			oc_pushes_map[oc_sub] = get_binnumop_pushtype;
+			oc_pushes_map[oc_conv] = get_conv_pushtype;
+			oc_pushes_map[oc_ldstr] = get_object_pushtype;
 		}
 	}
 }

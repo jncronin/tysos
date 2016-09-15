@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using libtysila4.ir;
 
 namespace libtysila4.target
 {
@@ -67,9 +68,11 @@ namespace libtysila4.target
         protected internal abstract void SetBranchDest(MCInst i, ir.Param d);
         protected internal abstract Reg GetLVLocation(int lv_loc, int lv_size);
         protected internal abstract MCInst[] SetupStack(int lv_size);
+        protected internal abstract MCInst[] CreateMove(Reg src, Reg dest);
 
         public binary_library.IBinaryFile bf;
         public binary_library.ISection text_section;
+        public StringTable st;
 
         public virtual IEnumerable<graph.Graph.PassDelegate> GetOutputMCPasses()
         {
@@ -299,9 +302,19 @@ namespace libtysila4.target
                 irnode.is_mc = true;
                 return;
             }
-
-            switch(irnode.oc)
+            /* Special case some object instructions we can rewrite a bit */
+            switch (irnode.oc)
             {
+                case ir.Opcode.oc_ldstr:
+                    if (LowerLdStr(irnode, ref next_temp_reg))
+                        return;
+                    break;
+
+                case ir.Opcode.oc_ldlabaddr:
+                    if (LowerLdLabAddr(irnode, ref next_temp_reg))
+                        return;
+                    break;
+
                 case ir.Opcode.oc_enter:
                     if (irnode.mcinsts == null)
                         irnode.mcinsts = new List<MCInst>();
@@ -311,6 +324,55 @@ namespace libtysila4.target
                     return;
             }
             throw new Exception("Unable to lower " + irnode.ToString());
+        }
+
+        private bool LowerLdLabAddr(Opcode irnode, ref int next_temp_reg)
+        {
+            var offset = irnode.uses[0].v;
+            var lab = irnode.uses[0].str;
+
+            irnode.mcinsts = new List<MCInst>();
+            irnode.mcinsts.Add(new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = Opcode.vl_str, str = "loadaddress", v = Generic.g_loadaddress },
+                    irnode.defs[0],
+                    new Param { t = Opcode.vl_c, str = lab, v = offset },
+                }
+            });
+
+            return true;
+        }
+
+
+        private bool LowerLdStr(Opcode irnode, ref int next_temp_reg)
+        {
+            var str_offset = irnode.uses[0].v;
+            var m = irnode.uses[0].m;
+            var strtab_lab = st.GetStringTableName();
+
+            // Ensure top byte is 0x70
+            if ((str_offset & 0xff000000U) != 0x70000000U)
+                throw new Exception("Invalid string token: " + str_offset.ToString());
+            str_offset &= 0x00ffffffU;
+
+            // Get offset within string table
+            var st_offset = st.GetStringAddress(m.GetString((int)str_offset),
+                this);
+
+            irnode.mcinsts = new List<MCInst>();
+            irnode.mcinsts.Add(new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = Opcode.vl_str, str = "loadaddress", v = Generic.g_loadaddress },
+                    irnode.defs[0],
+                    new Param { t = Opcode.vl_c, str = strtab_lab, v = st_offset },
+                }
+            });
+
+            return true;
         }
 
         static Target()
@@ -406,6 +468,7 @@ namespace libtysila4.target
                     return 4;
                 case ir.Opcode.ct_int64:
                     return 8;
+                case ir.Opcode.ct_intptr:
                 case ir.Opcode.ct_object:
                 case ir.Opcode.ct_ref:
                     return GetCTSize(ptype);
@@ -416,7 +479,7 @@ namespace libtysila4.target
             }
         }
 
-        protected virtual Reg[] GetRegLocs(ir.Param csite,
+        protected internal virtual Reg[] GetRegLocs(ir.Param csite,
             ref int stack_loc,
             Dictionary<int, int[]> cc)
         {

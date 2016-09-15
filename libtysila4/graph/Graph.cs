@@ -45,6 +45,8 @@ namespace libtysila4.graph
 
         public int next_vreg_id;
 
+        public target.Target.Reg[] incoming_args;
+
         public List<BaseNode> LinearStream = new List<BaseNode>();
         public virtual string LinearStreamString
         {

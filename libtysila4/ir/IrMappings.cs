@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila4\ir\IrMappings.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 18:10:58 on 29 August 2016
+ * It was generated at 15:22:20 on 15 September 2016
  * from D:\tysos\branches\tysila3\libtysila4\ir\IrMappings.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -52,6 +52,12 @@ namespace libtysila4.ir
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.brif1 }] = brif1;
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.br }] = br;
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.cmp, cil.Opcode.SimpleOpcode.ldc, cil.Opcode.SimpleOpcode.cmp }] = cmp_ldc_cmp;
+			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.binnumop }] = binnumops;
+			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.conv }] = conv;
+			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.stind }] = stind;
+			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.ldstr }] = ldstr;
+			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.ldfld }] = ldfld;
+			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.stfld }] = stfld;
 		}
 	}
 }

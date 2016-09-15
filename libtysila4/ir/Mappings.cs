@@ -35,7 +35,7 @@ namespace libtysila4.ir
             = new Dictionary<OCList<cil.Opcode.SingleOpcodes>, Handler>(
                 new GenericEqualityComparer<OCList<cil.Opcode.SingleOpcodes>>());
 
-        delegate Opcode[] Handler(cil.CilNode start);
+        delegate Opcode[] Handler(cil.CilNode start, target.Target t);
 
         static IrGraph()
         {
@@ -48,13 +48,13 @@ namespace libtysila4.ir
             init_single_map();
         }
 
-        static Opcode[] ld_ld_cmp(CilNode start)
+        static Opcode[] ld_ld_cmp(CilNode start, target.Target t)
         {
             var lv1 = GetParam(start);
             var lv2 = GetParam((CilNode)start.n.Next1.c);
             var cmp_node = start.n.Next1.Next1.c as CilNode;
 
-            var cops = cmp(cmp_node);
+            var cops = cmp(cmp_node, t);
             if (cops == null)
                 return null;
 
@@ -64,12 +64,12 @@ namespace libtysila4.ir
             return cops;
         }
 
-        static Opcode[] ld_cmp(CilNode start)
+        static Opcode[] ld_cmp(CilNode start, target.Target t)
         {
             var lv1 = GetParam(start);
             var cmp_node = start.n.Next1.c as CilNode;
 
-            var cops = cmp(cmp_node);
+            var cops = cmp(cmp_node, t);
             if (cops == null)
                 return null;
 
@@ -79,7 +79,7 @@ namespace libtysila4.ir
             return cops;
         }
 
-        static Opcode[] cmp(CilNode start)
+        static Opcode[] cmp(CilNode start, target.Target t)
         {
             var cc = Opcode.cc_double_map[start.opcode.opcode2];
             Opcode oc = new Opcode
@@ -93,7 +93,7 @@ namespace libtysila4.ir
             return new Opcode[] { oc };
         }
 
-        static Opcode[] cmp_ldc_cmp(CilNode start)
+        static Opcode[] cmp_ldc_cmp(CilNode start, target.Target t)
         {
             var cmp1 = start;
             var ldc = start.n.Next1.c as CilNode;
@@ -119,7 +119,7 @@ namespace libtysila4.ir
             };
         }
 
-        static Opcode[] ld_st(cil.CilNode start)
+        static Opcode[] ld_st(cil.CilNode start, target.Target t)
         {
             var lva = GetParam(start);
             var lvb = GetParam((cil.CilNode)start.n.Next1.c);
@@ -135,7 +135,7 @@ namespace libtysila4.ir
             } };
         }
 
-        static Opcode[] st_lv_st(cil.CilNode start)
+        static Opcode[] st_lv_st(cil.CilNode start, target.Target t)
         {
             var lv = GetParam(start);
 
@@ -149,43 +149,8 @@ namespace libtysila4.ir
 
 
 
-        static Opcode[] call(cil.CilNode start)
-        {
-            metadata.MetadataStream m;
-            uint token;
-            start.GetToken(out m, out token);
-            int table_id, row;
-            m.InterpretToken(token, out table_id, out row);
 
-            metadata.MetadataStream method_m;
-            int sig_idx;
-            int m_row = m.GetMethodDefRow(table_id, row, out method_m,
-                out sig_idx);
-
-            int param_count = method_m.GetMethodDefSigParamCountIncludeThis(sig_idx);
-            int ret_idx = method_m.GetMethodDefSigRetTypeIndex(sig_idx);
-            uint ret_token;
-            int ret_type = method_m.GetType(ref ret_idx, out ret_token);
-
-            bool is_void_ret = false;
-            if (ret_type == 0x01)
-                is_void_ret = true;
-
-            Param[] defs;
-            if (is_void_ret)
-                defs = new Param[] { };
-            else
-                defs = new Param[] { new Param { t = Opcode.vl_stack, v = 0 } };
-
-            Param[] uses = new Param[param_count + 1];
-            uses[0] = new Param { t = Opcode.vl_call_target, v = m_row, v2 = sig_idx, m = method_m };
-            for (int i = 0; i < param_count; i++)
-                uses[param_count - i] = new Param { t = Opcode.vl_stack, v = i };
-
-            return new Opcode[] { new Opcode { oc = Opcode.oc_call, defs = defs, uses = uses } };
-        }
-
-        static Opcode[] st_st_lv(cil.CilNode start)
+        static Opcode[] st_st_lv(cil.CilNode start, target.Target t)
         {
             var lv = GetParam(start);
 
@@ -197,33 +162,10 @@ namespace libtysila4.ir
             } };
         }
 
-        static Opcode[] call_stloc(cil.CilNode start)
-        {
-            var cops = call(start);
-            if (cops == null)
-                return null;
-
-            var lv = GetParam((cil.CilNode)start.n.Next1.c);
-
-            foreach (var cop in cops)
-            {
-                if (cop.oc == Opcode.oc_call)
-                {
-                    if (cop.defs.Length == 1)
-                    {
-                        cop.defs[0] = lv;
-                        return cops;
-                    }
-                    return null;
-                }
-            }
-            return null;
-        }
-
-        static Opcode[] nop(CilNode start)
+        static Opcode[] nop(CilNode start, target.Target t)
         { return new Opcode[] { new Opcode { oc = Opcode.oc_nop } }; }
 
-        static Opcode[] brtrue(CilNode start)
+        static Opcode[] brtrue(CilNode start, target.Target t)
         {
             return new Opcode[] { new Opcode { oc = Opcode.oc_brif,
                 cc = Opcode.cc_ne,
@@ -232,7 +174,7 @@ namespace libtysila4.ir
             } };
         }
 
-        static Opcode[] brfalse(CilNode start)
+        static Opcode[] brfalse(CilNode start, target.Target t)
         {
             return new Opcode[] { new Opcode { oc = Opcode.oc_brif,
                 cc = Opcode.cc_eq,
@@ -241,7 +183,7 @@ namespace libtysila4.ir
             } };
         }
 
-        static Opcode[] brif1(CilNode start)
+        static Opcode[] brif1(CilNode start, target.Target t)
         {
             var cc = Opcode.cc_single_map[start.opcode.opcode1];
             return new Opcode[] { new Opcode { oc = Opcode.oc_brif,
@@ -251,7 +193,7 @@ namespace libtysila4.ir
             } };
         }
 
-        static Opcode[] br(CilNode start)
+        static Opcode[] br(CilNode start, target.Target t)
         {
             return new Opcode[] { new Opcode { oc = Opcode.oc_br,
                 uses = new Param[] { },
@@ -259,7 +201,7 @@ namespace libtysila4.ir
             } };
         }
 
-        static Opcode[] ret(cil.CilNode start)
+        static Opcode[] ret(cil.CilNode start, target.Target t)
         {
             var cg = (cil.CilGraph)start.n.g;
             int ret_idx = cg._m.GetMethodDefSigRetTypeIndex(cg._mdef_sig);
@@ -279,10 +221,10 @@ namespace libtysila4.ir
             return new Opcode[] { new Opcode { oc = Opcode.oc_ret, defs = new Param[] { }, uses = uses } };
         }
 
-        static Opcode[] ld_ret(cil.CilNode start)
+        static Opcode[] ld_ret(cil.CilNode start, target.Target t)
         {
             var rn = (cil.CilNode)start.n.Next1.c;
-            var rops = ret(rn);
+            var rops = ret(rn, t);
             if (rops == null)
                 return null;
 
@@ -297,7 +239,7 @@ namespace libtysila4.ir
             return rops;
         }
 
-        static Opcode[] stloc_ldloc(cil.CilNode start)
+        static Opcode[] stloc_ldloc(cil.CilNode start, target.Target t)
         {
             int lv1 = start.GetLocalVarLoc();
             int lv2 = ((cil.CilNode)start.n.Next1.c).GetLocalVarLoc();

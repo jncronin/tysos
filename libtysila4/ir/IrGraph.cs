@@ -86,7 +86,7 @@ namespace libtysila4.ir
 
                         if (simple_map.TryGetValue(oclist, out h))
                         {
-                            var l = h((CilNode)bb[start_idx].c);
+                            var l = h((CilNode)bb[start_idx].c, t);
 
                             if (l != null)
                             {

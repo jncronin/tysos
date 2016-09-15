@@ -127,7 +127,7 @@ namespace libtysila4.ir
             = new Dictionary<int, string>(
                 new GenericEqualityComparer<int>());
 
-        public delegate int GetDefTypeHandler(Opcode start);
+        public delegate int GetDefTypeHandler(Opcode start, target.Target t);
 
 
         static Opcode()
@@ -162,11 +162,14 @@ namespace libtysila4.ir
         public int ct = Opcode.ct_unknown;
         public int ssa_idx = -1;
 
+        public bool stack_abs = false;
+
         public enum UseDefType { Unknown, Use, Def };
         public UseDefType ud = UseDefType.Unknown;
 
         public bool IsStack { get { return t == Opcode.vl_stack || t == Opcode.vl_stack32 || t == Opcode.vl_stack64; } }
         public bool IsLV { get { return t == Opcode.vl_lv || t == Opcode.vl_lv32 || t == Opcode.vl_lv64; } }
+        public bool IsLA { get { return t == Opcode.vl_arg || t == Opcode.vl_arg32 || t == Opcode.vl_arg64; } }
         public bool IsMreg { get { return t == Opcode.vl_mreg; } }
         public bool IsUse { get { return ud == UseDefType.Use; } }
         public bool IsDef { get { return ud == UseDefType.Def; } }

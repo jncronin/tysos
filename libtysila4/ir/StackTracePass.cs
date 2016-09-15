@@ -31,7 +31,7 @@ namespace libtysila4.ir
         {
             IrGraph ir = g as IrGraph;
 
-            int next_vreg_id = 0;
+            int next_vreg_id = g.next_vreg_id;
 
             /* First, identify types of local args */
             var sig_idx = ir._m.GetMethodDefSigRetTypeIndex(ir._mdef_sig);
@@ -96,7 +96,7 @@ namespace libtysila4.ir
 
             TraceBasicBlockStack(0, bb_start_stacks, bb_end_stacks, 
                 bb_start_vreg_stacks, bb_end_vreg_stacks,
-                ir, ref next_vreg_id);
+                ir, ref next_vreg_id, t);
 
             ir.next_vreg_id = next_vreg_id;
 
@@ -106,7 +106,7 @@ namespace libtysila4.ir
         private static void TraceBasicBlockStack(int bb_id, 
             List<int>[] bb_start_stacks, List<int>[] bb_end_stacks, 
             List<int>[] bb_start_vreg_stacks, List<int>[] bb_end_vreg_stacks,
-            IrGraph g, ref int next_vreg_id)
+            IrGraph g, ref int next_vreg_id, target.Target t)
         {
             // if already done, skip this block
             if (bb_end_stacks[bb_id] != null)
@@ -122,16 +122,25 @@ namespace libtysila4.ir
             List<int> cur_vreg_stack = new List<int>(bb_start_vreg_stack);
             foreach(var n in bb)
             {
+                var c = n.c as Opcode;
+                // Specially handle swap statement
+                if(c.oc == Opcode.oc_swap)
+                {
+                    var tmp = cur_stack[cur_stack.Count - 1];
+                    cur_stack[cur_stack.Count - 1] = cur_stack[cur_stack.Count - 2];
+                    cur_stack[cur_stack.Count - 2] = tmp;
+
+                    continue;
+                }
                 // First, identify the actual stack ids and var types of
                 //  all items on the stack in the uses column
 
                 int max_to_remove = -1;
-                var c = n.c as Opcode;
                 if (c.uses != null)
                 {
                     foreach (var use in c.uses)
                     {
-                        if (use.t == Opcode.vl_stack)
+                        if (use.t == Opcode.vl_stack && use.stack_abs == false)
                         {
                             if (use.v > max_to_remove)
                                 max_to_remove = (int)use.v;
@@ -159,7 +168,7 @@ namespace libtysila4.ir
                 {
                     foreach(var def in c.defs)
                     {
-                        if(def.t == Opcode.vl_stack)
+                        if(def.t == Opcode.vl_stack && def.stack_abs == false)
                         {
                             if (def.v != 0)
                                 throw new NotImplementedException();
@@ -169,7 +178,7 @@ namespace libtysila4.ir
                             int ct = def.ct;
                             if(ct == Opcode.ct_unknown)
                             {
-                                ct = Opcode.oc_pushes_map[c.oc](c);
+                                ct = Opcode.oc_pushes_map[c.oc](c, t);
                                 def.ct = ct;
                             }
                             def.v = next_vreg_id;
@@ -201,7 +210,7 @@ namespace libtysila4.ir
                     bb_start_vreg_stacks[next] = cur_vreg_stack;
                     TraceBasicBlockStack(next, bb_start_stacks,
                         bb_end_stacks, bb_start_vreg_stacks,
-                        bb_end_vreg_stacks, g, ref next_vreg_id);
+                        bb_end_vreg_stacks, g, ref next_vreg_id, t);
                 }
                 else
                 {

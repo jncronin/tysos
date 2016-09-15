@@ -46,7 +46,18 @@ namespace libtysila4.target.x86
                 case Opcode.oc_enter:
                     LowerEnter(irnode, ref next_temp_reg);
                     return;
-
+                case Opcode.oc_conv:
+                    LowerConv(irnode, ref next_temp_reg);
+                    return;
+                case Opcode.oc_stind:
+                    LowerStind(irnode, ref next_temp_reg);
+                    return;
+                case Opcode.oc_ldlabcontents:
+                    LowerLdLabContents(irnode, ref next_temp_reg);
+                    return;
+                case Opcode.oc_stlabcontents:
+                    LowerStLabContents(irnode, ref next_temp_reg);
+                    return;
             }
             base.MCLower(irnode, ref next_temp_reg);
         }
@@ -176,14 +187,24 @@ namespace libtysila4.target.x86
             return ret;
         }
 
+        /* Access to variables on the incoming stack is encoded as -address - 1 */
         protected internal override Reg GetLVLocation(int lv_loc, int lv_size)
         {
-            var disp = -lv_size + lv_loc;
+            int disp = 0;
+            if(lv_loc < 0)
+                disp = -lv_loc - 1 + 8;
+            else
+                disp = -lv_size + lv_loc;
             return new ContentsReg
             {
                 basereg = r_ebp,
                 disp = disp
             };
+        }
+
+        protected internal override MCInst[] CreateMove(Reg src, Reg dest)
+        {
+            throw new NotImplementedException();
         }
 
         protected internal override MCInst[] SetupStack(int lv_size)

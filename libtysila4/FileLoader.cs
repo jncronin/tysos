@@ -19,36 +19,17 @@
  * THE SOFTWARE.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using libtysila4.util;
-
-
-namespace libtysila4.target
+namespace libtysila4
 {
-    public class MangleCallsites
+    public abstract class FileLoader
     {
-        public static graph.Graph MangleCallsitesPass(graph.Graph g, Target t)
+        public class FileLoadResults
         {
-            foreach(var n in g.LinearStream)
-            {
-                var mcn = n.c as MCNode;
-
-                foreach(var I in mcn.all_insts)
-                {
-                    foreach(var p in I.p)
-                    {
-                        if(p.t == ir.Opcode.vl_call_target)
-                        {
-                            p.t = ir.Opcode.vl_str;
-                            p.str = p.m.MangleMethod((int)p.v, (int)p.v2);
-                        }
-                    }
-                }
-            }
-
-            return g;
+            public string FullFilename;
+            public string ModuleName;
+            public System.IO.Stream Stream;
         }
+
+        public abstract FileLoadResults LoadFile(string filename);
     }
 }
