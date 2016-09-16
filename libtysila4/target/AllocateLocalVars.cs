@@ -40,7 +40,6 @@ namespace libtysila4.target
 
             int[] lv_locs = new int[lv_count];
             int cur_loc = 0;
-            uint token;
             for(int i = 0; i < lv_count; i++)
             {
                 var type = g.cg._m.GetTypeSpec(ref idx, g.ms.gtparams,
@@ -79,7 +78,7 @@ namespace libtysila4.target
             var la_phys_locs = t.GetRegLocs(new ir.Param
             {
                 m = g.cg._m,
-                v2 = g.cg._mdef_sig
+                ms = g.ms,
             }, ref stack_loc, cc);
             g.incoming_args = la_phys_locs;
 

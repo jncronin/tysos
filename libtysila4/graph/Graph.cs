@@ -46,6 +46,7 @@ namespace libtysila4.graph
         public int BBCount { get { return bb_starts.Count; } }
 
         public int next_vreg_id;
+        internal util.Set lvars_for_simplifying = new util.Set();
 
         public target.Target.Reg[] incoming_args;
 

@@ -82,6 +82,7 @@ namespace tysila4
                 m.GetStringEntry(metadata.MetadataStream.tid_Module,
                 1, 1), al, t);
             t.st = st;
+            t.r = new libtysila4.CachingRequestor();
 
             /* for now, just assemble all public and protected
             non-generic methods in public types, plus the
@@ -141,6 +142,13 @@ namespace tysila4
                     libtysila4.libtysila.AssembleMethod(ms, bf, t, debug);
                 }
             }
+
+            while (!t.r.MethodRequestor.Empty)
+            {
+                libtysila4.libtysila.AssembleMethod(t.r.MethodRequestor.GetNext(),
+                    bf, t, debug);
+            }
+
             string d = debug.ToString();
 
             StreamWriter sw = new StreamWriter("debug.txt");

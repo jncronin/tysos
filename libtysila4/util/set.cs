@@ -155,6 +155,26 @@ namespace libtysila4.util
             return -1;
         }
 
+        public int get_last_set()
+        {
+            for (int i = b.Count - 1; i >= 0; i--)
+            {
+                var ul = b[i];
+
+                if (ul == 0)
+                    continue;
+
+                for (int bit_idx = 63; bit_idx >= 0; bit_idx--)
+                {
+                    if (((ul >> bit_idx) & 1UL) == 0)
+                        continue;
+                    return min_val + i * 64 + bit_idx;
+                }
+            }
+
+            return -1;
+        }
+
         public Set Clone()
         {
             var ret = new Set();

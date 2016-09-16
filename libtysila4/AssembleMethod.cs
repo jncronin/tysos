@@ -56,6 +56,7 @@ namespace libtysila4
             long code_size = 0;
             long lvar_sig_tok = 0;
             int boffset = 0;
+            bool has_exceptions = false;
 
             if ((flags & 0x3) == 0x2)
             {
@@ -73,6 +74,9 @@ namespace libtysila4
                 code_size = meth.ReadUInt(4);
                 lvar_sig_tok = meth.ReadUInt(8);
                 boffset = fat_hdr_len;
+
+                if ((flags & 0x8) == 0x8)
+                    has_exceptions = true;
             }
             else
                 throw new Exception("Invalid method header flags");
@@ -99,6 +103,7 @@ namespace libtysila4
                 ir.IrGraph.LowerCilGraph,
                 ir.StackTracePass.TraceStackPass,
                 target.Target.MCLowerPass,
+                target.SimplifyLocalVars.SimplifyLocalVarsPass,
                 graph.DominanceGraph.GenerateDominanceGraph,
                 target.SSA.ConvertToSSAPass,
                 target.Liveness.DoGenKill,
@@ -115,7 +120,8 @@ namespace libtysila4
 
             // Get first graph
             graph.Graph cg = cil.CilGraph.ReadCilStream(meth,
-                ms, boffset, (int)code_size, lvar_sig_tok);
+                ms, boffset, (int)code_size, lvar_sig_tok,
+                has_exceptions);
 
             // Run passes
             foreach (var pass in passes)

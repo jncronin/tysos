@@ -185,7 +185,38 @@ namespace libtysila4.target
 
         private void Freeze()
         {
-            throw new NotImplementedException();
+            var u = freezeWorklist.get_first_set();
+            freezeWorklist.unset(u);
+            simplifyWorklist.set(u);
+            FreezeMoves(u);
+        }
+
+        private void FreezeMoves(int u)
+        {
+            foreach (var m in worklistMoves)
+            {
+                var I = renumbered_insts[m];
+
+                // TODO - check these are the right way round
+                var x = t.GetMoveDest(I).ssa_idx;
+                var y = t.GetMoveSrc(I).ssa_idx;
+
+                int v;
+
+                if (GetAlias(y) == GetAlias(u))
+                    v = GetAlias(x);
+                else
+                    v = GetAlias(y);
+
+                activeMoves.unset(m);
+                frozenMoves.set(m);
+
+                if(NodeMoves(v).Empty && degree[v] < K)
+                {
+                    freezeWorklist.unset(v);
+                    simplifyWorklist.set(v);
+                }
+            }
         }
 
         private void Coalesce()
@@ -584,6 +615,7 @@ namespace libtysila4.target
         util.Set simplifyWorklist = new util.Set();
         util.Set worklistMoves = new util.Set();
         util.Set activeMoves = new util.Set();
+        util.Set frozenMoves = new util.Set();
         util.Set coalescedMoves = new Set();
         util.Set constrainedMoves = new Set();
         util.Set freezeWorklist = new util.Set();

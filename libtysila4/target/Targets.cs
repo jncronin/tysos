@@ -74,6 +74,7 @@ namespace libtysila4.target
         public binary_library.IBinaryFile bf;
         public binary_library.ISection text_section;
         public StringTable st;
+        public Requestor r;
 
         public virtual IEnumerable<graph.Graph.PassDelegate> GetOutputMCPasses()
         {
@@ -117,6 +118,7 @@ namespace libtysila4.target
 
             ret.cg = ig.cg;
             ret.ms = ig.ms;
+            ret.lvars_for_simplifying = ig.lvars_for_simplifying;
 
             foreach (var ir_node in ig.LinearStream)
                 t.MCLower(ir_node.c as ir.Opcode, ref input.next_vreg_id);

@@ -37,8 +37,9 @@ namespace libtysila4.ir
             var sig_idx = ir._m.GetMethodDefSigRetTypeIndex(ir._mdef_sig);
             var p_count = ir._m.GetMethodDefSigParamCount(ir._mdef_sig);
             var p_count_this = ir._m.GetMethodDefSigParamCountIncludeThis(ir._mdef_sig);
-            uint token;
-            ir._m.GetType(ref sig_idx, out token);
+
+            // skip rettype
+            ir._m.GetTypeSpec(ref sig_idx, g.ms.gtparams, g.ms.gmparams);
 
             ir.largs = new int[p_count_this];
             int next_larg_idx = 0;
@@ -50,9 +51,11 @@ namespace libtysila4.ir
             for(int i = 0; i < p_count; i++)
             {
                 bool is_req;
+                uint token;
                 while (ir._m.GetRetTypeCustomMod(ref sig_idx, out is_req, out token)) ;
 
-                var pt = ir._m.GetType(ref sig_idx, out token);
+                var pt = ir._m.GetTypeSpec(ref sig_idx, g.ms.gtparams, g.ms.gmparams);
+
                 ir.largs[next_larg_idx++] = Opcode.GetCTFromType(pt);
             }
 

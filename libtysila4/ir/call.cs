@@ -49,6 +49,7 @@ namespace libtysila4.ir
         static Opcode[] call(cil.CilNode start, metadata.MethodSpec ms,
             target.Target t)
         {
+            t.r.MethodRequestor.Request(ms);
 
             if (start.opcode.opcode1 == cil.Opcode.SingleOpcodes.callvirt)
             {

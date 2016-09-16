@@ -56,6 +56,7 @@ namespace libtysila4.ir
             ret._lvar_sig_tok = cg._lvar_sig_tok;
             ret.cg = cg;
             ret.ms = cg.ms;
+            ret.lvars_for_simplifying = cg.lvars_for_simplifying;
 
             if (special_meths == null)
                 special_meths = new SpecialMethods(cg._m);

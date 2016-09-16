@@ -39,7 +39,7 @@ namespace libtysila4.cil
 
         public static CilGraph ReadCilStream(metadata.DataInterface di,
             metadata.MethodSpec ms, int boffset, int length,
-            long lvar_sig_tok)
+            long lvar_sig_tok, bool has_exceptions = false)
         {
             CilGraph ret = new CilGraph();
             ret._m = ms.m;
@@ -51,6 +51,19 @@ namespace libtysila4.cil
 
             Dictionary<int, List<int>> offsets_before =
                 new Dictionary<int, List<int>>(new GenericEqualityComparer<int>());
+
+            // Get a list of all local vars
+            if (has_exceptions == false)
+            {
+                int table_id;
+                int row;
+                ms.m.InterpretToken((uint)lvar_sig_tok,
+                    out table_id, out row);
+                int idx = (int)ms.m.GetIntEntry(table_id, row, 0);
+                int lv_count = ms.m.GetLocalVarCount(ref idx);
+                for (int i = 0; i < lv_count; i++)
+                    ret.lvars_for_simplifying.set(i);
+            }
 
             // First, generate CilNodes for each instruction
             int offset = 0;
