@@ -74,8 +74,8 @@ namespace libtysila4.ir
                 ir.lvars = new int[lvar_count];
                 for (int i = 0; i < lvar_count; i++)
                 {
-                    var pt = ir._m.GetType(ref lvar_idx, out token);
-                    ir.lvars[i] = Opcode.GetCTFromType(pt);
+                    var pt_ts = ir._m.GetTypeSpec(ref lvar_idx, ir.ms.gtparams, ir.ms.gmparams);
+                    ir.lvars[i] = Opcode.GetCTFromType(pt_ts);
                 }
             }
 

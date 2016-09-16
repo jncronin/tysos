@@ -28,6 +28,8 @@ namespace libtysila4.graph
 {
     public class Graph
     {
+        public metadata.MethodSpec ms;
+
         public List<BaseNode> Starts = new List<BaseNode>();
         public List<BaseNode> Ends = new List<BaseNode>();
 

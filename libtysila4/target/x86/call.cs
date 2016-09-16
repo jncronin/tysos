@@ -82,7 +82,25 @@ namespace libtysila4.target.x86
             for (int i = 0; i < pcount; i++)
             {
                 Param[] ps = new Param[3];
-                ps[0] = new Param { t = Opcode.vl_str, str = "mov", v = x86_mov_rm32_r32 };
+                int opcode = x86_mov_rm32_r32;
+
+                switch(irnode.uses[i + 1].t)
+                {
+                    case Opcode.vl_c:
+                    case Opcode.vl_c32:
+                        opcode = x86_mov_rm32_imm32;
+                        break;
+
+                    case Opcode.vl_mreg:
+                    case Opcode.vl_stack:
+                    case Opcode.vl_stack32:
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
+                }
+
+                ps[0] = new Param { t = Opcode.vl_str, str = "mov", v = opcode };
                 var regloc = reglocs[i];
                 if (regloc.type == rt_stack)
                     regloc = new ContentsReg { basereg = r_esp, disp = regloc.stack_loc };

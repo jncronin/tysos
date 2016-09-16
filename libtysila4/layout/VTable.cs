@@ -47,6 +47,9 @@ namespace libtysila4.layout
 
         }
 
+        public static int GetVTableOffset(metadata.MethodSpec ms)
+        { return GetVTableOffset(ms.type, ms); }
+
         public static int GetVTableOffset(metadata.TypeSpec ts,
             metadata.MethodSpec ms)
         {

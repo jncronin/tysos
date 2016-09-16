@@ -84,7 +84,7 @@ multiinstr(name, oc_store, [ gprmem ], [ gprmem ], [
 
 multiinstr(name, oc_store, [ imm ], [ gprmem ], [
 	[ "x86_mov_rm32_imm32", "$d0", "$u0" ]
-], [ ], [ IntRegs ], 0);
+], [ 0 ], [ IntRegs ], 0);
 
 multiinstr(name, oc_store, [ gpr ], [ gprmem, gprmem ],
 	[	[ "x86_mov_rm32_r32", "$d0", "$u0" ],
@@ -214,6 +214,10 @@ ebxreg | esireg | edireg			// callee preserves
 cc_ret_sysv = cc(nspace, assembler, "ret_sysv",
 [
 	[ ct_int32, [ eax ] ],
+	[ ct_intptr, [ eax ] ],
+	[ ct_object, [ eax ] ],
+	[ ct_ref, [ eax ] ],
+
 	[ ct_int64, [ eaxedx ] ],
 ]);
 

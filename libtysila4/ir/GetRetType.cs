@@ -27,6 +27,34 @@ namespace libtysila4.ir
 {
     partial class Opcode
     {
+        internal static int GetCTFromType(metadata.TypeSpec ts)
+        {
+            switch(ts.stype)
+            {
+                case metadata.TypeSpec.SpecialType.None:
+                    if (ts.m.is_corlib && ts.m.simple_type_idx[ts.tdrow] != -1)
+                        return GetCTFromType(ts.m.simple_type_idx[ts.tdrow]);
+
+                    if (ts.IsValueType())
+                        throw new NotImplementedException();
+
+                    return ct_object;
+
+                case metadata.TypeSpec.SpecialType.SzArray:
+                case metadata.TypeSpec.SpecialType.Array:
+                    return ct_object;
+
+                case metadata.TypeSpec.SpecialType.MPtr:
+                    return ct_ref;
+
+                case metadata.TypeSpec.SpecialType.Ptr:
+                    return ct_intptr;
+
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
         internal static int GetCTFromType(int type)
         {
             switch (type)
@@ -70,7 +98,6 @@ namespace libtysila4.ir
                 case 0x1c:
                 case 0x1d:
                     return ct_object;
-
 
                 default:
                     throw new NotImplementedException();

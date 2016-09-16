@@ -43,8 +43,9 @@ namespace libtysila4.target
             uint token;
             for(int i = 0; i < lv_count; i++)
             {
-                int type = g.cg._m.GetType(ref idx, out token);
-                int t_size = t.GetSize(type, token);
+                var type = g.cg._m.GetTypeSpec(ref idx, g.ms.gtparams,
+                    g.ms.gmparams);
+                int t_size = t.GetSize(type);
                 lv_locs[i] = cur_loc;
 
                 cur_loc += t_size;
@@ -71,7 +72,7 @@ namespace libtysila4.target
             idx = g.cg._m.GetMethodDefSigRetTypeIndex(
                 g.cg._mdef_sig);
             // pass by rettype
-            g.cg._m.GetType(ref idx, out token);
+            g.cg._m.GetTypeSpec(ref idx, g.ms.gtparams, g.ms.gmparams);
 
             var cc = t.cc_map["sysv"];
             int stack_loc = 0;
@@ -89,8 +90,8 @@ namespace libtysila4.target
                     la_locs[laidx++] = -1 - mreg.stack_loc;
                 else
                 {
-                    var type = g.cg._m.GetType(ref idx, out token);
-                    var la_size = t.GetSize(type, token);
+                    var type = g.cg._m.GetTypeSpec(ref idx, g.ms.gtparams, g.ms.gmparams);
+                    var la_size = t.GetSize(type);
                     la_locs[laidx++] = cur_loc;
                     cur_loc += la_size;
                 }

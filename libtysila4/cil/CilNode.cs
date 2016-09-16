@@ -28,16 +28,15 @@ namespace libtysila4.cil
 {
     public class CilNode : graph.NodeContents
     {
-        public CilNode(metadata.MetadataStream metadata,
-            int typedef_row, int cil_offset)
+        public CilNode(metadata.MethodSpec ms, int cil_offset)
         {
-            m = metadata;
-            tdef_row = typedef_row;
+            m = ms.m;
             il_offset = cil_offset;
+            _ms = ms;
         }
 
         metadata.MetadataStream m;
-        int tdef_row;
+        metadata.MethodSpec _ms;
         public int il_offset;
 
         public Opcode opcode;

@@ -36,14 +36,23 @@ namespace libtysila4.ir
             int table_id, row;
             m.InterpretToken(token, out table_id, out row);
 
+
             metadata.MethodSpec ms;
-            metadata.TypeSpec ts;
-            if (m.GetMethodDefRow(table_id, row, out ts, out ms) == false)
+            if (m.GetMethodDefRow(table_id, row, out ms,
+                start.n.g.ms.gtparams,
+                start.n.g.ms.gmparams) == false)
                 throw new MissingMethodException();
+
+            return call(start, ms, t);
+        }
+
+        static Opcode[] call(cil.CilNode start, metadata.MethodSpec ms,
+            target.Target t)
+        {
 
             if (start.opcode.opcode1 == cil.Opcode.SingleOpcodes.callvirt)
             {
-                var vtbl_offset = layout.Layout.GetVTableOffset(ts, ms);
+                var vtbl_offset = layout.Layout.GetVTableOffset(ms);
 
                 if (vtbl_offset == 0)
                     throw new MissingMethodException();
@@ -55,26 +64,26 @@ namespace libtysila4.ir
 
             int param_count = ms.m.GetMethodDefSigParamCountIncludeThis(ms.msig);
             int ret_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
-            uint ret_token;
-            int ret_type = ms.m.GetType(ref ret_idx, out ret_token);
+            var ret_ts = ms.m.GetTypeSpec(ref ret_idx, ms.gtparams,
+                ms.gmparams);
 
             bool is_void_ret = false;
-            if (ret_type == 0x01)
+            if (ret_ts == null)
                 is_void_ret = true;
 
             Param[] defs;
             if (is_void_ret)
                 defs = new Param[] { };
             else
-                defs = new Param[] { new Param { t = Opcode.vl_stack, v = 0 } };
+                defs = new Param[] { new Param { t = Opcode.vl_stack, v = 0, ud = Param.UseDefType.Def } };
 
             Param[] uses = new Param[param_count + 1];
-            uses[0] = new Param { t = Opcode.vl_call_target, v = ms.mdrow, v2 = ms.msig, m = ms.m };
+            uses[0] = new Param { t = Opcode.vl_call_target, ms = ms, m = ms.m };
             for (int i = 0; i < param_count; i++)
-                uses[param_count - i] = new Param { t = Opcode.vl_stack, v = i };
+                uses[param_count - i] = new Param { t = Opcode.vl_stack, v = i, ud = Param.UseDefType.Use };
 
             /* Is this an internal call? */
-            var mname = ms.m.MangleMethod(ms.mdrow, ms.msig);
+            var mname = ms.m.MangleMethod(ms);
             var intcall = ir.intcall.intcall.do_intcall(mname,
                 defs, uses, start, t);
             if (intcall != null)

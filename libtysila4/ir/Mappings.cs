@@ -205,17 +205,16 @@ namespace libtysila4.ir
         {
             var cg = (cil.CilGraph)start.n.g;
             int ret_idx = cg._m.GetMethodDefSigRetTypeIndex(cg._mdef_sig);
-            uint ret_token;
-            int ret_type = cg._m.GetType(ref ret_idx, out ret_token);
+            var ret_type = cg._m.GetTypeSpec(ref ret_idx, cg.ms.gtparams, cg.ms.gmparams);
 
             Param[] uses;
-            if (ret_type == 0x01)
+            if (ret_type == null)
                 uses = new Param[1];
             else
                 uses = new Param[2];
 
-            uses[0] = new Param { t = Opcode.vl_call_target, v = cg._md_row, v2 = cg._mdef_sig, m = cg._m };
-            if (ret_type != 0x01)
+            uses[0] = new Param { t = Opcode.vl_call_target, ms = cg.ms, v = cg._md_row, v2 = cg._mdef_sig, m = cg._m };
+            if (ret_type != null)
                 uses[1] = new Param { t = Opcode.vl_stack, v = 0 };
 
             return new Opcode[] { new Opcode { oc = Opcode.oc_ret, defs = new Param[] { }, uses = uses } };

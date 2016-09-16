@@ -88,11 +88,7 @@ namespace libtysila4
             Label = mod_name + "_StringTable";
 
             var corlib = al.GetAssembly("mscorlib");
-            StringObject = new metadata.TypeSpec
-            {
-                m = corlib,
-                tdrow = corlib.GetTypeDefRow("String", "System")
-            };
+            StringObject = corlib.GetTypeSpec("System", "String");
             var fs_len = corlib.GetFieldDefRow("length", StringObject);
             length_offset = layout.Layout.GetFieldOffset(StringObject, fs_len,
                 t);

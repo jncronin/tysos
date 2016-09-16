@@ -42,7 +42,8 @@ namespace libtysila4.target
                         if(p.t == ir.Opcode.vl_call_target)
                         {
                             p.t = ir.Opcode.vl_str;
-                            p.str = p.m.MangleMethod((int)p.v, (int)p.v2);
+                            if(p.str == null)
+                                p.str = p.m.MangleMethod(p.ms);
                         }
                     }
                 }

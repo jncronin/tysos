@@ -116,6 +116,7 @@ namespace libtysila4.target
             var ig = input as ir.IrGraph;
 
             ret.cg = ig.cg;
+            ret.ms = ig.ms;
 
             foreach (var ir_node in ig.LinearStream)
                 t.MCLower(ir_node.c as ir.Opcode, ref input.next_vreg_id);
@@ -446,6 +447,26 @@ namespace libtysila4.target
             throw new NotSupportedException("Architecture does not support ct: " + ct.ToString());
         }
 
+        internal int GetSize(metadata.TypeSpec ts)
+        {
+            switch(ts.stype)
+            {
+                case metadata.TypeSpec.SpecialType.None:
+                    if(ts.m.is_corlib)
+                    {
+                        var simple = ts.m.simple_type_idx[ts.tdrow];
+                        if (simple != -1)
+                            return GetCTSize(ir.Opcode.GetCTFromType(simple));
+                    }
+                    if (ts.IsValueType())
+                        throw new NotImplementedException();
+                    return GetCTSize(Opcode.ct_object);
+
+                default:
+                    return GetCTSize(Opcode.ct_object);
+            }
+        }
+
         internal int GetSize(int ptype, uint token)
         {
             if (ptype == 0x11)
@@ -486,6 +507,15 @@ namespace libtysila4.target
         {
             var m = csite.m;
             var idx = (int)csite.v2;
+            metadata.TypeSpec[] gtparams = null;
+            metadata.TypeSpec[] gmparams = null;
+            if (csite.ms != null)
+            {
+                idx = csite.ms.msig;
+                m = csite.ms.m;
+                gtparams = csite.ms.gtparams;
+                gmparams = csite.ms.gmparams;
+            }
             Dictionary<int, int> cc_next = new Dictionary<int, int>();
 
             var pcount = m.GetMethodDefSigParamCountIncludeThis(idx);
@@ -495,68 +525,60 @@ namespace libtysila4.target
             bool is_req;
             uint token;
             while (m.GetRetTypeCustomMod(ref idx, out is_req, out token)) ;
-            m.GetType(ref idx, out token);
+            m.GetTypeSpec(ref idx, gtparams, gmparams);
 
             // Read types of parameters
             Target.Reg[] ret = new Target.Reg[pcount];
             for (int i = 0; i < pcount; i++)
             {
                 while (m.GetRetTypeCustomMod(ref idx, out is_req, out token)) ;
-                var v = m.GetType(ref idx, out token);
+                var v = m.GetTypeSpec(ref idx, gtparams, gmparams);
 
-                if (v == 0x11)
+                var ct = ir.Opcode.GetCTFromType(v);
+                Reg r = null;
+
+                int cur_cc_next;
+                if(cc_next.TryGetValue(ct, out cur_cc_next) == false)
+                    cur_cc_next = 0;
+
+                int[] cc_map;
+                if (cc.TryGetValue(ct, out cc_map))
                 {
-                    // value type - we also need to get its size
-                    throw new NotImplementedException();
+                    if (cur_cc_next >= cc_map.Length)
+                        cur_cc_next = cc_map.Length - 1;
+
+                    var reg_id = cc_map[cur_cc_next];
+                    if (regs[reg_id].type == rt_stack)
+                    {
+                        var size = GetCTSize(ct);
+                        Reg rstack = new Reg()
+                        {
+                            type = rt_stack,
+                            id = regs[reg_id].id,
+                            size = size,
+                            stack_loc = stack_loc,
+                            name = regs[reg_id].name,
+                            mask = regs[reg_id].mask
+                        };
+                        stack_loc += size;
+
+                        var diff = stack_loc % size;
+                        if (diff != 0)
+                            stack_loc = stack_loc + size - diff;
+                        r = rstack;
+                    }
+                    else
+                        r = regs[reg_id];
                 }
                 else
                 {
-                    var ct = ir.Opcode.GetCTFromType(v);
-                    Reg r = null;
+                    r = GetRegLoc(csite, ref stack_loc,
+                        cur_cc_next, ct);
 
-                    int cur_cc_next;
-                    if(cc_next.TryGetValue(ct, out cur_cc_next) == false)
-                        cur_cc_next = 0;
-
-                    int[] cc_map;
-                    if (cc.TryGetValue(ct, out cc_map))
-                    {
-                        if (cur_cc_next >= cc_map.Length)
-                            cur_cc_next = cc_map.Length - 1;
-
-                        var reg_id = cc_map[cur_cc_next];
-                        if (regs[reg_id].type == rt_stack)
-                        {
-                            var size = GetCTSize(ct);
-                            Reg rstack = new Reg()
-                            {
-                                type = rt_stack,
-                                id = regs[reg_id].id,
-                                size = size,
-                                stack_loc = stack_loc,
-                                name = regs[reg_id].name,
-                                mask = regs[reg_id].mask
-                            };
-                            stack_loc += size;
-
-                            var diff = stack_loc % size;
-                            if (diff != 0)
-                                stack_loc = stack_loc + size - diff;
-                            r = rstack;
-                        }
-                        else
-                            r = regs[reg_id];
-                    }
-                    else
-                    {
-                        r = GetRegLoc(csite, ref stack_loc,
-                            cur_cc_next, ct);
-
-                    }
-                    cc_next[ct] = cur_cc_next + 1;
-
-                    ret[i] = r;
                 }
+                cc_next[ct] = cur_cc_next + 1;
+
+                ret[i] = r;
             }
 
             return ret;

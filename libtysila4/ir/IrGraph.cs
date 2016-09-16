@@ -33,6 +33,8 @@ namespace libtysila4.ir
         internal uint _lvar_sig_tok;
         internal int[] lvars, largs;
 
+        static SpecialMethods special_meths;
+
         public static graph.Graph LowerCilGraph(graph.Graph g, target.Target t)
         {
             CilGraph cg = g as CilGraph;
@@ -53,6 +55,10 @@ namespace libtysila4.ir
             ret._mdef_sig = cg._mdef_sig;
             ret._lvar_sig_tok = cg._lvar_sig_tok;
             ret.cg = cg;
+            ret.ms = cg.ms;
+
+            if (special_meths == null)
+                special_meths = new SpecialMethods(cg._m);
 
             Dictionary<int, Opcode[]> cil_to_ir_map = new Dictionary<int, Opcode[]>();
 

@@ -297,6 +297,7 @@ namespace libtysila4.cil
             ret,
             nop,
             ldstr,
+            newobj
         }
 
         public enum PopBehaviour { Pop0 = 1, Pop1 = 2, PopI = 8, PopI8 = 32, PopR4 = 64, PopR8 = 128, PopRef = 256, VarPop = 512 };

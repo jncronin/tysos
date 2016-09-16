@@ -38,15 +38,16 @@ namespace libtysila4.cil
                 new Dictionary<int, CilNode>(new libtysila4.GenericEqualityComparer<int>());
 
         public static CilGraph ReadCilStream(metadata.DataInterface di,
-            metadata.MetadataStream m, int md_row, int boffset, int length,
+            metadata.MethodSpec ms, int boffset, int length,
             long lvar_sig_tok)
         {
             CilGraph ret = new CilGraph();
-            ret._m = m;
-            ret._md_row = md_row;
-            ret._mdef_sig = (int)m.GetIntEntry((int)metadata.MetadataStream.TableId.MethodDef,
-                md_row, 4);
+            ret._m = ms.m;
+            ret._md_row = ms.mdrow;
+            ret._mdef_sig = (int)ms.m.GetIntEntry((int)metadata.MetadataStream.TableId.MethodDef,
+                ms.mdrow, 4);
             ret._lvar_sig_tok = (uint)lvar_sig_tok;
+            ret.ms = ms;
 
             Dictionary<int, List<int>> offsets_before =
                 new Dictionary<int, List<int>>(new GenericEqualityComparer<int>());
@@ -55,7 +56,7 @@ namespace libtysila4.cil
             int offset = 0;
             while (offset < length)
             {
-                CilNode n = new CilNode(m, md_row, offset);
+                CilNode n = new CilNode(ms, offset);
 
                 /* Parse prefixes */
                 bool cont = true;

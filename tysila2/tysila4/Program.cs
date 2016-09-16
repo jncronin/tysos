@@ -63,10 +63,13 @@ namespace tysila4
             //var fname = "D:\\tysos\\branches\\tysila3\\libsupcs\\bin\\Release\\libsupcs.dll";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\test_002\bin\Release\test_002.exe";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\ifelse\ifelse.exe";
-            var fname = @"kernel.exe";
+            //var fname = @"kernel.exe";
+            var fname = @"test_005.exe";
 
             libtysila4.libtysila.AssemblyLoader al = new libtysila4.libtysila.AssemblyLoader(
                 new FileSystemFileLoader());
+
+            search_dirs.Add(@"..\..\mono\corlib");
 
             var m = al.GetAssembly(fname);
 
@@ -80,11 +83,63 @@ namespace tysila4
                 1, 1), al, t);
             t.st = st;
 
-            /* for now, just assemble all methods */
+            /* for now, just assemble all public and protected
+            non-generic methods in public types, plus the
+            entry point */
             StringBuilder debug = new StringBuilder();
             for(int i = 1; i <= m.table_rows[metadata.MetadataStream.tid_MethodDef]; i++)
             {
-                libtysila4.libtysila.AssembleMethod(i, 0, m, bf, t, debug);
+                metadata.MethodSpec ms = new metadata.MethodSpec
+                {
+                    m = m,
+                    mdrow = i,
+                    msig = 0
+                };
+
+                ms.type = new metadata.TypeSpec
+                {
+                    m = m,
+                    tdrow = m.methoddef_owners[ms.mdrow]
+                };
+
+                var mflags = m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
+                    i, 2);
+                var tflags = m.GetIntEntry(metadata.MetadataStream.tid_TypeDef,
+                    ms.type.tdrow, 0);
+
+                mflags &= 0x7;
+                tflags &= 0x7;
+
+                /* See if this is the entry point */
+                int tid, row;
+                m.InterpretToken(m.entry_point_token, out tid, out row);
+                if(tid == metadata.MetadataStream.tid_MethodDef)
+                {
+                    if(row == i)
+                    {
+                        var newsym = bf.CreateSymbol();
+                        newsym.Name = "kmain";
+                        newsym.DefinedIn = bf.GetTextSection();
+                        newsym.ObjectType = binary_library.SymbolObjectType.Function;
+                        newsym.Offset = (ulong)bf.GetTextSection().Data.Count;
+                        newsym.Size = 0;
+                        newsym.Type = binary_library.SymbolType.Global;
+                        newsym.DefinedIn.AddSymbol(newsym);
+
+                        mflags = 6;
+                        tflags = 1;
+                    }
+                }
+
+                ms.msig = (int)m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
+                    i, 4);
+
+                if (ms.type.IsGenericTemplate == false &&
+                    (mflags == 0x4 || mflags == 0x5 || mflags == 0x6) &&
+                    tflags != 0)
+                {
+                    libtysila4.libtysila.AssembleMethod(ms, bf, t, debug);
+                }
             }
             string d = debug.ToString();
 
@@ -103,34 +158,6 @@ namespace tysila4
 
             /* String table */
             st.WriteToOutput(bf, m, t);
-
-            /* add alias for entry point */
-            if(m.entry_point_token != 0)
-            {
-                int tid, row;
-                m.InterpretToken(m.entry_point_token, out tid, out row);
-                if(tid == metadata.MetadataStream.tid_MethodDef)
-                {
-                    metadata.TypeSpec ts;
-                    metadata.MethodSpec ms;
-                    if(m.GetMethodDefRow(tid, row, out ts, out ms))
-                    {
-                        var mname = m.MangleMethod(ms);
-                        var msym = bf.FindSymbol(mname);
-                        if(msym != null)
-                        {
-                            var newsym = bf.CreateSymbol();
-                            newsym.Name = "kmain";
-                            newsym.DefinedIn = msym.DefinedIn;
-                            newsym.ObjectType = msym.ObjectType;
-                            newsym.Offset = msym.Offset;
-                            newsym.Size = msym.Size;
-                            newsym.Type = msym.Type;
-                            newsym.DefinedIn.AddSymbol(newsym);
-                        }
-                    }
-                }
-            }
 
             bf.Filename = "output.o";
             bf.Write();

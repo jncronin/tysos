@@ -40,6 +40,7 @@
     <Compile Include="graph\DominanceGraph.cs" />
     <Compile Include="graph\Graph.cs" />
     <Compile Include="graph\Node.cs" />
+    <Compile Include="ir\obj.cs" />
     <Compile Include="ir\fld.cs" />
     <Compile Include="ir\GetRetType.cs" />
     <Compile Include="ir\intcall\intcall.cs" />
@@ -50,6 +51,7 @@
     <Compile Include="ir\Mappings.cs" />
     <Compile Include="ir\conv.cs" />
     <Compile Include="ir\call.cs" />
+    <Compile Include="ir\SpecialMethods.cs" />
     <Compile Include="ir\str.cs" />
     <Compile Include="ir\stind.cs" />
     <Compile Include="ir\numops.cs" />

@@ -28,14 +28,17 @@ namespace libtysila4
 {
     public partial class libtysila
     {
-        public static bool AssembleMethod(int mdef, int csite,
-            metadata.MetadataStream m,
+        public static bool AssembleMethod(metadata.MethodSpec ms,
             binary_library.IBinaryFile bf, target.Target t,
             StringBuilder debug_passes = null)
         {
             var ts = bf.GetTextSection();
             t.bf = bf;
             t.text_section = ts;
+
+            var csite = ms.msig;
+            var mdef = ms.mdrow;
+            var m = ms.m;
 
             // Get signature if not specified
             if (csite == 0)
@@ -75,7 +78,7 @@ namespace libtysila4
                 throw new Exception("Invalid method header flags");
 
             // Get mangled name for defining a symbol
-            var mangled_name = m.MangleMethod(mdef, csite);
+            var mangled_name = m.MangleMethod(ms);
             var meth_sym = bf.CreateSymbol();
             meth_sym.Name = mangled_name;
             meth_sym.ObjectType = binary_library.SymbolObjectType.Function;
@@ -112,7 +115,7 @@ namespace libtysila4
 
             // Get first graph
             graph.Graph cg = cil.CilGraph.ReadCilStream(meth,
-                m, mdef, boffset, (int)code_size, lvar_sig_tok);
+                ms, boffset, (int)code_size, lvar_sig_tok);
 
             // Run passes
             foreach (var pass in passes)

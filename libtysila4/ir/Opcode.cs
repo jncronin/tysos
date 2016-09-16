@@ -159,6 +159,7 @@ namespace libtysila4.ir
         public string str;
         public target.Target.Reg mreg;
         public metadata.MetadataStream m;
+        public metadata.MethodSpec ms;
         public int ct = Opcode.ct_unknown;
         public int ssa_idx = -1;
 
@@ -247,7 +248,24 @@ namespace libtysila4.ir
                         sb.Append("st" + v.ToString());
                     break;
                 case Opcode.vl_call_target:
-                    sb.Append("callsite(" + v.ToString() + " [" + v2.ToString() + "])");
+                    sb.Append("callsite(");
+                    if (str != null)
+                        sb.Append(str);
+                    else if(ms != null)
+                    {
+                        sb.Append(ms.mdrow.ToString());
+                        sb.Append(" [");
+                        sb.Append(ms.msig.ToString());
+                        sb.Append("]");
+                    }
+                    else
+                    {
+                        sb.Append(v.ToString());
+                        sb.Append(" [");
+                        sb.Append(v2.ToString());
+                        sb.Append("]");
+                    }
+                    sb.Append(")");
                     break;
                 case Opcode.vl_cc:
                     sb.Append(Opcode.cc_names[(int)v]);
