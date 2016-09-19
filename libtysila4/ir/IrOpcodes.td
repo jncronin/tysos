@@ -47,6 +47,7 @@ intmap("libtysila4.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"ldlabaddr",
 	"stlabcontents",
 	"swap",
+	"phi",
 ]);
 
 intmap("libtysila4.ir", "Opcode", "cc", "cc_names", "init_cc", [

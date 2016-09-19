@@ -195,12 +195,12 @@ namespace libtysila4.target.x86
                         case x86_movsxbd:
                             Code.Add(0x0f);
                             Code.Add(0xbe);
-                            Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                            Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                             break;
                         case x86_movzxbd:
                             Code.Add(0x0f);
                             Code.Add(0xb6);
-                            Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                            Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                             break;
                         case x86_jcc_rel32:
                             if (I.p[1].v != ir.Opcode.cc_never)

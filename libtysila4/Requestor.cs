@@ -64,7 +64,7 @@ namespace libtysila4
         public abstract void Request(T v);
     }
 
-    public class CachingIndividualRequestor<T> : IndividualRequestor<T> where T : IEquatable<T>
+    public class CachingIndividualRequestor<T> : IndividualRequestor<T> where T : class, IEquatable<T>
     {
         Set<T> done_and_pending = new Set<T>();
         util.Stack<T> pending = new util.Stack<T>();

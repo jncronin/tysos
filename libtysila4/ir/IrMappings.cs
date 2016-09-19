@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila4\ir\IrMappings.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 15:18:31 on 16 September 2016
+ * It was generated at 17:09:52 on 19 September 2016
  * from D:\tysos\branches\tysila3\libtysila4\ir\IrMappings.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -27,7 +27,6 @@ namespace libtysila4.ir
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.ldarg }] = st_lv_st;
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.stloc }] = st_st_lv;
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.starg }] = st_st_lv;
-			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.stloc, cil.Opcode.SimpleOpcode.ldloc }] = stloc_ldloc;
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.nop }] = nop;
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.call }] = call;
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.call, cil.Opcode.SimpleOpcode.stloc }] = call_stloc;

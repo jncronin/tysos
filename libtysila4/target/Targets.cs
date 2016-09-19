@@ -64,12 +64,17 @@ namespace libtysila4.target
         protected internal abstract ir.Param GetMoveSrc(MCInst i);
         protected internal abstract ir.Param GetMoveDest(MCInst i);
         protected internal abstract bool IsBranch(MCInst i);
+        protected internal abstract bool IsCall(MCInst i);
         protected internal abstract ir.Param GetBranchDest(MCInst i);
         protected internal abstract void SetBranchDest(MCInst i, ir.Param d);
         protected internal abstract Reg GetLVLocation(int lv_loc, int lv_size);
         protected internal abstract MCInst[] SetupStack(int lv_size);
         protected internal abstract MCInst[] CreateMove(Reg src, Reg dest);
+        protected internal abstract MCInst[] CreateMove(Param src, Param dest);
         protected internal abstract binary_library.IRelocationType GetDataToDataReloc();
+
+        protected internal virtual bool HasSideEffects(MCInst i)
+        { return IsCall(i); }
 
         public binary_library.IBinaryFile bf;
         public binary_library.ISection text_section;
@@ -121,7 +126,11 @@ namespace libtysila4.target
             ret.lvars_for_simplifying = ig.lvars_for_simplifying;
 
             foreach (var ir_node in ig.LinearStream)
-                t.MCLower(ir_node.c as ir.Opcode, ref input.next_vreg_id);
+            {
+                var o = ir_node.c as ir.Opcode;
+                foreach(var oc in o.all_insts)
+                    t.MCLower(oc as ir.Opcode, ref input.next_vreg_id);
+            }
 
             /* Return a graph with basic blocks as nodes */
             List<MCNode> bbs = new List<MCNode>();
@@ -137,13 +146,16 @@ namespace libtysila4.target
 
                 foreach(var n in ig.blocks[i])
                 {
-                    var oc = n.c as ir.Opcode;
+                    var o = n.c as ir.Opcode;
 
-                    cur_node.insts.AddRange(oc.mcinsts);
-                    if(oc.uses != null)
-                        cur_node.uses.AddRange(oc.uses);
-                    if(oc.defs != null)
-                        cur_node.defs.AddRange(oc.defs);
+                    foreach (var oc in o.all_insts)
+                    {
+                        cur_node.insts.AddRange(oc.mcinsts);
+                        if (oc.uses != null)
+                            cur_node.uses.AddRange(oc.uses);
+                        if (oc.defs != null)
+                            cur_node.defs.AddRange(oc.defs);
+                    }
                 }
 
                 /*foreach(var use in cur_node.uses)
@@ -280,7 +292,7 @@ namespace libtysila4.target
                                 var vreg_id = next_vreg_ids[(int)pv];
                                 if(pt == pt_tu)
                                 {
-                                    var tmpreg = new ir.Param { t = ir.Opcode.vl_stack, v = vreg_id, ud = ir.Param.UseDefType.Use };
+                                    var tmpreg = new ir.Param { t = ir.Opcode.vl_stack, ssa_idx = vreg_id, ud = ir.Param.UseDefType.Use };
                                     var new_uses = new List<ir.Param>(irnode.uses);
                                     new_uses.Add(tmpreg);
                                     irnode.uses = new_uses.ToArray();
@@ -288,7 +300,7 @@ namespace libtysila4.target
                                 }
                                 else
                                 {
-                                    var tmpreg = new ir.Param { t = ir.Opcode.vl_stack, v = vreg_id, ud = ir.Param.UseDefType.Def };
+                                    var tmpreg = new ir.Param { t = ir.Opcode.vl_stack, ssa_idx = vreg_id, ud = ir.Param.UseDefType.Def };
                                     var new_defs = new List<ir.Param>(irnode.defs);
                                     new_defs.Add(tmpreg);
                                     irnode.defs = new_defs.ToArray();

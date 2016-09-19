@@ -237,28 +237,6 @@ namespace libtysila4.ir
             rops[0].uses[1] = lv;
             return rops;
         }
-
-        static Opcode[] stloc_ldloc(cil.CilNode start, target.Target t)
-        {
-            int lv1 = start.GetLocalVarLoc();
-            int lv2 = ((cil.CilNode)start.n.Next1.c).GetLocalVarLoc();
-
-            if(lv1 == lv2)
-            {
-                // replace stloc_n, ldloc_n with store { st } -> { st, lv }
-                return new Opcode[] { new Opcode
-                {
-                    oc = Opcode.oc_store,
-                    defs = new Param[] { new Param { t = Opcode.vl_lv, v = lv2 }, new Param { t = Opcode.vl_stack, v = 0 } },
-                    uses = new Param[] { new Param { t = Opcode.vl_stack, v = 0 } }
-                } };
-            }
-            else
-            {
-                // they are not the same local var, so fail
-                return null;
-            }
-        }
     }
 
     class OCList<T> : IEquatable<OCList<T>>

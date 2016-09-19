@@ -142,6 +142,16 @@ namespace libtysila4.target.x86
             return false;
         }
 
+        protected internal override bool IsCall(MCInst i)
+        {
+            if (i.p != null && i.p.Length > 0 &&
+                i.p[0].t == Opcode.vl_str &&
+                (i.p[0].v == x86_call_rel32))
+                return true;
+            return false;
+        }
+
+
         protected internal override void SetBranchDest(MCInst i, Param d)
         {
             if (!IsBranch(i))
@@ -206,6 +216,34 @@ namespace libtysila4.target.x86
         protected internal override MCInst[] CreateMove(Reg src, Reg dest)
         {
             throw new NotImplementedException();
+        }
+
+        protected internal override MCInst[] CreateMove(Param src, Param dest)
+        {
+            var ct = dest.ct;
+
+            switch(ct)
+            {
+                case Opcode.ct_object:
+                case Opcode.ct_ref:
+                case Opcode.ct_int32:
+                case Opcode.ct_intptr:
+                    return new MCInst[]
+                    {
+                        new MCInst
+                        {
+                            p = new Param[]
+                            {
+                                new Param { t = Opcode.vl_str, v = x86_mov_r32_rm32, str = "mov_r32_rm32" },
+                                dest,
+                                src
+                            }
+                        }
+                    };
+
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         protected internal override MCInst[] SetupStack(int lv_size)

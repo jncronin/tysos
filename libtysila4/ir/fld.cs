@@ -37,10 +37,19 @@ namespace libtysila4.ir
             int table_id, row;
             m.InterpretToken(token, out table_id, out row);
 
+            var ms = start.n.g.ms;
+
             metadata.MethodSpec fs;
             metadata.TypeSpec ts;
             if (m.GetFieldDefRow(table_id, row, out ts, out fs) == false)
                 throw new MissingFieldException();
+
+            var fld_type = fs.m.GetFieldType(fs, ms.gtparams, ms.gmparams);
+            var fld_size = t.GetSize(fld_type);
+            var fld_ct = Opcode.GetCTFromType(fld_type);
+
+            if (fld_size != t.GetPointerSize())
+                throw new NotImplementedException();
 
             switch(start.opcode.opcode1)
             {
@@ -93,6 +102,24 @@ namespace libtysila4.ir
                     }
 
                 case cil.Opcode.SingleOpcodes.ldfld:
+                    {
+                        var fldoffset = layout.Layout.GetFieldOffset(ts, fs, t, false);
+
+                        var r = new Opcode
+                        {
+                            oc = Opcode.oc_ldind,
+                            uses = new Param[]
+                            {
+                                new Param { t = Opcode.vl_stack, v = 0 },
+                                new Param { t = Opcode.vl_c32, v = fldoffset },
+                            },
+                            defs = new Param[]
+                            {
+                                new Param { t = Opcode.vl_stack, v = 0, ct = fld_ct }
+                            }
+                        };
+                        return new Opcode[] { r };
+                    }
                 case cil.Opcode.SingleOpcodes.ldflda:
                     throw new NotImplementedException();
 

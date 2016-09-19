@@ -64,13 +64,57 @@ namespace libtysila4.target
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            foreach(var i in insts)
+            foreach(var i in all_insts)
             {
                 sb.Append(i.ToString());
                 sb.Append(';');
                 sb.Append(Environment.NewLine);
             }
             return sb.ToString();
+        }
+
+        internal class MCNodeId : IEquatable<MCNodeId>
+        {
+            public int ls_idx;
+            public int mc_idx;
+            public bool is_phi;
+            public graph.Graph g;
+
+            public MCInst inst
+            {
+                get
+                {
+                    var ls = g.LinearStream[ls_idx];
+                    var mcn = ls.c as MCNode;
+                    if (is_phi)
+                        return mcn.phis[mc_idx];
+                    else
+                        return mcn.insts[mc_idx];
+                }
+            }
+
+            public bool Equals(MCNodeId other)
+            {
+                if (other == null)
+                    return false;
+                if (ls_idx != other.ls_idx)
+                    return false;
+                if (mc_idx != other.mc_idx)
+                    return false;
+                return is_phi == other.is_phi;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as MCNodeId);
+            }
+
+            public override int GetHashCode()
+            {
+                return ls_idx.GetHashCode() ^
+                    (mc_idx.GetHashCode() << 10) ^
+                    (is_phi.GetHashCode() << 20);
+            }
         }
     }
 }

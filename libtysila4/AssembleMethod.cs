@@ -40,6 +40,22 @@ namespace libtysila4
             var mdef = ms.mdrow;
             var m = ms.m;
 
+            // Get mangled name for defining a symbol
+            var mangled_name = m.MangleMethod(ms);
+            var meth_sym = bf.CreateSymbol();
+            meth_sym.Name = mangled_name;
+            meth_sym.ObjectType = binary_library.SymbolObjectType.Function;
+            meth_sym.Offset = (ulong)ts.Data.Count;
+            meth_sym.Type = binary_library.SymbolType.Global;
+            ts.AddSymbol(meth_sym);
+            if (debug_passes != null)
+            {
+                debug_passes.Append("Assembling method ");
+                debug_passes.Append(mangled_name);
+                debug_passes.Append(Environment.NewLine);
+                debug_passes.Append(Environment.NewLine);
+            }
+
             // Get signature if not specified
             if (csite == 0)
             {
@@ -48,8 +64,12 @@ namespace libtysila4
             }
 
             // Get method RVA
-            var meth = m.GetRVA(m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
-                mdef, 0));
+            var rva = m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
+                mdef, 0);
+            if (rva == 0)
+                return false;
+
+            var meth = m.GetRVA(rva);
 
             var flags = meth.ReadByte(0);
             int max_stack = 0;
@@ -81,31 +101,17 @@ namespace libtysila4
             else
                 throw new Exception("Invalid method header flags");
 
-            // Get mangled name for defining a symbol
-            var mangled_name = m.MangleMethod(ms);
-            var meth_sym = bf.CreateSymbol();
-            meth_sym.Name = mangled_name;
-            meth_sym.ObjectType = binary_library.SymbolObjectType.Function;
-            meth_sym.Offset = (ulong)ts.Data.Count;
-            meth_sym.Type = binary_library.SymbolType.Global;
-            ts.AddSymbol(meth_sym);
-            if(debug_passes != null)
-            {
-                debug_passes.Append("Assembling method ");
-                debug_passes.Append(mangled_name);
-                debug_passes.Append(Environment.NewLine);
-                debug_passes.Append(Environment.NewLine);
-            }
-
             // Define passes
             var passes = new List<graph.Graph.PassDelegate>
             {
                 ir.IrGraph.LowerCilGraph,
                 ir.StackTracePass.TraceStackPass,
-                target.Target.MCLowerPass,
-                target.SimplifyLocalVars.SimplifyLocalVarsPass,
+                ir.SimplifyLocalVars.SimplifyLocalVarsPass,
                 graph.DominanceGraph.GenerateDominanceGraph,
-                target.SSA.ConvertToSSAPass,
+                ir.SSA.ConvertToSSAPass,
+                ir.DeadCodeElimination.DeadCodeEliminationPass,
+                ir.ResolvePhis.ResolvePhisPass,
+                target.Target.MCLowerPass,
                 target.Liveness.DoGenKill,
                 target.Liveness.LivenessAnalysis,
                 target.RegAlloc.RegAllocPass,

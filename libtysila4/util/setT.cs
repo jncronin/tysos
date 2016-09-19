@@ -26,7 +26,7 @@ using System.Text;
 
 namespace libtysila4.util
 {
-    public class Set<T> : ICollection<T> where T : System.IEquatable<T>
+    public class Set<T> : ICollection<T> where T : class, System.IEquatable<T>
     {
         Dictionary<T, int> d = new Dictionary<T, int>(
             new GenericEqualityComparer<T>());
@@ -81,6 +81,16 @@ namespace libtysila4.util
         IEnumerator IEnumerable.GetEnumerator()
         {
             return d.Keys.GetEnumerator();
+        }
+
+        public T GetAny()
+        {
+            if (d.Count == 0)
+                return null;
+
+            var e = d.Keys.GetEnumerator();
+            e.MoveNext();
+            return e.Current;
         }
     }
 }

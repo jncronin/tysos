@@ -60,6 +60,12 @@ namespace libtysila4.util
             b[ul_idx] |= (1UL << bit_idx);
         }
 
+        public void set(IEnumerable<int> other)
+        {
+            foreach (var o in other)
+                set(o);
+        }
+
         public void unset(int bit)
         {
             if (bit < min_val)

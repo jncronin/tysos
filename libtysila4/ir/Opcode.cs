@@ -33,6 +33,40 @@ namespace libtysila4.ir
         public Param[] uses;
         public Param[] defs;
 
+        public int oc_idx;  // used for SSA pass
+
+        public List<Opcode> phis = new List<Opcode>();
+        public List<Opcode> post_insts = new List<Opcode>();
+
+        public IEnumerable<Opcode> all_insts
+        {
+            get
+            {
+                foreach (var phi in phis)
+                    yield return phi;
+                yield return this;
+                foreach (var post in post_insts)
+                    yield return post;
+            }
+        }
+
+        public IEnumerable<Param> usesdefs
+        {
+            get
+            {
+                if (uses != null)
+                {
+                    foreach (Param p in uses)
+                        yield return p;
+                }
+                if (defs != null)
+                {
+                    foreach (Param p in defs)
+                        yield return p;
+                }
+            }
+        }
+
         public bool is_mc = false;
 
         public List<target.MCInst> mcinsts;
@@ -108,10 +142,16 @@ namespace libtysila4.ir
 
         public override string ToString()
         {
-            if (is_mc)
-                return MCString();
-            else
-                return IrString();
+            StringBuilder sb = new StringBuilder();
+            foreach(var o in all_insts)
+            {
+                if (o.is_mc)
+                    sb.Append(o.MCString());
+                else
+                    sb.Append(o.IrString());
+                sb.Append(Environment.NewLine);
+            }
+            return sb.ToString();
         }
 
         static Dictionary<int, string> oc_names;
@@ -149,6 +189,73 @@ namespace libtysila4.ir
             init_oc_pushes_map();
             init_vl();
         }
+
+        public bool HasSideEffects
+        {
+            get
+            {
+                switch (oc)
+                {
+                    case oc_call:
+                        return true;
+
+                    default:
+                        return false;
+                }
+            }
+        }
+
+        internal class OpcodeId : IEquatable<OpcodeId>
+        {
+            public int ls_idx;
+            public int mc_idx;
+            public int oc_type = 1;
+            public graph.Graph g;
+
+            public Opcode inst
+            {
+                get
+                {
+                    var ls = g.LinearStream[ls_idx];
+                    var mcn = ls.c as Opcode;
+                    switch(oc_type)
+                    {
+                        case 0:
+                            return mcn.phis[mc_idx];
+                        case 1:
+                            return mcn;
+                        case 2:
+                            return mcn.post_insts[mc_idx];
+                        default:
+                            return null;
+                    }
+                }
+            }
+
+            public bool Equals(OpcodeId other)
+            {
+                if (other == null)
+                    return false;
+                if (ls_idx != other.ls_idx)
+                    return false;
+                if (mc_idx != other.mc_idx)
+                    return false;
+                return oc_type == other.oc_type;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as OpcodeId);
+            }
+
+            public override int GetHashCode()
+            {
+                return ls_idx.GetHashCode() ^
+                    (mc_idx.GetHashCode() << 10) ^
+                    (oc_type.GetHashCode() << 20);
+            }
+        }
+
     }
 
     public class Param

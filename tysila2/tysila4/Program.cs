@@ -63,8 +63,8 @@ namespace tysila4
             //var fname = "D:\\tysos\\branches\\tysila3\\libsupcs\\bin\\Release\\libsupcs.dll";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\test_002\bin\Release\test_002.exe";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\ifelse\ifelse.exe";
-            //var fname = @"kernel.exe";
-            var fname = @"test_005.exe";
+            var fname = @"kernel.exe";
+            //var fname = @"test_005.exe";
 
             libtysila4.libtysila.AssemblyLoader al = new libtysila4.libtysila.AssemblyLoader(
                 new FileSystemFileLoader());

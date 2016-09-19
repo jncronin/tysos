@@ -64,6 +64,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Requestor.cs" />
     <Compile Include="StringTable.cs" />
+    <Compile Include="ir\ResolvePhis.cs" />
+    <Compile Include="ir\DeadCodeElimination.cs" />
     <Compile Include="target\AllocateLocalVars.cs" />
     <Compile Include="target\CalleePreserves.cs" />
     <Compile Include="target\HashTable.cs" />
@@ -74,8 +76,8 @@
     <Compile Include="target\PreserveRegistersAroundCall.cs" />
     <Compile Include="target\RegAlloc.cs" />
     <Compile Include="target\RemoveUnnecessaryMoves.cs" />
-    <Compile Include="target\SimplifyLocalVars.cs" />
-    <Compile Include="target\SSA.cs" />
+    <Compile Include="ir\SimplifyLocalVars.cs" />
+    <Compile Include="ir\SSA.cs" />
     <Compile Include="target\Target.cs" />
     <Compile Include="target\Targets.cs" />
     <Compile Include="target\x86\AssemblePass.cs" />

@@ -46,12 +46,12 @@ namespace libtysila4.graph
 
             // First build a set containing all blocks set
             var all_set = new util.Set();
-            foreach (var n in input.LinearStream)
+            foreach (var n in input.bb_starts)
                 all_set.set(n.bb);
             var nodes_visited = new Set();
 
             // Appel 18.1
-            foreach(var n in input.LinearStream)
+            foreach(var n in input.bb_starts)
             {
                 if (input.Starts.Contains(n))
                 {
@@ -67,7 +67,7 @@ namespace libtysila4.graph
             do
             {
                 changes = false;
-                foreach (var n in input.LinearStream)
+                foreach (var n in input.bb_starts)
                 {
                     HandleNode(n, dg.dom, ref changes);
                 }
@@ -76,7 +76,7 @@ namespace libtysila4.graph
             input.DominanceGraph = dg;
 
             // Calculate immediate dominators
-            foreach(var n in input.LinearStream)
+            foreach(var n in input.bb_starts)
             {
                 var Ds_n = dg.dom[n.bb];
 
@@ -112,13 +112,13 @@ namespace libtysila4.graph
                 new Dictionary<int, BaseNode>(
                     new GenericEqualityComparer<int>());
 
-            foreach(var n in input.LinearStream)
+            foreach(var n in input.bb_starts)
             {
                 dt_idx[n.bb] = new graph.MultiNode();
                 dt_idx[n.bb].bb = n.bb;
                 dt_idx[n.bb].c = new DomNodeContents { SrcNode = n };
             }
-            foreach(var n in input.LinearStream)
+            foreach(var n in input.bb_starts)
             {
                 int idom;
                 if(dg.idom.TryGetValue(n.bb, out idom))
@@ -132,28 +132,28 @@ namespace libtysila4.graph
 
             /* Compute dominance frontiers */
             foreach (var n in dg.Starts)
-                computeDF(n, dg);
+                computeDF(n, dg, input);
 
             return input;
         }
 
-        private static void computeDF(BaseNode n, DominanceGraph dg)
+        private static void computeDF(BaseNode n, DominanceGraph dg, Graph input)
         {
             // Appel page 434
             var S = new util.Set();
 
-            foreach(var y in ((DomNodeContents)n.c).SrcNode.Next)
+            foreach(var y in input.bbs_after[n.bb])
             {
                 int idom;
-                if(dg.idom.TryGetValue(y.bb, out idom) &&
+                if(dg.idom.TryGetValue(y, out idom) &&
                     idom != n.bb)
                 {
-                    S.set(y.bb);
+                    S.set(y);
                 }
             }
             foreach(var c in n.Next)
             {
-                computeDF(c, dg);
+                computeDF(c, dg, input);
                 foreach(var w in dg.dom[c.bb])
                 {
                     if (!dg.dom[w].get(n.bb))

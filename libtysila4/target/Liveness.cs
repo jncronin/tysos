@@ -30,12 +30,13 @@ namespace libtysila4.target
     {
         public static Graph DoGenKill(graph.Graph g, Target t)
         {
+            int ls_idx = 0;
             foreach (var n in g.LinearStream)
-                DoGenKill(n.c as MCNode);
+                DoGenKill(n.c as MCNode, ls_idx++, g);
             return g;
         }
 
-        private static void DoGenKill(MCNode mcn)
+        private static void DoGenKill(MCNode mcn, int ls_idx, Graph g)
         {
             mcn.gen.Clear();
             mcn.kill.Clear();
@@ -43,14 +44,32 @@ namespace libtysila4.target
             util.Set cur_used = new util.Set();
             util.Set cur_defd = new util.Set();
 
+            int mc_idx = 0;
+            int phi_params = mcn.phis.Count;
+
             foreach(var mci in mcn.all_insts)
             {
+                /* Generate a unique index for this instruction */
+                bool is_phi = mc_idx < phi_params;
+                var mc_idx_adj = mc_idx;
+                if (!is_phi)
+                    mc_idx_adj -= phi_params;
+
+                var mcn_id = new MCNode.MCNodeId
+                {
+                    g = g,
+                    ls_idx = ls_idx,
+                    mc_idx = mc_idx_adj,
+                    is_phi = is_phi
+                };
+
                 /* First update gen/kill sets */
                 foreach(var p in mci.p)
                 {
                     if (p.IsStack)
                     {
                         int x = p.ssa_idx;
+
                         if (p.ud == ir.Param.UseDefType.Use)
                         {
                             // gens are those variables used before assignment
@@ -84,6 +103,8 @@ namespace libtysila4.target
                             cur_defd.set(x);
                     }
                 }
+
+                mc_idx++;
             }
         }
 

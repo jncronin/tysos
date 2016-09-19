@@ -92,8 +92,8 @@ namespace libtysila4.target.x86
             then back to destination so we handle the case
             where both src and dest are memory locations.
             Register allocator should coalesce unnecessary moves */
-            var treg_def = new Param { t = Opcode.vl_stack, ct = ttype, v = treg, ud = Param.UseDefType.Def };
-            var treg_use = new Param { t = Opcode.vl_stack, ct = ttype, v = treg, ud = Param.UseDefType.Use };
+            var treg_def = new Param { t = Opcode.vl_stack, ct = ttype, ssa_idx = treg, ud = Param.UseDefType.Def };
+            var treg_use = new Param { t = Opcode.vl_stack, ct = ttype, ssa_idx = treg, ud = Param.UseDefType.Use };
             irnode.mcinsts.Add(new MCInst
             {
                 p = new Param[]

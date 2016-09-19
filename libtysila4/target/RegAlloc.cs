@@ -229,6 +229,9 @@ namespace libtysila4.target
             var x = t.GetMoveDest(I).ssa_idx;
             var y = t.GetMoveSrc(I).ssa_idx;
 
+            x = GetAlias(x);
+            y = GetAlias(y);
+
             int u, v;
             if(precolored.get(y))
             {
@@ -269,7 +272,7 @@ namespace libtysila4.target
                 }
                 else
                 {
-                    var adj_uv = Adjacent(u);
+                    var adj_uv = Adjacent(u).Clone();
                     adj_uv.Union(Adjacent(v));
 
                     if (!Conservative(adj_uv))
@@ -295,6 +298,8 @@ namespace libtysila4.target
                 spillWorklist.unset(v);
 
             coalescedNodes.set(v);
+            if (alias.ContainsKey(v))
+                throw new Exception();
             alias[v] = u;
 
             moveList[u].Union(moveList[v]);
@@ -327,7 +332,7 @@ namespace libtysila4.target
         private bool Conservative(Set adj_uv)
         {
             var k = 0;
-            foreach(var n in nodes)
+            foreach(var n in adj_uv)
             {
                 if (getDegree(n) >= K)
                     k++;
@@ -335,7 +340,7 @@ namespace libtysila4.target
             return k < K;
         }
 
-        private bool OK(int t, int u)
+        private bool OK(int t, int r)
         {
             throw new NotImplementedException();
         }

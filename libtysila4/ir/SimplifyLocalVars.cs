@@ -24,11 +24,11 @@ using System.Collections.Generic;
 using System.Text;
 using libtysila4.util;
 
-namespace libtysila4.target
+namespace libtysila4.ir
 {
     public class SimplifyLocalVars
     {
-        public static graph.Graph SimplifyLocalVarsPass(graph.Graph g, Target t)
+        public static graph.Graph SimplifyLocalVarsPass(graph.Graph g, target.Target t)
         {
             int lvar_count = g.lvars_for_simplifying.get_last_set() + 1;
 
@@ -38,43 +38,38 @@ namespace libtysila4.target
 
             foreach(var n in g.LinearStream)
             {
-                var mcn = n.c as MCNode;
+                var I = n.c as Opcode;
 
-                for(int i = 0; i < mcn.insts.Count; i++)
+                foreach (var p in I.usesdefs)
                 {
-                    var I = mcn.insts[i];
-
-                    foreach(var p in I.p)
+                    if (p.IsLV && g.lvars_for_simplifying.get((int)p.v))
                     {
-                        if (p.IsLV && g.lvars_for_simplifying.get((int)p.v))
+                        // This var is suitable for simplifying
+
+                        int new_st;
+                        if (lv_st_map[p.v] == -1)
                         {
-                            // This var is suitable for simplifying
-
-                            int new_st;
-                            if (lv_st_map[p.v] == -1)
-                            {
-                                new_st = g.next_vreg_id++;
-                                lv_st_map[p.v] = new_st;
-                            }
-                            else
-                                new_st = lv_st_map[p.v];
+                            new_st = g.next_vreg_id++;
+                            lv_st_map[p.v] = new_st;
+                        }
+                        else
+                            new_st = lv_st_map[p.v];
 
 
-                            switch(p.t)
-                            {
-                                case ir.Opcode.vl_lv:
-                                    p.t = ir.Opcode.vl_stack;
-                                    p.v = new_st;
-                                    break;
-                                case ir.Opcode.vl_lv32:
-                                    p.t = ir.Opcode.vl_stack32;
-                                    p.v = new_st;
-                                    break;
-                                case ir.Opcode.vl_lv64:
-                                    p.t = ir.Opcode.vl_stack64;
-                                    p.v = new_st;
-                                    break;
-                            }
+                        switch (p.t)
+                        {
+                            case ir.Opcode.vl_lv:
+                                p.t = ir.Opcode.vl_stack;
+                                p.v = new_st;
+                                break;
+                            case ir.Opcode.vl_lv32:
+                                p.t = ir.Opcode.vl_stack32;
+                                p.v = new_st;
+                                break;
+                            case ir.Opcode.vl_lv64:
+                                p.t = ir.Opcode.vl_stack64;
+                                p.v = new_st;
+                                break;
                         }
                     }
                 }

@@ -44,7 +44,6 @@ multimap("libtysila4.ir", "IrGraph", "simple_map", "init_simple_map", [
 	[ ldops, [ "ret" ], "ld_ret" ],
 	[ ldops, "st_lv_st" ],
 	[ stops, "st_st_lv" ],
-	[ [ "stloc" ], [ "ldloc" ], "stloc_ldloc" ],
 	[ [ "nop" ], "nop" ],
 	[ [ "call" ], "call" ],
 	[ [ "call" ], stops, "call_stloc" ],

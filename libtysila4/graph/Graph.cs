@@ -41,6 +41,13 @@ namespace libtysila4.graph
 
         public cil.CilGraph cg = null;
 
+        internal Dictionary<int, util.Set<ir.Opcode.OpcodeId>> uses =
+            new Dictionary<int, util.Set<ir.Opcode.OpcodeId>>(
+                new GenericEqualityComparer<int>());
+        internal Dictionary<int, util.Set<ir.Opcode.OpcodeId>> defs =
+            new Dictionary<int, util.Set<ir.Opcode.OpcodeId>>(
+                new GenericEqualityComparer<int>());
+
         public DominanceGraph DominanceGraph;
 
         public int BBCount { get { return bb_starts.Count; } }
@@ -51,6 +58,7 @@ namespace libtysila4.graph
         public target.Target.Reg[] incoming_args;
 
         public List<BaseNode> LinearStream = new List<BaseNode>();
+
         public virtual string LinearStreamString
         {
             get
