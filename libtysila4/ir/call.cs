@@ -49,16 +49,20 @@ namespace libtysila4.ir
         static Opcode[] call(cil.CilNode start, metadata.MethodSpec ms,
             target.Target t)
         {
+            bool is_virt = false;
+            int vtbl_offset = 0;
             if (start.opcode.opcode1 == cil.Opcode.SingleOpcodes.callvirt)
             {
-                var vtbl_offset = layout.Layout.GetVTableOffset(ms);
+                vtbl_offset = layout.Layout.GetVTableOffset(ms);
 
                 if (vtbl_offset == 0)
                     throw new MissingMethodException();
-                else if(vtbl_offset > 0)
-                    throw new NotImplementedException();
+                else if (vtbl_offset > 0)
+                {
+                    is_virt = true;
+                }
             }
-            if (start.opcode.opcode1 == cil.Opcode.SingleOpcodes.calli)
+            else if (start.opcode.opcode1 == cil.Opcode.SingleOpcodes.calli)
                 throw new NotImplementedException();
 
             int param_count = ms.m.GetMethodDefSigParamCountIncludeThis(ms.msig);
@@ -77,7 +81,10 @@ namespace libtysila4.ir
                 defs = new Param[] { new Param { t = Opcode.vl_stack, v = 0, ud = Param.UseDefType.Def } };
 
             Param[] uses = new Param[param_count + 1];
-            uses[0] = new Param { t = Opcode.vl_call_target, ms = ms, m = ms.m };
+            if (is_virt)
+                uses[0] = new Param { t = Opcode.vl_c, ct = Opcode.ct_intptr, v = vtbl_offset, ms = ms, m = ms.m };
+            else
+                uses[0] = new Param { t = Opcode.vl_call_target, ms = ms, m = ms.m };
             for (int i = 0; i < param_count; i++)
                 uses[param_count - i] = new Param { t = Opcode.vl_stack, v = i, ud = Param.UseDefType.Use };
 
@@ -90,7 +97,11 @@ namespace libtysila4.ir
 
             t.r.MethodRequestor.Request(ms);
 
-            return new Opcode[] { new Opcode { oc = Opcode.oc_call, defs = defs, uses = uses } };
+            int oc = Opcode.oc_call;
+            if (is_virt)
+                oc = Opcode.oc_callvirt;
+
+            return new Opcode[] { new Opcode { oc = oc, defs = defs, uses = uses } };
         }
 
         static Opcode[] call_stloc(cil.CilNode start, target.Target t)

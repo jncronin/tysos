@@ -53,6 +53,7 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"jmp_rel32",
 	"jcc_rel32",
 	"call_rel32",
+	"call_rm32",
 	"ret",
 	"pop_r32",
 	"pop_rm32",
@@ -222,6 +223,7 @@ cc_sysv = cc(nspace, assembler, "sysv",
 	[ ct_int64, [ stack ] ],
 	[ ct_object, [ stack ] ],
 	[ ct_ref, [ stack ] ],
+	[ ct_vt, [ stack ] ],
 ],
 eaxreg | ecxreg | edxreg,			// caller preserves
 ebxreg | esireg | edireg			// callee preserves

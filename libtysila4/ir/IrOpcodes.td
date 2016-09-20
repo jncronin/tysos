@@ -31,6 +31,7 @@ intmap("libtysila4.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"mul",
 	"div",
 	"call",
+	"callvirt",
 	"nop",
 	"ret",
 	"cmp",

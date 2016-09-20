@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using binary_library;
 using libtysila4.graph;
 using libtysila4.ir;
+using metadata;
 
 namespace libtysila4.target.x86
 {
@@ -39,7 +40,8 @@ namespace libtysila4.target.x86
             switch(irnode.oc)
             {
                 case Opcode.oc_call:
-                    LowerCall(irnode);
+                case Opcode.oc_callvirt:
+                    LowerCall(irnode, ref next_temp_reg);
                     return;
                 case Opcode.oc_ret:
                     LowerReturn(irnode);

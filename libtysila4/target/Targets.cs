@@ -422,6 +422,21 @@ namespace libtysila4.target
             }
         }
 
+        public class AddrAndContentsReg : Reg, IEquatable<Reg>
+        {
+            public Reg Addr, Contents;
+
+            public override bool Equals(Reg other)
+            {
+                var acr = other as AddrAndContentsReg;
+                if (acr == null)
+                    return false;
+                if (Addr.Equals(acr.Addr) == false)
+                    return false;
+                return Contents.Equals(acr.Contents);
+            }
+        }
+
         public class Reg : IEquatable<Reg>
         {
             public string name;
@@ -456,7 +471,8 @@ namespace libtysila4.target
         protected virtual Reg GetRegLoc(ir.Param csite,
             ref int stack_loc,
             int cc_next,
-            int ct)
+            int ct,
+            metadata.TypeSpec ts)
         {
             throw new NotSupportedException("Architecture does not support ct: " + ct.ToString());
         }
@@ -476,7 +492,6 @@ namespace libtysila4.target
                     {
                         return layout.Layout.GetTypeSize(ts, this, false);
                     }
-
                     return GetCTSize(Opcode.ct_object);
 
                 default:
@@ -568,7 +583,7 @@ namespace libtysila4.target
                     var reg_id = cc_map[cur_cc_next];
                     if (regs[reg_id].type == rt_stack)
                     {
-                        var size = GetCTSize(ct);
+                        var size = GetSize(v);
                         Reg rstack = new Reg()
                         {
                             type = rt_stack,
@@ -591,7 +606,7 @@ namespace libtysila4.target
                 else
                 {
                     r = GetRegLoc(csite, ref stack_loc,
-                        cur_cc_next, ct);
+                        cur_cc_next, ct, v);
 
                 }
                 cc_next[ct] = cur_cc_next + 1;

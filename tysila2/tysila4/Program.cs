@@ -63,9 +63,11 @@ namespace tysila4
             //var fname = "D:\\tysos\\branches\\tysila3\\libsupcs\\bin\\Release\\libsupcs.dll";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\test_002\bin\Release\test_002.exe";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\ifelse\ifelse.exe";
-            var fname = @"kernel.exe";
+            //var fname = @"kernel.exe";
             //var fname = @"test_005.exe";
             //var fname = @"vtype.exe";
+            //var fname = @"D:\tysos\branches\tysila3\mono\corlib\mscorlib.dll";
+            var fname = "vcall.exe";
 
             libtysila4.libtysila.AssemblyLoader al = new libtysila4.libtysila.AssemblyLoader(
                 new FileSystemFileLoader());
@@ -139,8 +141,10 @@ namespace tysila4
 
             while (!t.r.MethodRequestor.Empty)
             {
-                libtysila4.libtysila.AssembleMethod(t.r.MethodRequestor.GetNext(),
+                var ms = t.r.MethodRequestor.GetNext();
+                libtysila4.libtysila.AssembleMethod(ms,
                     bf, t, debug);
+                Console.WriteLine(ms.m.MangleMethod(ms));
             }
 
             string d = debug.ToString();

@@ -114,6 +114,8 @@ namespace libtysila4.cil
                 case Opcode.SingleOpcodes.ldc_r4:
                 case Opcode.SingleOpcodes.ldc_r8:
                     return ir.Opcode.ct_float;
+                case Opcode.SingleOpcodes.ldnull:
+                    return ir.Opcode.ct_object;
             }
             throw new NotSupportedException();
         }
@@ -126,6 +128,7 @@ namespace libtysila4.cil
             switch(opcode.opcode1)
             {
                 case Opcode.SingleOpcodes.ldc_i4_0:
+                case Opcode.SingleOpcodes.ldnull:
                     return 0;
                 case Opcode.SingleOpcodes.ldc_i4_1:
                     return 1;

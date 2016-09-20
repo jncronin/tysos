@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila4\ir\IrOpcodes.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 16:16:12 on 20 September 2016
+ * It was generated at 19:17:49 on 20 September 2016
  * from D:\tysos\branches\tysila3\libtysila4\ir\IrOpcodes.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -65,26 +65,27 @@ namespace libtysila4.ir
 		public const int oc_mul = 22;
 		public const int oc_div = 23;
 		public const int oc_call = 24;
-		public const int oc_nop = 25;
-		public const int oc_ret = 26;
-		public const int oc_cmp = 27;
-		public const int oc_br = 28;
-		public const int oc_brif = 29;
-		public const int oc_enter = 30;
-		public const int oc_conv = 31;
-		public const int oc_stind = 32;
-		public const int oc_ldind = 33;
-		public const int oc_ldindzb = 34;
-		public const int oc_ldindzw = 35;
-		public const int oc_ldstr = 36;
-		public const int oc_ldlabcontents = 37;
-		public const int oc_ldlabaddr = 38;
-		public const int oc_stlabcontents = 39;
-		public const int oc_ldloca = 40;
-		public const int oc_ldsta = 41;
-		public const int oc_zeromem = 42;
-		public const int oc_swap = 43;
-		public const int oc_phi = 44;
+		public const int oc_callvirt = 25;
+		public const int oc_nop = 26;
+		public const int oc_ret = 27;
+		public const int oc_cmp = 28;
+		public const int oc_br = 29;
+		public const int oc_brif = 30;
+		public const int oc_enter = 31;
+		public const int oc_conv = 32;
+		public const int oc_stind = 33;
+		public const int oc_ldind = 34;
+		public const int oc_ldindzb = 35;
+		public const int oc_ldindzw = 36;
+		public const int oc_ldstr = 37;
+		public const int oc_ldlabcontents = 38;
+		public const int oc_ldlabaddr = 39;
+		public const int oc_stlabcontents = 40;
+		public const int oc_ldloca = 41;
+		public const int oc_ldsta = 42;
+		public const int oc_zeromem = 43;
+		public const int oc_swap = 44;
+		public const int oc_phi = 45;
 		
 		internal static void init_oc()
 		{
@@ -95,26 +96,27 @@ namespace libtysila4.ir
 			oc_names[22] = "mul";
 			oc_names[23] = "div";
 			oc_names[24] = "call";
-			oc_names[25] = "nop";
-			oc_names[26] = "ret";
-			oc_names[27] = "cmp";
-			oc_names[28] = "br";
-			oc_names[29] = "brif";
-			oc_names[30] = "enter";
-			oc_names[31] = "conv";
-			oc_names[32] = "stind";
-			oc_names[33] = "ldind";
-			oc_names[34] = "ldindzb";
-			oc_names[35] = "ldindzw";
-			oc_names[36] = "ldstr";
-			oc_names[37] = "ldlabcontents";
-			oc_names[38] = "ldlabaddr";
-			oc_names[39] = "stlabcontents";
-			oc_names[40] = "ldloca";
-			oc_names[41] = "ldsta";
-			oc_names[42] = "zeromem";
-			oc_names[43] = "swap";
-			oc_names[44] = "phi";
+			oc_names[25] = "callvirt";
+			oc_names[26] = "nop";
+			oc_names[27] = "ret";
+			oc_names[28] = "cmp";
+			oc_names[29] = "br";
+			oc_names[30] = "brif";
+			oc_names[31] = "enter";
+			oc_names[32] = "conv";
+			oc_names[33] = "stind";
+			oc_names[34] = "ldind";
+			oc_names[35] = "ldindzb";
+			oc_names[36] = "ldindzw";
+			oc_names[37] = "ldstr";
+			oc_names[38] = "ldlabcontents";
+			oc_names[39] = "ldlabaddr";
+			oc_names[40] = "stlabcontents";
+			oc_names[41] = "ldloca";
+			oc_names[42] = "ldsta";
+			oc_names[43] = "zeromem";
+			oc_names[44] = "swap";
+			oc_names[45] = "phi";
 		}
 	}
 }
@@ -123,33 +125,33 @@ namespace libtysila4.ir
 {
 	partial class Opcode
 	{
-		public const int cc_always = 45;
-		public const int cc_never = 46;
-		public const int cc_eq = 47;
-		public const int cc_ne = 48;
-		public const int cc_gt = 49;
-		public const int cc_ge = 50;
-		public const int cc_lt = 51;
-		public const int cc_le = 52;
-		public const int cc_a = 53;
-		public const int cc_ae = 54;
-		public const int cc_b = 55;
-		public const int cc_be = 56;
+		public const int cc_always = 46;
+		public const int cc_never = 47;
+		public const int cc_eq = 48;
+		public const int cc_ne = 49;
+		public const int cc_gt = 50;
+		public const int cc_ge = 51;
+		public const int cc_lt = 52;
+		public const int cc_le = 53;
+		public const int cc_a = 54;
+		public const int cc_ae = 55;
+		public const int cc_b = 56;
+		public const int cc_be = 57;
 		
 		internal static void init_cc()
 		{
-			cc_names[45] = "always";
-			cc_names[46] = "never";
-			cc_names[47] = "eq";
-			cc_names[48] = "ne";
-			cc_names[49] = "gt";
-			cc_names[50] = "ge";
-			cc_names[51] = "lt";
-			cc_names[52] = "le";
-			cc_names[53] = "a";
-			cc_names[54] = "ae";
-			cc_names[55] = "b";
-			cc_names[56] = "be";
+			cc_names[46] = "always";
+			cc_names[47] = "never";
+			cc_names[48] = "eq";
+			cc_names[49] = "ne";
+			cc_names[50] = "gt";
+			cc_names[51] = "ge";
+			cc_names[52] = "lt";
+			cc_names[53] = "le";
+			cc_names[54] = "a";
+			cc_names[55] = "ae";
+			cc_names[56] = "b";
+			cc_names[57] = "be";
 		}
 	}
 }
@@ -180,25 +182,25 @@ namespace libtysila4.ir
 {
 	partial class Opcode
 	{
-		public const int ct_unknown = 57;
-		public const int ct_int32 = 58;
-		public const int ct_int64 = 59;
-		public const int ct_intptr = 60;
-		public const int ct_float = 61;
-		public const int ct_object = 62;
-		public const int ct_ref = 63;
-		public const int ct_vt = 64;
+		public const int ct_unknown = 58;
+		public const int ct_int32 = 59;
+		public const int ct_int64 = 60;
+		public const int ct_intptr = 61;
+		public const int ct_float = 62;
+		public const int ct_object = 63;
+		public const int ct_ref = 64;
+		public const int ct_vt = 65;
 		
 		internal static void init_ct()
 		{
-			ct_names[57] = "unknown";
-			ct_names[58] = "int32";
-			ct_names[59] = "int64";
-			ct_names[60] = "intptr";
-			ct_names[61] = "float";
-			ct_names[62] = "object";
-			ct_names[63] = "ref";
-			ct_names[64] = "vt";
+			ct_names[58] = "unknown";
+			ct_names[59] = "int32";
+			ct_names[60] = "int64";
+			ct_names[61] = "intptr";
+			ct_names[62] = "float";
+			ct_names[63] = "object";
+			ct_names[64] = "ref";
+			ct_names[65] = "vt";
 		}
 	}
 }

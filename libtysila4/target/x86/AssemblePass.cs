@@ -132,6 +132,14 @@ namespace libtysila4.target.x86
                                 AddImm32(Code, 0);
                             }
                             break;
+                        case x86_call_rm32:
+                            {
+                                Code.Add(0xff);
+                                var obj = I.p[1];
+                                var vtbl_offset = I.p[2];
+                                Code.AddRange(ModRMSIB(2, GetRM(obj.mreg), 2, -1, -1, (int)vtbl_offset.v));
+                                break;
+                            }
                         case x86_cmp_rm32_r32:
                             Code.Add(0x39);
                             Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));

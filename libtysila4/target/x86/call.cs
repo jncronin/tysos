@@ -27,7 +27,7 @@ namespace libtysila4.target.x86
 {
     partial class x86_Assembler
     {
-        void LowerCall(Opcode irnode)
+        void LowerCall(Opcode irnode, ref int next_temp_reg)
         {
             irnode.is_mc = true;
             irnode.mcinsts = new List<MCInst>();
@@ -43,7 +43,7 @@ namespace libtysila4.target.x86
 
             /* Parameters are:
                 0: call
-                1: call site
+                1: call site/vtbl_offset
                 2: ret_val/void
                 then actual parameters */
 
@@ -118,24 +118,63 @@ namespace libtysila4.target.x86
                 retreg = this.regs[retloc];
             }
 
-            Param[] pscall;
+            Param[] pscall = null;
 
-            if (retreg != null)
+            switch (irnode.oc)
             {
-                pscall = new Param[]
-                {
-                    new Param { t = Opcode.vl_str, str = "call", v = x86_call_rel32 },
-                    csite,
-                    new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Def }
-                };
-            }
-            else
-            {
-                pscall = new Param[]
-                {
-                    new Param { t = Opcode.vl_str, str = "call", v = x86_call_rel32 },
-                    csite,
-                };
+                case Opcode.oc_call:
+                    if (retreg != null)
+                    {
+                        pscall = new Param[]
+                        {
+                            new Param { t = Opcode.vl_str, str = "call", v = x86_call_rel32 },
+                            csite,
+                            new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Def }
+                        };
+                    }
+                    else
+                    {
+                        pscall = new Param[]
+                        {
+                            new Param { t = Opcode.vl_str, str = "call", v = x86_call_rel32 },
+                            csite,
+                        };
+                    }
+                    break;
+                case Opcode.oc_callvirt:
+                    irnode.uses[0].v *= GetPointerSize();
+                    /* First, get the vtable into eax (eax is guaranteed to be free because
+                    we will return into it) */
+                    irnode.mcinsts.Add(new MCInst
+                    {
+                        p = new Param[]
+                        {
+                            new Param { t = Opcode.vl_str, str = "mov_r32_rm32", v = x86_mov_r32_rm32disp },
+                            new Param { t = Opcode.vl_mreg, mreg = r_eax, ud = Param.UseDefType.Def },
+                            irnode.uses[1],
+                            new Param { t = Opcode.vl_c32, v = 0, ud = Param.UseDefType.Use }
+                        }
+                    });
+                    if (retreg != null)
+                    {
+                        pscall = new Param[]
+                        {
+                            new Param { t = Opcode.vl_str, str = "call_rm32", v = x86_call_rm32 },
+                            new Param { t = Opcode.vl_mreg, mreg = r_eax, ud = Param.UseDefType.Use },
+                            irnode.uses[0],
+                            new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Def }
+                        };
+                    }
+                    else
+                    {
+                        pscall = new Param[]
+                        {
+                            new Param { t = Opcode.vl_str, str = "call_rm32", v = x86_call_rm32 },
+                            new Param { t = Opcode.vl_mreg, mreg = r_eax, ud = Param.UseDefType.Use },
+                            irnode.uses[0],
+                        };
+                    }
+                    break;
             }
             irnode.mcinsts.Add(new MCInst { p = pscall });
 
@@ -167,7 +206,7 @@ namespace libtysila4.target.x86
             {
                 p = new Param[]
                 {
-                    new Param { t = ir.Opcode.vl_str, v = target.Generic.g_postcall }
+                    new Param { t = ir.Opcode.vl_str, str = "g_postcall", v = target.Generic.g_postcall }
                 }
             });
         }
