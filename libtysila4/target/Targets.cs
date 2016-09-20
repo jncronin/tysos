@@ -473,7 +473,10 @@ namespace libtysila4.target
                             return GetCTSize(ir.Opcode.GetCTFromType(simple));
                     }
                     if (ts.IsValueType())
-                        throw new NotImplementedException();
+                    {
+                        return layout.Layout.GetTypeSize(ts, this, false);
+                    }
+
                     return GetCTSize(Opcode.ct_object);
 
                 default:
@@ -483,6 +486,7 @@ namespace libtysila4.target
 
         internal int GetSize(int ptype, uint token)
         {
+            throw new NotSupportedException();
             if (ptype == 0x11)
                 throw new NotImplementedException();
             else

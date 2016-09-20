@@ -27,57 +27,46 @@ namespace libtysila4.target.x86
 {
     partial class x86_Assembler
     {
-        void LowerStind(Opcode irnode, ref int next_temp_reg)
+        void LowerZeromem(Opcode irnode, ref int next_temp_reg)
         {
             irnode.is_mc = true;
             irnode.mcinsts = new List<MCInst>();
 
             /* Parameters are:
                 0: addr
-                1: offset
-                2: value
+                1: length
             */
 
             var addr = irnode.uses[0];
-            var offset = irnode.uses[1];
-            var _value = irnode.uses[2];
-            var destsize = irnode.data_size;
+            var len = irnode.uses[1].v;
 
-            // for now, fail if addr or value aren't on
+            // for now, fail if value isn't on
             //  stack.
             // TODO: handle this - assign to temporaries
-            if (!addr.IsStack || !_value.IsStack)
+            if (!addr.IsStack)
                 throw new NotImplementedException();
 
-            int oc = 0;
+            // We handle up to 4x pointer size by direct stores, otherwise call
+            //  to memset()
 
-            switch(destsize)
+            if (len <= 16)
             {
-                case 1:
-                    oc = x86_mov_rm8disp_r32;
-                    break;
-                case 2:
-                    oc = x86_mov_rm16disp_r32;
-                    break;
-                case 4:
-                    oc = x86_mov_rm32disp_r32;
-                    break;
-                case 8:
-                    throw new NotImplementedException();
-                default:
-                    throw new NotImplementedException();
-            }
-
-            irnode.mcinsts.Add(new MCInst
-            {
-                p = new Param[]
+                for (int i = 0; i < len; i += 4)
                 {
-                    new Param { t = Opcode.vl_str, v = oc, str = "stind" },
-                    addr,
-                    offset,
-                    _value,
+                    irnode.mcinsts.Add(new MCInst
+                    {
+                        p = new Param[]
+                        {
+                            new Param { t = Opcode.vl_str, v = x86_mov_rm32disp_imm32 },
+                            addr,
+                            new Param { t = Opcode.vl_c32, v = i },
+                            new Param { t = Opcode.vl_c32, v = 0 }
+                        }
+                    });
                 }
-            });
+            }
+            else
+                throw new NotImplementedException();
         }
     }
 }

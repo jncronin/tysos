@@ -68,9 +68,10 @@ namespace libtysila4.ir
                 oc = Opcode.oc_stind,
                 uses = new Param[] {
                     new Param { t = Opcode.vl_stack, v = 1 },
+                    new Param { t = Opcode.vl_c32, v = 0 },
                     new Param { t = Opcode.vl_stack, v = 0 },
-                    new Param { t = Opcode.vl_c32, v = dest_size },
                 },
+                data_size = dest_size
             };
 
             return new Opcode[] { r };

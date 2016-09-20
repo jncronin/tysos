@@ -30,9 +30,6 @@ x86_def.ct_map = simple_map(nspace, assembler, "ct_map", "init_ctmap", [
 
 intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"mov_rm32_r32",
-	"mov_crm32_r32",
-	"mov_crm16_r32",
-	"mov_crm8_r32",
 	"mov_r32_rm32",
 	"mov_rm32_imm32",
 	"mov_r32_lab",
@@ -40,6 +37,12 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"mov_r32_rm32sib",
 	"mov_r32_rm32disp",
 	"mov_r32_rm32sibscaledisp",
+	"mov_rm32disp_imm32",
+	"mov_rm16disp_imm32",
+	"mov_rm8disp_imm32",
+	"mov_rm32disp_r32",
+	"mov_rm16disp_r32",
+	"mov_rm8disp_r32",
 	"movzxb_r32_rm32sibscaledisp",
 	"movzxw_r32_rm32sibscaledisp",
 	"cmp_rm32_r32",
@@ -61,6 +64,7 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"add_r32_rm32",
 	"sub_r32_rm32",
 	"imul_r32_rm32_imm32",
+	"lea_r32",
 ]);
 
 gprmem = [ vl_stack32, vl_lv32, vl_arg32, vl_stack, vl_lv, vl_arg ];
@@ -68,6 +72,11 @@ gpr = [ vl_stack32, vl_stack ];
 imm = [ vl_c32, vl_c ];
 gprmemimm = [ vl_stack32, vl_lv32, vl_arg32, vl_c32, vl_c, vl_stack,
 	vl_lv, vl_arg ];
+lvs = [ vl_lv32, vl_lv64, vl_lv ];
+
+multiinstr(name, oc_ldloca, [ lvs ], [ gpr ], [
+	[ "x86_lea_r32", "$d0", "$u0" ]
+], [ contentsreg ], [ Gprs ], 0);
 
 multiinstr(name, oc_store, [ gprmem ], [ gpr ], [
 	[ "x86_mov_r32_rm32", "$d0", "$u0" ]
@@ -179,6 +188,13 @@ multiinstr(name, oc_add, [ gprmem, gprmem ], [ gprmem ],
 		[ "x86_add_r32_rm32", "$td0", "$tu0", "$u1" ],
 		[ "x86_mov_rm32_r32", "$d0", "$tu0" ]
 ], [ IntRegs, IntRegs ], [ IntRegs ], 0);
+
+multiinstr(name, oc_add, [ gprmem, imm ], [ gprmem ],
+	[	[ "x86_mov_r32_rm32", "$td0", "$u0" ],
+		[ "x86_add_rm32_imm32", "$td0", "$tu0", "$u1" ],
+		[ "x86_mov_rm32_r32", "$d0", "$tu0" ]
+], [ IntRegs, 0 ], [ IntRegs ], 0);
+
 
 instr(name, oc_br, [], [],
 	[	[ "x86_jmp_rel32", "$br0" ]

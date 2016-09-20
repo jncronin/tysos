@@ -33,6 +33,8 @@ namespace libtysila4.ir
         public Param[] uses;
         public Param[] defs;
 
+        public int data_size = 0;
+
         public int oc_idx;  // used for SSA pass
 
         public List<Opcode> phis = new List<Opcode>();

@@ -65,6 +65,7 @@ namespace tysila4
             //var fname = @"D:\tysos\branches\tysila3\testsuite\ifelse\ifelse.exe";
             var fname = @"kernel.exe";
             //var fname = @"test_005.exe";
+            //var fname = @"vtype.exe";
 
             libtysila4.libtysila.AssemblyLoader al = new libtysila4.libtysila.AssemblyLoader(
                 new FileSystemFileLoader());
@@ -118,14 +119,7 @@ namespace tysila4
                 {
                     if(row == i)
                     {
-                        var newsym = bf.CreateSymbol();
-                        newsym.Name = "kmain";
-                        newsym.DefinedIn = bf.GetTextSection();
-                        newsym.ObjectType = binary_library.SymbolObjectType.Function;
-                        newsym.Offset = (ulong)bf.GetTextSection().Data.Count;
-                        newsym.Size = 0;
-                        newsym.Type = binary_library.SymbolType.Global;
-                        newsym.DefinedIn.AddSymbol(newsym);
+                        ms.aliases = new List<string> { "kmain" };
 
                         mflags = 6;
                         tflags = 1;
@@ -139,7 +133,7 @@ namespace tysila4
                     (mflags == 0x4 || mflags == 0x5 || mflags == 0x6) &&
                     tflags != 0)
                 {
-                    libtysila4.libtysila.AssembleMethod(ms, bf, t, debug);
+                    t.r.MethodRequestor.Request(ms);
                 }
             }
 

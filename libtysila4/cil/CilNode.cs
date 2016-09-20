@@ -199,10 +199,6 @@ namespace libtysila4.cil
 
         public int GetLocalVarLoc()
         {
-            if (opcode.sop != Opcode.SimpleOpcode.ldloc &&
-                opcode.sop != Opcode.SimpleOpcode.stloc)
-                throw new Exception("Not a local var node");
-
             switch(opcode.opcode1)
             {
                 case Opcode.SingleOpcodes.ldloc_0:
@@ -219,9 +215,20 @@ namespace libtysila4.cil
                     return 3;
                 case Opcode.SingleOpcodes.ldloc_s:
                 case Opcode.SingleOpcodes.stloc_s:
+                case Opcode.SingleOpcodes.ldloca_s:
                     return inline_int;
+
+                case Opcode.SingleOpcodes.double_:
+                    switch(opcode.opcode2)
+                    {
+                        case Opcode.DoubleOpcodes.ldloc:
+                        case Opcode.DoubleOpcodes.ldloca:
+                        case Opcode.DoubleOpcodes.stloc:
+                            return inline_int;
+                    }
+                    break;
             }
-            throw new NotImplementedException();
+            throw new Exception("Not a local var node");
         }
 
         public void GetToken(out metadata.MetadataStream metadata,

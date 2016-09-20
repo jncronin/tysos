@@ -48,9 +48,6 @@ namespace libtysila4.ir
             var fld_size = t.GetSize(fld_type);
             var fld_ct = Opcode.GetCTFromType(fld_type);
 
-            if (fld_size != t.GetPointerSize())
-                throw new NotImplementedException();
-
             switch(start.opcode.opcode1)
             {
                 case cil.Opcode.SingleOpcodes.ldsfld:
@@ -76,7 +73,8 @@ namespace libtysila4.ir
                             defs = new Param[]
                             {
                                 new Param { t = Opcode.vl_stack, v = 0, ct = ft_ct }
-                            }
+                            },
+                            data_size = fld_size
                         };
                         return new Opcode[] { r };
                     }
@@ -96,7 +94,8 @@ namespace libtysila4.ir
                             defs = new Param[]
                             {
                                 new Param { t = Opcode.vl_stack, v = 0, ct = ir.Opcode.ct_ref }
-                            }
+                            },
+                            data_size = fld_size
                         };
                         return new Opcode[] { r };
                     }
@@ -116,12 +115,30 @@ namespace libtysila4.ir
                             defs = new Param[]
                             {
                                 new Param { t = Opcode.vl_stack, v = 0, ct = fld_ct }
-                            }
+                            },
+                            data_size = fld_size
                         };
                         return new Opcode[] { r };
                     }
                 case cil.Opcode.SingleOpcodes.ldflda:
-                    throw new NotImplementedException();
+                    {
+                        var fldoffset = layout.Layout.GetFieldOffset(ts, fs, t, false);
+
+                        var r = new Opcode
+                        {
+                            oc = Opcode.oc_add,
+                            uses = new Param[]
+                            {
+                                new Param { t = Opcode.vl_stack, v = 0 },
+                                new Param { t = Opcode.vl_c32, v = fldoffset },
+                            },
+                            defs = new Param[]
+                            {
+                                new Param { t = Opcode.vl_stack, v = 0, ct = Opcode.ct_ref }
+                            },
+                        };
+                        return new Opcode[] { r };
+                    }
 
                 default:
                     throw new NotSupportedException();
@@ -137,10 +154,19 @@ namespace libtysila4.ir
             int table_id, row;
             m.InterpretToken(token, out table_id, out row);
 
+            var ms = start.n.g.ms;
+
             metadata.MethodSpec fs;
             metadata.TypeSpec ts;
             if (m.GetFieldDefRow(table_id, row, out ts, out fs) == false)
                 throw new MissingFieldException();
+
+            var fld_type = fs.m.GetFieldType(fs, ms.gtparams, ms.gmparams);
+            var fld_size = t.GetSize(fld_type);
+            var fld_ct = Opcode.GetCTFromType(fld_type);
+
+            if (fld_size != t.GetPointerSize())
+                throw new NotImplementedException();
 
             switch (start.opcode.opcode1)
             {
@@ -160,17 +186,35 @@ namespace libtysila4.ir
                             {
                                 new Param { t = Opcode.vl_str, str = sfldlabel, v = sfldoffset }
                             },
+                            data_size = fld_size
                         };
                         return new Opcode[] { r };
                     }
 
                 case cil.Opcode.SingleOpcodes.stfld:
-                    throw new NotImplementedException();
+                    {
+                        var fldoffset = layout.Layout.GetFieldOffset(ts, fs, t, false);
+
+                        var r = new Opcode
+                        {
+                            oc = Opcode.oc_stind,
+                            uses = new Param[]
+                            {
+                                new Param { t = Opcode.vl_stack, v = 1 },
+                                new Param { t = Opcode.vl_c32, v = fldoffset },
+                                new Param { t = Opcode.vl_stack, v = 0, ct = fld_ct },
+                            },
+                            defs = new Param[]
+                            {
+                            },
+                            data_size = fld_size
+                        };
+                        return new Opcode[] { r };
+                    }
 
                 default:
-                    throw new NotSupportedException();
+                        throw new NotSupportedException();
             }
         }
-
     }
 }

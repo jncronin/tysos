@@ -41,6 +41,7 @@ namespace libtysila4
             var m = ms.m;
 
             // Get mangled name for defining a symbol
+            List<binary_library.ISymbol> meth_syms = new List<binary_library.ISymbol>();
             var mangled_name = m.MangleMethod(ms);
             var meth_sym = bf.CreateSymbol();
             meth_sym.Name = mangled_name;
@@ -48,6 +49,22 @@ namespace libtysila4
             meth_sym.Offset = (ulong)ts.Data.Count;
             meth_sym.Type = binary_library.SymbolType.Global;
             ts.AddSymbol(meth_sym);
+            meth_syms.Add(meth_sym);
+
+            if(ms.aliases != null)
+            {
+                foreach(var alias in ms.aliases)
+                {
+                    var alias_sym = bf.CreateSymbol();
+                    alias_sym.Name = alias;
+                    alias_sym.ObjectType = binary_library.SymbolObjectType.Function;
+                    alias_sym.Offset = (ulong)ts.Data.Count;
+                    alias_sym.Type = binary_library.SymbolType.Global;
+                    ts.AddSymbol(alias_sym);
+                    meth_syms.Add(alias_sym);
+                }
+            }
+
             if (debug_passes != null)
             {
                 debug_passes.Append("Assembling method ");
@@ -149,7 +166,8 @@ namespace libtysila4
                 debug_passes.Append(cg.LinearStreamString);
             }
 
-            meth_sym.Size = ts.Data.Count - (int)meth_sym.Offset;
+            foreach(var sym in meth_syms)
+                sym.Size = ts.Data.Count - (int)sym.Offset;
 
             return true;
         }

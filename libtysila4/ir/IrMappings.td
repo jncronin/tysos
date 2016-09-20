@@ -44,6 +44,7 @@ multimap("libtysila4.ir", "IrGraph", "simple_map", "init_simple_map", [
 	[ ldops, [ "ret" ], "ld_ret" ],
 	[ ldops, "st_lv_st" ],
 	[ stops, "st_st_lv" ],
+	[ [ "ldloca" ], "ldloca" ],
 	[ [ "nop" ], "nop" ],
 	[ [ "call" ], "call" ],
 	[ [ "call" ], stops, "call_stloc" ],
@@ -62,6 +63,8 @@ multimap("libtysila4.ir", "IrGraph", "simple_map", "init_simple_map", [
 	[ [ "ldfld" ], "ldfld" ],
 	[ [ "stfld" ], "stfld" ],
 	[ [ "newobj" ], "newobj" ],
+	[ [ "dup" ], "dup" ],
+	[ [ "initobj" ], "initobj" ],
 ], funcref simple_opcode_handler(array, string));
 
 multimap("libtysila4.ir", "IrGraph", "single_map", "init_single_map", [

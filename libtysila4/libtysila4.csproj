@@ -40,6 +40,8 @@
     <Compile Include="graph\DominanceGraph.cs" />
     <Compile Include="graph\Graph.cs" />
     <Compile Include="graph\Node.cs" />
+    <Compile Include="ir\ld.cs" />
+    <Compile Include="ir\misc.cs" />
     <Compile Include="ir\obj.cs" />
     <Compile Include="ir\fld.cs" />
     <Compile Include="ir\GetRetType.cs" />
@@ -81,6 +83,7 @@
     <Compile Include="target\Target.cs" />
     <Compile Include="target\Targets.cs" />
     <Compile Include="target\x86\AssemblePass.cs" />
+    <Compile Include="target\x86\zeromem.cs" />
     <Compile Include="target\x86\lab.cs" />
     <Compile Include="target\x86\stind.cs" />
     <Compile Include="target\x86\conv.cs" />

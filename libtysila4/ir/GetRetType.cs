@@ -36,7 +36,7 @@ namespace libtysila4.ir
                         return GetCTFromType(ts.m.simple_type_idx[ts.tdrow]);
 
                     if (ts.IsValueType())
-                        throw new NotImplementedException();
+                        return ct_vt;
 
                     return ct_object;
 

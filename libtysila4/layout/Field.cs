@@ -36,8 +36,13 @@ namespace libtysila4.layout
             var first_fdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
                 ts.tdrow, 4);
             var last_fdef = ts.m.GetLastFieldDef(ts.tdrow);
-            var search_field_name = fs.m.GetIntEntry(MetadataStream.tid_Field,
-                fs.mdrow, 1);
+
+            uint search_field_name = 0;
+            if (fs != null)
+            {
+                search_field_name = fs.m.GetIntEntry(MetadataStream.tid_Field,
+                    fs.mdrow, 1);
+            }
 
             int cur_offset = 0;
 
@@ -55,73 +60,41 @@ namespace libtysila4.layout
                 if (((flags & 0x10) == 0x10 && is_static == true) ||
                     ((flags & 0x10) == 0 && is_static == false))
                 {
-                    // Check on name
-                    var fname = ts.m.GetIntEntry(MetadataStream.tid_Field,
-                        (int)fdef_row, 1);
-                    if (MetadataStream.CompareString(ts.m, fname,
-                        fs.m, search_field_name))
+                    // Check on name if we are looking for a particular field
+                    if (search_field_name != 0)
                     {
-                        return cur_offset;
+                        var fname = ts.m.GetIntEntry(MetadataStream.tid_Field,
+                            (int)fdef_row, 1);
+                        if (MetadataStream.CompareString(ts.m, fname,
+                            fs.m, search_field_name))
+                        {
+                            return cur_offset;
+                        }
                     }
 
                     // Increment by type size
-                    var fsig = ts.m.GetIntEntry(MetadataStream.tid_Field,
+                    var fsig = (int)ts.m.GetIntEntry(MetadataStream.tid_Field,
                         (int)fdef_row, 2);
 
-                    var sig_idx = ts.m.GetFieldSigTypeIndex((int)fsig);
-                    int ft;
-                    uint ft_tok;
-                    ft = ts.m.GetType(ref sig_idx, out ft_tok);
-                    var ft_size = t.GetSize(ft, ft_tok);
+                    var ft = ts.m.GetFieldType(ref fsig, ts.gtparams, null);
+                    var ft_size = t.GetSize(ft);
 
                     cur_offset += ft_size;
                 }
             }
 
-            // Shouldn't get here
-            throw new MissingFieldException();
+            // Shouldn't get here if looking for a specific field
+            if(search_field_name != 0)
+                throw new MissingFieldException();
+
+            // Else return size of complete type
+            return cur_offset;
         }
 
         public static int GetTypeSize(metadata.TypeSpec ts,
             target.Target t, bool is_static = false)
         {
-            /* Iterate through methods looking for requested
-                one */
-            var first_fdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
-                ts.tdrow, 4);
-            var last_fdef = ts.m.GetLastFieldDef(ts.tdrow);
-
-            int cur_offset = 0;
-
-            for (uint fdef_row = first_fdef; fdef_row < last_fdef; fdef_row++)
-            {
-                // Ensure field is static or not as required
-                var flags = ts.m.GetIntEntry(MetadataStream.tid_Field,
-                    (int)fdef_row, 0);
-                if (((flags & 0x10) == 0x10 && is_static == true) ||
-                    ((flags & 0x10) == 0 && is_static == false))
-                {
-                    // Increment by type size
-                    var fsig = ts.m.GetIntEntry(MetadataStream.tid_Field,
-                        (int)fdef_row, 2);
-
-                    var sig_idx = ts.m.GetFieldSigTypeIndex((int)fsig);
-                    int ft;
-                    uint ft_tok;
-                    ft = ts.m.GetType(ref sig_idx, out ft_tok);
-                    var ft_size = t.GetSize(ft, ft_tok);
-
-                    cur_offset += ft_size;
-                }
-            }
-
-            if(is_static == false && !ts.IsValueType())
-            {
-                // Add a vtable entry
-                cur_offset += t.GetCTSize(ir.Opcode.ct_object);
-            }
-
-            return cur_offset;
+            return GetFieldOffset(ts, null, t, is_static);
         }
 
         public static void OutputStaticFields(metadata.TypeSpec ts,
@@ -148,14 +121,11 @@ namespace libtysila4.layout
                 if ((flags & 0x10) == 0x10)
                 {
                     // Increment by type size
-                    var fsig = ts.m.GetIntEntry(MetadataStream.tid_Field,
+                    var fsig = (int)ts.m.GetIntEntry(MetadataStream.tid_Field,
                         (int)fdef_row, 2);
 
-                    var sig_idx = ts.m.GetFieldSigTypeIndex((int)fsig);
-                    int ft;
-                    uint ft_tok;
-                    ft = ts.m.GetType(ref sig_idx, out ft_tok);
-                    var ft_size = t.GetSize(ft, ft_tok);
+                    var ft = ts.m.GetFieldType(ref fsig, ts.gtparams, null);
+                    var ft_size = t.GetSize(ft);
 
                     /* See if there is any data defined as an rva */
                     var rva = ts.m.fieldrvas[(int)fdef_row];

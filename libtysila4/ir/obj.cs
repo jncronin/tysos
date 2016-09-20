@@ -91,12 +91,12 @@ namespace libtysila4.ir
                 stack_abs = obj_p.stack_abs,
                 ud = Param.UseDefType.Use
             };
-            
+
             /* Replace the instance of the object with our
             new object */
-            foreach(var call_op in call_ops)
+            foreach (var call_op in call_ops)
             {
-                if(call_op.oc == Opcode.oc_call)
+                if (call_op.oc == Opcode.oc_call)
                 {
                     call_op.uses[1] = obj_p_use;
                 }
@@ -123,6 +123,37 @@ namespace libtysila4.ir
             ret[call_ops.Length + 1] = assign;
 
             return ret;
+        }
+
+        static Opcode[] initobj(cil.CilNode start, target.Target t)
+        {
+            metadata.MetadataStream m;
+            uint token;
+            start.GetToken(out m, out token);
+            int table_id, row;
+            m.InterpretToken(token, out table_id, out row);
+
+            var ms = start.n.g.ms;
+
+            var ts = m.GetTypeSpec(table_id, row, ms.gtparams, ms.gmparams);
+
+            var obj_size = t.GetSize(ts);
+
+            // the value on the stack is a pointer, so just emit a zeromem instruction
+            return new Opcode[]
+            {
+                new Opcode
+                {
+                    oc = Opcode.oc_zeromem,
+                    uses = new Param[]
+                    {
+                        new Param { t = Opcode.vl_stack, ct = Opcode.ct_ref, v = 0 },
+                        new Param { t = Opcode.vl_c32, ct = Opcode.ct_int32, v = obj_size },
+                    },
+                    defs = new Param[] { },
+                    data_size = obj_size
+                }
+            };
         }
     }
 }

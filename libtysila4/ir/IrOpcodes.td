@@ -46,6 +46,9 @@ intmap("libtysila4.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"ldlabcontents",
 	"ldlabaddr",
 	"stlabcontents",
+	"ldloca",
+	"ldsta",
+	"zeromem",
 	"swap",
 	"phi",
 ]);
@@ -92,7 +95,8 @@ intmap("libtysila4.ir", "Opcode", "ct", "ct_names", "init_ct", [
 	"intptr",
 	"float",
 	"object",
-	"ref"
+	"ref",
+	"vt",
 ]);
 
 // map cil comparisons to ir codes

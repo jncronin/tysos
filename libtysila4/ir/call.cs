@@ -49,8 +49,6 @@ namespace libtysila4.ir
         static Opcode[] call(cil.CilNode start, metadata.MethodSpec ms,
             target.Target t)
         {
-            t.r.MethodRequestor.Request(ms);
-
             if (start.opcode.opcode1 == cil.Opcode.SingleOpcodes.callvirt)
             {
                 var vtbl_offset = layout.Layout.GetVTableOffset(ms);
@@ -89,6 +87,8 @@ namespace libtysila4.ir
                 defs, uses, start, t);
             if (intcall != null)
                 return intcall;
+
+            t.r.MethodRequestor.Request(ms);
 
             return new Opcode[] { new Opcode { oc = Opcode.oc_call, defs = defs, uses = uses } };
         }

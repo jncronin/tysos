@@ -256,19 +256,6 @@ namespace libtysila4.target.x86
                         case x86_ret:
                             Code.Add(0xc3);
                             break;
-                        case x86_mov_crm8_r32:
-                            Code.Add(0x88);
-                            Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), GetRM(I.p[1].mreg), 0));
-                            break;
-                        case x86_mov_crm16_r32:
-                            Code.Add(0x67); // CHECK
-                            Code.Add(0x89);
-                            Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), GetRM(I.p[1].mreg), 0));
-                            break;
-                        case x86_mov_crm32_r32:
-                            Code.Add(0x89);
-                            Code.AddRange(ModRMSIB(GetR(I.p[2].mreg), GetRM(I.p[1].mreg), 0));
-                            break;
                         case Generic.g_loadaddress:
                             {
                                 Code.Add(0xc7);
@@ -339,6 +326,26 @@ namespace libtysila4.target.x86
                             Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
                             break;
 
+                        case x86_mov_rm32disp_imm32:
+                            Code.Add(0xc7);
+                            Code.AddRange(ModRMSIB(0, GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
+                            AddImm32(Code, I.p[3].v);
+                            break;
+
+                        case x86_mov_rm8disp_r32:
+                            Code.Add(0x88);
+                            Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
+                            break;
+                        case x86_mov_rm16disp_r32:
+                            Code.Add(0x67); // CHECK
+                            Code.Add(0x89);
+                            Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
+                            break;
+                        case x86_mov_rm32disp_r32:
+                            Code.Add(0x89);
+                            Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
+                            break;
+
                         case x86_mov_r32_rm32sibscaledisp:
                             Code.Add(0x8b);
                             Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
@@ -354,6 +361,11 @@ namespace libtysila4.target.x86
                             Code.Add(0x0f);
                             Code.Add(0xb7);
                             Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
+                            break;
+
+                        case x86_lea_r32:
+                            Code.Add(0x8d);
+                            Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                             break;
 
                         default:
@@ -593,7 +605,10 @@ namespace libtysila4.target.x86
             if(disp_len == -1 && mod == 2)
             {
                 if (disp == 0)
+                {
+                    mod = 0;
                     disp_len = 0;
+                }
                 else if (disp >= sbyte.MinValue && disp <= sbyte.MaxValue)
                     disp_len = 1;
                 else
