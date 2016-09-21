@@ -44,14 +44,33 @@ namespace acpipc.Aml
         public Dictionary<string, ACPIObject> Devices = new Dictionary<string, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<string>());
         public Dictionary<string, ACPIObject> Processors = new Dictionary<string, ACPIObject>(new tysos.Program.MyGenericEqualityComparer<string>());
 
-        const ulong Revision = 0x20;
-        const ulong One = 1UL;
-        const ulong Zero = 0UL;
-        const ulong Ones = 0xffffffffffffffff;
+        internal const ulong Revision = 0x20;
+        internal const ulong One = 1UL;
+        internal const ulong Zero = 0UL;
+        internal const ulong Ones = 0xffffffffffffffff;
 
         public Namespace(IMachineInterface MachineInterface)
         {
             mi = MachineInterface;
+
+            // Initialize default methods
+            Objects["\\_OS_"] = new ACPIObject(
+                ACPIObject.DataType.Method,
+                new ACPIObject.MethodData
+                {
+                    ArgCount = 0,
+                    Builtin = new OSMethod(MachineInterface, this)
+                });
+
+            // Initialize default methods
+            Objects["\\_OSI"] = new ACPIObject(
+                ACPIObject.DataType.Method,
+                new ACPIObject.MethodData
+                {
+                    ArgCount = 1,
+                    Builtin = new OSIMethod(MachineInterface, this)
+                });
+
         }
 
         public bool ParseDefBlockHeader(byte[] aml, ref int idx, DefBlockHeader h)
@@ -390,7 +409,32 @@ namespace acpipc.Aml
 
             if (ParseByte(aml, ref idx, 0x5b) &&
                 ParseByte(aml, ref idx, 0x12))
-                throw new NotImplementedException();
+            {
+                /* Don't include these in the and statements above as they
+                may fail */
+                ACPIObject source = null, res;
+                ACPIName ns;
+                ParseNameString(aml, ref idx, out ns, s);
+                if (!ns.IsNull)
+                    source = FindObject(ns);
+
+                ParseTermArg(aml, ref idx, out res, s);
+
+                if(source != null)
+                {
+                    ACPIObject r = new ACPIObject(ACPIObject.DataType.ObjectReference,
+                        new ACPIObject.ObjRefData { Object = source });
+
+                    if (res != null)
+                        res.Write(r, mi, s, this);
+
+                    result = Ones;
+                    return true;
+                }
+
+                result = Zero;
+                return true;
+            }
 
             idx = old_idx;
             result = null;
@@ -638,9 +682,26 @@ namespace acpipc.Aml
         private bool ParseDefLGreater(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
 
-            if (ParseByte(aml, ref idx, 0x94))
+            if (ParseByte(aml, ref idx, 0x94) &&
+                ParseTermArg(aml, ref idx, out a, s) &&
+                ParseTermArg(aml, ref idx, out b, s))
+            {
+                /* Try to evaluate to integers */
+                ACPIObject ai, bi;
+                ai = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                bi = b.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                if ((ai != null) && (bi != null))
+                {
+                    if (ai.IntegerData > bi.IntegerData)
+                        result = Ones;
+                    else
+                        result = Zero;
+                    return true;
+                }
                 throw new NotImplementedException();
+            }
 
             idx = old_idx;
             result = null;
@@ -650,10 +711,27 @@ namespace acpipc.Aml
         private bool ParseDefLGreaterEqual(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
 
             if (ParseByte(aml, ref idx, 0x92) &&
-                ParseByte(aml, ref idx, 0x95))
+                ParseByte(aml, ref idx, 0x95) &&
+                ParseTermArg(aml, ref idx, out a, s) &&
+                ParseTermArg(aml, ref idx, out b, s))
+            {
+                /* Try to evaluate to integers */
+                ACPIObject ai, bi;
+                ai = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                bi = b.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                if ((ai != null) && (bi != null))
+                {
+                    if (ai.IntegerData >= bi.IntegerData)
+                        result = Ones;
+                    else
+                        result = Zero;
+                    return true;
+                }
                 throw new NotImplementedException();
+            }
 
             idx = old_idx;
             result = null;
@@ -663,9 +741,26 @@ namespace acpipc.Aml
         private bool ParseDefLLess(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
 
-            if (ParseByte(aml, ref idx, 0x95))
+            if (ParseByte(aml, ref idx, 0x95) &&
+                ParseTermArg(aml, ref idx, out a, s) &&
+                ParseTermArg(aml, ref idx, out b, s))
+            {
+                /* Try to evaluate to integers */
+                ACPIObject ai, bi;
+                ai = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                bi = b.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                if ((ai != null) && (bi != null))
+                {
+                    if (ai.IntegerData < bi.IntegerData)
+                        result = Ones;
+                    else
+                        result = Zero;
+                    return true;
+                }
                 throw new NotImplementedException();
+            }
 
             idx = old_idx;
             result = null;
@@ -675,10 +770,27 @@ namespace acpipc.Aml
         private bool ParseDefLLessEqual(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
 
             if (ParseByte(aml, ref idx, 0x92) &&
-                ParseByte(aml, ref idx, 0x94))
+                ParseByte(aml, ref idx, 0x94) &&
+                ParseTermArg(aml, ref idx, out a, s) &&
+                ParseTermArg(aml, ref idx, out b, s))
+            {
+                /* Try to evaluate to integers */
+                ACPIObject ai, bi;
+                ai = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                bi = b.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                if ((ai != null) && (bi != null))
+                {
+                    if (ai.IntegerData <= bi.IntegerData)
+                        result = Ones;
+                    else
+                        result = Zero;
+                    return true;
+                }
                 throw new NotImplementedException();
+            }
 
             idx = old_idx;
             result = null;
@@ -688,6 +800,7 @@ namespace acpipc.Aml
         private bool ParseDefMid(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
 
             if (ParseByte(aml, ref idx, 0x9e))
                 throw new NotImplementedException();
@@ -700,9 +813,24 @@ namespace acpipc.Aml
         private bool ParseDefLNot(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a;
 
-            if (ParseByte(aml, ref idx, 0x92))
+            if (ParseByte(aml, ref idx, 0x92) &&
+                ParseTermArg(aml, ref idx, out a, s))
+            {
+                /* Try to evaluate to integers */
+                ACPIObject ai;
+                ai = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                if (ai != null)
+                {
+                    if (ai.IntegerData == 0)
+                        result = Ones;
+                    else
+                        result = Zero;
+                    return true;
+                }
                 throw new NotImplementedException();
+            }
 
             idx = old_idx;
             result = null;
@@ -712,10 +840,27 @@ namespace acpipc.Aml
         private bool ParseDefLNotEqual(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
 
             if (ParseByte(aml, ref idx, 0x92) &&
-                ParseByte(aml, ref idx, 0x93))
+                ParseByte(aml, ref idx, 0x93) &&
+                ParseTermArg(aml, ref idx, out a, s) &&
+                ParseTermArg(aml, ref idx, out b, s))
+            {
+                /* Try to evaluate to integers */
+                ACPIObject ai, bi;
+                ai = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                bi = b.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                if ((ai != null) && (bi != null))
+                {
+                    if (ai.IntegerData != bi.IntegerData)
+                        result = Ones;
+                    else
+                        result = Zero;
+                    return true;
+                }
                 throw new NotImplementedException();
+            }
 
             idx = old_idx;
             result = null;
@@ -738,9 +883,26 @@ namespace acpipc.Aml
         private bool ParseDefLOr(byte[] aml, ref int idx, out ACPIObject result, State s)
         {
             int old_idx = idx;
+            ACPIObject a, b;
 
-            if (ParseByte(aml, ref idx, 0x91))
+            if (ParseByte(aml, ref idx, 0x91) &&
+                ParseTermArg(aml, ref idx, out a, s) &&
+                ParseTermArg(aml, ref idx, out b, s))
+            {
+                /* Try to evaluate to integers */
+                ACPIObject ai, bi;
+                ai = a.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                bi = b.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+                if ((ai != null) && (bi != null))
+                {
+                    if (ai.IntegerData != 0 | bi.IntegerData != 0)
+                        result = Ones;
+                    else
+                        result = Zero;
+                    return true;
+                }
                 throw new NotImplementedException();
+            }
 
             idx = old_idx;
             result = null;
@@ -1122,6 +1284,11 @@ namespace acpipc.Aml
 
                 /* If it is a valid name, we interpret it somehow */
                 result = FindObject(name);
+                if (result == null)
+                {
+                    System.Diagnostics.Debugger.Log(0, "acpipc", "Unable to find object: " + name.ToString());
+                    return false;
+                }
 
                 if (result.Type == ACPIObject.DataType.Method)
                 {
@@ -1143,9 +1310,17 @@ namespace acpipc.Aml
                         }
                         new_state.Args[i] = p.Evaluate(mi, s, this);
                     }
-                    int meth_idx = MethodData.Offset;
-                    if (ParseTermList(aml, ref meth_idx, MethodData.Length, out result, new_state))
+                    if (MethodData.Builtin == null)
+                    {
+                        int meth_idx = MethodData.Offset;
+                        if (ParseTermList(aml, ref meth_idx, MethodData.Length, out result, new_state))
+                            return true;
+                    }
+                    else
+                    {
+                        result = MethodData.Builtin.Execute(new_state);
                         return true;
+                    }
                 }
                 else
                     return true;

@@ -38,14 +38,23 @@ namespace acpipc.Aml
             Uninitialized, Buffer, BufferField, DDBHandle,
             Device, Event, FieldUnit, Integer, Method, Mutex, ObjectReference,
             OpRegion, Package, PowerResource, Processor, String, ThermalZone,
-            Arg, Local
+            Arg, Local, BuiltinMethod
         };
 
         public DataType Type;
 
         public object Data;
 
-        public ulong IntegerData { get { return (ulong)Data; } }
+        public ulong IntegerData
+        {
+            get
+            {
+                if (this == null)
+                    throw new Exception("Calling get_IntegerData on null");
+
+                return (ulong)Data;
+            }
+        }
 
         public ACPIObject()
         {
@@ -99,6 +108,8 @@ namespace acpipc.Aml
             public int ArgCount;
             public bool Serialized;
             public int SyncLevel;
+
+            internal BuiltinMethod Builtin = null;
         }
 
         public class BufferFieldData
@@ -534,8 +545,25 @@ namespace acpipc.Aml
             return new ACPIObject(DataType.Integer, v);
         }
 
+        public override string ToString()
+        {
+            switch(Type)
+            {
+                case DataType.String:
+                    return Data as string;
+                case DataType.Integer:
+                    return ((ulong)Data).ToString();
+                default:
+                    return Type.ToString();
+            }
+        }
+
         internal ACPIObject Evaluate(IMachineInterface mi, Namespace.State s, Namespace n)
         {
+            if(this == null)
+            {
+                throw new Exception("passed null pointer as this");
+            }
             /* Evaluate as much as we can */
             switch (Type)
             {
@@ -704,6 +732,10 @@ namespace acpipc.Aml
 
                         //System.Diagnostics.Debugger.Log(0, "acpipc", "Begin evaluating method: " + Name.ToString());
 
+                        if (md == null)
+                            throw new Exception("Method object has no MethodData");
+                        if (md.Builtin != null)
+                            return md.Builtin.Execute(new_state);
                         if (!n.ParseTermList(md.AML, ref midx, md.Length, out ret, new_state))
                             throw new Exception();
 

@@ -38,6 +38,7 @@
     <Compile Include="AddDevice.cs" />
     <Compile Include="aml\ACPIName.cs" />
     <Compile Include="aml\ACPIObject.cs" />
+    <Compile Include="aml\BuiltinMethod.cs" />
     <Compile Include="aml\DataAccess.cs" />
     <Compile Include="aml\DefBlockHeader.cs" />
     <Compile Include="aml\IMachineInterface.cs" />
