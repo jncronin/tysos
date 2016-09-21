@@ -317,7 +317,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                     return;
 
                 case 5:
-                    /* new string(char *value, int startIndex, int length) */
+                    /* new string(char[] value, int startIndex, int length) */
                     ass.Assign(state, used_locs, length_ptr, loc_params[3], Assembler.CliType.int32, il.il.tybel);
                     ass.Mul(state, used_locs, loc_params[2], loc_params[2], const_2, Assembler.CliType.int32, il.il.tybel);
                     ass.Conv(state, used_locs, loc_params[2], loc_params[2], new Signature.BaseType(BaseType_Type.I), new Signature.BaseType(BaseType_Type.I4), true, il.il.tybel);
@@ -409,7 +409,7 @@ namespace libtysila.frontend.cil.OpcodeEncodings
                 ass.Assign(state, used_locs, loc_dest, loc_params[3], Assembler.CliType.int32, il.il.tybel);
                 ass.Mul(state, used_locs, loc_dest, loc_dest, new libasm.const_location { c = 2 }, Assembler.CliType.int32, il.il.tybel);
                 loc_strlength = loc_params[3];
-                return 3;              
+                return 5;              
             }
             else if (Signature.BaseMethodSigCompare(c_6, str_mtc.msig, ass))
             {
