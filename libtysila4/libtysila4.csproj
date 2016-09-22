@@ -40,6 +40,7 @@
     <Compile Include="graph\DominanceGraph.cs" />
     <Compile Include="graph\Graph.cs" />
     <Compile Include="graph\Node.cs" />
+    <Compile Include="ir\ConstantPropagation.cs" />
     <Compile Include="ir\ld.cs" />
     <Compile Include="ir\misc.cs" />
     <Compile Include="ir\obj.cs" />

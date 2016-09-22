@@ -46,7 +46,7 @@ namespace libtysila4.target.x86
             // for now, fail if addr or value aren't on
             //  stack.
             // TODO: handle this - assign to temporaries
-            if (!addr.IsStack || !_value.IsStack)
+            if (!addr.IsStack || (!_value.IsStack && !_value.IsConstant))
                 throw new NotImplementedException();
 
             int oc = 0;
@@ -54,13 +54,22 @@ namespace libtysila4.target.x86
             switch(destsize)
             {
                 case 1:
-                    oc = x86_mov_rm8disp_r32;
+                    if (_value.IsStack)
+                        oc = x86_mov_rm8disp_r32;
+                    else
+                        oc = x86_mov_rm8disp_imm32;
                     break;
                 case 2:
-                    oc = x86_mov_rm16disp_r32;
+                    if (_value.IsStack)
+                        oc = x86_mov_rm16disp_r32;
+                    else
+                        oc = x86_mov_rm16disp_imm32;
                     break;
                 case 4:
-                    oc = x86_mov_rm32disp_r32;
+                    if (_value.IsStack)
+                        oc = x86_mov_rm32disp_r32;
+                    else
+                        oc = x86_mov_rm32disp_imm32;
                     break;
                 case 8:
                     throw new NotImplementedException();

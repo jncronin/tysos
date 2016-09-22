@@ -142,15 +142,23 @@ namespace libtysila4.ir
             }
         }
 
+        public string IndividualString
+        {
+            get
+            {
+                if (is_mc)
+                    return MCString();
+                else
+                    return IrString();
+            }
+        }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             foreach(var o in all_insts)
             {
-                if (o.is_mc)
-                    sb.Append(o.MCString());
-                else
-                    sb.Append(o.IrString());
+                sb.Append(o.IndividualString);
                 sb.Append(Environment.NewLine);
             }
             return sb.ToString();
@@ -277,12 +285,20 @@ namespace libtysila4.ir
         public enum UseDefType { Unknown, Use, Def };
         public UseDefType ud = UseDefType.Unknown;
 
+        /* These are used for constant folding */
+        internal int cf_stype = 0;
+        internal metadata.TypeSpec cf_type = null;
+        internal long cf_intval = 0;
+        internal ulong cf_uintval = 0;
+        internal bool cf_hasval = false;
+
         public bool IsStack { get { return t == Opcode.vl_stack || t == Opcode.vl_stack32 || t == Opcode.vl_stack64; } }
         public bool IsLV { get { return t == Opcode.vl_lv || t == Opcode.vl_lv32 || t == Opcode.vl_lv64; } }
         public bool IsLA { get { return t == Opcode.vl_arg || t == Opcode.vl_arg32 || t == Opcode.vl_arg64; } }
         public bool IsMreg { get { return t == Opcode.vl_mreg; } }
         public bool IsUse { get { return ud == UseDefType.Use; } }
         public bool IsDef { get { return ud == UseDefType.Def; } }
+        public bool IsConstant { get { return t == Opcode.vl_c || t == Opcode.vl_c32 || t == Opcode.vl_c64; } }
 
         /** <summary>Decorate the current type to include bitness</summary> */
         public int DecoratedType(target.Target tgt)

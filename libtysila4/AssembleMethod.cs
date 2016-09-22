@@ -126,6 +126,7 @@ namespace libtysila4
                 ir.SimplifyLocalVars.SimplifyLocalVarsPass,
                 graph.DominanceGraph.GenerateDominanceGraph,
                 ir.SSA.ConvertToSSAPass,
+                ir.ConstantPropagation.ConstantPropagationPass,
                 ir.DeadCodeElimination.DeadCodeEliminationPass,
                 ir.ResolvePhis.ResolvePhisPass,
                 target.Target.MCLowerPass,

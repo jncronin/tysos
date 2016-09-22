@@ -73,6 +73,7 @@ namespace libtysila4.target.x86
                     {
                     new Param { t = Opcode.vl_str, str = "sub_rm32_imm32", v = x86_sub_rm32_imm32 },
                     new Param { t = Opcode.vl_mreg, mreg = r_esp },
+                    new Param { t = Opcode.vl_mreg, mreg = r_esp },
                     new Param { t = Opcode.vl_c32, v = stack_loc }
                     }
                 });
@@ -195,6 +196,7 @@ namespace libtysila4.target.x86
                     p = new Param[]
                     {
                     new Param { t = Opcode.vl_str, str = "add_rm32_imm32", v = x86_add_rm32_imm32 },
+                    new Param { t = Opcode.vl_mreg, mreg = r_esp },
                     new Param { t = Opcode.vl_mreg, mreg = r_esp },
                     new Param { t = Opcode.vl_c32, v = stack_loc }
                     }

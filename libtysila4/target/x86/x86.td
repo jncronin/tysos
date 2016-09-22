@@ -196,6 +196,12 @@ multiinstr(name, oc_add, [ gprmem, imm ], [ gprmem ],
 		[ "x86_mov_rm32_r32", "$d0", "$tu0" ]
 ], [ IntRegs, 0 ], [ IntRegs ], 0);
 
+multiinstr(name, oc_add, [ imm, gprmem ], [ gprmem ],
+	[	[ "x86_mov_r32_rm32", "$td0", "$u1" ],
+		[ "x86_add_rm32_imm32", "$td0", "$tu0", "$u0" ],
+		[ "x86_mov_rm32_r32", "$d0", "$tu0" ]
+], [ 0, IntRegs ], [ IntRegs ], 0);
+
 
 instr(name, oc_br, [], [],
 	[	[ "x86_jmp_rel32", "$br0" ]

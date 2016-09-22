@@ -94,12 +94,12 @@ namespace libtysila4.target.x86
                         case x86_add_rm32_imm32:
                             Code.Add(0x81);
                             Code.AddRange(ModRMSIB(0, I.p[1].mreg));
-                            AddImm32(Code, I.p[2].v);
+                            AddImm32(Code, I.p[3].v);
                             break;
                         case x86_sub_rm32_imm32:
                             Code.Add(0x81);
                             Code.AddRange(ModRMSIB(5, I.p[1].mreg));
-                            AddImm32(Code, I.p[2].v);
+                            AddImm32(Code, I.p[3].v);
                             break;
                         case x86_sub_r32_rm32:
                             Code.Add(0x2b);
@@ -339,6 +339,18 @@ namespace libtysila4.target.x86
                             Code.AddRange(ModRMSIB(0, GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                             AddImm32(Code, I.p[3].v);
                             break;
+                        case x86_mov_rm16disp_imm32:
+                            Code.Add(0x67); // CHECK
+                            Code.Add(0xc7);
+                            Code.AddRange(ModRMSIB(0, GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
+                            AddImm16(Code, I.p[3].v);
+                            break;
+                        case x86_mov_rm8disp_imm32:
+                            Code.Add(0xc6);
+                            Code.AddRange(ModRMSIB(0, GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
+                            AddImm8(Code, I.p[3].v);
+                            break;
+
 
                         case x86_mov_rm8disp_r32:
                             Code.Add(0x88);
@@ -413,6 +425,17 @@ namespace libtysila4.target.x86
             c.Add((byte)((v >> 8) & 0xff));
             c.Add((byte)((v >> 16) & 0xff));
             c.Add((byte)((v >> 24) & 0xff));
+        }
+
+        private void AddImm16(List<byte> c, long v)
+        {
+            c.Add((byte)(v & 0xff));
+            c.Add((byte)((v >> 8) & 0xff));
+        }
+
+        private void AddImm8(List<byte> c, long v)
+        {
+            c.Add((byte)(v & 0xff));
         }
 
         private IEnumerable<byte> ModRMSIB(Reg r, Reg rm)

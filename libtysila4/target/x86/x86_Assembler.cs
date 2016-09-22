@@ -262,6 +262,7 @@ namespace libtysila4.target.x86
                     {
                         new Param { t = Opcode.vl_str, str = "sub", v = x86_sub_rm32_imm32 },
                         new Param { t = Opcode.vl_mreg, mreg = r_esp },
+                        new Param { t = Opcode.vl_mreg, mreg = r_esp },
                         new Param { t = Opcode.vl_c, v = lv_size }
                     } }
                 };
