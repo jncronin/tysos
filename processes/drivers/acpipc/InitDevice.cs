@@ -163,6 +163,12 @@ namespace acpipc
             int idx = 0;
             byte[] aml = v_dsdt.ToArray();
             n.ParseDefBlockHeader(aml, ref idx, h);
+            System.Diagnostics.Debugger.Log(0, "acpipc", "DSDT OEM: " + h.OemID + ", TableID: " + h.OemTableID);
+            if(h.OemID.Equals("VBOX  "))
+            {
+                System.Diagnostics.Debugger.Log(0, "acpipc", "VirtualBox BIOS detected");
+                mi.is_vbox = true;
+            }
             System.Diagnostics.Debugger.Log(0, "acpipc", "DefBlockHeader parsed");
 
             Aml.Namespace.State s = new Aml.Namespace.State
@@ -436,7 +442,7 @@ namespace acpipc
 
         bool SCIInt()
         {
-            System.Diagnostics.Debugger.Log(0, null, "SCIINT");
+            System.Diagnostics.Debugger.Log(0, "acpipc", "SCIINT");
             bool ret = false;
 
             /* Check PM1 status register */
@@ -461,7 +467,7 @@ namespace acpipc
 
         private void HandleFixedPowerButtonEvent()
         {
-            System.Diagnostics.Debugger.Log(0, null, "POWER BUTTON");
+            System.Diagnostics.Debugger.Log(0, "acpipc", "POWER BUTTON");
 
             /* Write 1 to the register to clear it (see 4.7.3.1.1) */
             fadt.PM1_STS.Write(1UL << 8);
@@ -478,23 +484,23 @@ namespace acpipc
             var s5 = n.Evaluate("\\_S5_", mi);
             if (s5 == null)
             {
-                System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned null");
+                System.Diagnostics.Debugger.Log(0, "acpipc", "\\_S5 returned null");
                 return;
             }
             if(s5.Type != ACPIObject.DataType.Package)
             {
-                System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned invalid type: " + s5.Type.ToString());
+                System.Diagnostics.Debugger.Log(0, "acpipc", "\\_S5 returned invalid type: " + s5.Type.ToString());
                 return;
             }
             var pdat = s5.Data as ACPIObject[];
             if(pdat == null)
             {
-                System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned invalid data type: " + s5.Data.GetType().ToString());
+                System.Diagnostics.Debugger.Log(0, "acpipc", "\\_S5 returned invalid data type: " + s5.Data.GetType().ToString());
                 return;
             }
             if(pdat.Length < 2)
             {
-                System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned too short a package (" + pdat.Length.ToString() + " items)");
+                System.Diagnostics.Debugger.Log(0, "acpipc", "\\_S5 returned too short a package (" + pdat.Length.ToString() + " items)");
                 return;
             }
             
@@ -506,10 +512,12 @@ namespace acpipc
             var pm1a_val = (slp_typa << 10) | (1UL << 13);
             var pm1b_val = (slp_typb << 10) | (1UL << 13);
 
-            System.Diagnostics.Debugger.Log(0, null, "\\_S5 returned " + slp_typa.ToString("X") + " and " + slp_typb.ToString());
+            System.Diagnostics.Debugger.Log(0, "acpipc", "\\_S5 returned " + slp_typa.ToString("X") + " and " + slp_typb.ToString());
 
             n.Evaluate("\\_PTS", mi, new ACPIObject[] { 5 });
             n.Evaluate("\\_GTS", mi, new ACPIObject[] { 5 });
+
+            System.Diagnostics.Debugger.Log(0, "acpipc", "Shutting down...");
 
             fadt.PM1a_CNT_BLK.Write(pm1a_val);
             fadt.PM1b_CNT_BLK.Write(pm1b_val);

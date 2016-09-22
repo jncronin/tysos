@@ -56,7 +56,6 @@ namespace acpipc.Aml
 
         internal override ACPIObject Execute(Namespace.State state)
         {
-            System.Diagnostics.Debugger.Log(0, "acpipc", "_OSI(" + state.Args[0].ToString() + ")");
             ACPIObject osval = state.Args[0].EvaluateTo(ACPIObject.DataType.String, _mi, state, _n);
             string osvalstr = osval.Data as string;
 
@@ -65,7 +64,10 @@ namespace acpipc.Aml
                 System.Diagnostics.Debugger.Log(0, "acpipc", "_OSI(null) called, returning 0");
                 return Namespace.Zero;
             }
-            ulong ret = Namespace.Ones;
+            ulong ret = Namespace.Zero;
+
+            if (osvalstr == "Windows 2015")
+                ret = Namespace.Ones;
 
             System.Diagnostics.Debugger.Log(0, "acpipc", "_OSI(" + osvalstr + ") called, returning " + ret.ToString());
             return ret;

@@ -156,7 +156,7 @@ namespace acpipc
 
                 if(valid == false)
                 {
-                    System.Diagnostics.Debugger.Log(0, null, "GAS: Read(): unsupported addrspace: " +
+                    System.Diagnostics.Debugger.Log(0, "acpipc", "GAS: Read(): unsupported addrspace: " +
                         addrspace.ToString() + " and reg_bit_width: " + reg_bit_width.ToString());
 
                     return 0;
@@ -180,7 +180,7 @@ namespace acpipc
                 }
             }
 
-            System.Diagnostics.Debugger.Log(0, null, "GAS: Read(): read " + ret.ToString("X") + " from " +
+            System.Diagnostics.Debugger.Log(0, "acpipc", "GAS: Read(): read " + ret.ToString("X") + " from " +
                 addrspace.ToString() + ":" + addr.ToString("X"));
 
             return ret;
@@ -285,7 +285,7 @@ namespace acpipc
 
                 if(valid == false)
                 {
-                    System.Diagnostics.Debugger.Log(0, null, "GAS: Write(): unsupported addrspace: " +
+                    System.Diagnostics.Debugger.Log(0, "acpipc", "GAS: Write(): unsupported addrspace: " +
                         addrspace.ToString() + " and reg_bit_width: " + reg_bit_width.ToString());
 
                     return;
@@ -294,7 +294,7 @@ namespace acpipc
                 bits_written += bits_adjust;
             }
 
-            System.Diagnostics.Debugger.Log(0, null, "GAS: Read(): wrote " + val.ToString("X") + " to " +
+            System.Diagnostics.Debugger.Log(0, "acpipc", "GAS: Write(): wrote " + val.ToString("X") + " to " +
                 addrspace.ToString() + ":" + addr.ToString("X"));
         }
     }

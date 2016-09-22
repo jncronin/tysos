@@ -28,6 +28,7 @@ namespace acpipc
     class MachineInterface : Aml.IMachineInterface
     {
         acpipc a;
+        internal bool is_vbox = false;
 
         public MachineInterface(acpipc acpi)
         {
@@ -94,8 +95,60 @@ namespace acpipc
             throw new NotImplementedException();
         }
 
+        StringBuilder vbox_dbg;
+
+        void vbox_write(byte v)
+        {
+            vbox_write(v.ToString("X2"));
+            vbox_write_char(0);
+        }
+
+        void vbox_write(ushort v)
+        {
+            vbox_write(v.ToString("X4"));
+            vbox_write_char(0);
+        }
+
+        void vbox_write(uint v)
+        {
+            vbox_write(v.ToString("X8"));
+            vbox_write_char(0);
+        }
+
+        void vbox_write(string s)
+        {
+            foreach (char c in s)
+                vbox_write_char((byte)c);
+        }
+
+        void vbox_write_char(byte v)
+        {
+                if(vbox_dbg == null)
+                    vbox_dbg = new StringBuilder();
+                if (v == 0 || v == '\n')
+                {
+                    if (vbox_dbg != null)
+                    {
+                        System.Diagnostics.Debugger.Log(0, "acpipc", "VBOXDBG: " + vbox_dbg.ToString());
+                        vbox_dbg = null;
+                    }
+                }
+                else
+                    vbox_dbg.Append((char)v);
+        }
+
         public void WriteIOByte(ulong Addr, byte v)
         {
+            /* If its a write to the vbox dbg port, log it */
+            if(Addr == 0x3001 && is_vbox)
+            {
+                vbox_write_char(v);
+            }
+            else if(Addr == 0x3000 && is_vbox)
+            {
+                vbox_write(v);
+            }
+
             tysos.x86_64.IOResource io = a.ios.Contains(Addr, 1);
             if (io != null)
                 io.Write(Addr, 1, v);
@@ -105,6 +158,12 @@ namespace acpipc
 
         public void WriteIODWord(ulong Addr, uint v)
         {
+            /* If its a write to the vbox dbg port, log it */
+            if (Addr == 0x3000 && is_vbox)
+            {
+                vbox_write(v);
+            }
+
             tysos.x86_64.IOResource io = a.ios.Contains(Addr, 4);
             if (io != null)
             {
@@ -126,6 +185,12 @@ namespace acpipc
 
         public void WriteIOWord(ulong Addr, ushort v)
         {
+            /* If its a write to the vbox dbg port, log it */
+            if (Addr == 0x3000 && is_vbox)
+            {
+                vbox_write(v);
+            }
+
             tysos.x86_64.IOResource io = a.ios.Contains(Addr, 2);
             if (io != null)
                 io.Write(Addr, 2, v);

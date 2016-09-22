@@ -553,6 +553,32 @@ namespace acpipc.Aml
                     return Data as string;
                 case DataType.Integer:
                     return ((ulong)Data).ToString();
+                case DataType.Buffer:
+                    {
+                        StringBuilder sb = new StringBuilder("Buffer [ ");
+                        byte[] b = Data as byte[];
+                        for(int i = 0; i < b.Length; i++)
+                        {
+                            if (i != 0)
+                                sb.Append(", ");
+                            sb.Append(b[i].ToString("X2"));
+                        }
+                        sb.Append(" ]");
+                        return sb.ToString();
+                    }
+                case DataType.Package:
+                    {
+                        StringBuilder sb = new StringBuilder("Package [ ");
+                        ACPIObject[] b = Data as ACPIObject[];
+                        for (int i = 0; i < b.Length; i++)
+                        {
+                            if (i != 0)
+                                sb.Append(", ");
+                            sb.Append(b[i].ToString());
+                        }
+                        sb.Append(" ]");
+                        return sb.ToString();
+                    }
                 default:
                     return Type.ToString();
             }

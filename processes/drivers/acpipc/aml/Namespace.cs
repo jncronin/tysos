@@ -36,6 +36,8 @@ namespace acpipc.Aml
             public ACPIObject Return;
 
             public bool IsMethodExec = false;
+
+            public int BlockEnd = -1;
         }
 
         IMachineInterface mi;
@@ -491,6 +493,8 @@ namespace acpipc.Aml
                     throw new Exception("Source must be ObjectReference");
 
                 ACPIObject.ObjRefData ord = objref.Data as ACPIObject.ObjRefData;
+
+                //System.Diagnostics.Debugger.Log(0, "acpipc", old_idx.ToString() + ": DerefOf(" + ord.Object.ToString() + ", " + ord.Index.ToString() + ")");
 
                 switch (ord.Object.Type)
                 {
@@ -1497,13 +1501,25 @@ namespace acpipc.Aml
             {
                 int pkg_end = pkg_length_offset + pkg_length;
 
-                if (Predicate.IntegerData != 0)
+                ACPIObject PEval = Predicate.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
+
+                if (PEval.IntegerData != 0)
                 {
                     /* Execute the if block */
+                    int old_blk_end = s.BlockEnd;
+                    s.BlockEnd = pkg_end;
+                    //System.Diagnostics.Debugger.Log(0, "acpipc", old_idx + ": IfElse - Predicate: " + PEval.ToString() + ", executing with BlockEnd as " + s.BlockEnd);
                     ParseTermList(aml, ref idx, pkg_end - idx, s);
+                    s.BlockEnd = old_blk_end;
                 }
                 else
+                {
                     idx = pkg_end;
+                    //System.Diagnostics.Debugger.Log(0, "acpipc", old_idx + ": IfElse - Predicate: " + PEval.ToString() + ", skipping to " + idx.ToString());
+                }
+
+                if (idx == s.BlockEnd)
+                    return true;
 
                 /* See if there is an else block */
                 if (ParseByte(aml, ref idx, 0xa1))
@@ -1512,13 +1528,21 @@ namespace acpipc.Aml
                     ParsePkgLength(aml, ref idx, out epkg_length, out epkg_length_offset);
                     int epkg_end = epkg_length_offset + epkg_length;
 
-                    if (Predicate.IntegerData == 0)
+
+                    if (PEval.IntegerData == 0)
                     {
                         /* Execute the else block */
+                        int old_blk_end = s.BlockEnd;
+                        s.BlockEnd = epkg_end;
+                        //System.Diagnostics.Debugger.Log(0, "acpipc", old_idx + ": IfElse - has Else, executing it with BlockEnd as " + s.BlockEnd.ToString());
                         ParseTermList(aml, ref idx, epkg_end - idx, s);
+                        s.BlockEnd = old_blk_end;
                     }
                     else
+                    {
                         idx = epkg_end;
+                        //System.Diagnostics.Debugger.Log(0, "acpipc", old_idx + ": IfElse - has Else, skipping to " + idx.ToString());
+                    }
                 }
 
                 return true;
@@ -1671,7 +1695,10 @@ namespace acpipc.Aml
                 {
                     int widx = pkg_start;
 
+                    int old_blk_end = s.BlockEnd;
+                    s.BlockEnd = pkg_end;
                     ParseTermList(aml, ref widx, pkg_end - pkg_start, s);
+                    s.BlockEnd = old_blk_end;
 
                     PEval = Predicate.EvaluateTo(ACPIObject.DataType.Integer, mi, s, this);
                 }
