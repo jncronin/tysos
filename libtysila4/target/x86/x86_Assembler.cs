@@ -272,6 +272,7 @@ namespace libtysila4.target.x86
         {
             return new Graph.PassDelegate[]
             {
+                SimplifyImmediates,
                 Assemble.AssemblePass,
             };
         }

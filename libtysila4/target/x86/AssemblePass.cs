@@ -96,10 +96,20 @@ namespace libtysila4.target.x86
                             Code.AddRange(ModRMSIB(0, I.p[1].mreg));
                             AddImm32(Code, I.p[3].v);
                             break;
+                        case x86_add_rm32_imm8:
+                            Code.Add(0x83);
+                            Code.AddRange(ModRMSIB(0, I.p[1].mreg));
+                            AddImm8(Code, I.p[3].v);
+                            break;
                         case x86_sub_rm32_imm32:
                             Code.Add(0x81);
                             Code.AddRange(ModRMSIB(5, I.p[1].mreg));
                             AddImm32(Code, I.p[3].v);
+                            break;
+                        case x86_sub_rm32_imm8:
+                            Code.Add(0x83);
+                            Code.AddRange(ModRMSIB(5, I.p[1].mreg));
+                            AddImm8(Code, I.p[3].v);
                             break;
                         case x86_sub_r32_rm32:
                             Code.Add(0x2b);
@@ -157,6 +167,11 @@ namespace libtysila4.target.x86
                                 Code.AddRange(ModRMSIB(7, I.p[1].mreg));
                             }
                             AddImm32(Code, I.p[2].v);
+                            break;
+                        case x86_cmp_rm32_imm8:
+                            Code.Add(0x83);
+                            Code.AddRange(ModRMSIB(7, I.p[1].mreg));
+                            AddImm8(Code, I.p[2].v);
                             break;
                         case x86_set_rm32:
                             if(I.p[1].v != ir.Opcode.cc_never)
@@ -385,6 +400,11 @@ namespace libtysila4.target.x86
 
                         case x86_lea_r32:
                             Code.Add(0x8d);
+                            Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                            break;
+
+                        case x86_xor_r32_rm32:
+                            Code.Add(0x33);
                             Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                             break;
 

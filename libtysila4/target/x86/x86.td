@@ -48,6 +48,7 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"cmp_rm32_r32",
 	"cmp_r32_rm32",
 	"cmp_rm32_imm32",
+	"cmp_rm32_imm8",
 	"set_rm32",
 	"movsxbd", 	"movsxwd", 	"movzxbd", 	"movzxwd",
 	"jmp_rel32",
@@ -61,11 +62,14 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"push_rm32",
 	"push_imm32",
 	"add_rm32_imm32",
+	"add_rm32_imm8",
 	"sub_rm32_imm32",
+	"sub_rm32_imm8",
 	"add_r32_rm32",
 	"sub_r32_rm32",
 	"imul_r32_rm32_imm32",
 	"lea_r32",
+	"xor_r32_rm32",
 ]);
 
 gprmem = [ vl_stack32, vl_lv32, vl_arg32, vl_stack, vl_lv, vl_arg ];

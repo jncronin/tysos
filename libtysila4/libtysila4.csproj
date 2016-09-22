@@ -83,6 +83,7 @@
     <Compile Include="ir\SSA.cs" />
     <Compile Include="target\Target.cs" />
     <Compile Include="target\Targets.cs" />
+    <Compile Include="target\x86\SimplifyImmediates.cs" />
     <Compile Include="target\x86\AssemblePass.cs" />
     <Compile Include="target\x86\zeromem.cs" />
     <Compile Include="target\x86\lab.cs" />
