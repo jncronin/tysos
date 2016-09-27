@@ -101,7 +101,11 @@ namespace libtysila4.ir
             if (is_virt)
                 oc = Opcode.oc_callvirt;
 
-            return new Opcode[] { new Opcode { oc = oc, defs = defs, uses = uses } };
+            int ret_stype = 0;
+            if (ret_ts != null)
+                ret_stype = ret_ts.SimpleType;
+
+            return new Opcode[] { new Opcode { oc = oc, defs = defs, uses = uses, call_retval = ret_ts, call_retval_stype = ret_stype } };
         }
 
         static Opcode[] call_stloc(cil.CilNode start, target.Target t)

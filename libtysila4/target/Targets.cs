@@ -403,6 +403,11 @@ namespace libtysila4.target
             public Reg basereg;
             public long disp;
 
+            public ContentsReg()
+            {
+                type = rt_contents;
+            }
+
             public override string ToString()
             {
                 if (disp == 0)

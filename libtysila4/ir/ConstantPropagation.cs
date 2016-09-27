@@ -183,6 +183,13 @@ namespace libtysila4.ir
                 case Opcode.oc_ldlabcontents:
                     break;
 
+                case Opcode.oc_call:
+                    if (o.call_retval != null)
+                        o.defs[0].cf_type = o.call_retval;
+                    if (o.call_retval_stype != 0)
+                        o.defs[0].cf_stype = o.call_retval_stype;
+                    break;
+
                 default:
                     throw new NotImplementedException();
             }

@@ -150,7 +150,7 @@ namespace libtysila4.target.x86
                     {
                         p = new Param[]
                         {
-                            new Param { t = Opcode.vl_str, str = "mov_r32_rm32", v = x86_mov_r32_rm32disp },
+                            new Param { t = Opcode.vl_str, str = "mov_r32_rm32disp", v = x86_mov_r32_rm32disp },
                             new Param { t = Opcode.vl_mreg, mreg = r_eax, ud = Param.UseDefType.Def },
                             irnode.uses[1],
                             new Param { t = Opcode.vl_c32, v = 0, ud = Param.UseDefType.Use }
@@ -229,10 +229,37 @@ namespace libtysila4.target.x86
                 var retcc = retcc_map["ret_" + cc];
                 var retloc = retcc[rettype.ct][0];
                 retreg = this.regs[retloc];
-                Param[] ps = new Param[3];
-                ps[0] = new Param { t = Opcode.vl_str, str = "mov", v = x86_mov_r32_rm32 };
-                ps[1] = new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Def };
-                ps[2] = irnode.uses[1];
+
+                Param[] ps;
+                switch (rettype.ct)
+                {
+                    case Opcode.ct_int32:
+                    case Opcode.ct_intptr:
+                    case Opcode.ct_object:
+                    case Opcode.ct_ref:
+                        if (rettype.IsConstant)
+                        {
+                            ps = new Param[3];
+                            ps[0] = new Param { t = Opcode.vl_str, str = "mov_rm32_imm32", v = x86_mov_rm32_imm32 };
+                            ps[1] = new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Def };
+                            ps[2] = irnode.uses[1];
+                        }
+                        else if (rettype.IsStack)
+                        {
+                            ps = new Param[3];
+                            ps[0] = new Param { t = Opcode.vl_str, str = "mov_r32_rm32", v = x86_mov_r32_rm32 };
+                            ps[1] = new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Def };
+                            ps[2] = irnode.uses[1];
+                        }
+                        else
+                            throw new NotImplementedException();
+
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
+                }
+            
                 irnode.mcinsts.Add(new MCInst { p = ps });
             }
 

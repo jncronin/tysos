@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila4\ir\IrMappings.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 15:38:05 on 22 September 2016
+ * It was generated at 21:34:00 on 27 September 2016
  * from D:\tysos\branches\tysila3\libtysila4\ir\IrMappings.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -61,6 +61,8 @@ namespace libtysila4.ir
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.newobj }] = newobj;
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.dup }] = dup;
 			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.initobj }] = initobj;
+			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.castclass }] = castclass;
+			simple_map[new cil.Opcode.SimpleOpcode[] { cil.Opcode.SimpleOpcode.ldtoken }] = ldtoken;
 		}
 	}
 }

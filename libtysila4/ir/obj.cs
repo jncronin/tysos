@@ -74,9 +74,10 @@ namespace libtysila4.ir
             {
                 oc = Opcode.oc_call,
                 defs = new Param[] { obj_p },
-                uses = new Param[] { malloc_target, tsize_p }
+                uses = new Param[] { malloc_target, tsize_p },
+                call_retval = ms.type,
+                call_retval_stype = ms.type.SimpleType
             };
-
 
             /* Get opcodes for calling the constructor */
             var call_ops = call(start, ms, t);
@@ -152,6 +153,116 @@ namespace libtysila4.ir
                     },
                     defs = new Param[] { },
                     data_size = obj_size
+                }
+            };
+        }
+
+        static Opcode[] ldtoken(cil.CilNode start, target.Target t)
+        {
+            metadata.MetadataStream m;
+            uint token;
+            start.GetToken(out m, out token);
+            int table_id, row;
+            m.InterpretToken(token, out table_id, out row);
+
+            var ms = start.n.g.ms;
+
+            string mangled_name;
+            int offset = 0;
+            metadata.MethodSpec tok_ms = null;
+            metadata.TypeSpec tok_ts = null;
+
+            switch(table_id)
+            {
+                case metadata.MetadataStream.tid_MethodDef:
+                case metadata.MetadataStream.tid_MethodSpec:
+                    if(!m.GetMethodDefRow(table_id, row, out tok_ms,
+                        ms.gtparams, ms.gmparams))
+                    {
+                        throw new MissingMethodException();
+                    }
+                    break;
+
+                case metadata.MetadataStream.tid_TypeDef:
+                case metadata.MetadataStream.tid_TypeRef:
+                case metadata.MetadataStream.tid_TypeSpec:
+                    tok_ts = m.GetTypeSpec(table_id, row,
+                        ms.gtparams, ms.gmparams);
+                    if (tok_ts == null)
+                        throw new TypeLoadException();
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+
+            if (tok_ts != null)
+            {
+                mangled_name = tok_ts.m.MangleType(tok_ts);
+                t.r.VTableRequestor.Request(tok_ts);
+                offset = layout.Layout.GetVTableTIOffset(tok_ts) *
+                    t.GetPointerSize();
+            }
+            else if (tok_ms != null)
+            {
+                mangled_name = tok_ms.m.MangleMethodSpec(tok_ms);
+                t.r.MethodSpecRequestor.Request(tok_ms);
+                offset = 0;
+            }
+            else
+                throw new NotImplementedException();
+
+            return new Opcode[]
+            {
+                new Opcode
+                {
+                    oc = Opcode.oc_ldlabaddr,
+                    uses = new Param[]
+                    {
+                        new Param { m = ms.m, t = Opcode.vl_str, str = mangled_name, v = offset },
+                    },
+                    defs = new Param[]
+                    {
+                        new Param { m = ms.m, t = Opcode.vl_stack, v = 0, ct = Opcode.ct_object },
+                    }
+                }
+            };
+        }
+
+        static Opcode[] castclass(cil.CilNode start, target.Target t)
+        {
+            /* We don't actually encode castclass/isinst here, but pass
+            it through to a later pass because the constant folding code
+            may be able to optimise it by tracing the type passed to it */
+
+            metadata.MetadataStream m;
+            uint token;
+            start.GetToken(out m, out token);
+            int table_id, row;
+            m.InterpretToken(token, out table_id, out row);
+
+            var ms = start.n.g.ms;
+
+            var ts = m.GetTypeSpec(table_id, row, ms.gtparams, ms.gmparams);
+
+            int oc = Opcode.oc_castclass;
+            if (start.opcode.opcode1 == cil.Opcode.SingleOpcodes.isinst)
+                oc = Opcode.oc_isinst;
+
+            return new Opcode[]
+            {
+                new Opcode
+                {
+                    oc = oc,
+                    uses = new Param[]
+                    {
+                        new Param { m = ms.m, t = Opcode.vl_stack, v = 0, ct = Opcode.ct_object },
+                        new Param { m = ms.m, t = Opcode.vl_ts_token, ts = ts },
+                    },
+                    defs = new Param[]
+                    {
+                        new Param { m = ms.m, t = Opcode.vl_stack, v = 0, ct = Opcode.ct_object },
+                    }
                 }
             };
         }

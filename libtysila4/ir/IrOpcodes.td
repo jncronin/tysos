@@ -20,7 +20,8 @@ intmap("libtysila4.ir", "Opcode", "vl", "vl_names", "init_vl", [
 	"cc",
 	"str",
 	"void",
-	"mreg"
+	"mreg",
+	"ts_token",
 ]);
 
 intmap("libtysila4.ir", "Opcode", "oc", "oc_names", "init_oc", [
@@ -52,6 +53,8 @@ intmap("libtysila4.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"zeromem",
 	"swap",
 	"phi",
+	"castclass",
+	"isinst",
 ]);
 
 intmap("libtysila4.ir", "Opcode", "cc", "cc_names", "init_cc", [

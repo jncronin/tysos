@@ -123,11 +123,11 @@ namespace libtysila4.ir
             // Clone the start stack to use to iterate through
             List<int> cur_stack = new List<int>(bb_start_stack);
             List<int> cur_vreg_stack = new List<int>(bb_start_vreg_stack);
-            foreach(var n in bb)
+            foreach (var n in bb)
             {
                 var c = n.c as Opcode;
                 // Specially handle swap statement
-                if(c.oc == Opcode.oc_swap)
+                if (c.oc == Opcode.oc_swap)
                 {
                     var tmp = cur_stack[cur_stack.Count - 1];
                     cur_stack[cur_stack.Count - 1] = cur_stack[cur_stack.Count - 2];
@@ -159,12 +159,18 @@ namespace libtysila4.ir
                     }
 
                     max_to_remove++;
-                    while(max_to_remove > 0)
+                    while (max_to_remove > 0)
                     {
                         cur_stack.RemoveAt(cur_stack.Count - 1);
                         cur_vreg_stack.RemoveAt(cur_vreg_stack.Count - 1);
                         max_to_remove--;
                     }
+                }
+
+                if (c.empties_stack)
+                {
+                    cur_stack.Clear();
+                    cur_vreg_stack.Clear();
                 }
 
                 if(c.defs != null)

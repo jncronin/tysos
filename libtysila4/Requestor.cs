@@ -33,11 +33,15 @@ namespace libtysila4
     {
         public abstract IndividualRequestor<TypeSpec> VTableRequestor { get; }
         public abstract IndividualRequestor<MethodSpec> MethodRequestor { get; }
+        public abstract IndividualRequestor<MethodSpec> MethodSpecRequestor { get; }
+        public abstract IndividualRequestor<MethodSpec> FieldSpecRequestor { get; }
     }
 
     public class CachingRequestor : Requestor
     {
         CachingIndividualRequestor<MethodSpec> m = new CachingIndividualRequestor<MethodSpec>();
+        CachingIndividualRequestor<MethodSpec> ms = new CachingIndividualRequestor<MethodSpec>();
+        CachingIndividualRequestor<MethodSpec> fs = new CachingIndividualRequestor<MethodSpec>();
         CachingIndividualRequestor<TypeSpec> vt = new CachingIndividualRequestor<TypeSpec>();
 
         public override IndividualRequestor<MethodSpec> MethodRequestor
@@ -45,6 +49,22 @@ namespace libtysila4
             get
             {
                 return m;
+            }
+        }
+
+        public override IndividualRequestor<MethodSpec> MethodSpecRequestor
+        {
+            get
+            {
+                return ms;
+            }
+        }
+
+        public override IndividualRequestor<MethodSpec> FieldSpecRequestor
+        {
+            get
+            {
+                return fs;
             }
         }
 

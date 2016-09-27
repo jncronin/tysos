@@ -36,10 +36,11 @@ namespace libtysila4.layout
             Method 0
             ...
 
+            TI TODO
+
             IFaceList TODO
 
 
-            TI TODO
         */
 
         public void CreateVtableLayout(metadata.TypeSpec ts, target.Target t)
@@ -98,6 +99,11 @@ namespace libtysila4.layout
             }
 
             return 0;   // fail
+        }
+
+        public static int GetVTableTIOffset(TypeSpec ts)
+        {
+            return GetVTableMethLength(ts);
         }
 
         private static int GetVTableMethLength(TypeSpec ts)

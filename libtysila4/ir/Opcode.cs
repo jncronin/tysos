@@ -35,7 +35,12 @@ namespace libtysila4.ir
 
         public int data_size = 0;
 
+        public bool empties_stack = false;  // leave empties the entire stack
+
         public int oc_idx;  // used for SSA pass
+
+        public metadata.TypeSpec call_retval; // value returned by a call instruction
+        public int call_retval_stype;
 
         public List<Opcode> phis = new List<Opcode>();
         public List<Opcode> post_insts = new List<Opcode>();
@@ -277,6 +282,7 @@ namespace libtysila4.ir
         public target.Target.Reg mreg;
         public metadata.MetadataStream m;
         public metadata.MethodSpec ms;
+        public metadata.TypeSpec ts;
         public int ct = Opcode.ct_unknown;
         public int ssa_idx = -1;
 
@@ -403,6 +409,10 @@ namespace libtysila4.ir
                     break;
                 case Opcode.vl_mreg:
                     sb.Append("%" + mreg.ToString());
+                    break;
+                case Opcode.vl_ts_token:
+                    sb.Append("TypeSpec: ");
+                    sb.Append(m.MangleType(ts));
                     break;
                 default:
                     return "{null}";

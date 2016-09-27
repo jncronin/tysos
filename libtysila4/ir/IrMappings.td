@@ -65,6 +65,8 @@ multimap("libtysila4.ir", "IrGraph", "simple_map", "init_simple_map", [
 	[ [ "newobj" ], "newobj" ],
 	[ [ "dup" ], "dup" ],
 	[ [ "initobj" ], "initobj" ],
+	[ [ "castclass" ], "castclass" ],
+	[ [ "ldtoken" ], "ldtoken" ],
 ], funcref simple_opcode_handler(array, string));
 
 multimap("libtysila4.ir", "IrGraph", "single_map", "init_single_map", [
