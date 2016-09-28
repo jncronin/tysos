@@ -89,6 +89,7 @@ namespace libtysila4.target.x86
                 {
                     case Opcode.vl_c:
                     case Opcode.vl_c32:
+                    case Opcode.vl_str:
                         opcode = x86_mov_rm32_imm32;
                         break;
 
@@ -209,6 +210,19 @@ namespace libtysila4.target.x86
                 p = new Param[]
                 {
                     new Param { t = ir.Opcode.vl_str, str = "g_postcall", v = target.Generic.g_postcall }
+                }
+            });
+        }
+
+        void LowerEndfinally(Opcode irnode)
+        {
+            irnode.is_mc = true;
+            irnode.mcinsts = new List<MCInst>();
+            irnode.mcinsts.Add(new MCInst
+            {
+                p = new Param[]
+                {
+                    new Param { t = Opcode.vl_str, str = "ret", v = x86_ret },
                 }
             });
         }

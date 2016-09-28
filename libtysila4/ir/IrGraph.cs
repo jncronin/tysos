@@ -33,7 +33,7 @@ namespace libtysila4.ir
         internal uint _lvar_sig_tok;
         internal int[] lvars, largs;
 
-        static SpecialMethods special_meths;
+        internal static SpecialMethods special_meths;
 
         public static graph.Graph LowerCilGraph(graph.Graph g, target.Target t)
         {
@@ -148,6 +148,7 @@ namespace libtysila4.ir
                         ret.bb_ends.Add(n);
 
                     n.c = bb[j];
+                    n.g = ret;
 
                     if(j >= 1)
                     {

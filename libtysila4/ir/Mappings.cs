@@ -196,11 +196,21 @@ namespace libtysila4.ir
         static Opcode[] br(CilNode start, target.Target t)
         {
             bool empties_stack = false;
-            if (start.opcode.opcode1 == cil.Opcode.SingleOpcodes.leave ||
-                start.opcode.opcode1 == cil.Opcode.SingleOpcodes.leave_s)
-                empties_stack = true;
+            int oc = Opcode.oc_br;
 
-            return new Opcode[] { new Opcode { oc = Opcode.oc_br,
+            switch(start.opcode.opcode1)
+            {
+                case cil.Opcode.SingleOpcodes.leave:
+                case cil.Opcode.SingleOpcodes.leave_s:
+                    empties_stack = true;
+                    break;
+                case cil.Opcode.SingleOpcodes.endfinally:
+                    empties_stack = true;
+                    oc = Opcode.oc_endfinally;
+                    break;
+            }
+
+            return new Opcode[] { new Opcode { oc = oc,
                 uses = new Param[] { },
                 defs = new Param[] { },
                 empties_stack = empties_stack

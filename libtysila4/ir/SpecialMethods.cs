@@ -29,9 +29,10 @@ namespace libtysila4.ir
 {
     partial class IrGraph
     {
-        class SpecialMethods : metadata.MetadataStream
+        internal class SpecialMethods : metadata.MetadataStream
         {
             public int gcmalloc;
+            public int castclassex;
 
             public SpecialMethods(metadata.MetadataStream m)
             {
@@ -43,6 +44,9 @@ namespace libtysila4.ir
 
                 gcmalloc = CreateMethodSignature(b, i,
                     new metadata.TypeSpec[] { i4 });
+                castclassex = CreateMethodSignature(b, i,
+                    new TypeSpec[] { i, i, i4 });
+
 
                 sh_blob = new BlobStream(b.ToArray());
 

@@ -55,6 +55,7 @@ intmap("libtysila4.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"phi",
 	"castclass",
 	"isinst",
+	"endfinally",
 ]);
 
 intmap("libtysila4.ir", "Opcode", "cc", "cc_names", "init_cc", [
@@ -156,7 +157,7 @@ function oc_pushes_map_handler(array oc, string h)
 }
 
 multimap("libtysila4.ir", "Opcode", "oc_pushes_map", "init_oc_pushes_map", [
-	[ [ "call" ], "get_call_rettype" ],
+	[ [ "call", "callvirt" ], "get_call_rettype" ],
 	[ [ "store" ], "get_store_pushtype" ],
 	[ [ "add" ], "get_binnumop_pushtype" ],
 	[ [ "sub" ], "get_binnumop_pushtype" ],

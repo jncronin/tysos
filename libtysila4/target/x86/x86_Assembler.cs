@@ -43,6 +43,9 @@ namespace libtysila4.target.x86
                 case Opcode.oc_callvirt:
                     LowerCall(irnode, ref next_temp_reg);
                     return;
+                case Opcode.oc_endfinally:
+                    LowerEndfinally(irnode);
+                    return;
                 case Opcode.oc_ret:
                     LowerReturn(irnode);
                     return;

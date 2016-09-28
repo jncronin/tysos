@@ -108,14 +108,17 @@ namespace libtysila4.ir
         {
             // Determine the return type from the method signature
             var cs = n.uses[0];
-            if (cs.t != Opcode.vl_call_target)
+
+            var ms = cs.ms;
+            if (ms == null)
                 throw new NotSupportedException();
 
-            var msig = cs.v2;
-            var rt_idx = cs.m.GetMethodDefSigRetTypeIndex((int)msig);
-            uint tok;
-            var rt = cs.m.GetType(ref rt_idx, out tok);
-            var ct = GetCTFromType(rt);
+            var msig = ms.msig;
+            var rt_idx = ms.m.GetMethodDefSigRetTypeIndex(msig);
+            var ret_ts = ms.m.GetTypeSpec(ref rt_idx,
+                n.n.g.ms.gtparams, n.n.g.ms.gmparams);
+
+            var ct = GetCTFromType(ret_ts);
 
             return ct;
         }

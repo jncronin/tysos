@@ -479,7 +479,7 @@ namespace libtysila4.target
             int ct,
             metadata.TypeSpec ts)
         {
-            throw new NotSupportedException("Architecture does not support ct: " + ct.ToString());
+            throw new NotSupportedException("Architecture does not support ct: " + Opcode.ct_names[ct]);
         }
 
         internal int GetSize(metadata.TypeSpec ts)

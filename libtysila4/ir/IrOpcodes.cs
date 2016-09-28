@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila4\ir\IrOpcodes.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 21:34:00 on 27 September 2016
+ * It was generated at 10:59:14 on 28 September 2016
  * from D:\tysos\branches\tysila3\libtysila4\ir\IrOpcodes.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -90,6 +90,7 @@ namespace libtysila4.ir
 		public const int oc_phi = 46;
 		public const int oc_castclass = 47;
 		public const int oc_isinst = 48;
+		public const int oc_endfinally = 49;
 		
 		internal static void init_oc()
 		{
@@ -123,6 +124,7 @@ namespace libtysila4.ir
 			oc_names[46] = "phi";
 			oc_names[47] = "castclass";
 			oc_names[48] = "isinst";
+			oc_names[49] = "endfinally";
 		}
 	}
 }
@@ -131,33 +133,33 @@ namespace libtysila4.ir
 {
 	partial class Opcode
 	{
-		public const int cc_always = 49;
-		public const int cc_never = 50;
-		public const int cc_eq = 51;
-		public const int cc_ne = 52;
-		public const int cc_gt = 53;
-		public const int cc_ge = 54;
-		public const int cc_lt = 55;
-		public const int cc_le = 56;
-		public const int cc_a = 57;
-		public const int cc_ae = 58;
-		public const int cc_b = 59;
-		public const int cc_be = 60;
+		public const int cc_always = 50;
+		public const int cc_never = 51;
+		public const int cc_eq = 52;
+		public const int cc_ne = 53;
+		public const int cc_gt = 54;
+		public const int cc_ge = 55;
+		public const int cc_lt = 56;
+		public const int cc_le = 57;
+		public const int cc_a = 58;
+		public const int cc_ae = 59;
+		public const int cc_b = 60;
+		public const int cc_be = 61;
 		
 		internal static void init_cc()
 		{
-			cc_names[49] = "always";
-			cc_names[50] = "never";
-			cc_names[51] = "eq";
-			cc_names[52] = "ne";
-			cc_names[53] = "gt";
-			cc_names[54] = "ge";
-			cc_names[55] = "lt";
-			cc_names[56] = "le";
-			cc_names[57] = "a";
-			cc_names[58] = "ae";
-			cc_names[59] = "b";
-			cc_names[60] = "be";
+			cc_names[50] = "always";
+			cc_names[51] = "never";
+			cc_names[52] = "eq";
+			cc_names[53] = "ne";
+			cc_names[54] = "gt";
+			cc_names[55] = "ge";
+			cc_names[56] = "lt";
+			cc_names[57] = "le";
+			cc_names[58] = "a";
+			cc_names[59] = "ae";
+			cc_names[60] = "b";
+			cc_names[61] = "be";
 		}
 	}
 }
@@ -188,25 +190,25 @@ namespace libtysila4.ir
 {
 	partial class Opcode
 	{
-		public const int ct_unknown = 61;
-		public const int ct_int32 = 62;
-		public const int ct_int64 = 63;
-		public const int ct_intptr = 64;
-		public const int ct_float = 65;
-		public const int ct_object = 66;
-		public const int ct_ref = 67;
-		public const int ct_vt = 68;
+		public const int ct_unknown = 62;
+		public const int ct_int32 = 63;
+		public const int ct_int64 = 64;
+		public const int ct_intptr = 65;
+		public const int ct_float = 66;
+		public const int ct_object = 67;
+		public const int ct_ref = 68;
+		public const int ct_vt = 69;
 		
 		internal static void init_ct()
 		{
-			ct_names[61] = "unknown";
-			ct_names[62] = "int32";
-			ct_names[63] = "int64";
-			ct_names[64] = "intptr";
-			ct_names[65] = "float";
-			ct_names[66] = "object";
-			ct_names[67] = "ref";
-			ct_names[68] = "vt";
+			ct_names[62] = "unknown";
+			ct_names[63] = "int32";
+			ct_names[64] = "int64";
+			ct_names[65] = "intptr";
+			ct_names[66] = "float";
+			ct_names[67] = "object";
+			ct_names[68] = "ref";
+			ct_names[69] = "vt";
 		}
 	}
 }
@@ -267,6 +269,7 @@ namespace libtysila4.ir
 		static void init_oc_pushes_map()
 		{
 			oc_pushes_map[oc_call] = get_call_rettype;
+			oc_pushes_map[oc_callvirt] = get_call_rettype;
 			oc_pushes_map[oc_store] = get_store_pushtype;
 			oc_pushes_map[oc_add] = get_binnumop_pushtype;
 			oc_pushes_map[oc_sub] = get_binnumop_pushtype;

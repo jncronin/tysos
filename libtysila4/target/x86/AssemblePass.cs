@@ -89,7 +89,28 @@ namespace libtysila4.target.x86
                         case x86_mov_rm32_imm32:
                             Code.Add(0xc7);
                             Code.AddRange(ModRMSIB(0, I.p[1].mreg));
-                            AddImm32(Code, I.p[2].v);
+
+                            switch(I.p[2].t)
+                            {
+                                case ir.Opcode.vl_c:
+                                case ir.Opcode.vl_c32:
+                                    AddImm32(Code, I.p[2].v);
+                                    break;
+                                case ir.Opcode.vl_str:
+                                    var reloc = bf.CreateRelocation();
+                                    reloc.DefinedIn = text_section;
+                                    reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
+                                    reloc.Addend = I.p[2].v;
+                                    reloc.References = bf.CreateSymbol();
+                                    reloc.References.DefinedIn = null;
+                                    reloc.References.Name = I.p[2].str;
+                                    reloc.Offset = (ulong)Code.Count;
+                                    bf.AddRelocation(reloc);
+                                    AddImm32(Code, 0);
+                                    break;
+                                default:
+                                    throw new NotSupportedException();
+                            }
                             break;
                         case x86_add_rm32_imm32:
                             Code.Add(0x81);

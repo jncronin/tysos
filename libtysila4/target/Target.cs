@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila4\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 21:34:00 on 27 September 2016
+ * It was generated at 10:59:14 on 28 September 2016
  * from D:\tysos\branches\tysila3\libtysila4\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -200,12 +200,12 @@ namespace libtysila4.target.x86
 		public static System.Collections.Generic.Dictionary<int, int[]> cc_map_sysv = new System.Collections.Generic.Dictionary<int, int[]>(new libtysila4.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_map_sysv[62] = new int[] { 0, };
-			cc_map_sysv[64] = new int[] { 0, };
 			cc_map_sysv[63] = new int[] { 0, };
-			cc_map_sysv[66] = new int[] { 0, };
+			cc_map_sysv[65] = new int[] { 0, };
+			cc_map_sysv[64] = new int[] { 0, };
 			cc_map_sysv[67] = new int[] { 0, };
 			cc_map_sysv[68] = new int[] { 0, };
+			cc_map_sysv[69] = new int[] { 0, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 104;
@@ -220,11 +220,11 @@ namespace libtysila4.target.x86
 		public static System.Collections.Generic.Dictionary<int, int[]> cc_map_ret_sysv = new System.Collections.Generic.Dictionary<int, int[]>(new libtysila4.GenericEqualityComparer<int>());
 		internal static void init_ret_sysv()
 		{
-			cc_map_ret_sysv[62] = new int[] { 3, };
-			cc_map_ret_sysv[64] = new int[] { 3, };
-			cc_map_ret_sysv[66] = new int[] { 3, };
+			cc_map_ret_sysv[63] = new int[] { 3, };
+			cc_map_ret_sysv[65] = new int[] { 3, };
 			cc_map_ret_sysv[67] = new int[] { 3, };
-			cc_map_ret_sysv[63] = new int[] { 11, };
+			cc_map_ret_sysv[68] = new int[] { 3, };
+			cc_map_ret_sysv[64] = new int[] { 11, };
 		}
 		
 		internal const ulong ret_sysv_caller_preserves = 0;

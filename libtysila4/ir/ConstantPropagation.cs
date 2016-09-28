@@ -71,7 +71,7 @@ namespace libtysila4.ir
                                 {
                                     CalcConstantVal(o, vreg_stypes, vreg_types,
                                         vreg_intvals, vreg_uintvals, vreg_hasvals,
-                                        ref changes);
+                                        ref changes, g as IrGraph);
                                 }
                             }
                         }
@@ -85,7 +85,8 @@ namespace libtysila4.ir
 
         private static void CalcConstantVal(Opcode o, int[] vreg_stypes,
             TypeSpec[] vreg_types, long[] vreg_intvals,
-            ulong[] vreg_uintvals, bool[] vreg_hasvals, ref int changes)
+            ulong[] vreg_uintvals, bool[] vreg_hasvals, ref int changes,
+            IrGraph g)
         {
             switch(o.oc)
             {
@@ -177,6 +178,11 @@ namespace libtysila4.ir
                     o.defs[0].cf_stype = 0x0e;
                     break;
 
+                case Opcode.oc_ldlabaddr:
+                    o.defs[0].cf_hasval = false;
+                    o.defs[0].cf_stype = 0x18;
+                    break;
+
                 case Opcode.oc_ldind:
                 case Opcode.oc_ldindzb:
                 case Opcode.oc_ldindzw:
@@ -184,10 +190,62 @@ namespace libtysila4.ir
                     break;
 
                 case Opcode.oc_call:
+                case Opcode.oc_callvirt:
                     if (o.call_retval != null)
                         o.defs[0].cf_type = o.call_retval;
                     if (o.call_retval_stype != 0)
                         o.defs[0].cf_stype = o.call_retval_stype;
+                    break;
+
+                case Opcode.oc_castclass:
+                case Opcode.oc_isinst:
+                    {
+                        var stack_type = o.uses[0].cf_type;
+                        var tok_type = o.uses[1].ts;
+
+                        if (stack_type == null || 
+                            stack_type.IsSuperclassOf(tok_type))
+                        {
+                            /* There is a chance the cast will succeed but we
+                            need to resort to a runtime check */
+                            int to_throw = 1;
+                            if (o.oc == Opcode.oc_isinst)
+                                to_throw = 0;
+                            o.uses = new Param[]
+                            {
+                                new Param { t = Opcode.vl_call_target, str = "castclassex",
+                                    m = IrGraph.special_meths, v2 = IrGraph.special_meths.castclassex },
+                                o.uses[0],
+                                new Param { t = Opcode.vl_str, str = tok_type.MangleType() },
+                                new Param { t = Opcode.vl_c32, ct = Opcode.ct_int32, v = to_throw }
+                            };
+                            o.oc = Opcode.oc_call;
+
+                            o.defs[0].cf_stype = tok_type.ElemType;
+                            o.defs[0].cf_type = tok_type;
+                            o.defs[0].cf_hasval = false;
+                        }
+                        else if (stack_type.Equals(tok_type) ||
+                            stack_type.IsSubclassOf(tok_type))
+                        {
+                            /* We can statically prove the cast will succeed */
+                            o.defs[0].cf_stype = tok_type.ElemType;
+                            o.defs[0].cf_type = tok_type;
+                            o.defs[0].cf_hasval = o.uses[0].cf_hasval;
+                            o.defs[0].cf_intval = o.uses[0].cf_intval;
+                            o.defs[0].cf_uintval = o.uses[0].cf_uintval;
+
+                            o.uses = new Param[] { o.uses[0] };
+                            o.oc = Opcode.oc_store;
+                        }
+                        else
+                        {
+                            /* There is no way the cast can succeed */
+                            throw new NotImplementedException();
+
+                            // TODO: handle interface casting
+                        }
+                    }
                     break;
 
                 default:
