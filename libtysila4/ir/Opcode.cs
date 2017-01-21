@@ -35,6 +35,8 @@ namespace libtysila4.ir
 
         public int data_size = 0;
 
+        public int il_offset;
+
         public bool empties_stack = false;  // leave empties the entire stack
 
         public int oc_idx;  // used for SSA pass
@@ -44,6 +46,7 @@ namespace libtysila4.ir
 
         public List<Opcode> phis = new List<Opcode>();
         public List<Opcode> post_insts = new List<Opcode>();
+        public List<Opcode> pre_insts = new List<Opcode>();
 
         public IEnumerable<Opcode> all_insts
         {
@@ -51,6 +54,8 @@ namespace libtysila4.ir
             {
                 foreach (var phi in phis)
                     yield return phi;
+                foreach (var pre in pre_insts)
+                    yield return pre;
                 yield return this;
                 foreach (var post in post_insts)
                     yield return post;
@@ -81,6 +86,8 @@ namespace libtysila4.ir
         string IrString()
         {
             StringBuilder sb = new StringBuilder();
+            sb.Append("BB" + n.bb.ToString("D4") + " ");
+            sb.Append("IL" + il_offset.ToString("X4") + ": ");
             if (oc_names.ContainsKey(oc))
                 sb.Append(oc_names[oc]);
             else
@@ -118,6 +125,21 @@ namespace libtysila4.ir
                 sb.Append(" }");
             }
             else sb.Append("{empty}");
+
+            if (oc == oc_br)
+                sb.Append(" { BB" + n.Next1.bb.ToString("D4") + " }");
+            else if(oc == oc_brif)
+            {
+                sb.Append(" { ");
+                int id = 0;
+                foreach(var nxt in n.Next)
+                {
+                    if (id++ != 0)
+                        sb.Append(", ");
+                    sb.Append("BB" + nxt.bb.ToString("D4"));
+                }
+                sb.Append(" }");
+            }
             return sb.ToString();
         }
 
@@ -241,6 +263,8 @@ namespace libtysila4.ir
                             return mcn;
                         case 2:
                             return mcn.post_insts[mc_idx];
+                        case 3:
+                            return mcn.pre_insts[mc_idx];
                         default:
                             return null;
                     }
@@ -412,7 +436,7 @@ namespace libtysila4.ir
                     break;
                 case Opcode.vl_ts_token:
                     sb.Append("TypeSpec: ");
-                    sb.Append(m.MangleType(ts));
+                    sb.Append(ts.m.MangleType(ts));
                     break;
                 default:
                     return "{null}";

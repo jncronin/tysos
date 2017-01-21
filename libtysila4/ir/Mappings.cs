@@ -193,6 +193,17 @@ namespace libtysila4.ir
             } };
         }
 
+        static Opcode[] brif2(CilNode start, target.Target t)
+        {
+            var cc = Opcode.cc_single_map[start.opcode.opcode1];
+            return new Opcode[] { new Opcode { oc = Opcode.oc_brif,
+                cc = cc,
+                uses = new Param[] { new Param { t = Opcode.vl_stack, v = 1 }, new Param { t = Opcode.vl_stack, v = 0 } },
+                defs = new Param[] { }
+            } };
+        }
+
+
         static Opcode[] br(CilNode start, target.Target t)
         {
             bool empties_stack = false;

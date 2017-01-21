@@ -123,6 +123,8 @@ namespace libtysila4.target
 
             ret.cg = ig.cg;
             ret.ms = ig.ms;
+            ret.uses = ig.uses;
+            ret.defs = ig.defs;
             ret.lvars_for_simplifying = ig.lvars_for_simplifying;
 
             foreach (var ir_node in ig.LinearStream)
@@ -337,6 +339,12 @@ namespace libtysila4.target
                     irnode.mcinsts.Add(new MCInst { p = new ir.Param[] { new ir.Param { t = ir.Opcode.vl_str, v = Generic.g_setupstack } } });
                     irnode.mcinsts.Add(new MCInst { p = new ir.Param[] { new ir.Param { t = ir.Opcode.vl_str, v = Generic.g_savecalleepreserves } } });
                     irnode.is_mc = true;
+                    return;
+
+                case Opcode.oc_pop:
+                    irnode.is_mc = true;
+                    if (irnode.mcinsts == null)
+                        irnode.mcinsts = new List<MCInst>();
                     return;
             }
             throw new Exception("Unable to lower " + irnode.ToString());

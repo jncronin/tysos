@@ -67,6 +67,11 @@ namespace libtysila4.target.x86
                 case Opcode.oc_zeromem:
                     LowerZeromem(irnode, ref next_temp_reg);
                     return;
+                case Opcode.oc_enter_handler:
+                    // TODO
+                    irnode.mcinsts = new List<MCInst>();
+                    irnode.is_mc = true;
+                    return;
             }
             base.MCLower(irnode, ref next_temp_reg);
         }

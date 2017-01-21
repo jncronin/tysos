@@ -94,6 +94,7 @@
     <Compile Include="util\set.cs" />
     <Compile Include="util\setT.cs" />
     <Compile Include="util\Stack.cs" />
+    <Compile Include="util\util.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\metadata\metadata.csproj">

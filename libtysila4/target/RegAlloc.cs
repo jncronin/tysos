@@ -151,7 +151,11 @@ namespace libtysila4.target
                     foreach(var p in I.p)
                     {
                         if (p.IsStack)
+                        {
                             initial.set(p.ssa_idx);
+                            use_locs[p.ssa_idx] = new Set();
+                            def_locs[p.ssa_idx] = new Set();
+                        }
                     }
                 }
             }
@@ -180,7 +184,49 @@ namespace libtysila4.target
 
         private void SelectSpill()
         {
-            throw new NotImplementedException();
+            int best_spill = -1;
+            int best_spill_cost = int.MaxValue;
+            foreach(var m in spillWorklist)
+            {
+                var sc = SpillCost(m);
+                if(sc < best_spill_cost)
+                {
+                    best_spill = m;
+                    best_spill_cost = sc;
+                }
+            }
+
+            if (best_spill == -1)
+                throw new Exception();
+
+            spillWorklist.unset(best_spill);
+            simplifyWorklist.set(best_spill);
+            FreezeMoves(best_spill);
+        }
+
+        private int SpillCost(int m)
+        {
+            int sc = 0;
+            foreach(var use in use_locs[m])
+            {
+                sc += MinUseDefDist(use, def_locs[m]);
+            }
+            return sc;
+        }
+
+        private int MinUseDefDist(int use, Set defs)
+        {
+            int min_dist = int.MaxValue;
+            foreach(var def in defs)
+            {
+                var cur_dist = use - def;
+                if (cur_dist < min_dist && cur_dist > 0)
+                    min_dist = cur_dist;
+            }
+
+            if (min_dist >= 2 * inst_count)
+                min_dist = 2 * inst_count;
+            return min_dist;
         }
 
         private void Freeze()
@@ -197,7 +243,6 @@ namespace libtysila4.target
             {
                 var I = renumbered_insts[m];
 
-                // TODO - check these are the right way round
                 var x = t.GetMoveDest(I).ssa_idx;
                 var y = t.GetMoveSrc(I).ssa_idx;
 
@@ -225,7 +270,6 @@ namespace libtysila4.target
 
             var I = renumbered_insts[m];
 
-            // TODO - check these are the right way round
             var x = t.GetMoveDest(I).ssa_idx;
             var y = t.GetMoveSrc(I).ssa_idx;
 
@@ -440,7 +484,10 @@ namespace libtysila4.target
             }
 
             foreach (var n in coalescedNodes)
-                color[n] = color[GetAlias(n)];
+            {
+                var alias = GetAlias(n);
+                color[n] = color[alias];
+            }
         }
 
         private int GetAlias(int n)
@@ -490,6 +537,8 @@ namespace libtysila4.target
 
         private void Build()
         {
+            int inst_idx = 0;
+
             foreach (var b in g.LinearStream)
             {
                 var mcn = b.c as MCNode;
@@ -527,15 +576,36 @@ namespace libtysila4.target
 
                     foreach(var p in I.p)
                     {
-                        if(p.IsStack && p.ud == ir.Param.UseDefType.Def)
+                        if (p.IsStack && p.ud == ir.Param.UseDefType.Def)
+                        {
+                            // also set location of use for spillcost heuristic
+                            Set ul;
+                            if(!use_locs.TryGetValue(p.ssa_idx, out ul))
+                            {
+                                ul = new Set();
+                                use_locs[p.ssa_idx] = ul;
+                            }
+                            ul.set(inst_idx);
+
                             live.set(p.ssa_idx);
+                        }
                     }
 
                     foreach(var p in I.p)
                     {
                         if(p.IsStack && p.ud == ir.Param.UseDefType.Def)
                         {
-                            foreach(var l in live)
+                            // also set location of def for spillcost heuristic
+                            Set dl;
+                            if (!def_locs.TryGetValue(p.ssa_idx, out dl))
+                            {
+                                dl = new Set();
+                                def_locs[p.ssa_idx] = dl;
+                            }
+
+                            dl.set(inst_idx);
+
+                            foreach (var l in live)
                             {
                                 AddEdge(l, p.ssa_idx);
                             }
@@ -553,7 +623,10 @@ namespace libtysila4.target
                             live.set(p.ssa_idx);
                     }
                 }
+
+                inst_idx++;
             }
+            inst_count = inst_idx;
         }
 
         private void AddEdge(int u, int v)
@@ -582,6 +655,14 @@ namespace libtysila4.target
             t = target;
         }
 
+        Dictionary<int, util.Set> use_locs =
+            new Dictionary<int, util.Set>(
+                new GenericEqualityComparer<int>());
+        Dictionary<int, util.Set> def_locs =
+            new Dictionary<int, util.Set>(
+                new GenericEqualityComparer<int>());
+
+        int inst_count;
         graph.Graph g;
         Target t;
         List<MCInst> renumbered_insts = new List<MCInst>();

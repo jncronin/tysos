@@ -55,14 +55,12 @@ namespace libtysila4.ir
                         {
                             foreach (var P in Si.uses)
                             {
-                                if (P.IsStack)
+                                if (P.IsStack && P.ssa_idx >= 0)
                                 {
                                     var xi = P.ssa_idx;
 
-                                    var c = g.uses[xi].Count;
                                     g.uses[xi].Remove(S);
-                                    if (g.uses[xi].Count != c - 1)
-                                        System.Diagnostics.Debugger.Break();
+
                                     W.set(xi);
                                 }
                             }

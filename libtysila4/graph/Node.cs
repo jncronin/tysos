@@ -56,6 +56,11 @@ namespace libtysila4.graph
         public abstract int PrevCount { get; }
         public abstract BaseNode Next1 { get; }
         public abstract BaseNode Prev1 { get; }
+        public virtual BaseNode Next2 { get { return null; } }
+        public virtual BaseNode Prev2 { get { return null; } }
+
+        public abstract void ReplacePrev(BaseNode old_node, BaseNode new_node);
+        public abstract void ReplaceNext(BaseNode old_node, BaseNode new_node);
 
         public override string ToString()
         {
@@ -67,6 +72,8 @@ namespace libtysila4.graph
 
         public Graph g;
         public int bb;
+
+        public metadata.ExceptionHeader ehdr;
 
         public bool Equals(BaseNode other)
         {
@@ -90,6 +97,17 @@ namespace libtysila4.graph
         public override int PrevCount { get { if (p == null) return 0; return 1; } }
         public override BaseNode Next1 { get { return n; } }
         public override BaseNode Prev1 { get { return p; } }
+
+        public override void ReplacePrev(BaseNode old_node, BaseNode new_node)
+        {
+            if (p.Equals(old_node))
+                p = new_node;
+        }
+        public override void ReplaceNext(BaseNode old_node, BaseNode new_node)
+        {
+            if (n.Equals(old_node))
+                n = new_node;
+        }
     }
 
     public class MultiNode : BaseNode
@@ -109,10 +127,29 @@ namespace libtysila4.graph
         public override int PrevCount { get { return p.Count; } }
         public override BaseNode Next1 { get { return n[0]; } }
         public override BaseNode Prev1 { get { return p[0]; } }
+        public override BaseNode Next2 { get { return n[1]; } }
+        public override BaseNode Prev2 { get { return p[1]; } }
 
         public override void SetDefaultNext(BaseNode node)
         {
             n.Insert(0, node);
+        }
+
+        public override void ReplacePrev(BaseNode old_node, BaseNode new_node)
+        {
+            for(int i = 0; i < p.Count; i++)
+            {
+                if (p[i].Equals(old_node))
+                    p[i] = new_node;
+            }
+        }
+        public override void ReplaceNext(BaseNode old_node, BaseNode new_node)
+        {
+            for (int i = 0; i < n.Count; i++)
+            {
+                if (n[i].Equals(old_node))
+                    n[i] = new_node;
+            }
         }
     }
 }

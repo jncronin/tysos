@@ -28,6 +28,19 @@ namespace libtysila4.ir
 {
     partial class IrGraph
     {
+        static Opcode[] pop(CilNode start, target.Target t)
+        {
+            return new Opcode[]
+            {
+                new Opcode
+                {
+                    oc = Opcode.oc_pop,
+                    uses = new Param[] { new Param { t = Opcode.vl_stack, v = 0 } },
+                    defs = new Param[] { }
+                },
+            };
+        }
+
         static Opcode[] dup(cil.CilNode start, target.Target t)
         {
             /* This is quite complicated with the way uses and defs are

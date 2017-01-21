@@ -258,7 +258,7 @@ namespace libtysila4.target.x86
                             ps[1] = new Param { t = Opcode.vl_mreg, mreg = retreg, ud = Param.UseDefType.Def };
                             ps[2] = irnode.uses[1];
                         }
-                        else if (rettype.IsStack)
+                        else if (rettype.IsStack || rettype.IsLA || rettype.IsLV)
                         {
                             ps = new Param[3];
                             ps[0] = new Param { t = Opcode.vl_str, str = "mov_r32_rm32", v = x86_mov_r32_rm32 };

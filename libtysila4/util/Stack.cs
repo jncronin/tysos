@@ -34,6 +34,8 @@ namespace libtysila4.util
 
         public T Pop()
         {
+            if (Count == 0)
+                return default(T);
             var ret = this[Count - 1];
             RemoveAt(Count - 1);
             return ret;

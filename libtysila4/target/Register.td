@@ -20,6 +20,17 @@ export function Ri32(string name)
 	return ret;
 }
 
+export function Rf32(string name)
+{
+	ret = [ name = name, id = next_reg_id, type = rt_float, size = 32, mask = 1 << next_reg_id ];
+	next_reg_id = next_reg_id + 1;
+	export next_reg_id;
+	vargen(name, ret);
+	vargen(name + "reg", ret.mask);
+	
+	return ret;
+}
+
 export function MultiReg(string name, array regs)
 {
 	mask = 0;

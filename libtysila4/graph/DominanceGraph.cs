@@ -154,9 +154,9 @@ namespace libtysila4.graph
             foreach(var c in n.Next)
             {
                 computeDF(c, dg, input);
-                foreach(var w in dg.dom[c.bb])
+                foreach(var w in dg.df[c.bb])
                 {
-                    if (!dg.dom[w].get(n.bb))
+                    if (!dg.dom[w].get(n.bb) || n.bb == w)
                         S.set(w);
                 }
             }
@@ -201,7 +201,7 @@ namespace libtysila4.graph
 
         public override string ToString()
         {
-            return SrcNode.ToString();
+            return "DomNode: " + SrcNode.ToString();
         }
     }
 }

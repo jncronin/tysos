@@ -55,7 +55,7 @@ namespace libtysila4.ir
                         {
                             foreach (var use in o.uses)
                             {
-                                if (use.IsStack && vreg_stypes[use.ssa_idx] != 0)
+                                if (use.IsStack && use.ssa_idx >= 0 && vreg_stypes[use.ssa_idx] != 0)
                                 {
                                     SetParamFromCache(use, vreg_stypes, vreg_types,
                                         vreg_intvals, vreg_uintvals, vreg_hasvals,
@@ -195,6 +195,14 @@ namespace libtysila4.ir
                         o.defs[0].cf_type = o.call_retval;
                     if (o.call_retval_stype != 0)
                         o.defs[0].cf_stype = o.call_retval_stype;
+                    break;
+
+                case Opcode.oc_enter_handler:
+                    if(o.uses[0].t == Opcode.vl_ts_token)
+                    {
+                        o.defs[0].cf_type = o.uses[0].ts;
+                        o.defs[0].cf_stype = o.uses[0].ts.SimpleType;
+                    }
                     break;
 
                 case Opcode.oc_castclass:
@@ -362,10 +370,7 @@ namespace libtysila4.ir
                 else
                     oid.mc_idx -= no.phis.Count;
 
-                int c = g.uses[use.ssa_idx].Count;
                 g.uses[use.ssa_idx].Remove(oid);
-                if (g.uses[use.ssa_idx].Count != c - 1)
-                    System.Diagnostics.Debugger.Break();
             }
         }
     }

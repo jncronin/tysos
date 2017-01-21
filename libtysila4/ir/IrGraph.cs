@@ -72,7 +72,43 @@ namespace libtysila4.ir
                 int start_idx = 0;
 
                 if (bb.Count > 0 && cg.Starts.Contains(bb[0]))
-                    cur_ir_code.Add(new Opcode { oc = Opcode.oc_enter });
+                {
+                    var ehdr = bb[0].ehdr;
+
+                    if (ehdr != null)
+                    {
+                        switch(ehdr.EType)
+                        {
+                            case metadata.ExceptionHeader.ExceptionHeaderType.Catch:
+                                {
+                                    Param ehdr_u = new Param
+                                    {
+                                        t = Opcode.vl_ts_token,
+                                        ts = ehdr.ClassToken,
+                                        ud = Param.UseDefType.Use
+                                    };
+                                    Param ehdr_d = new Param()
+                                    {
+                                        t = Opcode.vl_stack,
+                                        ct = Opcode.ct_object,
+                                        v = 0,
+                                        ud = Param.UseDefType.Def
+                                    };
+                                    cur_ir_code.Add(new Opcode
+                                    {
+                                        oc = Opcode.oc_enter_handler,
+                                        uses = new Param[] { ehdr_u },
+                                        defs = new Param[] { ehdr_d }
+                                    });
+                                }
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                    }
+                    else
+                        cur_ir_code.Add(new Opcode { oc = Opcode.oc_enter });
+                }
                 while (start_idx < bb.Count)
                 {
                     // Build the longest stretch of simple opcodes from
@@ -100,6 +136,7 @@ namespace libtysila4.ir
                                 /* Populate use/def members of params */
                                 foreach (var oc in l)
                                 {
+                                    oc.il_offset = ((CilNode)bb[start_idx].c).il_offset;
                                     if (oc.uses != null)
                                     {
                                         foreach (var p in oc.uses)

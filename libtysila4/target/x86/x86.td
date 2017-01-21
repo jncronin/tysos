@@ -13,7 +13,7 @@ next_reg_id = 0;
 regs = [ Rstack(), Rcontents(),
 	Ri32("eip"), Ri32("eax"), Ri32("ebx"), Ri32("ecx"),
 	Ri32("edx"), Ri32("edi"), Ri32("esi"), Ri32("esp"),
-	Ri32("ebp"),
+	Ri32("ebp"), Rf64("st0"),
 	MultiReg("eaxedx", [ eax, edx ]) ];
 x86_def.regs = regs;
 
@@ -234,6 +234,7 @@ cc_sysv = cc(nspace, assembler, "sysv",
 	[ ct_object, [ stack ] ],
 	[ ct_ref, [ stack ] ],
 	[ ct_vt, [ stack ] ],
+	[ ct_float, [ stack ] ],
 ],
 eaxreg | ecxreg | edxreg,			// caller preserves
 ebxreg | esireg | edireg			// callee preserves
@@ -247,6 +248,8 @@ cc_ret_sysv = cc(nspace, assembler, "ret_sysv",
 	[ ct_ref, [ eax ] ],
 
 	[ ct_int64, [ eaxedx ] ],
+
+	[ ct_float, [ st0 ] ],
 ]);
 
 x86_def.cc = cc_map(nspace, assembler, [

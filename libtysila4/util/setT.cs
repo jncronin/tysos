@@ -92,5 +92,13 @@ namespace libtysila4.util
             e.MoveNext();
             return e.Current;
         }
+
+        internal Set<T> Clone()
+        {
+            var other = new Set<T>();
+            foreach (var key in d.Keys)
+                other.d[key] = 0;
+            return other;
+        }
     }
 }

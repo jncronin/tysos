@@ -126,12 +126,25 @@ namespace libtysila4.ir
             foreach (var n in bb)
             {
                 var c = n.c as Opcode;
-                // Specially handle swap statement
+                // Specially handle swap and pop statements
                 if (c.oc == Opcode.oc_swap)
                 {
                     var tmp = cur_stack[cur_stack.Count - 1];
                     cur_stack[cur_stack.Count - 1] = cur_stack[cur_stack.Count - 2];
                     cur_stack[cur_stack.Count - 2] = tmp;
+
+                    var tmp_vreg = cur_vreg_stack[cur_vreg_stack.Count - 1];
+                    cur_vreg_stack[cur_vreg_stack.Count - 1] = cur_vreg_stack[cur_vreg_stack.Count - 2];
+                    cur_vreg_stack[cur_vreg_stack.Count - 2] = tmp_vreg;
+
+                    continue;
+                }
+                else if(c.oc == Opcode.oc_pop)
+                {
+                    cur_stack.RemoveAt(cur_stack.Count - 1);
+                    cur_vreg_stack.RemoveAt(cur_vreg_stack.Count - 1);
+                    c.uses = new Param[] { };
+                    c.oc = Opcode.oc_nop;
 
                     continue;
                 }

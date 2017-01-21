@@ -87,8 +87,8 @@ namespace libtysila4.ir
             /* Appel 19.6 */
             Dictionary<int, util.Set> Aphi =
                 new Dictionary<int, util.Set>(new GenericEqualityComparer<int>());
-            foreach (var a in vars)
-                Aphi[a] = new util.Set();
+            for(int y = 0; y < oc_idx; y++)
+                Aphi[y] = new util.Set();
 
             foreach (var a in vars)
             {
@@ -102,7 +102,7 @@ namespace libtysila4.ir
                     foreach(var y in input.DominanceGraph.df[ocs[n].n.bb])
                     {
                         var y2 = (input.bb_starts[y].c as Opcode).oc_idx;
-                        if(!Aphi[a].get(y2))
+                        if(!Aphi[y2].get(a))
                         {
                             // Insert phi function
                             var o = input.LinearStream[y2].c as Opcode;
@@ -116,9 +116,11 @@ namespace libtysila4.ir
                             for (int i = 0; i < preds; i++)
                                 phi.uses[i] = new ir.Param { t = var_locs[a].t, v = a, ud = ir.Param.UseDefType.Use };
 
+                            phi.n = o.n;
+
                             o.phis.Add(phi);
 
-                            Aphi[a].set(y2);
+                            Aphi[y2].set(a);
                             if (!Aorig[y].get(a))
                                 W.set(y2);
                         }
@@ -236,15 +238,19 @@ namespace libtysila4.ir
                 /* Special handling of the last instruction in each bb */
                 if (o_idx == input.blocks[bb_id].Count - 1)
                 {
-                    foreach (var Y in input.blocks[bb_id][o_idx].Next)
+                    var cur_b = input.blocks[bb_id][o_idx];
+                    foreach (var Y in cur_b.Next)
                     {
                         int j = 0;
                         foreach (var prev in Y.Prev)
                         {
-                            if (prev == input.blocks[bb_id][o_idx])
+                            if (prev == cur_b)
                                 break;
                             j++;
                         }
+
+                        if (j == Y.PrevCount)
+                            System.Diagnostics.Debugger.Break();
                         // n is now the jth predecessor of Y
 
                         var oy = Y.c as Opcode;
@@ -252,24 +258,30 @@ namespace libtysila4.ir
                         foreach (var phi in oy.phis)
                         {
                             var a = (int)phi.defs[0].v;
-                            var i = stack[a].Peek();
-                            phi.uses[j].ssa_idx = i;
 
-                            var oc_id = new Opcode.OpcodeId();
-                            oc_id.g = input;
-                            oc_id.ls_idx = oy.oc_idx;
-
-                            oc_id.mc_idx = mc_idx;
-                            oc_id.oc_type = 0;
-
-                            Set<Opcode.OpcodeId> uses;
-                            if (!input.uses.TryGetValue(i, out uses))
+                            if (stack[a].Count > 0)
                             {
-                                uses = new Set<Opcode.OpcodeId>();
-                                input.uses[i] = uses;
-                                input.defs[i] = new Set<Opcode.OpcodeId>();
+                                var i = stack[a].Peek();
+                                phi.uses[j].ssa_idx = i;
+
+                                var oc_id = new Opcode.OpcodeId();
+                                oc_id.g = input;
+                                oc_id.ls_idx = oy.oc_idx;
+
+                                oc_id.mc_idx = mc_idx;
+                                oc_id.oc_type = 0;
+
+                                Set<Opcode.OpcodeId> uses;
+                                if (!input.uses.TryGetValue(i, out uses))
+                                {
+                                    uses = new Set<Opcode.OpcodeId>();
+                                    input.uses[i] = uses;
+                                    input.defs[i] = new Set<Opcode.OpcodeId>();
+                                }
+                                uses.Add(oc_id);
                             }
-                            uses.Add(oc_id);
+                            else
+                                phi.uses[j].ssa_idx = -1;
 
                             mc_idx++;
                         }

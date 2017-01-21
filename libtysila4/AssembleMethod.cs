@@ -93,6 +93,7 @@ namespace libtysila4
             long code_size = 0;
             long lvar_sig_tok = 0;
             int boffset = 0;
+            List<metadata.ExceptionHeader> ehdrs = null;
             bool has_exceptions = false;
 
             if ((flags & 0x3) == 0x2)
@@ -113,7 +114,50 @@ namespace libtysila4
                 boffset = fat_hdr_len;
 
                 if ((flags & 0x8) == 0x8)
+                {
                     has_exceptions = true;
+
+                    ehdrs = new List<metadata.ExceptionHeader>();
+
+                    int ehdr_offset = boffset + (int)code_size;
+                    ehdr_offset = util.util.align(ehdr_offset, 4);
+
+                    while (true)
+                    {
+                        int kind = meth.ReadByte(ehdr_offset);
+
+                        if ((kind & 0x1) != 0x1)
+                            throw new Exception("Invalid exception header");
+
+                        bool is_fat = false;
+                        if ((kind & 0x40) == 0x40)
+                            is_fat = true;
+
+                        int data_size = meth.ReadInt(ehdr_offset);
+                        data_size >>= 8;
+                        if (is_fat)
+                            data_size &= 0xffffff;
+                        else
+                            data_size &= 0xff;
+
+                        int clause_count;
+                        if (is_fat)
+                            clause_count = (data_size - 4) / 24;
+                        else
+                            clause_count = (data_size - 4) / 12;
+
+                        ehdr_offset += 4;
+                        for(int i = 0; i < clause_count; i++)
+                        {
+                            var ehdr = ParseExceptionHeader(meth,
+                                ref ehdr_offset, is_fat, ms);
+                            ehdrs.Add(ehdr);
+                        }
+
+                        if ((kind & 0x80) != 0x80)
+                            break;
+                    }
+                }
             }
             else
                 throw new Exception("Invalid method header flags");
@@ -145,7 +189,7 @@ namespace libtysila4
             // Get first graph
             graph.Graph cg = cil.CilGraph.ReadCilStream(meth,
                 ms, boffset, (int)code_size, lvar_sig_tok,
-                has_exceptions);
+                has_exceptions, ehdrs);
 
             // Run passes
             foreach (var pass in passes)
@@ -171,6 +215,69 @@ namespace libtysila4
                 sym.Size = ts.Data.Count - (int)sym.Offset;
 
             return true;
+        }
+
+        private static metadata.ExceptionHeader ParseExceptionHeader(metadata.DataInterface di,
+            ref int ehdr_offset, bool is_fat,
+            metadata.MethodSpec ms)
+        {
+            metadata.ExceptionHeader ehdr = new metadata.ExceptionHeader();
+            int flags = 0;
+            if(is_fat)
+            {
+                flags = di.ReadInt(ehdr_offset);
+                ehdr.TryILOffset = di.ReadInt(ehdr_offset + 4);
+                ehdr.TryLength = di.ReadInt(ehdr_offset + 8);
+                ehdr.HandlerILOffset = di.ReadInt(ehdr_offset + 12);
+                ehdr.HandlerLength = di.ReadInt(ehdr_offset + 16);
+            }
+            else
+            {
+                flags = di.ReadShort(ehdr_offset);
+                ehdr.TryILOffset = di.ReadShort(ehdr_offset + 2);
+                ehdr.TryLength = di.ReadSByte(ehdr_offset + 4);
+                ehdr.HandlerILOffset = di.ReadShort(ehdr_offset + 5);
+                ehdr.HandlerLength = di.ReadSByte(ehdr_offset + 7);
+            }
+
+            switch(flags)
+            {
+                case 0:
+                    ehdr.EType = metadata.ExceptionHeader.ExceptionHeaderType.Catch;
+                    uint mtoken;
+                    if (is_fat)
+                        mtoken = di.ReadUInt(ehdr_offset + 20);
+                    else
+                        mtoken = di.ReadUInt(ehdr_offset + 8);
+
+                    int table_id, row;
+                    ms.m.InterpretToken(mtoken, out table_id, out row);
+                    ehdr.ClassToken = ms.m.GetTypeSpec(table_id, row,
+                        ms.gtparams, ms.gmparams);
+                    break;
+                case 1:
+                    ehdr.EType = metadata.ExceptionHeader.ExceptionHeaderType.Filter;
+                    if (is_fat)
+                        ehdr.FilterOffset = di.ReadInt(ehdr_offset + 20);
+                    else
+                        ehdr.FilterOffset = di.ReadInt(ehdr_offset + 8);
+                    break;
+                case 2:
+                    ehdr.EType = metadata.ExceptionHeader.ExceptionHeaderType.Finally;
+                    break;
+                case 4:
+                    ehdr.EType = metadata.ExceptionHeader.ExceptionHeaderType.Fault;
+                    break;
+                default:
+                    throw new Exception("Invalid exception type: " + flags.ToString());
+            }
+
+            if (is_fat)
+                ehdr_offset += 24;
+            else
+                ehdr_offset += 12;
+
+            return ehdr;
         }
     }
 }

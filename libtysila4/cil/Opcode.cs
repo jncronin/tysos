@@ -301,6 +301,7 @@ namespace libtysila4.cil
             newobj,
             initobj,
             dup,
+            pop,
             castclass,
             ldtoken,
         }

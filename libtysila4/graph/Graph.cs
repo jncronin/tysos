@@ -80,6 +80,9 @@ namespace libtysila4.graph
 
         public void RefreshBasicBlocks()
         {
+            // This is broken currently
+            throw new NotImplementedException();
+
             bb_starts.Clear();
             bb_ends.Clear();
             blocks.Clear();

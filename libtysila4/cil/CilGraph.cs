@@ -39,7 +39,8 @@ namespace libtysila4.cil
 
         public static CilGraph ReadCilStream(metadata.DataInterface di,
             metadata.MethodSpec ms, int boffset, int length,
-            long lvar_sig_tok, bool has_exceptions = false)
+            long lvar_sig_tok, bool has_exceptions = false,
+            List<metadata.ExceptionHeader> ehdrs = null)
         {
             CilGraph ret = new CilGraph();
             ret._m = ms.m;
@@ -52,7 +53,7 @@ namespace libtysila4.cil
             Dictionary<int, List<int>> offsets_before =
                 new Dictionary<int, List<int>>(new GenericEqualityComparer<int>());
 
-            // Get a list of all local vars
+            // Get a list of all local vars that can potentially be simplified to vregs
             if (has_exceptions == false)
             {
                 int table_id;
@@ -309,11 +310,67 @@ namespace libtysila4.cil
                     }
                 }
                 else
+                {
+                    // determine if this is an exception handler
+                    if(has_exceptions)
+                    {
+                        foreach(var ehdr in ehdrs)
+                        {
+                            if (ehdr.HandlerILOffset == il_offset)
+                                n.ehdr = ehdr;
+                        }
+                    }
                     ret.Starts.Add(n);
+                }
             }
 
             // We have changed the graph - patch up the basic block info
-            ret.RefreshBasicBlocks();
+            int cur_bb = -1;
+            List<graph.BaseNode> blocks = null;
+            
+            foreach(var il_offset in ret.offset_order)
+            {
+                var n = ret.offset_map[il_offset].n;
+
+                if(n.PrevCount == 0 || n.PrevCount >= 2 ||
+                    (((CilNode)n.Prev1.c).opcode.ctrl != Opcode.ControlFlow.NEXT &&
+                    ((CilNode)n.Prev1.c).opcode.ctrl != Opcode.ControlFlow.CALL))
+                {
+                    cur_bb++;
+                    blocks = new List<graph.BaseNode>();
+                    ret.bb_starts.Add(n);
+                }
+
+                blocks.Add(n);
+                n.bb = cur_bb;
+
+                if(n.NextCount == 0 || n.NextCount >= 2 ||
+                    (((CilNode)n.c).opcode.ctrl != Opcode.ControlFlow.NEXT &&
+                    ((CilNode)n.c).opcode.ctrl != Opcode.ControlFlow.CALL) ||
+                    n.Next1.PrevCount != 1)
+                {
+                    ret.bb_ends.Add(n);
+                    ret.blocks.Add(blocks);
+                }
+            }
+
+            foreach(var bb_start in ret.bb_starts)
+            {
+                List<int> bb_before = new List<int>();
+                foreach (var prev in bb_start.Prev)
+                    bb_before.Add(prev.bb);
+                ret.bbs_before.Add(bb_before);
+            }
+
+            foreach (var bb_end in ret.bb_ends)
+            {
+                List<int> bb_after = new List<int>();
+                foreach (var next in bb_end.Next)
+                    bb_after.Add(next.bb);
+                ret.bbs_after.Add(bb_after);
+            }
+
+            //ret.RefreshBasicBlocks();
 
             return ret;
         }
