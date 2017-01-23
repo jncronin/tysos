@@ -63,29 +63,31 @@ namespace tysila4
             //var fname = "D:\\tysos\\branches\\tysila3\\libsupcs\\bin\\Release\\libsupcs.dll";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\test_002\bin\Release\test_002.exe";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\ifelse\ifelse.exe";
-            //var fname = @"kernel.exe";
+            var fname = @"barebones\kernel.exe";
             //var fname = @"test_005.exe";
-            //var fname = @"vtype.exe";
+            //var fname = @"vtype\vtype.exe";
             //var fname = @"D:\tysos\branches\tysila3\mono\corlib\mscorlib.dll";
-            var fname = "vcall.exe";
+            //var fname = @"vcall\vcall.exe";
 
-            libtysila4.libtysila.AssemblyLoader al = new libtysila4.libtysila.AssemblyLoader(
+            libtysila5.libtysila.AssemblyLoader al = new libtysila5.libtysila.AssemblyLoader(
                 new FileSystemFileLoader());
 
-            search_dirs.Add(@"..\..\mono\corlib");
+            search_dirs.Add(@"..\mono\corlib");
 
             var m = al.GetAssembly(fname);
 
-            var t = libtysila4.target.Target.targets["x86"];
+            var t = libtysila5.target.Target.targets["x86"];
             var bf = new binary_library.elf.ElfFile(binary_library.Bitness.Bits32);
             t.bf = bf;
             bf.Init();
             bf.Architecture = "x86";
-            var st = new libtysila4.StringTable(
+            var st = new libtysila5.StringTable(
                 m.GetStringEntry(metadata.MetadataStream.tid_Module,
                 1, 1), al, t);
             t.st = st;
-            t.r = new libtysila4.CachingRequestor();
+            t.r = new libtysila5.CachingRequestor();
+
+            //dftest.df_test();
 
             /* for now, just assemble all public and protected
             non-generic methods in public types, plus the
@@ -132,6 +134,7 @@ namespace tysila4
                     i, 4);
 
                 if (ms.type.IsGenericTemplate == false &&
+                    ms.IsGenericTemplate == false &&
                     (mflags == 0x4 || mflags == 0x5 || mflags == 0x6) &&
                     tflags != 0)
                 {
@@ -142,7 +145,7 @@ namespace tysila4
             while (!t.r.MethodRequestor.Empty)
             {
                 var ms = t.r.MethodRequestor.GetNext();
-                libtysila4.libtysila.AssembleMethod(ms,
+                libtysila5.libtysila.AssembleMethod(ms,
                     bf, t, debug);
                 Console.WriteLine(ms.m.MangleMethod(ms));
             }
@@ -154,11 +157,10 @@ namespace tysila4
             sw.Close();
 
             /* and all static fields */
-            for(int i = 1; i <= m.table_rows[metadata.MetadataStream.tid_TypeDef]; i++)
+            while (!t.r.StaticFieldRequestor.Empty)
             {
-                metadata.TypeSpec ts;
-                m.GetTypeDefRow(metadata.MetadataStream.tid_TypeDef, i, out ts);
-                libtysila4.layout.Layout.OutputStaticFields(ts,
+                var sf = t.r.StaticFieldRequestor.GetNext();
+                libtysila5.layout.Layout.OutputStaticFields(sf,
                     t, bf);
             }
 
