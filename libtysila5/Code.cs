@@ -45,6 +45,9 @@ namespace libtysila5
         public target.Target.Reg[] incoming_args;
         public bool[] la_needs_assign;
 
+        public ulong regs_used = 0;
+        public List<target.Target.Reg> regs_saved = new List<target.Target.Reg>();
+
         public target.Target t;
 
         public List<int> offset_order = new List<int>();

@@ -62,6 +62,8 @@ namespace libtysila5.ir
                         if(cur_reg < r32.Length)
                         {
                             si.reg = r32[cur_reg++];
+
+                            c.regs_used |= si.reg.mask;
                         }
                         else
                         {

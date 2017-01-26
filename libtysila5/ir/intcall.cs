@@ -37,7 +37,7 @@ namespace libtysila5.ir
         static void init_intcalls()
         {
             intcalls["_Zu1S_9get_Chars_Rc_P2u1ti"] = string_getChars;
-            intcalls["_Zu1S_10get_Length_Ri_P1u1t"] = string_getLength;
+            //intcalls["_Zu1S_10get_Length_Ri_P1u1t"] = string_getLength;
         }
 
         static Stack<StackItem> string_getChars(CilNode n, Code c, Stack<StackItem> stack_before)

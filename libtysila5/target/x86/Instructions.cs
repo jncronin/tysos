@@ -363,6 +363,19 @@ namespace libtysila5.target.x86
                                 else
                                     r.Add(inst(x86_sub_rm32_imm32, r_esp, r_esp, c.lv_total_size, n));
                             }
+
+                            var regs_to_save = c.regs_used | c.t.cc_callee_preserves_map["sysv"];
+                            var regs_set = new util.Set();
+                            regs_set.Union(regs_to_save);
+                            while(regs_set.Empty == false)
+                            {
+                                var reg = regs_set.get_first_set();
+                                regs_set.unset(reg);
+                                var cur_reg = regs[reg];
+                                r.Add(inst(x86_push_r32, cur_reg, n));
+                                c.regs_saved.Add(cur_reg);
+                            }
+
                             return r;
                         }
 
@@ -582,6 +595,10 @@ namespace libtysila5.target.x86
                 r.Add(inst(x86_mov_r32_rm32, r_eax, n.stack_before[0].reg, n));
             }
 
+            // Restore used regs
+            for (int i = c.regs_saved.Count - 1; i >= 0; i--)
+                r.Add(inst(x86_pop_r32, c.regs_saved[i], n));
+
             r.Add(inst(x86_mov_r32_rm32, r_esp, r_ebp, n));
             r.Add(inst(x86_pop_r32, r_ebp, n));
             r.Add(inst(x86_ret, n));
@@ -600,6 +617,12 @@ namespace libtysila5.target.x86
             ulong defined = 0;
             foreach (var si in n.stack_after)
                 defined |= si.reg.mask;
+
+            var rt_idx = call_ms.m.GetMethodDefSigRetTypeIndex(call_ms.msig);
+            var rt = call_ms.m.GetTypeSpec(ref rt_idx, call_ms.gtparams, call_ms.gmparams);
+            if (rt != null)
+                defined &= ~n.stack_after.Peek().reg.mask;
+
             var to_push = new util.Set();
             to_push.Union(defined);
             to_push.Intersect(caller_preserves);
@@ -651,6 +674,14 @@ namespace libtysila5.target.x86
             // Restore saved registers
             for (int i = push_list.Count - 1; i >= 0; i--)
                 r.Add(inst(x86_pop_r32, push_list[i], n));
+
+            // Get return value
+            if(rt != null)
+            {
+                // TODO: deal with non int32 types
+                var dest = n.stack_after.Peek().reg;
+                r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
+            }
 
             return r;
         }
