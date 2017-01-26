@@ -29,11 +29,11 @@ namespace tysila4
     class Program
     {
         /* Boiler plate */
-        const string year = "2009 - 2016";
+        const string year = "2009 - 2017";
         const string authors = "John Cronin <jncronin@tysos.org>";
         const string website = "http://www.tysos.org";
         const string nl = "\n";
-        public static string bplate = "tysila " + libtysila4.libtysila.VersionString + " (" + website + ")" + nl +
+        public static string bplate = "tysila " + libtysila5.libtysila.VersionString + " (" + website + ")" + nl +
             "Copyright (C) " + year + " " + authors + nl +
             "This is free software.  Please see the source for copying conditions.  There is no warranty, " +
             "not even for merchantability or fitness for a particular purpose";
@@ -60,10 +60,48 @@ namespace tysila4
 
         static void Main(string[] args)
         {
+            var argc = args.Length;
+            char c;
+            var go = new XGetoptCS.XGetopt();
+            var arg_str = "t:L:f:e:o:d:";
+            string target = "x86";
+            string debug_file = null;
+            string output_file = null;
+            string epoint = null;
+            while((c = go.Getopt(argc, args, arg_str)) != '\0')
+            {
+                switch(c)
+                {
+                    case 't':
+                        target = go.Optarg;
+                        break;
+                    case 'L':
+                        search_dirs.Add(go.Optarg);
+                        break;
+                    case 'd':
+                        debug_file = go.Optarg;
+                        break;
+                    case 'o':
+                        output_file = go.Optarg;
+                        break;
+                    case 'e':
+                        epoint = go.Optarg;
+                        break;
+                }
+            }
+
+            var fname = go.Optarg;
+
+            if(fname == String.Empty)
+            {
+                Console.WriteLine("No input file specified");
+                return;
+            }
+
             //var fname = "D:\\tysos\\branches\\tysila3\\libsupcs\\bin\\Release\\libsupcs.dll";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\test_002\bin\Release\test_002.exe";
             //var fname = @"D:\tysos\branches\tysila3\testsuite\ifelse\ifelse.exe";
-            var fname = @"barebones\kernel.exe";
+            //var fname = @"barebones\kernel.exe";
             //var fname = @"test_005.exe";
             //var fname = @"vtype\vtype.exe";
             //var fname = @"D:\tysos\branches\tysila3\mono\corlib\mscorlib.dll";
@@ -72,22 +110,20 @@ namespace tysila4
             libtysila5.libtysila.AssemblyLoader al = new libtysila5.libtysila.AssemblyLoader(
                 new FileSystemFileLoader());
 
-            search_dirs.Add(@"..\mono\corlib");
+            //search_dirs.Add(@"..\mono\corlib");
 
             var m = al.GetAssembly(fname);
 
-            var t = libtysila5.target.Target.targets["x86"];
+            var t = libtysila5.target.Target.targets[target];
             var bf = new binary_library.elf.ElfFile(binary_library.Bitness.Bits32);
             t.bf = bf;
             bf.Init();
-            bf.Architecture = "x86";
+            bf.Architecture = target;
             var st = new libtysila5.StringTable(
                 m.GetStringEntry(metadata.MetadataStream.tid_Module,
                 1, 1), al, t);
             t.st = st;
             t.r = new libtysila5.CachingRequestor();
-
-            //dftest.df_test();
 
             /* for now, just assemble all public and protected
             non-generic methods in public types, plus the
@@ -123,7 +159,8 @@ namespace tysila4
                 {
                     if(row == i)
                     {
-                        ms.aliases = new List<string> { "kmain" };
+                        if(epoint != null)
+                            ms.aliases = new List<string> { epoint };
 
                         mflags = 6;
                         tflags = 1;
@@ -150,11 +187,14 @@ namespace tysila4
                 Console.WriteLine(ms.m.MangleMethod(ms));
             }
 
-            string d = debug.ToString();
+            if (debug_file != null)
+            {
+                string d = debug.ToString();
 
-            StreamWriter sw = new StreamWriter("debug.txt");
-            sw.Write(d);
-            sw.Close();
+                StreamWriter sw = new StreamWriter(debug_file);
+                sw.Write(d);
+                sw.Close();
+            }
 
             /* and all static fields */
             while (!t.r.StaticFieldRequestor.Empty)
@@ -167,111 +207,9 @@ namespace tysila4
             /* String table */
             st.WriteToOutput(bf, m, t);
 
-            bf.Filename = "output.o";
+            /* Write output file */
+            bf.Filename = output_file;
             bf.Write();
-
-            /*for(int t = 0; t < m.GetTableCount(); t++)
-            {
-                Console.WriteLine("Table " + t.ToString("X2"));
-
-                for(int r = 1; r <= m.GetRowCount(t); r++)
-                {
-                    Console.Write("  ");
-                    Console.Write(r.ToString("0000"));
-                    Console.Write(": ");
-
-                    for(int c = 0; c < m.GetColCount(t); c++)
-                    {
-                        if (c != 0)
-                            Console.Write(", ");
-
-                        var fe = m.GetFieldEntry(t, r, c);
-                        Console.Write(fe.ToString());
-                    }
-
-                    Console.WriteLine();
-                }
-                Console.WriteLine();
-            }*/
-
-            /*var meth = m.GetRVA(m.GetIntEntry(6, 1, 0));
-
-            var flags = meth.ReadByte(0);
-            if ((flags & 0x3) == 0x2)
-            {
-                // Tiny
-                throw new NotImplementedException();
-            }
-            else if ((flags & 0x3) == 0x3)
-            {
-                // Fat
-                uint fat_flags = meth.ReadUShort(0) & 0xfffU;
-                int fat_hdr_len = (meth.ReadUShort(0) >> 12) * 4;
-                int max_stack = meth.ReadUShort(2);
-                long code_size = meth.ReadUInt(4);
-                long lvar_sig_tok = meth.ReadUInt(8);
-
-                var t = libtysila4.target.Target.targets["x86"];
-                var bf = new binary_library.elf.ElfFile(binary_library.Bitness.Bits32);
-                t.bf = bf;
-                bf.Init();
-                bf.Architecture = "x86";
-                var text_sect = bf.CreateContentsSection();
-                text_sect.IsAlloc = true;
-                text_sect.IsExecutable = true;
-                text_sect.IsWriteable = false;
-                text_sect.Name = ".text";
-                t.text_section = text_sect;
-                t.bf.AddSection(text_sect);
-
-                var passes = new List<libtysila4.graph.Graph.PassDelegate>
-                {
-                    libtysila4.ir.IrGraph.LowerCilGraph,
-                    libtysila4.ir.StackTracePass.TraceStackPass,
-                    libtysila4.target.Target.MCLowerPass,
-                    libtysila4.graph.DominanceGraph.GenerateDominanceGraph,
-                    libtysila4.target.SSA.ConvertToSSAPass,
-                    libtysila4.target.Liveness.DoGenKill,
-                    libtysila4.target.Liveness.LivenessAnalysis,
-                    libtysila4.target.RegAlloc.RegAllocPass,
-                    libtysila4.target.Liveness.MRegLivenessAnalysis,
-                    libtysila4.target.PreserveRegistersAroundCall.PreserveRegistersAroundCallPass,
-                    libtysila4.target.RemoveUnnecessaryMoves.RemoveUnnecessaryMovesPass,
-                    libtysila4.target.CalleePreserves.CalleePreservesPass,
-                    libtysila4.target.AllocateLocalVars.AllocateLocalVarsPass,
-                    libtysila4.target.MangleCallsites.MangleCallsitesPass,
-                };
-                passes.AddRange(t.GetOutputMCPasses());
-
-                libtysila4.graph.Graph cg = libtysila4.cil.CilGraph.ReadCilStream(meth,
-                    m, 1, fat_hdr_len, (int)code_size, lvar_sig_tok);
-
-                List<libtysila4.graph.Graph> graphs = new List<libtysila4.graph.Graph>();
-                StringBuilder sb = new StringBuilder();
-                graphs.Add(cg);
-                foreach(var pass in passes)
-                {
-                    sb.Append("Graph before " + pass.Method.Name + ":" + System.Environment.NewLine);
-                    sb.Append(cg.LinearStreamString);
-                    sb.Append(Environment.NewLine);
-                    sb.Append(Environment.NewLine);
-
-                    cg = cg.RunPass(pass, t);
-                    graphs.Add(cg);
-                }
-
-                // TODO: fix up phis
-
-                sb.Append("Final graph:" + Environment.NewLine);
-                sb.Append(cg.LinearStreamString);
-                var sb_text = sb.ToString();
-
-                bf.Filename = "output.o";
-                bf.Write();
-                //throw new NotImplementedException();
-            }
-            else
-                throw new Exception("Invalid method header type");*/
         }
     }
 }
