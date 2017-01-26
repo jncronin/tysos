@@ -28,9 +28,9 @@ namespace libtysila5.target
     public class MCInst
     {
         public ir.Param[] p;
-        public int idx;
         public util.Set mreg_live_in, mreg_live_out;
         public cil.CilNode.IRNode parent;
+        public int offset;
 
         public override string ToString()
         {

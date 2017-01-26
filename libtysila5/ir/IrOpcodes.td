@@ -33,6 +33,7 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"div",
 	"call",
 	"callvirt",
+	"calli",
 	"nop",
 	"ret",
 	"cmp",
@@ -62,6 +63,10 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"ldloc",
 	"stloc",
 	"rem",
+	"ldarg",
+	"starg",
+	"ldarga",
+	"stackcopy",
 ]);
 
 intmap("libtysila5.ir", "Opcode", "cc", "cc_names", "init_cc", [

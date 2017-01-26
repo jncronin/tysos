@@ -30,7 +30,7 @@ namespace libtysila5
     public partial class libtysila
     {
         public static int MajorVersion { get { return 0; } }
-        public static int MinorVersion { get { return 4; } }
+        public static int MinorVersion { get { return 5; } }
         public static int BuildVersion { get { return 0; } }
         public static string VersionString
         {

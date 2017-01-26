@@ -31,11 +31,15 @@ x86_def.ct_map = simple_map(nspace, assembler, "ct_map", "init_ctmap", [
 intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"mov_rm32_r32",
 	"mov_r32_rm32",
+	"mov_r8_rm8",
+	"mov_r16_rm16",
 	"mov_rm32_imm32",
 	"mov_r32_lab",
 	"mov_lab_r32",
 	"mov_r32_rm32sib",
 	"mov_r32_rm32disp",
+	"mov_r32_rm16disp",
+	"mov_r32_rm8disp",
 	"mov_r32_rm32sibscaledisp",
 	"mov_rm32disp_imm32",
 	"mov_rm16disp_imm32",
@@ -69,6 +73,7 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"add_rm32_r32",
 	"sub_r32_rm32",
 	"imul_r32_rm32_imm32",
+	"imul_r32_rm32",
 	"lea_r32",
 	"xor_r32_rm32",
 ]);

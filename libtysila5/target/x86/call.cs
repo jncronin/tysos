@@ -61,8 +61,10 @@ namespace libtysila5.target.x86
             var cc2 = cc_map[cc];
 
             int stack_loc = 0;
+            int[] arg_sizes;
+            metadata.TypeSpec[] arg_types;
             var reglocs = GetRegLocs(csite, ref stack_loc,
-                cc2);
+                cc2, out arg_sizes, out arg_types);
 
             /* Set-up stack */
             if (stack_loc != 0)

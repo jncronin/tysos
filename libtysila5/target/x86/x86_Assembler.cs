@@ -122,14 +122,22 @@ namespace libtysila5.target.x86
         protected internal override Reg GetLVLocation(int lv_loc, int lv_size)
         {
             int disp = 0;
-            if(lv_loc < 0)
-                disp = -lv_loc - 1 + 8;
-            else
-                disp = -lv_size + lv_loc;
+            disp = -lv_size - lv_loc;
             return new ContentsReg
             {
                 basereg = r_ebp,
                 disp = disp
+            };
+        }
+
+        /* Access to variables on the incoming stack is encoded as -address - 1 */
+        protected internal override Reg GetLALocation(int la_loc, int la_size)
+        {
+            return new ContentsReg
+            {
+                basereg = r_ebp,
+                disp = la_loc + 8,
+                size = la_size
             };
         }
 

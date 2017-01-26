@@ -45,6 +45,7 @@
     <Compile Include="ir\ConvertToIR.cs" />
     <Compile Include="ir\fld.cs" />
     <Compile Include="ir\GetRetType.cs" />
+    <Compile Include="ir\intcall.cs" />
     <Compile Include="ir\IrOpcodes.cs" />
     <Compile Include="ir\ld.cs" />
     <Compile Include="ir\misc.cs" />
@@ -59,12 +60,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Requestor.cs" />
     <Compile Include="StringTable.cs" />
+    <Compile Include="target\AllocateLocalVarsArgs.cs" />
     <Compile Include="target\ChooseInstructions.cs" />
     <Compile Include="target\HashTable.cs" />
     <Compile Include="target\MCGraph.cs" />
     <Compile Include="target\MCInst.cs" />
     <Compile Include="target\Target.cs" />
     <Compile Include="target\Targets.cs" />
+    <Compile Include="target\x86\AssemblePass.cs" />
     <Compile Include="target\x86\call.cs" />
     <Compile Include="target\x86\conv.cs" />
     <Compile Include="target\x86\Instructions.cs" />

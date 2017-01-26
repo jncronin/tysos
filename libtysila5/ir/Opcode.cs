@@ -301,5 +301,10 @@ namespace libtysila5.ir
             sb.Append("}");
             return sb.ToString();
         }
+
+        public static implicit operator Param(long v)
+        {
+            return new Param { t = Opcode.vl_c, v = v };
+        }
     }
 }

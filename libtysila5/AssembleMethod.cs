@@ -167,6 +167,9 @@ namespace libtysila5
                 ms, boffset, (int)code_size, lvar_sig_tok,
                 has_exceptions, ehdrs);
 
+            /* Allocate local vars and args */
+            t.AllocateLocalVarsArgs(cil);
+
             /* Convert to IR */
             cil.t = t;
             ir.ConvertToIR.DoConversion(cil);
@@ -174,8 +177,11 @@ namespace libtysila5
             /* Allocate registers */
             ir.AllocRegs.DoAllocation(cil);
 
+
             /* Choose instructions */
             target.ChooseInstructions.DoChoosing(cil);
+
+            ((target.x86.x86_Assembler)cil.t).AssemblePass(cil);
 
             foreach (var sym in meth_syms)
                 sym.Size = ts.Data.Count - (int)sym.Offset;

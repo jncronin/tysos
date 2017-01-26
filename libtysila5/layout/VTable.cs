@@ -77,16 +77,24 @@ namespace libtysila5.layout
                     ms.m, search_meth_name))
                 {
                     // TODO: check signature
+                    var msig = ts.m.GetIntEntry(MetadataStream.tid_MethodDef,
+                        (int)mdef_row, 4);
+                    if (MetadataStream.CompareSignature(ms.m, ms.msig, 
+                        ms.gtparams, ms.gmparams,
+                        ts.m, (int)msig, 
+                        ts.gtparams, ms.gmparams))
+                    {
 
-                    if ((flags & 0x40) == 0x40)
-                    {
-                        // Virtual
-                        return vtbl_length;
-                    }
-                    else
-                    {
-                        // Instance
-                        return -1;
+                        if ((flags & 0x40) == 0x40)
+                        {
+                            // Virtual
+                            return vtbl_length;
+                        }
+                        else
+                        {
+                            // Instance
+                            return -1;
+                        }
                     }
                 }
                 else

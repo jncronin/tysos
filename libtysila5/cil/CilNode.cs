@@ -82,7 +82,11 @@ namespace libtysila5.cil
         metadata.MetadataStream m;
         metadata.MethodSpec _ms;
         public int il_offset;
+        public int mc_offset = -1;
         public bool is_block_start = false;
+
+        public bool is_meth_start = false;
+        public bool is_eh_start = false;
 
         public bool visited = false;
 

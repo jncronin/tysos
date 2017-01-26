@@ -66,6 +66,7 @@ namespace libtysila5.target
         protected internal abstract int GetBranchDest(MCInst i);
         protected internal abstract void SetBranchDest(MCInst i, int d);
         protected internal abstract Reg GetLVLocation(int lv_loc, int lv_size);
+        protected internal abstract Reg GetLALocation(int la_loc, int la_size);
         protected internal abstract MCInst[] SetupStack(int lv_size);
         protected internal abstract MCInst[] CreateMove(Reg src, Reg dest);
         protected internal abstract binary_library.IRelocationType GetDataToDataReloc();
@@ -128,8 +129,10 @@ namespace libtysila5.target
             {
                 if (disp == 0)
                     return "[" + basereg.ToString() + "]";
-                else
+                else if (disp > 0)
                     return "[" + basereg.ToString() + " + " + disp.ToString() + "]";
+                else
+                    return "[" + basereg.ToString() + " - " + (-disp).ToString() + "]";
             }
 
             public override bool Equals(Reg other)
@@ -262,7 +265,9 @@ namespace libtysila5.target
 
         protected internal virtual Reg[] GetRegLocs(ir.Param csite,
             ref int stack_loc,
-            Dictionary<int, int[]> cc)
+            Dictionary<int, int[]> cc,
+            out int[] la_sizes,
+            out metadata.TypeSpec[] la_types)
         {
             var m = csite.m;
             var idx = (int)csite.v2;
@@ -275,7 +280,8 @@ namespace libtysila5.target
                 gtparams = csite.ms.gtparams;
                 gmparams = csite.ms.gmparams;
             }
-            Dictionary<int, int> cc_next = new Dictionary<int, int>();
+            Dictionary<int, int> cc_next = new Dictionary<int, int>(
+                new GenericEqualityComparer<int>());
 
             var pcount = m.GetMethodDefSigParamCountIncludeThis(idx);
             idx = m.GetMethodDefSigRetTypeIndex(idx);
@@ -288,10 +294,16 @@ namespace libtysila5.target
 
             // Read types of parameters
             Target.Reg[] ret = new Target.Reg[pcount];
+            la_sizes = new int[pcount];
+            la_types = new metadata.TypeSpec[pcount];
             for (int i = 0; i < pcount; i++)
             {
                 while (m.GetRetTypeCustomMod(ref idx, out is_req, out token)) ;
                 var v = m.GetTypeSpec(ref idx, gtparams, gmparams);
+
+                la_types[i] = v;
+                var size = GetSize(v);
+                la_sizes[i] = size;
 
                 var ct = ir.Opcode.GetCTFromType(v);
                 Reg r = null;
@@ -309,7 +321,6 @@ namespace libtysila5.target
                     var reg_id = cc_map[cur_cc_next];
                     if (regs[reg_id].type == rt_stack)
                     {
-                        var size = GetSize(v);
                         Reg rstack = new Reg()
                         {
                             type = rt_stack,

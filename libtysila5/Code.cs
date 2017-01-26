@@ -34,7 +34,16 @@ namespace libtysila5
         public int lvar_sig_tok;
 
         public List<cil.CilNode> starts;
-        
+
+        public target.Target.Reg[] lv_locs;
+        public target.Target.Reg[] la_locs;
+        public int[] lv_sizes;
+        public int[] la_sizes;
+        public int lv_total_size;
+        public metadata.TypeSpec[] lv_types;
+        public metadata.TypeSpec[] la_types;
+        public target.Target.Reg[] incoming_args;
+        public bool[] la_needs_assign;
 
         public target.Target t;
 
