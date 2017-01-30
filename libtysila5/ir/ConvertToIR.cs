@@ -128,6 +128,16 @@ namespace libtysila5.ir
                     n.irnodes.Add(new CilNode.IRNode { parent = n, imm_l = imm, opcode = Opcode.oc_ldc, ct = Opcode.ct_int32, vt_size = 4, stack_after = stack_after, stack_before = stack_before });
                     break;
 
+                case cil.Opcode.SingleOpcodes.ldnull:
+                    stack_after = new Stack<StackItem>(stack_before);
+                    si = new StackItem();
+                    si.ts = c.ms.m.GetSimpleTypeSpec(0x1c);
+
+                    stack_after.Add(si);
+                    imm = 0;
+                    n.irnodes.Add(new CilNode.IRNode { parent = n, imm_l = imm, opcode = Opcode.oc_ldc, ct = Opcode.ct_object, vt_size = c.t.GetPointerSize(), stack_after = stack_after, stack_before = stack_before });
+                    break;
+
                 case cil.Opcode.SingleOpcodes.stloc_0:
                     stack_after = stloc(n, c, stack_before, 0);
                     break;
@@ -458,6 +468,43 @@ namespace libtysila5.ir
                     stack_after = stind(n, c, stack_before, 8);
                     break;
 
+                case cil.Opcode.SingleOpcodes.ldind_i:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x18));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_ref:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x1c));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_i1:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x04));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_i2:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x06));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_i4:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x08));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_i8:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x0a));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_r4:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x0c));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_r8:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x0d));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_u1:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x05));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_u2:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x07));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldind_u4:
+                    stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x09));
+                    break;
+
+
+
+
                 case cil.Opcode.SingleOpcodes.double_:
                     switch(n.opcode.opcode2)
                     {
@@ -562,14 +609,22 @@ namespace libtysila5.ir
             var rt_idx = c.ms.m.GetMethodDefSigRetTypeIndex(c.ms.msig);
             var rt_ts = c.ms.m.GetTypeSpec(ref rt_idx, c.ms.gtparams, c.ms.gmparams);
 
+            int ret_ct = ir.Opcode.ct_unknown;
+            int ret_vt_size = 0;
+
             if (rt_ts == null && stack_before.Count != 0)
                 throw new Exception("Inconsistent stack on ret");
-            else if (rt_ts != null && stack_before.Count != 1)
-                throw new Exception("Inconsistent stack on ret");
+            else if (rt_ts != null)
+            {
+                if (stack_before.Count != 1)
+                    throw new Exception("Inconsistent stack on ret");
+                ret_ct = ir.Opcode.GetCTFromType(rt_ts);
+                ret_vt_size = c.t.GetSize(rt_ts);
+            }
 
             var stack_after = new Stack<StackItem>();
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, stack_before = stack_before, stack_after = stack_after });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, ct = ret_ct, vt_size = ret_vt_size, stack_before = stack_before, stack_after = stack_after });
 
             return stack_after;
         }

@@ -282,38 +282,34 @@ namespace libtysila5.target.x86
                             var val = n.stack_after.Peek().reg;
 
                             List<MCInst> r = new List<MCInst>();
-                            if (addr is ContentsReg || ((addr.Equals(r_esi) || addr.Equals(r_edi) && n.vt_size != 4)))
+                            handle_ldind(val, addr, 0, n.vt_size, r, n);
+
+                            return r;
+                        }
+                        else if(n_ct == ir.Opcode.ct_int64)
+                        {
+                            var addr = n.stack_before.Peek().reg;
+                            var val = n.stack_after.Peek().reg;
+
+                            List<MCInst> r = new List<MCInst>();
+
+                            var dr = val as DoubleReg;
+
+                            /* Do this here so its only done once.  We don't need the [esi]/[edi]
+                             * check as the vt_size is guaranteed to be 4.  However, the address
+                             * used in the second iteration may overwrite the return value in
+                             * the first, so we need to check for that.  We do it backwards
+                             * so that this is less likely (e.g. stack goes from
+                             * ..., esi to ..., esi, edi thus assigning first to edi won't
+                             * cause a problem */
+                            if (addr is ContentsReg || addr.Equals(dr.b))
                             {
                                 r.Add(inst(x86_mov_r32_rm32, r_eax, addr, n));
                                 addr = r_eax;
                             }
 
-                            var act_val = val;
-
-                            if (val is ContentsReg || ((val.Equals(r_esi) || val.Equals(r_edi) && n.vt_size != 4)))
-                            {
-                                val = r_edx;
-                            }
-
-                            switch (n.vt_size)
-                            {
-                                case 1:
-                                    r.Add(inst(x86_mov_r32_rm8disp, val, addr, 0, n));
-                                    break;
-                                case 2:
-                                    r.Add(inst(x86_mov_r32_rm16disp, val, addr, 0, n));
-                                    break;
-                                case 4:
-                                    r.Add(inst(x86_mov_r32_rm32disp, val, addr, 0, n));
-                                    break;
-                                default:
-                                    throw new NotImplementedException();
-                            }
-
-                            if (!val.Equals(act_val))
-                            {
-                                r.Add(inst(x86_mov_rm32_r32, act_val, val, n));
-                            }
+                            handle_ldind(dr.b, addr, 4, 4, r, n);
+                            handle_ldind(dr.a, addr, 0, 4, r, n);
 
                             return r;
                         }
@@ -585,14 +581,68 @@ namespace libtysila5.target.x86
             return null;
         }
 
+        private void handle_ldind(Reg val, Reg addr, int disp, int vt_size, List<MCInst> r, CilNode.IRNode n)
+        {
+            if (addr is ContentsReg || ((addr.Equals(r_esi) || addr.Equals(r_edi)) && vt_size != 4))
+            {
+                r.Add(inst(x86_mov_r32_rm32, r_eax, addr, n));
+                addr = r_eax;
+            }
+
+            var act_val = val;
+
+            if (val is ContentsReg || ((val.Equals(r_esi) || val.Equals(r_edi)) && n.vt_size == 1))
+            {
+                val = r_edx;
+            }
+
+            switch (vt_size)
+            {
+                case 1:
+                    r.Add(inst(x86_mov_r32_rm8disp, val, addr, disp, n));
+                    break;
+                case 2:
+                    r.Add(inst(x86_mov_r32_rm16disp, val, addr, disp, n));
+                    break;
+                case 4:
+                    r.Add(inst(x86_mov_r32_rm32disp, val, addr, disp, n));
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            if (!val.Equals(act_val))
+            {
+                r.Add(inst(x86_mov_rm32_r32, act_val, val, n));
+            }
+        }
+
         private List<MCInst> handle_ret(CilNode.IRNode n, Code c)
         {
             List<MCInst> r = new List<MCInst>();
 
             if(n.stack_before.Count == 1)
             {
-                // TODO: check return reg is eax
-                r.Add(inst(x86_mov_r32_rm32, r_eax, n.stack_before[0].reg, n));
+                var reg = n.stack_before.Peek().reg;
+
+                switch(n.ct)
+                {
+                    case ir.Opcode.ct_int32:
+                    case ir.Opcode.ct_intptr:
+                    case ir.Opcode.ct_object:
+                    case ir.Opcode.ct_ref:
+                        r.Add(inst(x86_mov_r32_rm32, r_eax, n.stack_before[0].reg, n));
+                        break;
+
+                    case ir.Opcode.ct_int64:
+                        var dr = reg as DoubleReg;
+                        r.Add(inst(x86_mov_r32_rm32, r_eax, dr.a, n));
+                        r.Add(inst(x86_mov_r32_rm32, r_edx, dr.b, n));
+                        break;
+
+                    default:
+                        throw new NotImplementedException(ir.Opcode.ct_names[n.ct]);
+                }
             }
 
             // Restore used regs
@@ -640,25 +690,35 @@ namespace libtysila5.target.x86
             /* Push arguments */
             var sig_idx = call_ms.msig;
             var pcount = call_ms.m.GetMethodDefSigParamCountIncludeThis(sig_idx);
+            sig_idx = call_ms.m.GetMethodDefSigRetTypeIndex(sig_idx);
+            call_ms.m.GetTypeSpec(ref sig_idx, c.ms.gtparams, c.ms.gmparams);
 
             int push_length = 0;
 
             for(int i = 0; i < pcount; i++)
             {
+                var push_ts = call_ms.m.GetTypeSpec(ref sig_idx, c.ms.gtparams, c.ms.gmparams);
+                var push_ct = ir.Opcode.GetCTFromType(push_ts);
+
                 var to_pass = n.stack_before.Peek(i).reg;
 
-                if (to_pass is ContentsReg)
+                switch(push_ct)
                 {
-                    ContentsReg cr = to_pass as ContentsReg;
-                    if (cr.size != 4)
+                    case ir.Opcode.ct_int32:
+                    case ir.Opcode.ct_object:
+                    case ir.Opcode.ct_ref:
+                    case ir.Opcode.ct_intptr:
+                        handle_push(to_pass, ref push_length, r, n);
+                        break;
+
+                    case ir.Opcode.ct_int64:
+                        var dr = to_pass as DoubleReg;
+                        handle_push(dr.b, ref push_length, r, n);
+                        handle_push(dr.a, ref push_length, r, n);
+                        break;
+
+                    default:
                         throw new NotImplementedException();
-                    r.Add(inst(x86_push_rm32, to_pass, n));
-                    push_length += 4;
-                }
-                else
-                {
-                    r.Add(inst(x86_push_r32, to_pass, n));
-                    push_length += 4;
                 }
             }
 
@@ -684,6 +744,23 @@ namespace libtysila5.target.x86
             }
 
             return r;
+        }
+
+        private void handle_push(Reg reg, ref int push_length, List<MCInst> r, CilNode.IRNode n)
+        {
+            if (reg is ContentsReg)
+            {
+                ContentsReg cr = reg as ContentsReg;
+                if (cr.size != 4)
+                    throw new NotImplementedException();
+                r.Add(inst(x86_push_rm32, reg, n));
+                push_length += 4;
+            }
+            else
+            {
+                r.Add(inst(x86_push_r32, reg, n));
+                push_length += 4;
+            }
         }
 
         private MCInst inst_jmp(int idx, int jmp_target, CilNode.IRNode p)

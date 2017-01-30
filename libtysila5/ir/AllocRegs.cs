@@ -38,6 +38,23 @@ namespace libtysila5.ir
             }
         }
 
+        static target.Target.Reg alloc_x86_reg(Code c, target.Target.Reg[] regs, ref int cur_reg, ref int cur_stack)
+        {
+            var x = c.t as target.x86.x86_Assembler;
+
+            if (cur_reg < regs.Length)
+            {
+                var ret = regs[cur_reg++];
+                c.regs_used |= ret.mask;
+                return ret;
+            }
+            else
+            {
+                cur_stack -= 4;
+                return new target.Target.ContentsReg { basereg = x.r_ebp, disp = cur_stack, size = 4 };
+            }
+        }
+
         private static void DoAllocation(Code c, Stack<StackItem> stack)
         {
             // simple algorithm for x86 for now
@@ -59,20 +76,16 @@ namespace libtysila5.ir
                     case Opcode.ct_intptr:
                     case Opcode.ct_object:
                     case Opcode.ct_ref:
-                        if(cur_reg < r32.Length)
-                        {
-                            si.reg = r32[cur_reg++];
-
-                            c.regs_used |= si.reg.mask;
-                        }
-                        else
-                        {
-                            cur_stack -= 4;
-                            si.reg = new target.Target.ContentsReg { basereg = x.r_ebp, disp = cur_stack, size = 4 };
-                        }
+                        si.reg = alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack);
                         break;
+                    case Opcode.ct_int64:
+                        si.reg = new target.Target.DoubleReg(
+                            alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack),
+                            alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack));
+                        break;
+                        
                     default:
-                        throw new NotImplementedException();
+                        throw new NotImplementedException(ir.Opcode.ct_names[si.ct]);
                 }
             }
         }
