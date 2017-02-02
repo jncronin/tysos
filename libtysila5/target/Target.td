@@ -15,7 +15,8 @@ intmap("libtysila5.target", "Generic", "g", "insts", "init_instrs", [
 	"setupstack",
 	"savecalleepreserves",
 	"restorecalleepreserves",
-	"loadaddress"
+	"loadaddress",
+	"mclabel",
 ]);
 
 // Include machine specific definitions here

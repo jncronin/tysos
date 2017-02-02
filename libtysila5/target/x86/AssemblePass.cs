@@ -33,6 +33,9 @@ namespace libtysila5.target.x86
             var Code = text_section.Data as List<byte>;
             var code_start = Code.Count;
 
+            Dictionary<int, int> il_starts = new Dictionary<int, int>(
+                new GenericEqualityComparer<int>());
+
             /* Get maximum il offset of method */
             int max_il = 0;
             foreach(var cil in c.cil)
@@ -42,7 +45,6 @@ namespace libtysila5.target.x86
             }
             max_il++;
 
-            int[] il_starts = new int[max_il];
             for (int i = 0; i < max_il; i++)
                 il_starts[i] = -1;
 
@@ -66,6 +68,10 @@ namespace libtysila5.target.x86
 
                 switch (I.p[0].v)
                 {
+                    case Generic.g_mclabel:
+                        il_starts[(int)I.p[1].v] = mc_offset;
+                        break;
+
                     case x86_push_rm32:
                         Code.Add(0xff);
                         Code.AddRange(ModRMSIB(6, I.p[1].mreg));
@@ -155,6 +161,10 @@ namespace libtysila5.target.x86
                         Code.AddRange(ModRMSIB(0, I.p[1].mreg));
                         AddImm8(Code, I.p[3].v);
                         break;
+                    case x86_adc_r32_rm32:
+                        Code.Add(0x13);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        break;
                     case x86_sub_rm32_imm32:
                         Code.Add(0x81);
                         Code.AddRange(ModRMSIB(5, I.p[1].mreg));
@@ -167,6 +177,10 @@ namespace libtysila5.target.x86
                         break;
                     case x86_sub_r32_rm32:
                         Code.Add(0x2b);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        break;
+                    case x86_sbb_r32_rm32:
+                        Code.Add(0x1b);
                         Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
                         break;
                     case x86_add_r32_rm32:
@@ -476,6 +490,12 @@ namespace libtysila5.target.x86
                     case x86_xor_r32_rm32:
                         Code.Add(0x33);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
+                    case x86_sar_rm32_imm8:
+                        Code.Add(0xc1);
+                        Code.AddRange(ModRMSIB(7, I.p[1].mreg));
+                        AddImm8(Code, I.p[2].v);
                         break;
 
                     default:

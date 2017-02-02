@@ -40,11 +40,20 @@ namespace libtysila5
 
     public class CachingRequestor : Requestor
     {
-        CachingIndividualRequestor<MethodSpec> m = new CachingIndividualRequestor<MethodSpec>();
-        CachingIndividualRequestor<MethodSpec> ms = new CachingIndividualRequestor<MethodSpec>();
-        CachingIndividualRequestor<MethodSpec> fs = new CachingIndividualRequestor<MethodSpec>();
-        CachingIndividualRequestor<TypeSpec> vt = new CachingIndividualRequestor<TypeSpec>();
-        CachingIndividualRequestor<TypeSpec> sf = new CachingIndividualRequestor<TypeSpec>();
+        CachingIndividualRequestor<MethodSpec> m;
+        CachingIndividualRequestor<MethodSpec> ms;
+        CachingIndividualRequestor<MethodSpec> fs;
+        CachingIndividualRequestor<TypeSpec> vt;
+        CachingIndividualRequestor<TypeSpec> sf;
+
+        public CachingRequestor(MetadataStream mstream = null)
+        {
+            m = new CachingIndividualRequestor<MethodSpec>(mstream);
+            ms = new CachingIndividualRequestor<MethodSpec>(mstream);
+            fs = new CachingIndividualRequestor<MethodSpec>(mstream);
+            vt = new CachingIndividualRequestor<TypeSpec>(mstream);
+            sf = new CachingIndividualRequestor<TypeSpec>(mstream);
+        }
 
         public override IndividualRequestor<MethodSpec> MethodRequestor
         {
@@ -94,10 +103,16 @@ namespace libtysila5
         public abstract void Request(T v);
     }
 
-    public class CachingIndividualRequestor<T> : IndividualRequestor<T> where T : class, IEquatable<T>
+    public class CachingIndividualRequestor<T> : IndividualRequestor<T> where T : Spec, IEquatable<T>
     {
         Set<T> done_and_pending = new Set<T>();
         util.Stack<T> pending = new util.Stack<T>();
+        MetadataStream m;
+
+        public CachingIndividualRequestor(MetadataStream mstream = null)
+        {
+            m = mstream;
+        }
 
         public override bool Empty
         {
@@ -114,6 +129,9 @@ namespace libtysila5
 
         public override void Request(T v)
         {
+            if (m != null && m != v.Metadata)
+                return;
+
             if(!done_and_pending.Contains(v))
             {
                 done_and_pending.Add(v);

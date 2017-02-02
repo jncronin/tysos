@@ -289,5 +289,12 @@ namespace libtysila5.cil
             metadata = m;
             token = inline_uint;            
         }
+
+        public metadata.TypeSpec GetTokenAsTypeSpec(Code c)
+        {
+            int table_id, row;
+            m.InterpretToken(inline_uint, out table_id, out row);
+            return m.GetTypeSpec(table_id, row, c.ms.gtparams, c.ms.gmparams);
+        }
     }
 }

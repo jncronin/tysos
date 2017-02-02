@@ -48,10 +48,24 @@ namespace libtysila5
         public ulong regs_used = 0;
         public List<target.Target.Reg> regs_saved = new List<target.Target.Reg>();
 
+        public int next_mclabel = -1;
+
         public target.Target t;
 
         public List<int> offset_order = new List<int>();
         public Dictionary<int, cil.CilNode> offset_map =
                 new Dictionary<int, cil.CilNode>(new libtysila5.GenericEqualityComparer<int>());
+
+        static ir.SpecialMethods _special = null;
+
+        internal ir.SpecialMethods special_meths
+        {
+            get
+            {
+                if (_special == null)
+                    _special = new libtysila5.ir.SpecialMethods(ms.m);
+                return _special;
+            }
+        }
     }
 }

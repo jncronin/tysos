@@ -52,6 +52,7 @@
     <Compile Include="ir\numops.cs" />
     <Compile Include="ir\obj.cs" />
     <Compile Include="ir\Opcode.cs" />
+    <Compile Include="ir\SpecialMethods.cs" />
     <Compile Include="ir\stind.cs" />
     <Compile Include="ir\str.cs" />
     <Compile Include="layout\Field.cs" />
