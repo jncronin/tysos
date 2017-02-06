@@ -214,8 +214,7 @@ namespace libtysila5.target.x86
                         {
                             Code.Add(0xff);
                             var obj = I.p[1];
-                            var vtbl_offset = I.p[2];
-                            Code.AddRange(ModRMSIB(2, GetRM(obj.mreg), 2, -1, -1, (int)vtbl_offset.v));
+                            Code.AddRange(ModRMSIB(2, obj.mreg));
                             break;
                         }
                     case x86_cmp_rm32_r32:

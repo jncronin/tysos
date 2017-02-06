@@ -46,13 +46,13 @@ namespace libtysila5.target.x86
                 {
                     case ir.Opcode.oc_ldc:
                         if (n_ct == ir.Opcode.ct_int32)
-                            return new List<MCInst> { inst(x86_mov_rm32_imm32, n.stack_after.Peek().reg, (int)n.imm_l, n) };
+                            return new List<MCInst> { inst(x86_mov_rm32_imm32, n.stack_after.Peek(n.res_a).reg, (int)n.imm_l, n) };
                         break;
 
                     case ir.Opcode.oc_stackcopy:
                         {
                             var src = n.stack_before.Peek((int)n.imm_l).reg;
-                            var dest = n.stack_after.Peek().reg;
+                            var dest = n.stack_after.Peek(n.res_a).reg;
 
                             var r = new List<MCInst>();
                             if (n_ct == ir.Opcode.ct_int32)
@@ -74,7 +74,7 @@ namespace libtysila5.target.x86
 
                     case ir.Opcode.oc_stloc:
                         {
-                            var src = n.stack_before.Peek().reg;
+                            var src = n.stack_before.Peek(n.arg_a).reg;
                             var dest = c.lv_locs[(int)n.imm_l];
 
                             var r = new List<MCInst>();
@@ -102,7 +102,7 @@ namespace libtysila5.target.x86
                     case ir.Opcode.oc_ldloc:
                         {
                             var src = c.lv_locs[(int)n.imm_l];
-                            var dest = n.stack_after.Peek().reg;
+                            var dest = n.stack_after.Peek(n.res_a).reg;
 
                             var r = new List<MCInst>();
                             if (n_ct == ir.Opcode.ct_int32)
@@ -128,7 +128,7 @@ namespace libtysila5.target.x86
                     case ir.Opcode.oc_ldarg:
                         if (n_ct == ir.Opcode.ct_int32)
                         {
-                            var dest = n.stack_after.Peek().reg;
+                            var dest = n.stack_after.Peek(n.res_a).reg;
 
                             var r = new List<MCInst>();
                             if (dest is ContentsReg)
@@ -147,9 +147,9 @@ namespace libtysila5.target.x86
 
                     case ir.Opcode.oc_add:
                         {
-                            var srca = n.stack_before.Peek(1).reg;
-                            var srcb = n.stack_before.Peek().reg;
-                            var dest = n.stack_after.Peek().reg;
+                            var srca = n.stack_before.Peek(n.arg_a).reg;
+                            var srcb = n.stack_before.Peek(n.arg_b).reg;
+                            var dest = n.stack_after.Peek(n.res_a).reg;
 
                             List<MCInst> r = new List<MCInst>();
 
@@ -174,9 +174,9 @@ namespace libtysila5.target.x86
 
                     case ir.Opcode.oc_sub:
                         {
-                            var srca = n.stack_before.Peek(1).reg;
-                            var srcb = n.stack_before.Peek().reg;
-                            var dest = n.stack_after.Peek().reg;
+                            var srca = n.stack_before.Peek(n.arg_a).reg;
+                            var srcb = n.stack_before.Peek(n.arg_b).reg;
+                            var dest = n.stack_after.Peek(n.res_a).reg;
 
                             List<MCInst> r = new List<MCInst>();
 
@@ -202,9 +202,9 @@ namespace libtysila5.target.x86
                     case ir.Opcode.oc_cmp:
                         if (n_ct == ir.Opcode.ct_int32)
                         {
-                            var srca = n.stack_before.Peek(1).reg;
-                            var srcb = n.stack_before.Peek().reg;
-                            var dest = n.stack_after.Peek().reg;
+                            var srca = n.stack_before.Peek(n.arg_a).reg;
+                            var srcb = n.stack_before.Peek(n.arg_b).reg;
+                            var dest = n.stack_after.Peek(n.res_a).reg;
 
                             List<MCInst> r = new List<MCInst>();
                             if (!(srca is ContentsReg))
@@ -233,8 +233,8 @@ namespace libtysila5.target.x86
                     case ir.Opcode.oc_brif:
                         if (n_ct == ir.Opcode.ct_int32)
                         {
-                            var srca = n.stack_before.Peek(1).reg;
-                            var srcb = n.stack_before.Peek().reg;
+                            var srca = n.stack_before.Peek(n.arg_a).reg;
+                            var srcb = n.stack_before.Peek(n.arg_b).reg;
 
                             List<MCInst> r = new List<MCInst>();
 
@@ -247,8 +247,8 @@ namespace libtysila5.target.x86
                         }
                         else if(n_ct == ir.Opcode.ct_int64)
                         {
-                            var srca = n.stack_before.Peek(1).reg as DoubleReg;
-                            var srcb = n.stack_before.Peek().reg as DoubleReg;
+                            var srca = n.stack_before.Peek(n.arg_a).reg as DoubleReg;
+                            var srcb = n.stack_before.Peek(n.arg_b).reg as DoubleReg;
 
                             List<MCInst> r = new List<MCInst>();
 
@@ -272,8 +272,8 @@ namespace libtysila5.target.x86
                         {
                             var r = new List<MCInst>();
 
-                            var si = n.stack_before.Peek();
-                            var di = n.stack_after.Peek();
+                            var si = n.stack_before.Peek(n.arg_a);
+                            var di = n.stack_after.Peek(n.res_a);
                             var to_type = di.ts.SimpleType;
 
                             var sreg = si.reg;
@@ -326,8 +326,8 @@ namespace libtysila5.target.x86
                         {
                             var r = new List<MCInst>();
 
-                            var si = n.stack_before.Peek();
-                            var di = n.stack_after.Peek();
+                            var si = n.stack_before.Peek(n.arg_a);
+                            var di = n.stack_after.Peek(n.res_a);
                             var to_type = di.ts.SimpleType;
 
                             var sreg = si.reg;
@@ -370,15 +370,8 @@ namespace libtysila5.target.x86
                     case ir.Opcode.oc_stind:
                         if (n_ct == ir.Opcode.ct_int32)
                         {
-                            var addr = n.stack_before.Peek(1).reg;
-                            var val = n.stack_before.Peek().reg;
-
-                            if (n.imm_l == 1)
-                            {
-                                var tmp = addr;
-                                addr = val;
-                                val = tmp;
-                            }
+                            var addr = n.stack_before.Peek(n.arg_a).reg;
+                            var val = n.stack_before.Peek(n.arg_b).reg;
 
                             List<MCInst> r = new List<MCInst>();
                             if (addr is ContentsReg)
@@ -411,16 +404,8 @@ namespace libtysila5.target.x86
                         }
                         else if (n_ct == ir.Opcode.ct_int64)
                         {
-                            var addr = n.stack_before.Peek(1).reg;
-                            var val = n.stack_before.Peek().reg;
-
-                            if (n.imm_l == 1)
-                            {
-                                var tmp = addr;
-                                addr = val;
-                                val = tmp;
-                            }
-
+                            var addr = n.stack_before.Peek(n.arg_a).reg;
+                            var val = n.stack_before.Peek(n.arg_b).reg;
 
                             var dr = val as DoubleReg;
 
@@ -441,8 +426,8 @@ namespace libtysila5.target.x86
                     case ir.Opcode.oc_ldind:
                         if (n_ct == ir.Opcode.ct_int32)
                         {
-                            var addr = n.stack_before.Peek().reg;
-                            var val = n.stack_after.Peek().reg;
+                            var addr = n.stack_before.Peek(n.arg_a).reg;
+                            var val = n.stack_after.Peek(n.res_a).reg;
 
                             List<MCInst> r = new List<MCInst>();
                             handle_ldind(val, addr, 0, n.vt_size, r, n);
@@ -451,8 +436,8 @@ namespace libtysila5.target.x86
                         }
                         else if(n_ct == ir.Opcode.ct_int64)
                         {
-                            var addr = n.stack_before.Peek().reg;
-                            var val = n.stack_after.Peek().reg;
+                            var addr = n.stack_before.Peek(n.arg_a).reg;
+                            var val = n.stack_after.Peek(n.res_a).reg;
 
                             List<MCInst> r = new List<MCInst>();
 
@@ -485,7 +470,7 @@ namespace libtysila5.target.x86
                     case ir.Opcode.oc_ldlabaddr:
                         if (n_ct == ir.Opcode.ct_int32)
                         {
-                            var dest = n.stack_after.Peek().reg;
+                            var dest = n.stack_after.Peek(n.res_a).reg;
 
                             List<MCInst> r = new List<MCInst>();
                             if (dest is ContentsReg)
@@ -501,7 +486,15 @@ namespace libtysila5.target.x86
 
                     case ir.Opcode.oc_call:
                         {
-                            var r = handle_call(n, c);
+                            var r = handle_call(n, c, false);
+                            if (r != null)
+                                return r;
+                        }
+                        return null;
+
+                    case ir.Opcode.oc_calli:
+                        {
+                            var r = handle_call(n, c, true);
                             if (r != null)
                                 return r;
                         }
@@ -541,9 +534,9 @@ namespace libtysila5.target.x86
                     case ir.Opcode.oc_mul:
                         if(n_ct == ir.Opcode.ct_int32)
                         {
-                            var srca = n.stack_before.Peek(1).reg;
-                            var srcb = n.stack_before.Peek(0).reg;
-                            var dest = n.stack_after.Peek().reg;
+                            var srca = n.stack_before.Peek(n.arg_a).reg;
+                            var srcb = n.stack_before.Peek(n.arg_b).reg;
+                            var dest = n.stack_after.Peek(n.res_a).reg;
 
                             if(srca.Equals(dest) && !(srca is ContentsReg))
                             {
@@ -584,7 +577,7 @@ namespace libtysila5.target.x86
                     {
                         List<MCInst> r = new List<MCInst>();
 
-                        var dest = n2.stack_after.Peek().reg;
+                        var dest = n2.stack_after.Peek(n1.res_a).reg;
                         var src = new ir.Param { t = ir.Opcode.vl_str, str = n1.imm_lab, v = n1.imm_l };
                         var actdest = dest;
                         
@@ -631,14 +624,14 @@ namespace libtysila5.target.x86
                     if (n3.vt_size <= 4)
                     {
                         List<MCInst> r = new List<MCInst>();
-                        var src = n1.stack_before.Peek().reg;
+                        var src = n1.stack_before.Peek(n1.arg_a).reg;
                         if (src is ContentsReg)
                         {
                             r.Add(inst(x86_mov_r32_rm32, r_eax, src, n1));
                             src = r_eax;
                         }
 
-                        var dest = n3.stack_after.Peek().reg;
+                        var dest = n3.stack_after.Peek(n1.res_a).reg;
 
                         var actdest = dest;
                         if (dest is ContentsReg)
@@ -691,10 +684,10 @@ namespace libtysila5.target.x86
                     if (vt_size > 4)
                         return null;
 
-                    var srcobj = n1.stack_before.Peek(1).reg;
-                    var srcidx = n1.stack_before.Peek(0).reg;
+                    var srcobj = n1.stack_before.Peek(n1.arg_a).reg;
+                    var srcidx = n1.stack_before.Peek(n1.arg_b).reg;
 
-                    var dest = n6.stack_after.Peek(0).reg;
+                    var dest = n6.stack_after.Peek(n6.res_a).reg;
 
                     var scale = n1.imm_l;
 
@@ -938,7 +931,7 @@ namespace libtysila5.target.x86
             return r;
         }
 
-        private List<MCInst> handle_call(CilNode.IRNode n, Code c)
+        private List<MCInst> handle_call(CilNode.IRNode n, Code c, bool is_calli)
         {
             List<MCInst> r = new List<MCInst>();
             var call_ms = n.imm_ms;
@@ -976,13 +969,14 @@ namespace libtysila5.target.x86
             var rt2 = call_ms.m.GetTypeSpec(ref sig_idx, c.ms.gtparams, c.ms.gmparams);
 
             int push_length = 0;
+            int calli_adjust = is_calli ? 1 : 0;
 
             for(int i = 0; i < pcount; i++)
             {
                 var push_ts = call_ms.m.GetTypeSpec(ref sig_idx, c.ms.gtparams, c.ms.gmparams);
                 var push_ct = ir.Opcode.GetCTFromType(push_ts);
 
-                var to_pass = n.stack_before.Peek(i).reg;
+                var to_pass = n.stack_before.Peek(i + calli_adjust).reg;
 
                 switch (push_ct)
                 {
@@ -1005,7 +999,18 @@ namespace libtysila5.target.x86
             }
 
             // Do the call
-            r.Add(inst(x86_call_rel32, new ir.Param { t = ir.Opcode.vl_call_target, str = target }, n));
+            if(is_calli)
+            {
+                var call_reg = n.stack_before.Peek().reg;
+                /*if(call_reg is ContentsReg)
+                {
+                    handle_move(r_eax, call_reg, r, n);
+                    call_reg = r_eax;
+                }*/
+                r.Add(inst(x86_call_rm32, call_reg, n));
+            }
+            else
+                r.Add(inst(x86_call_rel32, new ir.Param { t = ir.Opcode.vl_call_target, str = target }, n));
 
             // Restore stack
             var add_oc = x86_add_rm32_imm32;
@@ -1020,9 +1025,16 @@ namespace libtysila5.target.x86
             // Get return value
             if(rt != null)
             {
-                // TODO: deal with non int32 types
+                var rt_size = c.t.GetSize(rt);
                 var dest = n.stack_after.Peek().reg;
-                r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
+                if (rt_size <= 4)
+                    r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
+                else if(rt_size == 8)
+                {
+                    var drd = dest as DoubleReg;
+                    r.Add(inst(x86_mov_rm32_r32, drd.a, r_eax, n));
+                    r.Add(inst(x86_mov_rm32_r32, drd.b, r_edx, n));
+                }
             }
 
             return r;

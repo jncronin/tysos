@@ -47,6 +47,12 @@ namespace libtysila5.cil
             public util.Stack<ir.StackItem> stack_before;
             public util.Stack<ir.StackItem> stack_after;
 
+            public int arg_a = 0;
+            public int arg_b = 1;
+            public int arg_c = 2;
+            public int arg_d = 3;
+            public int res_a = 0;
+
             public long imm_l;
             public ulong imm_ul;
             public string imm_lab;

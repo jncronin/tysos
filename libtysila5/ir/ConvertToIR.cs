@@ -222,16 +222,16 @@ namespace libtysila5.ir
                     break;
 
                 case cil.Opcode.SingleOpcodes.stfld:
-                    stack_after = copy_to_front(n, c, stack_before, 1);
-                    stack_after = ldflda(n, c, stack_after, false, out ts);
-                    stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
-                    stack_after = stind(n, c, stack_after, c.t.GetSize(ts), true);
+                    //stack_after = copy_to_front(n, c, stack_before, 1);
+                    stack_after = ldflda(n, c, stack_before, false, out ts, 1);
+                    stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr, 2);
+                    stack_after = stind(n, c, stack_after, c.t.GetSize(ts), 1, 0);
                     stack_after.Pop();
                     break;
 
                 case cil.Opcode.SingleOpcodes.stsfld:
                     stack_after = ldflda(n, c, stack_before, true, out ts);
-                    stack_after = stind(n, c, stack_after, c.t.GetSize(ts), true);
+                    stack_after = stind(n, c, stack_after, c.t.GetSize(ts), 1, 0);
                     break;
 
                 case cil.Opcode.SingleOpcodes.br:
@@ -334,8 +334,16 @@ namespace libtysila5.ir
                         if((call_ms_flags & 0x40) == 0x40)
                         {
                             // Calling a virtual function
-                            stack_after = copy_this_to_front(n, c, stack_before);
-                            stack_after = get_virt_ftn_ptr(n, c, stack_after);
+                            var ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
+
+                            uint sig_idx = ms.m.GetIntEntry(MetadataStream.tid_MethodDef, ms.mdrow,
+                                4);
+
+                            var pc = ms.m.GetMethodDefSigParamCountIncludeThis((int)sig_idx);
+
+
+                            //stack_after = copy_this_to_front(n, c, stack_before);
+                            stack_after = get_virt_ftn_ptr(n, c, stack_before, pc - 1);
                             stack_after = call(n, c, stack_after, true);
                         }
                         else
@@ -527,6 +535,11 @@ namespace libtysila5.ir
                     stack_after = castclass(n, c, stack_before, false);
                     break;
 
+                case cil.Opcode.SingleOpcodes.pop:
+                    stack_after = new Stack<StackItem>(stack_before);
+                    stack_after.Pop();
+                    break;
+
                 case cil.Opcode.SingleOpcodes.double_:
                     switch(n.opcode.opcode2)
                     {
@@ -649,7 +662,7 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> ldflda(CilNode n, Code c, Stack<StackItem> stack_before, bool is_static, out TypeSpec fld_ts)
+        private static Stack<StackItem> ldflda(CilNode n, Code c, Stack<StackItem> stack_before, bool is_static, out TypeSpec fld_ts, int src_a = 0)
         {
             int table_id, row;
             c.ms.m.InterpretToken(n.inline_uint, out table_id, out row);
@@ -684,7 +697,7 @@ namespace libtysila5.ir
             }
             else
             {
-                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ct = Opcode.ct_intptr, imm_l = fld_addr, stack_before = stack_before, stack_after = stack_after });
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ct = Opcode.ct_intptr, imm_l = fld_addr, stack_before = stack_before, stack_after = stack_after, arg_a = src_a, arg_b = 0 });
             }
 
             stack_after.Push(si);
@@ -716,17 +729,17 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> get_virt_ftn_ptr(CilNode n, Code c, Stack<StackItem> stack_before)
+        private static Stack<StackItem> get_virt_ftn_ptr(CilNode n, Code c, Stack<StackItem> stack_before, int arg_a)
         {
-            Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
-
             var ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
             var ts = ms.type;
 
             var l = layout.Layout.GetVTableOffset(ms);
 
+            var stack_after = ldc(n, c, stack_before, l, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, ir.Opcode.ct_intptr, arg_a + 1);
 
-            throw new NotImplementedException();
+            return stack_after;
         }
 
         private static Stack<StackItem> copy_this_to_front(CilNode n, Code c, Stack<StackItem> stack_before)
@@ -772,19 +785,17 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> stind(CilNode n, Code c, Stack<StackItem> stack_before, int v, bool swap = false)
+        private static Stack<StackItem> stind(CilNode n, Code c, Stack<StackItem> stack_before, int v, int val = 0, int addr = 1)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
-            var st_src = stack_after.Pop();
-            var st_dest = stack_after.Pop();
+            var st_src = stack_after.Peek(val);
+            var st_dest = stack_after.Peek(addr);
 
-            if(swap)
-            {
-                var st_tmp = st_src;
-                st_src = st_dest;
-                st_dest = st_tmp;
-            }
+            if (addr >= 2 || val >= 2)
+                throw new NotImplementedException();
+            stack_after.Pop();
+            stack_after.Pop();
 
             var ct_dest = st_dest.ct;
 
@@ -799,7 +810,7 @@ namespace libtysila5.ir
 
             var ct_src = st_src.ct;
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stind, ct = ct_src, vt_size = v, imm_l = swap ? 1 : 0, stack_before = stack_before, stack_after = stack_after });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stind, ct = ct_src, vt_size = v, stack_before = stack_before, stack_after = stack_after, arg_a = addr, arg_b = val });
 
             return stack_after;
         }
@@ -859,8 +870,12 @@ namespace libtysila5.ir
             }
         }
 
-        private static Stack<StackItem> call(CilNode n, Code c, Stack<StackItem> stack_before, bool is_calli = false, string override_name = null, MetadataStream override_m = null, int override_msig = 0)
+        private static Stack<StackItem> call(CilNode n, Code c, Stack<StackItem> stack_before, bool is_calli = false, string override_name = null, MetadataStream override_m = null, int override_msig = 0,
+            int calli_ftn = 0)
         {
+            if (calli_ftn != 0)
+                throw new NotImplementedException();
+
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
             MetadataStream m;
@@ -958,7 +973,7 @@ namespace libtysila5.ir
             if (!bin_comp_valid(ct_a, ct_b, cc, false))
                 throw new Exception("Invalid comparison between " + Opcode.ct_names[ct_a] + " and " + Opcode.ct_names[ct_b]);
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_brif, imm_l = n.il_offsets_after[1], imm_ul = (uint)cc, ct = ct_a, ct2 = ct_b, stack_after = stack_after, stack_before = stack_before });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_brif, imm_l = n.il_offsets_after[1], imm_ul = (uint)cc, ct = ct_a, ct2 = ct_b, stack_after = stack_after, stack_before = stack_before, arg_a = 1, arg_b = 0 });
 
             return stack_after;
         }
@@ -981,18 +996,30 @@ namespace libtysila5.ir
             si.ts = ts;
             stack_after.Push(si);
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_cmp, ct = ct_a, ct2 = ct_b, imm_ul = (uint)cc, stack_after = stack_after, stack_before = stack_before });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_cmp, ct = ct_a, ct2 = ct_b, imm_ul = (uint)cc, stack_after = stack_after, stack_before = stack_before, arg_a = 1, arg_b = 0 });
 
             return stack_after;
         }
 
         private static Stack<StackItem> binnumop(CilNode n, Code c, Stack<StackItem> stack_before, cil.Opcode.SingleOpcodes oc,
-            int ct_ret = Opcode.ct_unknown)
+            int ct_ret = Opcode.ct_unknown,
+            int src_a = -1, int src_b = -1, int res_a = -1)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
-            var si_b = stack_after.Pop();
-            var si_a = stack_after.Pop();
+            if(src_a == -1)
+            {
+                stack_after.Pop();
+                src_a = 1;
+            }
+            if(src_b == -1)
+            {
+                stack_after.Pop();
+                src_b = 0;
+            }
+
+            var si_b = stack_before.Peek(src_b);
+            var si_a = stack_before.Peek(src_a);
 
             var ct_a = si_a.ct;
             var ct_b = si_b.ct;
@@ -1066,7 +1093,15 @@ namespace libtysila5.ir
                     break;
             }
 
-            stack_after.Push(si);
+            if (res_a == -1)
+            {
+                stack_after.Push(si);
+                res_a = 0;
+            }
+            else
+            {
+                stack_after[stack_after.Count - 1 - res_a] = si;
+            }
 
             int noc = 0;
             switch(oc)
@@ -1096,7 +1131,7 @@ namespace libtysila5.ir
                     break;
             }
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = noc, ct = ct_a, ct2 = ct_b, stack_before = stack_before, stack_after = stack_after });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = noc, ct = ct_a, ct2 = ct_b, stack_before = stack_before, stack_after = stack_after, arg_a = src_a, arg_b = src_b, res_a = res_a });
 
             return stack_after;
         }
