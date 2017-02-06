@@ -58,6 +58,21 @@ namespace libtysila5.ir
             sb.Append(")");
             return sb.ToString();
         }
+
+        internal StackItem Clone()
+        {
+            return new StackItem
+            {
+                max_l = max_l,
+                max_ul = max_ul,
+                min_l = min_l,
+                min_ul = min_ul,
+                reg = reg,
+                str_val = str_val,
+                ts = ts,
+                _ct = _ct
+            };
+        }
     }
 
     public partial class ConvertToIR
@@ -543,6 +558,10 @@ namespace libtysila5.ir
                     stack_after.Pop();
                     break;
 
+                case cil.Opcode.SingleOpcodes.newarr:
+                    stack_after = newarr(n, c, stack_before);
+                    break;
+
                 case cil.Opcode.SingleOpcodes.double_:
                     switch(n.opcode.opcode2)
                     {
@@ -574,6 +593,111 @@ namespace libtysila5.ir
 
             foreach (var after in n.il_offsets_after)
                 DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static Stack<StackItem> newarr(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var arr_elem_type = n.GetTokenAsTypeSpec(c);
+            var arr_type = new metadata.TypeSpec { m = arr_elem_type.m, stype = TypeSpec.SpecialType.SzArray, other = arr_elem_type };
+            var et_size = c.t.GetSize(arr_elem_type);
+
+            c.t.r.VTableRequestor.Request(arr_elem_type);
+            c.t.r.VTableRequestor.Request(arr_type);
+
+            /* Determine size of array object.
+             * 
+             * Layout = 
+             * 
+             * Array object layout
+             * Lobounds array (4 * rank)
+             * Sizes array (4 * rank)
+             * Data array (numElems * et_size)
+             */
+
+            var int32_size = c.t.GetCTSize(Opcode.ct_int32);
+            var intptr_size = c.t.GetPointerSize();
+
+            var arr_obj_size = layout.Layout.GetTypeSize(arr_type, c.t);
+            var total_static_size = arr_obj_size +
+                2 * int32_size;
+
+            var stack_after = copy_to_front(n, c, stack_before, 0);
+            stack_after = ldc(n, c, stack_after, et_size);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul);
+            stack_after = ldc(n, c, stack_after, total_static_size);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = conv(n, c, stack_after, 0x18);
+
+            /* Allocate object */
+            stack_after = call(n, c, stack_after, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
+
+            /* Store lobounds */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, arr_obj_size, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = ldc(n, c, stack_after, 0);
+            stack_after = stind(n, c, stack_after, int32_size);
+
+            /* Store size */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, arr_obj_size + int32_size, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = stind(n, c, stack_after, int32_size, 2, 0);
+
+            /* Store vtbl pointer */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldlab(n, c, stack_after, c.ms.m.MangleType(arr_type));
+            stack_after = stind(n, c, stack_after, intptr_size);
+
+            /* Store etype vtbl pointer */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.ElemTypeVtblPointer, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = ldlab(n, c, stack_after, c.ms.m.MangleType(arr_elem_type));
+            stack_after = stind(n, c, stack_after, intptr_size);
+
+            /* Store lobounds pointer */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.LoboundsPointer, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = copy_to_front(n, c, stack_after, 1);
+            stack_after = ldc(n, c, stack_after, arr_obj_size, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = stind(n, c, stack_after, intptr_size);
+
+            /* Store sizes pointer */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.SizesPointer, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = copy_to_front(n, c, stack_after, 1);
+            stack_after = ldc(n, c, stack_after, arr_obj_size + int32_size, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = stind(n, c, stack_after, intptr_size);
+
+            /* Store data pointer */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.DataArrayPointer, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = copy_to_front(n, c, stack_after, 1);
+            stack_after = ldc(n, c, stack_after, arr_obj_size + 2 * int32_size, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = stind(n, c, stack_after, intptr_size);
+
+            /* Store elem type size */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.ElemTypeSize, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = ldc(n, c, stack_after, et_size);
+            stack_after = stind(n, c, stack_after, int32_size);
+
+            /* Convert to an object on the stack of the appropriate size */
+            var stack_after2 = new Stack<StackItem>(stack_after);
+            stack_after2.Pop();
+            stack_after2.Pop();
+            stack_after2.Push(new StackItem { ts = arr_type });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stackcopy, ct = ir.Opcode.ct_object, vt_size = intptr_size, stack_before = stack_after, stack_after = stack_after2 });
+
+            return stack_after2;
         }
 
         private static Stack<StackItem> castclass(CilNode n, Code c, Stack<StackItem> stack_before, bool isinst)
@@ -758,15 +882,17 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> copy_to_front(CilNode n, Code c, Stack<StackItem> stack_before, int v)
+        private static Stack<StackItem> copy_to_front(CilNode n, Code c, Stack<StackItem> stack_before, int v = 0)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
             var si = stack_before.Peek(v);
 
-            stack_after.Push(si);
+            var sidest = si.Clone();
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stackcopy, ct = Opcode.GetCTFromType(si.ts), vt_size = c.t.GetSize(si.ts), imm_l = v, imm_ul = 0, stack_before = stack_before, stack_after = stack_after });
+            stack_after.Push(sidest);
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stackcopy, ct = Opcode.GetCTFromType(si.ts), vt_size = c.t.GetSize(si.ts), arg_a = v, imm_ul = 0, stack_before = stack_before, stack_after = stack_after });
 
             return stack_after;
         }
@@ -788,17 +914,20 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> stind(CilNode n, Code c, Stack<StackItem> stack_before, int v, int val = 0, int addr = 1)
+        private static Stack<StackItem> stind(CilNode n, Code c, Stack<StackItem> stack_before, int vt_size, int val = 0, int addr = 1)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
             var st_src = stack_after.Peek(val);
             var st_dest = stack_after.Peek(addr);
 
-            if (addr >= 2 || val >= 2)
-                throw new NotImplementedException();
-            stack_after.Pop();
-            stack_after.Pop();
+            if ((addr == 0 && val == 1) || (addr == 1 && val == 0))
+            {
+                stack_after.Pop();
+                stack_after.Pop();
+            }
+            else if (addr == 0 || val == 0)
+                stack_after.Pop();
 
             var ct_dest = st_dest.ct;
 
@@ -813,7 +942,7 @@ namespace libtysila5.ir
 
             var ct_src = st_src.ct;
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stind, ct = ct_src, vt_size = v, stack_before = stack_before, stack_after = stack_after, arg_a = addr, arg_b = val });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stind, ct = ct_src, vt_size = vt_size, stack_before = stack_before, stack_after = stack_after, arg_a = addr, arg_b = val });
 
             return stack_after;
         }

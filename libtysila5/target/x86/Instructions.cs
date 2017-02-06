@@ -51,7 +51,7 @@ namespace libtysila5.target.x86
 
                     case ir.Opcode.oc_stackcopy:
                         {
-                            var src = n.stack_before.Peek((int)n.imm_l).reg;
+                            var src = n.stack_before.Peek(n.arg_a).reg;
                             var dest = n.stack_after.Peek(n.res_a).reg;
 
                             var r = new List<MCInst>();

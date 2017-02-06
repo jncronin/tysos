@@ -94,7 +94,17 @@ namespace libtysila5.layout
         public static int GetTypeSize(metadata.TypeSpec ts,
             target.Target t, bool is_static = false)
         {
-            return GetFieldOffset(ts, null, t, is_static);
+            switch(ts.stype)
+            {
+                case TypeSpec.SpecialType.None:
+                    return GetFieldOffset(ts, null, t, is_static);
+                case TypeSpec.SpecialType.SzArray:
+                    if (is_static)
+                        return 0;
+                    return GetArrayObjectSize(t);
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         public static void OutputStaticFields(metadata.TypeSpec ts,

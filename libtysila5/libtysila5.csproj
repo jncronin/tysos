@@ -55,6 +55,7 @@
     <Compile Include="ir\SpecialMethods.cs" />
     <Compile Include="ir\stind.cs" />
     <Compile Include="ir\str.cs" />
+    <Compile Include="layout\Array.cs" />
     <Compile Include="layout\Field.cs" />
     <Compile Include="layout\VTable.cs" />
     <Compile Include="libtysila.cs" />
