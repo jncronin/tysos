@@ -199,6 +199,33 @@ namespace libtysila5.target.x86
                         }
                         break;
 
+                    case ir.Opcode.oc_and:
+                        {
+                            var srca = n.stack_before.Peek(n.arg_a).reg;
+                            var srcb = n.stack_before.Peek(n.arg_b).reg;
+                            var dest = n.stack_after.Peek(n.res_a).reg;
+
+                            List<MCInst> r = new List<MCInst>();
+
+                            switch (n_ct)
+                            {
+                                case ir.Opcode.ct_int32:
+                                    handle_and(srca, srcb, dest, r, n);
+                                    return r;
+
+                                case ir.Opcode.ct_int64:
+                                    {
+                                        var dra = srca as DoubleReg;
+                                        var drb = srcb as DoubleReg;
+                                        var drd = dest as DoubleReg;
+                                        handle_and(dra.a, drb.a, drd.a, r, n);
+                                        handle_and(dra.b, drb.b, drd.b, r, n);
+                                        return r;
+                                    }
+                            }
+                        }
+                        break;
+
                     case ir.Opcode.oc_cmp:
                         if (n_ct == ir.Opcode.ct_int32)
                         {
@@ -855,6 +882,62 @@ namespace libtysila5.target.x86
             }
         }
 
+        private void handle_and(Reg srca, Reg srcb, Reg dest, List<MCInst> r, CilNode.IRNode n)
+        {
+            if (!(srca is ContentsReg) && srca.Equals(dest))
+            {
+                r.Add(inst(x86_and_r32_rm32, srca, srca, srcb, n));
+            }
+            else if (!(srcb is ContentsReg) && srca.Equals(dest))
+            {
+                r.Add(inst(x86_and_rm32_r32, srca, srca, srcb, n));
+            }
+            else
+            {
+                // complex way, do calc in rax, then store
+                r.Add(inst(x86_mov_r32_rm32, r_eax, srca, n));
+                r.Add(inst(x86_and_r32_rm32, r_eax, r_eax, srcb, n));
+                r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
+            }
+        }
+
+        private void handle_or(Reg srca, Reg srcb, Reg dest, List<MCInst> r, CilNode.IRNode n)
+        {
+            if (!(srca is ContentsReg) && srca.Equals(dest))
+            {
+                r.Add(inst(x86_or_r32_rm32, srca, srca, srcb, n));
+            }
+            else if (!(srcb is ContentsReg) && srca.Equals(dest))
+            {
+                r.Add(inst(x86_or_rm32_r32, srca, srca, srcb, n));
+            }
+            else
+            {
+                // complex way, do calc in rax, then store
+                r.Add(inst(x86_mov_r32_rm32, r_eax, srca, n));
+                r.Add(inst(x86_or_r32_rm32, r_eax, r_eax, srcb, n));
+                r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
+            }
+        }
+
+        private void handle_xor(Reg srca, Reg srcb, Reg dest, List<MCInst> r, CilNode.IRNode n)
+        {
+            if (!(srca is ContentsReg) && srca.Equals(dest))
+            {
+                r.Add(inst(x86_xor_r32_rm32, srca, srca, srcb, n));
+            }
+            else if (!(srcb is ContentsReg) && srca.Equals(dest))
+            {
+                r.Add(inst(x86_xor_rm32_r32, srca, srca, srcb, n));
+            }
+            else
+            {
+                // complex way, do calc in rax, then store
+                r.Add(inst(x86_mov_r32_rm32, r_eax, srca, n));
+                r.Add(inst(x86_xor_r32_rm32, r_eax, r_eax, srcb, n));
+                r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
+            }
+        }
 
         private void handle_ldind(Reg val, Reg addr, int disp, int vt_size, List<MCInst> r, CilNode.IRNode n)
         {
@@ -1013,10 +1096,13 @@ namespace libtysila5.target.x86
                 r.Add(inst(x86_call_rel32, new ir.Param { t = ir.Opcode.vl_call_target, str = target }, n));
 
             // Restore stack
-            var add_oc = x86_add_rm32_imm32;
-            if (push_length < 128)
-                add_oc = x86_add_rm32_imm8;
-            r.Add(inst(add_oc, r_esp, r_esp, push_length, n));
+            if (push_length != 0)
+            {
+                var add_oc = x86_add_rm32_imm32;
+                if (push_length < 128)
+                    add_oc = x86_add_rm32_imm8;
+                r.Add(inst(add_oc, r_esp, r_esp, push_length, n));
+            }
 
             // Restore saved registers
             for (int i = push_list.Count - 1; i >= 0; i--)
@@ -1029,12 +1115,14 @@ namespace libtysila5.target.x86
                 var dest = n.stack_after.Peek().reg;
                 if (rt_size <= 4)
                     r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
-                else if(rt_size == 8)
+                else if (rt_size == 8)
                 {
                     var drd = dest as DoubleReg;
                     r.Add(inst(x86_mov_rm32_r32, drd.a, r_eax, n));
                     r.Add(inst(x86_mov_rm32_r32, drd.b, r_edx, n));
                 }
+                else
+                    throw new NotImplementedException();
             }
 
             return r;

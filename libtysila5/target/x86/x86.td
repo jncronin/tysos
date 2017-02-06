@@ -81,6 +81,11 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"imul_r32_rm32",
 	"lea_r32",
 	"xor_r32_rm32",
+	"xor_rm32_r32",
+	"and_r32_rm32",
+	"and_rm32_r32",
+	"or_r32_rm32",
+	"or_rm32_r32",
 	"sar_rm32_imm8",
 ]);
 

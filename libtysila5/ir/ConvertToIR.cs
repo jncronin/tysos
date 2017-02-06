@@ -371,6 +371,9 @@ namespace libtysila5.ir
                 case cil.Opcode.SingleOpcodes.div_un:
                 case cil.Opcode.SingleOpcodes.rem:
                 case cil.Opcode.SingleOpcodes.rem_un:
+                case cil.Opcode.SingleOpcodes.and:
+                case cil.Opcode.SingleOpcodes.or:
+                case cil.Opcode.SingleOpcodes.xor:
                     stack_after = binnumop(n, c, stack_before, n.opcode.opcode1);
                     break;
 
@@ -1129,6 +1132,15 @@ namespace libtysila5.ir
                 case cil.Opcode.SingleOpcodes.rem_un:
                     noc = Opcode.oc_rem;
                     break;
+                case cil.Opcode.SingleOpcodes.and:
+                    noc = Opcode.oc_and;
+                    break;
+                case cil.Opcode.SingleOpcodes.or:
+                    noc = Opcode.oc_or;
+                    break;
+                case cil.Opcode.SingleOpcodes.xor:
+                    noc = Opcode.oc_xor;
+                    break;
             }
 
             n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = noc, ct = ct_a, ct2 = ct_b, stack_before = stack_before, stack_after = stack_after, arg_a = src_a, arg_b = src_b, res_a = res_a });
@@ -1138,6 +1150,10 @@ namespace libtysila5.ir
 
         private static int bin_op_valid(int ct_a, int ct_b, cil.Opcode.SingleOpcodes oc)
         {
+            if (oc == cil.Opcode.SingleOpcodes.and ||
+                oc == cil.Opcode.SingleOpcodes.or ||
+                oc == cil.Opcode.SingleOpcodes.xor)
+                return int_op_valid(ct_a, ct_b, oc);
             switch(ct_a)
             {
                 case Opcode.ct_int32:
@@ -1196,6 +1212,28 @@ namespace libtysila5.ir
                                 return Opcode.ct_intptr;
                             break;
                     }
+                    break;
+            }
+            return Opcode.ct_unknown;
+        }
+
+        private static int int_op_valid(int ct_a, int ct_b, cil.Opcode.SingleOpcodes oc)
+        {
+            switch (ct_a)
+            {
+                case Opcode.ct_int32:
+                case Opcode.ct_intptr:
+                    switch (ct_b)
+                    {
+                        case Opcode.ct_int32:
+                            return Opcode.ct_int32;
+                        case Opcode.ct_intptr:
+                            return Opcode.ct_intptr;
+                    }
+                    break;
+                case Opcode.ct_int64:
+                    if (ct_b == Opcode.ct_int64)
+                        return Opcode.ct_int64;
                     break;
             }
             return Opcode.ct_unknown;

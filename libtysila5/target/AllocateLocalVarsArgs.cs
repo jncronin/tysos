@@ -79,7 +79,7 @@ namespace libtysila5.target
             // pass by rettype
             m.GetTypeSpec(ref idx, c.ms.gtparams, c.ms.gmparams);
 
-            for (int i = 0; i < la_count2; i++)
+            for (int i = 0; i < la_count; i++)
             {
                 var mreg = la_phys_locs[i];
 

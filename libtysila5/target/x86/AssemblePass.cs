@@ -179,6 +179,30 @@ namespace libtysila5.target.x86
                         Code.Add(0x2b);
                         Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
                         break;
+                    case x86_and_r32_rm32:
+                        Code.Add(0x23);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        break;
+                    case x86_and_rm32_r32:
+                        Code.Add(0x21);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        break;
+                    case x86_or_r32_rm32:
+                        Code.Add(0x0b);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        break;
+                    case x86_or_rm32_r32:
+                        Code.Add(0x09);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        break;
+                    case x86_xor_r32_rm32:
+                        Code.Add(0x33);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        break;
+                    case x86_xor_rm32_r32:
+                        Code.Add(0x31);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        break;
                     case x86_sbb_r32_rm32:
                         Code.Add(0x1b);
                         Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
@@ -483,11 +507,6 @@ namespace libtysila5.target.x86
 
                     case x86_lea_r32:
                         Code.Add(0x8d);
-                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
-                        break;
-
-                    case x86_xor_r32_rm32:
-                        Code.Add(0x33);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
 
