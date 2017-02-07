@@ -392,6 +392,12 @@ namespace libtysila5.ir
                     stack_after = binnumop(n, c, stack_before, n.opcode.opcode1);
                     break;
 
+                case cil.Opcode.SingleOpcodes.shl:
+                case cil.Opcode.SingleOpcodes.shr:
+                case cil.Opcode.SingleOpcodes.shr_un:
+                    stack_after = shiftop(n, c, stack_before, n.opcode.opcode1);
+                    break;
+
                 case cil.Opcode.SingleOpcodes.conv_i:
                     stack_after = conv(n, c, stack_before, 0x18);
                     break;
@@ -580,6 +586,21 @@ namespace libtysila5.ir
                         case cil.Opcode.DoubleOpcodes.clt_un:
                             stack_after = cmp(n, c, stack_before, Opcode.cc_b);
                             break;
+                        case cil.Opcode.DoubleOpcodes.localloc:
+                            {
+                                stack_after = new Stack<StackItem>(stack_before);
+                                stack_after.Pop();
+
+                                si = new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0x18) };
+                                stack_after.Push(si);
+
+                                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_localloc, stack_before = stack_before, stack_after = stack_after });
+
+                                // TODO: if localsinit set then initialize to zero
+
+                                break;
+                            }
+
                         default:
                             throw new NotImplementedException(n.ToString());
                     }
@@ -593,6 +614,92 @@ namespace libtysila5.ir
 
             foreach (var after in n.il_offsets_after)
                 DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static Stack<StackItem> shiftop(CilNode n, Code c, Stack<StackItem> stack_before, cil.Opcode.SingleOpcodes oc,
+            int ct_ret = Opcode.ct_unknown,
+            int src_a = -1, int src_b = -1, int res_a = -1)
+        {
+            Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
+
+            if (src_a == -1)
+            {
+                stack_after.Pop();
+                src_a = 1;
+            }
+            if (src_b == -1)
+            {
+                stack_after.Pop();
+                src_b = 0;
+            }
+
+            var si_b = stack_before.Peek(src_b);
+            var si_a = stack_before.Peek(src_a);
+
+            var ct_a = si_a.ct;
+            var ct_b = si_b.ct;
+
+            if (ct_ret == Opcode.ct_unknown)
+            {
+                ct_ret = int_op_valid(ct_a, ct_a, oc);
+                if (ct_ret == Opcode.ct_unknown)
+                    throw new Exception("Invalid shift operation between " + Opcode.ct_names[ct_a] + " and " + Opcode.ct_names[ct_b]);
+            }
+
+            StackItem si = new StackItem();
+            si._ct = ct_ret;
+
+            switch (ct_ret)
+            {
+                case Opcode.ct_int32:
+                    si.ts = c.ms.m.GetSimpleTypeSpec(0x8);
+                    break;
+                case Opcode.ct_int64:
+                    si.ts = c.ms.m.GetSimpleTypeSpec(0xa);
+                    break;
+                case Opcode.ct_intptr:
+                    si.ts = c.ms.m.GetSimpleTypeSpec(0x18);
+                    break;
+                case Opcode.ct_float:
+                    si.ts = c.ms.m.GetSimpleTypeSpec(0xd);
+                    break;
+                case Opcode.ct_object:
+                    si.ts = c.ms.m.GetSimpleTypeSpec(0x1c);
+                    break;
+            }
+
+            if (res_a == -1)
+            {
+                stack_after.Push(si);
+                res_a = 0;
+            }
+            else
+            {
+                stack_after[stack_after.Count - 1 - res_a] = si;
+            }
+
+            int noc = 0;
+            switch (oc)
+            {
+                case cil.Opcode.SingleOpcodes.shl:
+                    noc = Opcode.oc_shl;
+                    break;
+                case cil.Opcode.SingleOpcodes.shr:
+                    noc = Opcode.oc_shr;
+                    break;
+                case cil.Opcode.SingleOpcodes.shr_un:
+                    noc = Opcode.oc_shr_un;
+                    break;
+                case cil.Opcode.SingleOpcodes.mul:
+                case cil.Opcode.SingleOpcodes.mul_ovf:
+                case cil.Opcode.SingleOpcodes.mul_ovf_un:
+                    noc = Opcode.oc_mul;
+                    break;
+            }
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = noc, ct = ct_a, ct2 = ct_b, stack_before = stack_before, stack_after = stack_after, arg_a = src_a, arg_b = src_b, res_a = res_a });
+
+            return stack_after;
         }
 
         private static Stack<StackItem> newarr(CilNode n, Code c, Stack<StackItem> stack_before)

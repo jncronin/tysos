@@ -32,9 +32,10 @@ namespace libtysila5.ir
         public int gcmalloc;
         public int castclassex;
 
+        List<byte> b = new List<byte>();
+
         public SpecialMethods(metadata.MetadataStream m)
         {
-            List<byte> b = new List<byte>();
 
             var corlib = m.al.GetAssembly("mscorlib");
             var i4 = corlib.GetTypeSpec("System", "Int32");
@@ -45,12 +46,17 @@ namespace libtysila5.ir
             castclassex = CreateMethodSignature(b, i,
                 new TypeSpec[] { i, i, i4 });
 
-            sh_blob = new BlobStream(b.ToArray());
+            sh_blob = new BlobStream(b);
 
             al = m.al;
         }
 
-        private int CreateMethodSignature(List<byte> b, TypeSpec rettype, TypeSpec[] ps, bool has_this = false)
+        internal int CreateMethodSignature(TypeSpec rettype, TypeSpec[] ps, bool has_this = false)
+        {
+            return CreateMethodSignature(b, rettype, ps, has_this);
+        }
+
+        int CreateMethodSignature(List<byte> b, TypeSpec rettype, TypeSpec[] ps, bool has_this = false)
         {
             List<byte> tmp = new List<byte>();
 
@@ -107,7 +113,7 @@ namespace libtysila5.ir
 
         class BlobStream : metadata.PEFile.StreamHeader
         {
-            public BlobStream(byte[] arr)
+            public BlobStream(IList<byte> arr)
             {
                 di = new metadata.ArrayInterface(arr);
             }

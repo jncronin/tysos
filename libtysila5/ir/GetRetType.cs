@@ -55,6 +55,24 @@ namespace libtysila5.ir
             }
         }
 
+        internal static metadata.TypeSpec GetTypeFromCT(int ct, metadata.MetadataStream m)
+        {
+            switch(ct)
+            {
+                case ct_int32:
+                    return m.GetSimpleTypeSpec(0x08);
+                case ct_int64:
+                    return m.GetSimpleTypeSpec(0x0a);
+                case ct_intptr:
+                    return m.GetSimpleTypeSpec(0x18);
+                case ct_object:
+                    return m.GetSimpleTypeSpec(0x1c);
+                case ct_float:
+                    return m.GetSimpleTypeSpec(0x0d);
+            }
+            return null;
+        }
+
         internal static int GetCTFromType(int type)
         {
             switch (type)

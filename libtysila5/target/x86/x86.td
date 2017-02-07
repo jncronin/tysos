@@ -87,6 +87,10 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"or_r32_rm32",
 	"or_rm32_r32",
 	"sar_rm32_imm8",
+	"sal_rm32_cl",
+	"sar_rm32_cl",
+	"shr_rm32_cl",
+	"and_rm32_imm8",
 ]);
 
 function oc_map_handler(array entries, string val)

@@ -516,6 +516,27 @@ namespace libtysila5.target.x86
                         AddImm8(Code, I.p[2].v);
                         break;
 
+                    case x86_and_rm32_imm8:
+                        Code.Add(0x83);
+                        Code.AddRange(ModRMSIB(4, I.p[1].mreg));
+                        AddImm8(Code, I.p[3].v);
+                        break;
+
+                    case x86_sal_rm32_cl:
+                        Code.Add(0xd3);
+                        Code.AddRange(ModRMSIB(4, I.p[1].mreg));
+                        break;
+
+                    case x86_sar_rm32_cl:
+                        Code.Add(0xd3);
+                        Code.AddRange(ModRMSIB(7, I.p[1].mreg));
+                        break;
+
+                    case x86_shr_rm32_cl:
+                        Code.Add(0xd3);
+                        Code.AddRange(ModRMSIB(5, I.p[1].mreg));
+                        break;
+
                     default:
                         throw new NotImplementedException(insts[(int)I.p[0].v]);
                 }

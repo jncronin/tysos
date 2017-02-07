@@ -42,6 +42,10 @@ namespace libtysila5.cil
             public int opcode;
             public int ct = ir.Opcode.ct_unknown;
             public int ct2 = ir.Opcode.ct_unknown;
+            int _ctret = ir.Opcode.ct_unknown;
+            bool has_ctret = false;
+            public int ctret { get { if (has_ctret) return _ctret; else return ct; } set { _ctret = value; has_ctret = true; } }
+
             public int vt_size;
 
             public util.Stack<ir.StackItem> stack_before;

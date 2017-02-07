@@ -72,6 +72,8 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"starg",
 	"ldarga",
 	"stackcopy",
+	"localloc",
+	"shr", "shl", "shr_un",
 ]);
 
 intmap("libtysila5.ir", "Opcode", "cc", "cc_names", "init_cc", [
