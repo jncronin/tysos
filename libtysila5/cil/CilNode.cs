@@ -55,6 +55,7 @@ namespace libtysila5.cil
             public int arg_b = 1;
             public int arg_c = 2;
             public int arg_d = 3;
+            public List<int> arg_list = null;
             public int res_a = 0;
 
             public long imm_l;
@@ -306,5 +307,11 @@ namespace libtysila5.cil
             m.InterpretToken(inline_uint, out table_id, out row);
             return m.GetTypeSpec(table_id, row, c.ms.gtparams, c.ms.gmparams);
         }
+
+        public metadata.MethodSpec GetTokenAsMethodSpec(Code c)
+        {
+            return m.GetMethodSpec(inline_uint, c.ms.gtparams, c.ms.gmparams);
+        }
+
     }
 }

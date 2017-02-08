@@ -80,6 +80,11 @@ namespace libtysila5.ir
 
         private void CreateTypeSignature(List<byte> tmp, TypeSpec ts)
         {
+            if(ts == null)
+            {
+                tmp.Add(0x01);
+                return;
+            }
             if (ts.m.is_corlib == false)
                 throw new NotSupportedException();
             var stype = ts.m.simple_type_idx[ts.tdrow];

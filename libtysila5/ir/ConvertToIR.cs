@@ -262,8 +262,9 @@ namespace libtysila5.ir
                 case cil.Opcode.SingleOpcodes.brfalse_s:
                     // first push zero
                     stack_after = new Stack<StackItem>(stack_before);
-                    stack_after.Push(new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0x18), min_l = 0, max_l = 0, min_ul = 0, max_ul = 0 });
-                    n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ct = Opcode.ct_intptr, imm_l = 0, imm_ul = 0, stack_before = stack_before, stack_after = stack_after });
+                    var brtf_ct = get_brtf_type(n.opcode, stack_before.Peek().ct);
+                    stack_after.Push(new StackItem { ts = ir.Opcode.GetTypeFromCT(brtf_ct, c.ms.m), min_l = 0, max_l = 0, min_ul = 0, max_ul = 0 });
+                    n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ct = brtf_ct, imm_l = 0, imm_ul = 0, stack_before = stack_before, stack_after = stack_after });
 
                     switch(n.opcode.opcode1)
                     {
@@ -568,6 +569,10 @@ namespace libtysila5.ir
                     stack_after = newarr(n, c, stack_before);
                     break;
 
+                case cil.Opcode.SingleOpcodes.newobj:
+                    stack_after = newobj(n, c, stack_before);
+                    break;
+
                 case cil.Opcode.SingleOpcodes.double_:
                     switch(n.opcode.opcode2)
                     {
@@ -614,6 +619,83 @@ namespace libtysila5.ir
 
             foreach (var after in n.il_offsets_after)
                 DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static int get_brtf_type(cil.Opcode opcode, int ct)
+        {
+            switch(opcode.opcode1)
+            {
+                case cil.Opcode.SingleOpcodes.brtrue:
+                case cil.Opcode.SingleOpcodes.brtrue_s:
+                    switch(ct)
+                    {
+                        case ir.Opcode.ct_intptr:
+                        case ir.Opcode.ct_object:
+                            // following added for mono csc compatibility
+                        case ir.Opcode.ct_int32:
+                        case ir.Opcode.ct_int64:
+                        case ir.Opcode.ct_ref:
+                            return ct;
+                    }
+                    break;
+                case cil.Opcode.SingleOpcodes.brfalse:
+                case cil.Opcode.SingleOpcodes.brfalse_s:
+                    switch (ct)
+                    {
+                        case ir.Opcode.ct_int32:
+                        case ir.Opcode.ct_int64:
+                        case ir.Opcode.ct_object:
+                        case ir.Opcode.ct_ref:
+                        case ir.Opcode.ct_intptr:
+                            return ct;
+                    }
+                    break;
+            }
+            throw new Exception("Invalid argument to " + opcode.ToString() + ": " + ir.Opcode.ct_names[ct]);
+        }
+
+        private static Stack<StackItem> newobj(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var ctor = n.GetTokenAsMethodSpec(c);
+            var objtype = ctor.type;
+
+            /* check if this is system.string */
+            if (objtype.Equals(c.ms.m.GetSimpleTypeSpec(0x0e)))
+                throw new NotImplementedException();
+
+            var objsize = layout.Layout.GetTypeSize(objtype, c.t);
+            var vtname = c.ms.m.MangleMethod(ctor);
+            var intptrsize = c.t.GetPointerSize();
+
+            /* create object */
+            var stack_after = ldc(n, c, stack_before, objsize, 0x18);
+            stack_after = call(n, c, stack_after, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
+
+            /* store vtbl pointer */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldlab(n, c, stack_after, vtname);
+            stack_after = stind(n, c, stack_after, intptrsize);
+
+            /* call constructor.  Arguments are 0 for object, then
+             * for the other pcount - 1 arguments, they are at
+             * pcount - 1, pcount - 2, pcount - 3 etc */
+            System.Collections.Generic.List<int> p = new System.Collections.Generic.List<int>();
+            var pcount = ctor.m.GetMethodDefSigParamCountIncludeThis(ctor.msig);
+            p.Add(0);
+            for (int i = 0; i < (pcount - 1); i++)
+                p.Add(pcount - 1 - i);
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_call, imm_ms = ctor, arg_list = p, stack_before = stack_after, stack_after = stack_after });
+
+            /* pop all arguments and leave object on the stack */
+            var stack_after2 = new Stack<StackItem>(stack_after);
+            for (int i = 0; i < pcount; i++)
+                stack_after2.Pop();
+
+            stack_after2.Push(new StackItem { ts = objtype });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_stackcopy, arg_a = 0, res_a = 0, stack_before = stack_after, stack_after = stack_after2 });
+
+            return stack_after2;
         }
 
         private static Stack<StackItem> shiftop(CilNode n, Code c, Stack<StackItem> stack_before, cil.Opcode.SingleOpcodes oc,
