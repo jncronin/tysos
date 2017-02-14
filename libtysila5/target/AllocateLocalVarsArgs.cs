@@ -29,7 +29,7 @@ namespace libtysila5.target
 
                 c.lv_sizes[i] = t_size;
                 c.lv_types[i] = type;
-                c.lv_locs[i] = GetLVLocation(cur_loc, t_size);
+                c.lv_locs[i] = GetLVLocation(cur_loc, t_size, c);
 
                 cur_loc += t_size;
 
@@ -51,7 +51,6 @@ namespace libtysila5.target
             int laidx = 0;
             cur_loc = 0;
 
-
             var cc = cc_map["sysv"];
             int stack_loc = 0;
             var la_phys_locs = GetRegLocs(new ir.Param
@@ -65,7 +64,7 @@ namespace libtysila5.target
             if (la_count != la_count2)
             {
                 var this_size = GetCTSize(ir.Opcode.ct_object);
-                c.la_locs[laidx] = GetLALocation(cur_loc, this_size);
+                c.la_locs[laidx] = GetLALocation(cur_loc, this_size, c);
                 c.la_sizes[laidx] = this_size;
                 c.la_types[laidx] = ms.type;
 
@@ -85,7 +84,7 @@ namespace libtysila5.target
 
                 if (mreg.type == rt_stack)
                 {
-                    la_phys_locs[i] = GetLALocation(mreg.stack_loc, c.la_sizes[i]);
+                    la_phys_locs[i] = GetLALocation(mreg.stack_loc, c.la_sizes[i], c);
                     c.la_locs[i] = la_phys_locs[i];
                     c.la_needs_assign[i] = false;
                 }

@@ -45,6 +45,8 @@ namespace libtysila5
         public target.Target.Reg[] incoming_args;
         public bool[] la_needs_assign;
 
+        public metadata.TypeSpec ret_ts = null;
+
         public ulong regs_used = 0;
         public List<target.Target.Reg> regs_saved = new List<target.Target.Reg>();
 

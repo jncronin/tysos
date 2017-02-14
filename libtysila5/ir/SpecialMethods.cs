@@ -31,6 +31,7 @@ namespace libtysila5.ir
     {
         public int gcmalloc;
         public int castclassex;
+        public int throw_;
 
         List<byte> b = new List<byte>();
 
@@ -40,11 +41,14 @@ namespace libtysila5.ir
             var corlib = m.al.GetAssembly("mscorlib");
             var i4 = corlib.GetTypeSpec("System", "Int32");
             var i = corlib.GetTypeSpec("System", "IntPtr");
+            var o = corlib.GetSimpleTypeSpec(0x1c);
 
             gcmalloc = CreateMethodSignature(b, i,
                 new metadata.TypeSpec[] { i4 });
             castclassex = CreateMethodSignature(b, i,
                 new TypeSpec[] { i, i, i4 });
+            throw_ = CreateMethodSignature(b, null,
+                new TypeSpec[] { o });
 
             sh_blob = new BlobStream(b);
 

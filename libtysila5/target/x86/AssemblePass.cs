@@ -537,6 +537,15 @@ namespace libtysila5.target.x86
                         Code.AddRange(ModRMSIB(5, I.p[1].mreg));
                         break;
 
+                    case x86_xchg_r32_rm32:
+                        Code.Add(0x87);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+                    case x86_xchg_rm32_r32:
+                        Code.Add(0x87);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                        break;
+
                     default:
                         throw new NotImplementedException(insts[(int)I.p[0].v]);
                 }

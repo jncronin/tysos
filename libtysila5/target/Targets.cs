@@ -65,8 +65,8 @@ namespace libtysila5.target
         protected internal abstract bool IsCall(MCInst i);
         protected internal abstract int GetBranchDest(MCInst i);
         protected internal abstract void SetBranchDest(MCInst i, int d);
-        protected internal abstract Reg GetLVLocation(int lv_loc, int lv_size);
-        protected internal abstract Reg GetLALocation(int la_loc, int la_size);
+        protected internal abstract Reg GetLVLocation(int lv_loc, int lv_size, Code c);
+        protected internal abstract Reg GetLALocation(int la_loc, int la_size, Code c);
         protected internal abstract MCInst[] SetupStack(int lv_size);
         protected internal abstract MCInst[] CreateMove(Reg src, Reg dest);
         protected internal abstract binary_library.IRelocationType GetDataToDataReloc();
@@ -313,6 +313,7 @@ namespace libtysila5.target
                 new GenericEqualityComparer<int>());
 
             var pcount = m.GetMethodDefSigParamCountIncludeThis(idx);
+            bool has_this = m.GetMethodDefSigHasNonExplicitThis(idx);
             idx = m.GetMethodDefSigRetTypeIndex(idx);
 
             // Skip rettype
@@ -327,8 +328,15 @@ namespace libtysila5.target
             la_types = new metadata.TypeSpec[pcount];
             for (int i = 0; i < pcount; i++)
             {
-                while (m.GetRetTypeCustomMod(ref idx, out is_req, out token)) ;
-                var v = m.GetTypeSpec(ref idx, gtparams, gmparams);
+                metadata.TypeSpec v;
+
+                if (i == 0 && has_this)
+                    v = csite.ms.type;
+                else
+                {
+                    while (m.GetRetTypeCustomMod(ref idx, out is_req, out token)) ;
+                    v = m.GetTypeSpec(ref idx, gtparams, gmparams);
+                }
 
                 la_types[i] = v;
                 var size = GetSize(v);

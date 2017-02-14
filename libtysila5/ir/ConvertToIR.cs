@@ -216,6 +216,10 @@ namespace libtysila5.ir
                     stack_after = ldarg(n, c, stack_before, 3);
                     break;
 
+                case cil.Opcode.SingleOpcodes.ldarga_s:
+                    stack_after = ldarga(n, c, stack_before, n.inline_int);
+                    break;
+
                 case cil.Opcode.SingleOpcodes.ldsfld:
                     stack_after = ldflda(n, c, stack_before, true, out ts);
                     stack_after = ldind(n, c, stack_after, ts);
@@ -248,6 +252,72 @@ namespace libtysila5.ir
                     stack_after = ldflda(n, c, stack_before, true, out ts);
                     stack_after = stind(n, c, stack_after, c.t.GetSize(ts), 1, 0);
                     break;
+
+                case cil.Opcode.SingleOpcodes.ldelem:
+                    stack_after = ldelem(n, c, stack_before, n.GetTokenAsTypeSpec(c));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_i:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x18));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_i1:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x04));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_i2:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x06));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_i4:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x08));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_i8:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x0a));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_r4:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x0c));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_r8:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x0d));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_ref:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x1c));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_u1:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x05));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_u2:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x07));
+                    break;
+                case cil.Opcode.SingleOpcodes.ldelem_u4:
+                    stack_after = ldelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x09));
+                    break;
+
+                case cil.Opcode.SingleOpcodes.stelem:
+                    stack_after = stelem(n, c, stack_before, n.GetTokenAsTypeSpec(c));
+                    break;
+                case cil.Opcode.SingleOpcodes.stelem_i:
+                    stack_after = stelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x18));
+                    break;
+                case cil.Opcode.SingleOpcodes.stelem_i1:
+                    stack_after = stelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x04));
+                    break;
+                case cil.Opcode.SingleOpcodes.stelem_i2:
+                    stack_after = stelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x06));
+                    break;
+                case cil.Opcode.SingleOpcodes.stelem_i4:
+                    stack_after = stelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x08));
+                    break;
+                case cil.Opcode.SingleOpcodes.stelem_i8:
+                    stack_after = stelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x0a));
+                    break;
+                case cil.Opcode.SingleOpcodes.stelem_r4:
+                    stack_after = stelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x0c));
+                    break;
+                case cil.Opcode.SingleOpcodes.stelem_r8:
+                    stack_after = stelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x0d));
+                    break;
+                case cil.Opcode.SingleOpcodes.stelem_ref:
+                    stack_after = stelem(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x1c));
+                    break;
+
 
                 case cil.Opcode.SingleOpcodes.br:
                 case cil.Opcode.SingleOpcodes.br_s:
@@ -518,6 +588,10 @@ namespace libtysila5.ir
                     stack_after = stind(n, c, stack_before, 8);
                     break;
 
+                case cil.Opcode.SingleOpcodes.stobj:
+                    stack_after = stind(n, c, stack_before, c.t.GetSize(n.GetTokenAsTypeSpec(c)));
+                    break;
+
                 case cil.Opcode.SingleOpcodes.ldind_i:
                     stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x18));
                     break;
@@ -552,6 +626,10 @@ namespace libtysila5.ir
                     stack_after = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x09));
                     break;
 
+                case cil.Opcode.SingleOpcodes.ldobj:
+                    stack_after = ldobj(n, c, stack_before, n.GetTokenAsTypeSpec(c));
+                    break;
+
                 case cil.Opcode.SingleOpcodes.isinst:
                     stack_after = castclass(n, c, stack_before, true);
                     break;
@@ -571,6 +649,30 @@ namespace libtysila5.ir
 
                 case cil.Opcode.SingleOpcodes.newobj:
                     stack_after = newobj(n, c, stack_before);
+                    break;
+
+                case cil.Opcode.SingleOpcodes.throw_:
+                    stack_after = throw_(n, c, stack_before);
+                    break;
+
+                case cil.Opcode.SingleOpcodes.switch_:
+                    stack_after = switch_(n, c, stack_before);
+                    break;
+
+                case cil.Opcode.SingleOpcodes.unbox_any:
+                    stack_after = unbox_any(n, c, stack_before);
+                    break;
+
+                case cil.Opcode.SingleOpcodes.box:
+                    stack_after = box(n, c, stack_before);
+                    break;
+
+                case cil.Opcode.SingleOpcodes.ldlen:
+                    stack_after = ldlen(n, c, stack_before);
+                    break;
+
+                case cil.Opcode.SingleOpcodes.dup:
+                    stack_after = copy_to_front(n, c, stack_before);
                     break;
 
                 case cil.Opcode.SingleOpcodes.double_:
@@ -605,6 +707,9 @@ namespace libtysila5.ir
 
                                 break;
                             }
+                        case cil.Opcode.DoubleOpcodes._sizeof:
+                            stack_after = ldc(n, c, stack_before, c.t.GetSize(n.GetTokenAsTypeSpec(c)));
+                            break;
 
                         default:
                             throw new NotImplementedException(n.ToString());
@@ -619,6 +724,184 @@ namespace libtysila5.ir
 
             foreach (var after in n.il_offsets_after)
                 DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static Stack<StackItem> ldobj(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts = null)
+        {
+            if (ts == null)
+                ts = n.GetTokenAsTypeSpec(c);
+
+            if(ts.IsValueType())
+            {
+                var esize = c.t.GetSize(ts);
+                return ldind(n, c, stack_before, ts);
+            }
+
+            var ret = ldind(n, c, stack_before, c.ms.m.GetSimpleTypeSpec(0x1c));
+            ret.Peek().ts = ts;
+            return ret;
+        }
+
+        private static Stack<StackItem> ldlen(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            // dereference sizes pointer
+            var stack_after = ldc(n, c, stack_before, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.SizesPointer, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.GetSimpleTypeSpec(0x18));
+            stack_after = ldind(n, c, stack_after, c.ms.m.GetSimpleTypeSpec(0x08));
+            return stack_after;
+        }
+
+        private static Stack<StackItem> stelem(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts)
+        {
+            // todo: type and array bounds checks
+
+            var tsize = c.t.GetSize(ts);
+
+            // build offset
+            var stack_after = ldc(n, c, stack_before, tsize, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_intptr, 2, -1, 1);
+
+            // check object is a szarray to ts
+            stack_after = copy_to_front(n, c, stack_after, 2);
+            stack_after = castclass(n, c, stack_after, false, null,
+                new TypeSpec { m = c.ms.m.al.GetAssembly("mscorlib"), stype = TypeSpec.SpecialType.SzArray, other = ts });
+
+            // dereference data pointer
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.DataArrayPointer, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.GetSimpleTypeSpec(0x18));
+
+            // get pointer to actual data
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr, -1, 2, -1);
+
+            // load data
+            stack_after = stind(n, c, stack_after, tsize, 1, 0);
+
+            stack_after = new Stack<StackItem>(stack_after);
+            stack_after.Pop();
+            stack_after.Pop();
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> box(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var ts = n.GetTokenAsTypeSpec(c);
+
+            if (ts.IsValueType())
+            {
+                if(!ts.Equals(stack_before.Peek().ts))
+                    throw new Exception("Box called with invalid parameter: " + ts.ToString() +
+                        " vs " + stack_before.Peek().ts);
+
+                var boxed_ts = new metadata.TypeSpec { m = ts.m, stype = TypeSpec.SpecialType.Boxed, other = ts };
+                var ptr_size = c.t.GetPointerSize();
+                var data_size = c.t.GetSize(ts);
+                var boxed_size = util.util.align(ptr_size + data_size, ptr_size);
+
+                // create boxed object
+                var stack_after = ldc(n, c, stack_before, boxed_size, 0x18);
+                stack_after = call(n, c, stack_after, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
+
+                // set vtbl
+                stack_after = copy_to_front(n, c, stack_after);
+                stack_after = ldlab(n, c, stack_after, c.ms.m.MangleType(ts));
+                stack_after = stind(n, c, stack_after, ptr_size);
+
+                // set object
+                stack_after = copy_to_front(n, c, stack_after);
+                stack_after = ldc(n, c, stack_after, ptr_size, 0x18);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+                stack_after = stind(n, c, stack_after, data_size, 2, 0);
+
+                // get return value
+                var stack_after2 = new Stack<StackItem>(stack_after);
+                stack_after2.Pop();
+                stack_after2.Pop();
+                stack_after2.Push(new StackItem { ts = boxed_ts });
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_stackcopy, stack_before = stack_after, stack_after = stack_after2 });
+
+                return stack_after2;
+            }
+            else
+            {
+                return stack_before;
+            }
+        }
+
+        private static Stack<StackItem> unbox_any(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var ts = n.GetTokenAsTypeSpec(c);
+
+            if (ts.IsValueType())
+            {
+                // TODO ensure stack item is a boxed instance of ts
+
+                var stack_after = ldc(n, c, stack_before, c.t.GetPointerSize(), 0x18);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+                stack_after = ldind(n, c, stack_after, ts);
+                return stack_after;
+            }
+            else
+            {
+                return castclass(n, c, stack_before);
+            }
+        }
+
+        private static Stack<StackItem> ldelem(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts)
+        {
+            // todo: type and array bounds checks
+
+            var tsize = c.t.GetSize(ts);
+
+            // build offset
+            var stack_after = ldc(n, c, stack_before, tsize, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_intptr);
+
+            // check object is a szarray to ts
+            stack_after = copy_to_front(n, c, stack_after, 1);
+            stack_after = castclass(n, c, stack_after, false, null,
+                new TypeSpec { m = c.ms.m.al.GetAssembly("mscorlib"), stype = TypeSpec.SpecialType.SzArray, other = ts });
+
+            // dereference data pointer
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.DataArrayPointer, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.GetSimpleTypeSpec(0x18));
+
+            // get pointer to actual data
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+
+            // load data
+            stack_after = ldind(n, c, stack_after, ts);
+
+            var stack_after2 = new Stack<StackItem>(stack_after);
+            stack_after2.Pop();
+            stack_after2.Pop();
+            stack_after2.Push(new StackItem { ts = ts });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stackcopy, arg_a = 0, res_a = 0, stack_before = stack_after, stack_after = stack_after2 });
+
+            return stack_after2;
+        }
+
+        private static Stack<StackItem> switch_(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            // TODO: optimize for architectures that support jump tables
+            int[] targets = new int[n.il_offsets_after.Count - 1];
+            for (int i = 0; i < n.il_offsets_after.Count - 1; i++)
+                targets[i] = n.il_offsets_after[i];
+
+            var stack_after = new Stack<StackItem>(stack_before);
+            stack_after.Pop();
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_switch, arg_list = new System.Collections.Generic.List<int>(targets), stack_before = stack_before, stack_after = stack_after });
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> throw_(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            return call(n, c, stack_before, false, "throw", c.special_meths, c.special_meths.throw_);
         }
 
         private static int get_brtf_type(cil.Opcode opcode, int ct)
@@ -889,10 +1172,14 @@ namespace libtysila5.ir
             return stack_after2;
         }
 
-        private static Stack<StackItem> castclass(CilNode n, Code c, Stack<StackItem> stack_before, bool isinst)
+        private static Stack<StackItem> castclass(CilNode n, Code c, Stack<StackItem> stack_before, bool isinst = false,
+            metadata.TypeSpec from_type = null,
+            metadata.TypeSpec to_type = null)
         {
-            var from_type = stack_before.Peek().ts;
-            var to_type = n.GetTokenAsTypeSpec(c);
+            if(from_type == null)
+                from_type = stack_before.Peek().ts;
+            if(to_type == null)
+                to_type = n.GetTokenAsTypeSpec(c);
 
             if(from_type == null ||
                 from_type.IsSuperclassOf(to_type))
@@ -913,7 +1200,10 @@ namespace libtysila5.ir
                 from_type.IsSubclassOf(to_type))
             {
                 /* We can statically prove the cast will succeed */
-                throw new NotImplementedException();
+                var stack_after = new Stack<StackItem>(stack_before);
+                stack_after.Pop();
+                stack_after.Push(new StackItem { ts = to_type });
+                return stack_after;
             }
             else
             {
@@ -1099,6 +1389,24 @@ namespace libtysila5.ir
             var ct = Opcode.GetCTFromType(ts);
 
             n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldarg, ct = ct, vt_size = vt_size, imm_l = v, stack_before = stack_before, stack_after = stack_after });
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> ldarga(CilNode n, Code c, Stack<StackItem> stack_before, int v)
+        {
+            Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
+
+            var si = new StackItem();
+            var ts = c.la_types[v];
+            ts = new TypeSpec { m = ts.m, stype = TypeSpec.SpecialType.MPtr, other = ts };
+            si.ts = ts;
+            stack_after.Push(si);
+
+            var vt_size = c.t.GetSize(ts);
+            var ct = Opcode.GetCTFromType(ts);
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldarga, ct = ct, vt_size = vt_size, imm_l = v, stack_before = stack_before, stack_after = stack_after });
 
             return stack_after;
         }

@@ -42,6 +42,9 @@ namespace libtysila5.cil
                 out table_id, out row);
             int idx = (int)ms.m.GetIntEntry(table_id, row, 0);
 
+            var rtsig = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
+            ret.ret_ts = ms.m.GetTypeSpec(ref rtsig, ms.gtparams, ms.gmparams);
+
             ret.lvar_sig_tok = idx;
 
             Dictionary<int, List<int>> offsets_before =

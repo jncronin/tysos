@@ -119,8 +119,11 @@ namespace libtysila5.target.x86
         }
 
         /* Access to variables on the incoming stack is encoded as -address - 1 */
-        protected internal override Reg GetLVLocation(int lv_loc, int lv_size)
+        protected internal override Reg GetLVLocation(int lv_loc, int lv_size, Code c)
         {
+            if (Opcode.GetCTFromType(c.ret_ts) == Opcode.ct_vt)
+                lv_loc += 4;
+
             int disp = 0;
             disp = -lv_size - lv_loc;
             return new ContentsReg
@@ -131,8 +134,11 @@ namespace libtysila5.target.x86
         }
 
         /* Access to variables on the incoming stack is encoded as -address - 1 */
-        protected internal override Reg GetLALocation(int la_loc, int la_size)
+        protected internal override Reg GetLALocation(int la_loc, int la_size, Code c)
         {
+            if (Opcode.GetCTFromType(c.ret_ts) == Opcode.ct_vt)
+                la_loc += 4;
+
             return new ContentsReg
             {
                 basereg = r_ebp,

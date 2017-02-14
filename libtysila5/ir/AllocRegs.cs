@@ -83,7 +83,24 @@ namespace libtysila5.ir
                             alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack),
                             alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack));
                         break;
-                        
+                    case Opcode.ct_vt:
+                        {
+                            var vt_size = c.t.GetSize(si.ts);
+                            if (vt_size <= 4)
+                                si.reg = alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack);
+                            else if (vt_size <= 8)
+                                si.reg = new target.Target.DoubleReg(
+                                    alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack),
+                                    alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack));
+                            else
+                            {
+                                vt_size = util.util.align(vt_size, 4);
+                                cur_stack -= vt_size;
+                                si.reg = new target.Target.ContentsReg { basereg = x.r_ebp, disp = cur_stack, size = vt_size };
+                            }
+                            break;
+                        }
+
                     default:
                         throw new NotImplementedException(ir.Opcode.ct_names[si.ct]);
                 }

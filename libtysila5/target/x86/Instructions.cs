@@ -645,14 +645,24 @@ namespace libtysila5.target.x86
                     case ir.Opcode.oc_enter:
                         {
                             List<MCInst> r = new List<MCInst>();
+
+                            var lv_size = c.lv_total_size;
+
+                            if(ir.Opcode.GetCTFromType(c.ret_ts) == ir.Opcode.ct_vt)
+                            {
+                                r.Add(inst(x86_pop_r32, r_eax, n));
+                                r.Add(inst(x86_xchg_r32_rm32, r_eax, new ContentsReg { basereg = r_esp, disp = 0, size = 4 }, n));
+                                lv_size += 4;
+                            }
+
                             r.Add(inst(x86_push_r32, r_ebp, n));
                             r.Add(inst(x86_mov_r32_rm32, r_ebp, r_esp, n));
-                            if (c.lv_total_size != 0)
+                            if (lv_size != 0)
                             {
-                                if (c.lv_total_size <= 127)
-                                    r.Add(inst(x86_sub_rm32_imm8, r_esp, r_esp, c.lv_total_size, n));
+                                if (lv_size <= 127)
+                                    r.Add(inst(x86_sub_rm32_imm8, r_esp, r_esp, lv_size, n));
                                 else
-                                    r.Add(inst(x86_sub_rm32_imm32, r_esp, r_esp, c.lv_total_size, n));
+                                    r.Add(inst(x86_sub_rm32_imm32, r_esp, r_esp, lv_size, n));
                             }
 
                             var regs_to_save = c.regs_used | c.t.cc_callee_preserves_map["sysv"];
@@ -667,6 +677,9 @@ namespace libtysila5.target.x86
                                 c.regs_saved.Add(cur_reg);
                             }
 
+                            if (ir.Opcode.GetCTFromType(c.ret_ts) == ir.Opcode.ct_vt)
+                                r.Add(inst(x86_mov_rm32_r32, new ContentsReg { basereg = r_ebp, disp = -4, size = 4 }, r_eax, n));
+
                             return r;
                         }
 
@@ -677,12 +690,20 @@ namespace libtysila5.target.x86
                             var srcb = n.stack_before.Peek(n.arg_b).reg;
                             var dest = n.stack_after.Peek(n.res_a).reg;
 
-                            if(srca.Equals(dest) && !(srca is ContentsReg))
+                            if (srca.Equals(dest) && !(srca is ContentsReg))
                             {
                                 return new List<MCInst>
                                 {
                                     inst(x86_imul_r32_rm32, dest, srcb, n)
                                 };
+                            }
+                            else
+                            {
+                                var r = new List<MCInst>();
+                                handle_move(r_eax, srca, r, n);
+                                r.Add(inst(x86_imul_r32_rm32, r_eax, srcb, n));
+                                handle_move(dest, r_eax, r, n);
+                                return r;
                             }
                         }
                         break;
@@ -986,11 +1007,34 @@ namespace libtysila5.target.x86
         {
             if (src is ContentsReg && dest is ContentsReg)
             {
-                // first store to rax
+                var crs = src as ContentsReg;
+                var crd = dest as ContentsReg;
+
+                var vt_size = crs.size;
+                if (vt_size != crd.size)
+                    throw new Exception("Differing size in move");
+
+                vt_size = util.util.align(vt_size, 4);
+                if (vt_size > 16)
+                    throw new NotImplementedException();
+
                 if (temp_reg == null)
-                    temp_reg = r_eax;
-                r.Add(inst(x86_mov_r32_rm32, temp_reg, src, n));
-                src = temp_reg;
+                {
+                    if (crs.basereg.Equals(r_eax) || crd.basereg.Equals(r_eax))
+                        temp_reg = r_edx;
+                    else
+                        temp_reg = r_eax;
+                }
+
+                for (int i = 0; i < vt_size; i += 4)
+                {
+                    var new_crs = new ContentsReg { basereg = crs.basereg, disp = crs.disp + i, size = 4 };
+                    var new_crd = new ContentsReg { basereg = crd.basereg, disp = crd.disp + i, size = 4 };
+
+                    // first store to rax
+                    r.Add(inst(x86_mov_r32_rm32, temp_reg, new_crs, n));
+                    r.Add(inst(x86_mov_rm32_r32, new_crd, temp_reg, n));
+                }
             }
             else if (src is ContentsReg)
                 r.Add(inst(x86_mov_r32_rm32, dest, src, n));
@@ -1170,6 +1214,19 @@ namespace libtysila5.target.x86
                         r.Add(inst(x86_mov_r32_rm32, r_edx, dr.b, n));
                         break;
 
+                    case ir.Opcode.ct_vt:
+                        // move address to save to to eax
+                        handle_move(r_eax, new ContentsReg { basereg = r_ebp, disp = -4, size = 4 },
+                            r, n);
+
+                        // move struct to [eax]
+                        var vt_size = GetSize(c.ret_ts);
+                        handle_move(new ContentsReg { basereg = r_eax, size = vt_size },
+                            reg, r, n);
+
+                        break;
+
+
                     default:
                         throw new NotImplementedException(ir.Opcode.ct_names[n.ct]);
                 }
@@ -1283,6 +1340,9 @@ namespace libtysila5.target.x86
             // Get return value
             if(rt != null)
             {
+                if (ir.Opcode.GetCTFromType(rt) == ir.Opcode.ct_vt)
+                    throw new NotImplementedException();
+
                 var rt_size = c.t.GetSize(rt);
                 var dest = n.stack_after.Peek().reg;
                 if (rt_size <= 4)

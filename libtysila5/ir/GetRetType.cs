@@ -29,6 +29,9 @@ namespace libtysila5.ir
     {
         internal static int GetCTFromType(metadata.TypeSpec ts)
         {
+            if (ts == null)
+                return ct_unknown;
+
             switch(ts.stype)
             {
                 case metadata.TypeSpec.SpecialType.None:
@@ -49,6 +52,9 @@ namespace libtysila5.ir
 
                 case metadata.TypeSpec.SpecialType.Ptr:
                     return ct_intptr;
+
+                case metadata.TypeSpec.SpecialType.Boxed:
+                    return ct_object;
 
                 default:
                     throw new NotSupportedException();

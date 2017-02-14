@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 18:09:34 on 06 February 2017
+ * It was generated at 15:48:23 on 14 February 2017
  * from D:\tysos\branches\tysila3\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -165,6 +165,8 @@ namespace libtysila5.target.x86
 		public const int x86_sar_rm32_cl = 83;
 		public const int x86_shr_rm32_cl = 84;
 		public const int x86_and_rm32_imm8 = 85;
+		public const int x86_xchg_r32_rm32 = 86;
+		public const int x86_xchg_rm32_r32 = 87;
 		
 		internal static void init_instrs()
 		{
@@ -233,6 +235,8 @@ namespace libtysila5.target.x86
 			insts[83] = "sar_rm32_cl";
 			insts[84] = "shr_rm32_cl";
 			insts[85] = "and_rm32_imm8";
+			insts[86] = "xchg_r32_rm32";
+			insts[87] = "xchg_rm32_r32";
 		}
 	}
 }
@@ -244,13 +248,13 @@ namespace libtysila5.target.x86
 		public static System.Collections.Generic.Dictionary<int, int[]> cc_map_sysv = new System.Collections.Generic.Dictionary<int, int[]>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_map_sysv[83] = new int[] { 0, };
-			cc_map_sysv[85] = new int[] { 0, };
 			cc_map_sysv[84] = new int[] { 0, };
-			cc_map_sysv[87] = new int[] { 0, };
+			cc_map_sysv[86] = new int[] { 0, };
+			cc_map_sysv[85] = new int[] { 0, };
 			cc_map_sysv[88] = new int[] { 0, };
 			cc_map_sysv[89] = new int[] { 0, };
-			cc_map_sysv[86] = new int[] { 0, };
+			cc_map_sysv[90] = new int[] { 0, };
+			cc_map_sysv[87] = new int[] { 0, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 104;
@@ -265,12 +269,12 @@ namespace libtysila5.target.x86
 		public static System.Collections.Generic.Dictionary<int, int[]> cc_map_ret_sysv = new System.Collections.Generic.Dictionary<int, int[]>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_ret_sysv()
 		{
-			cc_map_ret_sysv[83] = new int[] { 3, };
-			cc_map_ret_sysv[85] = new int[] { 3, };
-			cc_map_ret_sysv[87] = new int[] { 3, };
+			cc_map_ret_sysv[84] = new int[] { 3, };
+			cc_map_ret_sysv[86] = new int[] { 3, };
 			cc_map_ret_sysv[88] = new int[] { 3, };
-			cc_map_ret_sysv[84] = new int[] { 12, };
-			cc_map_ret_sysv[86] = new int[] { 11, };
+			cc_map_ret_sysv[89] = new int[] { 3, };
+			cc_map_ret_sysv[85] = new int[] { 12, };
+			cc_map_ret_sysv[87] = new int[] { 11, };
 		}
 		
 		internal const ulong ret_sysv_caller_preserves = 0;
