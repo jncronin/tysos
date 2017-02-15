@@ -1283,12 +1283,25 @@ namespace libtysila5.target.x86
             int push_length = 0;
             int calli_adjust = is_calli ? 1 : 0;
 
+            metadata.TypeSpec[] push_tss = new metadata.TypeSpec[pcount];
             for(int i = 0; i < pcount; i++)
             {
-                var push_ts = call_ms.m.GetTypeSpec(ref sig_idx, c.ms.gtparams, c.ms.gmparams);
+                if (i == 0 && call_ms.m.GetMethodDefSigHasNonExplicitThis(call_ms.msig))
+                    push_tss[i] = call_ms.type;
+                else
+                    push_tss[i] = call_ms.m.GetTypeSpec(ref sig_idx, c.ms.gtparams, c.ms.gmparams);
+            }
+
+            for(int i = 0; i < pcount; i++)
+            {
+                metadata.TypeSpec push_ts = push_tss[pcount - i - 1];
                 var push_ct = ir.Opcode.GetCTFromType(push_ts);
 
-                var to_pass = n.stack_before.Peek(pcount - i - 1 + calli_adjust).reg;
+                var stack_loc = i;
+                if (n.arg_list != null)
+                    stack_loc = n.arg_list[pcount - i - 1];
+
+                var to_pass = n.stack_before.Peek(stack_loc + calli_adjust).reg;
 
                 switch (push_ct)
                 {
@@ -1296,6 +1309,7 @@ namespace libtysila5.target.x86
                     case ir.Opcode.ct_object:
                     case ir.Opcode.ct_ref:
                     case ir.Opcode.ct_intptr:
+                    case ir.Opcode.ct_vt:
                         handle_push(to_pass, ref push_length, r, n);
                         break;
 
@@ -1365,9 +1379,20 @@ namespace libtysila5.target.x86
             if (reg is ContentsReg)
             {
                 ContentsReg cr = reg as ContentsReg;
-                if (cr.size != 4)
+                if (cr.size < 4)
                     throw new NotImplementedException();
-                r.Add(inst(x86_push_rm32, reg, n));
+                else if(cr.size == 4)
+                    r.Add(inst(x86_push_rm32, reg, n));
+                else
+                {
+                    var psize = util.util.align(cr.size, 4);
+                    if (psize <= 127)
+                        r.Add(inst(x86_sub_rm32_imm8, r_esp, r_esp, psize, n));
+                    else
+                        r.Add(inst(x86_sub_rm32_imm32, r_esp, r_esp, psize, n));
+                    handle_move(new ContentsReg { basereg = r_esp, size = cr.size },
+                        cr, r, n);
+                }
                 push_length += 4;
             }
             else
