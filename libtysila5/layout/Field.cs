@@ -97,6 +97,12 @@ namespace libtysila5.layout
             switch(ts.stype)
             {
                 case TypeSpec.SpecialType.None:
+                    if(ts.Equals(ts.m.SystemRuntimeTypeHandle) ||
+                        ts.Equals(ts.m.SystemRuntimeMethodHandle) ||
+                        ts.Equals(ts.m.SystemRuntimeFieldHandle))
+                    {
+                        return is_static ? 0 : (3 * t.GetPointerSize());
+                    }
                     return GetFieldOffset(ts, null, t, is_static);
                 case TypeSpec.SpecialType.SzArray:
                     if (is_static)

@@ -675,6 +675,10 @@ namespace libtysila5.ir
                     stack_after = copy_to_front(n, c, stack_before);
                     break;
 
+                case cil.Opcode.SingleOpcodes.ldtoken:
+                    stack_after = ldtoken(n, c, stack_before);
+                    break;
+
                 case cil.Opcode.SingleOpcodes.double_:
                     switch(n.opcode.opcode2)
                     {
@@ -724,6 +728,48 @@ namespace libtysila5.ir
 
             foreach (var after in n.il_offsets_after)
                 DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static Stack<StackItem> ldtoken(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var ts = n.GetTokenAsTypeSpec(c);
+            var ms = n.GetTokenAsMethodSpec(c);
+
+            TypeSpec push_ts = null;
+            string mod_name = null;
+            System.Collections.Generic.IEnumerable<byte> sig_val = null;
+
+            if(ts != null)
+            {
+                push_ts = ts.m.SystemRuntimeTypeHandle;
+                mod_name = ts.m.AssemblyName;
+                sig_val = ts.Signature;
+            }
+            else if(ms != null)
+            {
+                // TODO: decide if method or field ref
+                throw new NotImplementedException();
+            }
+
+            int sig_offset = c.t.st.GetSignatureAddress(mod_name, sig_val, c.t);
+
+            // build the object
+            var stack_after = ldc(n, c, stack_before, c.t.GetSize(push_ts), 0x18);
+            stack_after = call(n, c, stack_after, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
+
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldlab(n, c, stack_after, push_ts.MangleType());
+            stack_after = stind(n, c, stack_after, c.t.GetPointerSize());
+
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, c.t.GetPointerSize(), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldlab(n, c, stack_after, c.t.st.GetStringTableName(), sig_offset);
+            stack_after = stind(n, c, stack_after, c.t.GetPointerSize());
+
+            stack_after.Peek().ts = push_ts;
+
+            return stack_after;
         }
 
         private static Stack<StackItem> ldobj(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts = null)

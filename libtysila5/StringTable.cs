@@ -36,6 +36,24 @@ namespace libtysila5
             return Label;
         }
 
+        public int GetSignatureAddress(string module, IEnumerable<byte> sig, target.Target t)
+        {
+            var ptr_size = t.GetCTSize(ir.Opcode.ct_object);
+            while (str_tab.Count % ptr_size != 0)
+                str_tab.Add(0);
+
+            int ret = str_tab.Count;
+
+            sig_metadata_addrs[ret] = module;
+            for (int i = 0; i < ptr_size; i++)
+                str_tab.Add(0);
+
+            foreach (byte b in sig)
+                str_tab.Add(b);
+
+            return ret;
+        }
+
         public int GetStringAddress(string s, target.Target t)
         {
             if (str_addrs.ContainsKey(s))
@@ -73,6 +91,10 @@ namespace libtysila5
                 return ret;
             }
         }
+
+        Dictionary<int, string> sig_metadata_addrs =
+            new Dictionary<int, string>(
+                new GenericEqualityComparer<int>());
 
         Dictionary<string, int> str_addrs =
             new Dictionary<string, int>(
@@ -129,6 +151,23 @@ namespace libtysila5
                 reloc.Addend = 0;
                 reloc.References = str_lab;
                 reloc.Offset = (ulong)(str_addr + stab_base);
+                of.AddRelocation(reloc);
+            }
+
+            foreach(var kvp in sig_metadata_addrs)
+            {
+                var reloc = of.CreateRelocation();
+                reloc.DefinedIn = rd;
+                reloc.Type = t.GetDataToDataReloc();
+                reloc.Addend = 0;
+
+                var md_lab = of.CreateSymbol();
+                md_lab.DefinedIn = null;
+                md_lab.Name = kvp.Value;
+                md_lab.ObjectType = binary_library.SymbolObjectType.Object;
+
+                reloc.References = md_lab;
+                reloc.Offset = (ulong)(kvp.Key + stab_base);
                 of.AddRelocation(reloc);
             }
 
