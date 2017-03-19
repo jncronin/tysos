@@ -316,6 +316,11 @@ namespace libtysila5.target.x86
                         Code.Add(0xb6);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
+                    case x86_movzxwd:
+                        Code.Add(0x0f);
+                        Code.Add(0xb7);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
                     case x86_jcc_rel32:
                         if (I.p[1].v != ir.Opcode.cc_never)
                         {
@@ -546,6 +551,27 @@ namespace libtysila5.target.x86
                         Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
                         break;
 
+                    case x86_movsd_xmmm64_xmm:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0x11);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                        break;
+
+                    case x86_movsd_xmm_xmmm64:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0x10);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
+                    case x86_cvtsd2si_r32_xmmm64:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0x2d);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
                     default:
                         throw new NotImplementedException(insts[(int)I.p[0].v]);
                 }
@@ -631,6 +657,22 @@ namespace libtysila5.target.x86
             else if (r == r_esi)
                 return 6;
             else if (r == r_edi)
+                return 7;
+            else if (r == r_xmm0)
+                return 0;
+            else if (r == r_xmm1)
+                return 1;
+            else if (r == r_xmm2)
+                return 2;
+            else if (r == r_xmm3)
+                return 3;
+            else if (r == r_xmm4)
+                return 4;
+            else if (r == r_xmm5)
+                return 5;
+            else if (r == r_xmm6)
+                return 6;
+            else if (r == r_xmm7)
                 return 7;
 
             throw new NotSupportedException();
@@ -737,6 +779,22 @@ namespace libtysila5.target.x86
             else if (rm == r_esi)
                 return 6;
             else if (rm == r_edi)
+                return 7;
+            else if (rm == r_xmm0)
+                return 0;
+            else if (rm == r_xmm1)
+                return 1;
+            else if (rm == r_xmm2)
+                return 2;
+            else if (rm == r_xmm3)
+                return 3;
+            else if (rm == r_xmm4)
+                return 4;
+            else if (rm == r_xmm5)
+                return 5;
+            else if (rm == r_xmm6)
+                return 6;
+            else if (rm == r_xmm7)
                 return 7;
 
             throw new NotSupportedException();

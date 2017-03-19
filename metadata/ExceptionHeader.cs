@@ -40,5 +40,7 @@ namespace metadata
         public int TryILOffset, TryLength, HandlerILOffset, HandlerLength;
         public TypeSpec ClassToken;
         public int FilterOffset;
+
+        public int EhdrIdx;
     }
 }

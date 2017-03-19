@@ -71,6 +71,47 @@ namespace metadata
             return FullName;
         }
 
+        /* Fast access to built-in types */
+        public class BuiltInType
+        {
+            public string name, nspace, mod;
+            TypeSpec v;
+            internal AssemblyLoader al;
+
+            public TypeSpec Type
+            {
+                get
+                {
+                    if (v == null)
+                    {
+                        var m = al.GetAssembly(mod);
+                        v = m.GetTypeSpec(nspace, name);
+                        if (v == null)
+                            throw new Exception("Cannot find " + nspace + "." +
+                                name + " in " + mod);
+                    }
+                    return v;
+                }
+            }
+
+            public static implicit operator TypeSpec(BuiltInType b) { return b.Type; }
+        }
+        internal BuiltInType GetBuiltin(string name, string nspace = "System", string mod = "mscorlib")
+        { return new BuiltInType { mod = mod, name = name, nspace = nspace, al = al }; }
+
+        public BuiltInType SystemObject;
+        public BuiltInType SystemString;
+        public BuiltInType SystemInt8;
+        public BuiltInType SystemInt16;
+        public BuiltInType SystemInt32;
+        public BuiltInType SystemInt64;
+        public BuiltInType SystemIntPtr;
+        public BuiltInType SystemRuntimeTypeHandle;
+        public BuiltInType SystemRuntimeMethodHandle;
+        public BuiltInType SystemRuntimeFieldHandle;
+        public BuiltInType SystemEnum;
+        public BuiltInType SystemValueType;
+
         /* Consts for fast table indexing */
         public const int tid_Assembly = 0x20;
         public const int tid_AssemblyOS = 0x22;
@@ -267,7 +308,7 @@ namespace metadata
         // These are the functions likely called by the compiler
 
         // Raw get function
-        public uint GetIntEntry(int table_id, int row, int col)
+        public virtual uint GetIntEntry(int table_id, int row, int col)
         {
             if (row == 0)
                 return 0;
@@ -352,7 +393,7 @@ namespace metadata
             GetCodedIndexEntry(GetIntEntry(table_id, row, col),
                 templ, out ref_id, out ref_row);
         }
-         public void GetCodedIndexEntry(uint val,
+        public void GetCodedIndexEntry(uint val,
             CodedIndexTemplate templ, out int ref_id, out int ref_row)
         {
             uint index = val >> templ.TagBits;
@@ -361,11 +402,40 @@ namespace metadata
             ref_row = (int)index;
             ref_id = templ.Members[(int)table];
         }
+        public uint MakeCodedIndexEntry(int table_id, int table_row,
+            CodedIndexTemplate templ)
+        {
+            uint encoded_table = 0;
+            for(int i = 0; i < templ.Members.Length; i++)
+            {
+                if(templ.Members[i] == table_id)
+                {
+                    encoded_table = (uint)i;
+                    break;
+                }
+            }
+            uint val = (((uint)table_row) << templ.TagBits) | encoded_table;
+            return val;
+        }
 
         public DataInterface GetRVA(long RVA)
         {
             long offset = pef.ResolveRVA(RVA);
             return file.Clone((int)offset);
+        }
+
+        public static bool CompareSignature(MethodSpec a, MethodSpec b)
+        {
+            return CompareSignature(a.m, a.msig, a.gtparams, a.gmparams,
+                b.m, b.msig, b.gtparams, b.gmparams);
+        }
+
+        public static bool CompareSignature(MethodSpec a,
+            MetadataStream mb, int msigb,
+            TypeSpec[] gtparamsb, TypeSpec[] gmparamsb)
+        {
+            return CompareSignature(a.m, a.msig, a.gtparams, a.gmparams,
+                mb, msigb, gtparamsb, gmparamsb);
         }
 
         public static bool CompareSignature(MetadataStream ma,
@@ -697,8 +767,24 @@ namespace metadata
                     }
                 case (int)TableId.MethodSpec:
                     throw new NotImplementedException();
+
+                case (int)TableId.Field:
+                    ms = new MethodSpec
+                    {
+                        m = this,
+                        mdrow = row,
+                        msig = (int)GetIntEntry(table_id, row, 2),
+                        type = new TypeSpec
+                        {
+                            m = this,
+                            tdrow = fielddef_owners[row]
+                        },
+                        is_field = true
+                    };
+                    return true;
             }
-            throw new NotSupportedException();
+            ms = null;
+            return false;
         }
 
         public TypeSpec GetTypeSpec(int table_id, int row,
@@ -741,7 +827,7 @@ namespace metadata
                     }
 
                 default:
-                    throw new NotSupportedException();
+                    return null;
             }
         }
 
@@ -929,6 +1015,11 @@ namespace metadata
                     for (int i = 0; i < loCount; i++)
                         ts.arr_lobounds[i] = (int)SigReadUSCompressed(ref sig_idx);
 
+                    break;
+
+                case 0x45:
+                    ts = GetTypeSpec(ref sig_idx, gtparams, gmparams);
+                    ts.Pinned = true;
                     break;
 
                 default:

@@ -36,7 +36,7 @@ namespace libtysila5
             return Label;
         }
 
-        public int GetSignatureAddress(string module, IEnumerable<byte> sig, target.Target t)
+        public int GetSignatureAddress(IEnumerable<byte> sig, target.Target t)
         {
             var ptr_size = t.GetCTSize(ir.Opcode.ct_object);
             while (str_tab.Count % ptr_size != 0)
@@ -44,12 +44,33 @@ namespace libtysila5
 
             int ret = str_tab.Count;
 
-            sig_metadata_addrs[ret] = module;
-            for (int i = 0; i < ptr_size; i++)
-                str_tab.Add(0);
-
             foreach (byte b in sig)
                 str_tab.Add(b);
+
+            return ret;
+        }
+
+        public int GetSignatureAddress(metadata.TypeSpec.FullySpecSignature sig, target.Target t)
+        {
+            var ptr_size = t.GetCTSize(ir.Opcode.ct_object);
+            while (str_tab.Count % ptr_size != 0)
+                str_tab.Add(0);
+
+            int ret = str_tab.Count;
+
+            // first is encoded length of module references
+            str_tab.AddRange(metadata.MetadataStream.SigWriteUSCompressed((uint)sig.Modules.Count));
+
+            // then module references
+            foreach(var mod in sig.Modules)
+            {
+                sig_metadata_addrs[str_tab.Count] = mod.AssemblyName;
+                for (int i = 0; i < ptr_size; i++)
+                    str_tab.Add(0);
+            }
+
+            // then signature
+            str_tab.AddRange(sig.Signature);
 
             return ret;
         }

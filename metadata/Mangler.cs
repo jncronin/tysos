@@ -184,6 +184,10 @@ namespace metadata
                     sb.Append(ts.idx.ToString());
                     break;
 
+                case TypeSpec.SpecialType.Boxed:
+                    MangleType(ts.other, sb, ms);
+                    break;
+
                 default:
                     throw new NotImplementedException();
             }

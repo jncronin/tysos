@@ -123,7 +123,7 @@ namespace tysila4
                 m.GetStringEntry(metadata.MetadataStream.tid_Module,
                 1, 1), al, t);
             t.st = st;
-            t.r = new libtysila5.CachingRequestor();
+            t.r = new libtysila5.CachingRequestor(m);
 
             /* for now, just assemble all public and protected
             non-generic methods in public types, plus the

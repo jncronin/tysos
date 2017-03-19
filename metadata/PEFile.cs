@@ -280,6 +280,19 @@ namespace metadata
                 m.PatchSimpleTypes();
             }
 
+            m.SystemObject = m.GetBuiltin("Object");
+            m.SystemString = m.GetBuiltin("String");
+            m.SystemInt8 = m.GetBuiltin("SByte");
+            m.SystemInt16 = m.GetBuiltin("Int16");
+            m.SystemInt32 = m.GetBuiltin("Int32");
+            m.SystemInt64 = m.GetBuiltin("Int64");
+            m.SystemIntPtr = m.GetBuiltin("IntPtr");
+            m.SystemRuntimeTypeHandle = m.GetBuiltin("RuntimeTypeHandle");
+            m.SystemRuntimeMethodHandle = m.GetBuiltin("RuntimeMethodHandle");
+            m.SystemRuntimeFieldHandle = m.GetBuiltin("RuntimeFieldHandle");
+            m.SystemEnum = m.GetBuiltin("Enum");
+            m.SystemValueType = m.GetBuiltin("ValueType");
+            
             return m;
         }
 

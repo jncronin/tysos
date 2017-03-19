@@ -1,10 +1,9 @@
 TYBUILD=../../tybuild/bin/Release/tybuild.exe
-TYSILA=../../tysila2/bin/Release/tysila2.exe
+TYSILA=../../tysila2/tysila4/bin/Debug/tysila4.exe
 YASM=yasm
 GCC=i686-elf-gcc
 
-#KERNEL_OBJ=kernel.o
-KERNEL_OBJ=output.o
+KERNEL_OBJ=kernel.o
 
 all: barebones.iso
 
@@ -12,7 +11,7 @@ kernel.exe: kernel.cs Makefile
 	$(TYBUILD) /unsafe /r:libsupcs kernel.cs
 
 kernel.o: kernel.exe $(TYSILA)
-	$(TYSILA) --arch i586-elf-tysos --rename-epoint kmain -L../../mono/corlib -fno-rtti -o kernel.o kernel.exe
+	$(TYSILA) -t x86 -e kmain -L../../mono/corlib -fno-rtti -o kernel.o kernel.exe
 
 loader.o: loader.asm
 	$(YASM) -felf -o loader.o loader.asm

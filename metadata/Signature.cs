@@ -232,7 +232,7 @@ namespace metadata
         }
 
         // Internal functions that parse a bit of the signature
-        uint SigReadUSCompressed(ref int idx, bool us = false)
+        internal uint SigReadUSCompressed(ref int idx, bool us = false)
         {
             PEFile.StreamHeader sh = sh_blob;
             if (us)
@@ -250,6 +250,31 @@ namespace metadata
             byte b4 = sh.di.ReadByte(idx++);
             return (b1 & 0x1fU) << 24 | ((uint)b2 << 16) |
                 ((uint)b3 << 8) | b4;
+        }
+
+        public static List<byte> SigWriteUSCompressed(uint val)
+        {
+            List<byte> ret = new List<byte>();
+            if (val <= 127)
+            {
+                ret.Add((byte)val);
+                return ret;
+            }
+            else if(val <= 0x3fff)
+            {
+                ret.Add((byte)((val >> 8) | 0x80U));
+                ret.Add((byte)(val & 0xffu));
+                return ret;
+            }
+            else if(val <= 0x1fffffff)
+            {
+                ret.Add((byte)((val >> 24) | 0xc0u));
+                ret.Add((byte)((val >> 16) & 0xffu));
+                ret.Add((byte)((val >> 8) & 0xffu));
+                ret.Add((byte)(val & 0xffu));
+                return ret;
+            }
+            throw new ArgumentOutOfRangeException("val", "too large, must be <= 0x1fffffff");
         }
     }
 }

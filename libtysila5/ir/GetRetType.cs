@@ -112,7 +112,7 @@ namespace libtysila5.ir
                     return ct_ref;
 
                 case 0x11:
-                    throw new NotImplementedException();
+                    return ct_vt;
 
                 case 0x12:
                 case 0x14:

@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2011 by John Cronin
+﻿/* Copyright (C) 2016 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +22,17 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using metadata;
+using libtysila5.target;
 
-namespace Gui.Drawing
+namespace libtysila5.layout
 {
-    public class Brush
+    public partial class Layout
     {
+        public static int GetEhdrSize(Target t)
+        {
+            // TODO
+            return 0;
+        }
     }
 }

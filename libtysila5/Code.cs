@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using metadata;
 
 namespace libtysila5
 {
@@ -59,6 +60,7 @@ namespace libtysila5
                 new Dictionary<int, cil.CilNode>(new libtysila5.GenericEqualityComparer<int>());
 
         static ir.SpecialMethods _special = null;
+        internal List<ExceptionHeader> ehdrs;
 
         internal ir.SpecialMethods special_meths
         {

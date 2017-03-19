@@ -56,6 +56,23 @@ namespace libtysila5.cil
             {
                 CilNode n = new CilNode(ms, offset);
 
+                /* Determine try block starts */
+                if (ehdrs != null)
+                {
+                    foreach (var ehdr in ehdrs)
+                    {
+                        if (ehdr.TryILOffset == offset)
+                        {
+                            n.try_starts.Add(ehdr);
+                        }
+                        if (ehdr.HandlerILOffset == offset &&
+                            ehdr.EType == metadata.ExceptionHeader.ExceptionHeaderType.Catch)
+                        {
+                            n.catch_starts.Add(ehdr);
+                        }
+                    }
+                }
+
                 /* Parse prefixes */
                 bool cont = true;
                 while (cont)
@@ -270,6 +287,8 @@ namespace libtysila5.cil
                 foreach (var e in ehdrs)
                     ret.starts.Add(ret.offset_map[e.HandlerILOffset]);
             }
+
+            ret.ehdrs = ehdrs;
 
             return ret;
         }

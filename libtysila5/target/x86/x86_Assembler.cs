@@ -129,7 +129,8 @@ namespace libtysila5.target.x86
             return new ContentsReg
             {
                 basereg = r_ebp,
-                disp = disp
+                disp = disp,
+                size = lv_size
             };
         }
 

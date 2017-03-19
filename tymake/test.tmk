@@ -201,8 +201,11 @@ rulefor "%.obj" inputs { "%.exe" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
 rulefor "%.obj" inputs { "%.dll" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
 	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR -L$TYSOSDIR $_RULE_INPUT");
 }
-rulefor "%.to" inputs { "%.obj" } depends { TL, "test.tmk" } {
+/*rulefor "%.to" inputs { "%.obj" } depends { TL, "test.tmk" } {
 	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
+}*/
+rulefor "%.to" inputs { "%.obj" } depends { "test.tmk" } {
+	cp(_RULE_INPUT, _RULE_OUTPUT);
 }
 
 /* Rule for linking the kernel */

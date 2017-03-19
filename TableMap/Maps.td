@@ -54,13 +54,13 @@ export function simple_map(string namespace, string class, string map_name, stri
 		{
 			print("\t\tpublic System.Collections.Generic.Dictionary<string, " + to_type + "> " + map_name + " = ");
 			print("new System.Collections.Generic.Dictionary<string, " + to_type + ">");
-			print("(new libtysila4.GenericEqualityComparer<string>());\n");
+			print("(new libtysila5.GenericEqualityComparer<string>());\n");
 		}
 		else
 		{
 			print("\t\tpublic System.Collections.Generic.Dictionary<int, " + to_type + "> " + map_name + " = ");
 			print("new System.Collections.Generic.Dictionary<int, " + to_type + ">");
-			print("(new libtysila4.GenericEqualityComparer<int>());\n");
+			print("(new libtysila5.GenericEqualityComparer<int>());\n");
 		}
 	}
 

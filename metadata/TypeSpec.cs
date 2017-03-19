@@ -31,6 +31,12 @@ namespace metadata
     public abstract class Spec
     {
         public abstract MetadataStream Metadata { get; }
+
+        public class FullySpecSignature
+        {
+            public List<byte> Signature;
+            public List<MetadataStream> Modules;
+        }
     }
 
     /**<summary>Represents a generic way of specifying all types
@@ -42,7 +48,7 @@ namespace metadata
 
         public TypeSpec[] gtparams;
 
-        public enum SpecialType { None, SzArray, Array, Ptr, MPtr, Var, MVar };
+        public enum SpecialType { None, SzArray, Array, Ptr, MPtr, Var, MVar, Boxed };
         public int idx; // var/mvar index for uninstantiated generic types/methods
         public SpecialType stype;
 
@@ -53,6 +59,8 @@ namespace metadata
         public int arr_rank;
         public int[] arr_sizes;
         public int[] arr_lobounds;
+
+        public bool Pinned;
 
         public override MetadataStream Metadata
         { get { return m; } }
@@ -87,6 +95,15 @@ namespace metadata
 
         public TypeSpec GetExtends()
         {
+            switch(stype)
+            {
+                case SpecialType.Array:
+                case SpecialType.SzArray:
+                    return m.GetSimpleTypeSpec(0x1c);
+
+                case SpecialType.Boxed:
+                    return m.SystemValueType;
+            }
             int table_id, etdrow;
             m.GetCodedIndexEntry(MetadataStream.tid_TypeDef,
                 tdrow, 3, m.TypeDefOrRef, out table_id,
@@ -103,9 +120,21 @@ namespace metadata
         /**<summary>Is the type a descendent of System.ValueType?</summary> */
         public bool IsValueType()
         {
+            switch(stype)
+            {
+                case SpecialType.Array:
+                case SpecialType.Boxed:
+                case SpecialType.SzArray:
+                    return false;
+                case SpecialType.MPtr:
+                case SpecialType.Ptr:
+                    return true;
+            }
             var extends = GetExtends();
             if (extends == null)
                 return false;
+            if (extends.Equals(m.SystemEnum))
+                return true;                
             if (extends.m.simple_type_idx == null)
                 return false;
             return (extends.m.simple_type_idx[extends.tdrow] == 0x11);
@@ -114,6 +143,15 @@ namespace metadata
         /**<summary>Is this a superclass of another type?</summary> */
         public bool IsSuperclassOf(TypeSpec other)
         {
+            if (stype == SpecialType.SzArray && other.stype == SpecialType.SzArray)
+                return this.other.IsSuperclassOf(other.other);
+            if(SimpleType == 0x1c)
+            {
+                if (other.stype == SpecialType.Array ||
+                    other.stype == SpecialType.SzArray)
+                    return true;
+            }
+
             var other_extends = other.GetExtends();
 
             if (other_extends == null)
@@ -127,6 +165,42 @@ namespace metadata
         public bool IsSubclassOf(TypeSpec other)
         {
             return other.IsSuperclassOf(this);
+        }
+
+        /**<summary>Convert to a managed pointer</summary> */
+        public TypeSpec ManagedPointer
+        {
+            get
+            {
+                return new TypeSpec { m = m, stype = SpecialType.MPtr, other = this };
+            }
+        }
+
+        /**<summary>Convert to an unmanaged pointer</summary> */
+        public TypeSpec Pointer
+        {
+            get
+            {
+                return new TypeSpec { m = m, stype = SpecialType.Ptr, other = this };
+            }
+        }
+
+        /**<summary>Convert to a zero-based array</summary> */
+        public TypeSpec SzArray
+        {
+            get
+            {
+                return new TypeSpec { m = m, stype = SpecialType.SzArray, other = this };
+            }
+        }
+
+        /**<summary>Convert to a boxed instance</summary> */
+        public TypeSpec Box
+        {
+            get
+            {
+                return new TypeSpec { m = m, stype = SpecialType.Boxed, other = this };
+            }
         }
 
         public string MangleType()
@@ -150,6 +224,183 @@ namespace metadata
                     return false;
                 return gtparams == null;
             }
+        }
+
+        public FullySpecSignature Signature
+        {
+            get
+            {
+                List<byte> sig = new List<byte>();
+                List<MetadataStream> mods = new List<MetadataStream>();
+                AddSignature(sig, mods);
+                return new FullySpecSignature
+                {
+                    Modules = mods,
+                    Signature = sig
+                };
+            }
+        }
+
+        public bool IsInterface
+        {
+            get
+            {
+                switch(stype)
+                {
+                    case SpecialType.None:
+                        var flags = m.GetIntEntry(MetadataStream.tid_TypeDef,
+                            tdrow, 0);
+                        return (flags & 0x20) == 0x20;
+
+                    default:
+                        return false;
+                }                
+            }
+        }
+
+        public TypeSpec ReducedType
+        {
+            get
+            {
+                var t = UnderlyingType;
+                if (t.stype != SpecialType.None)
+                    return this;
+
+                switch(t.SimpleType)
+                {
+                    case 0x04:
+                    case 0x05:
+                        return m.SystemInt8;
+                    case 0x06:
+                    case 0x07:
+                        return m.SystemInt16;
+                    case 0x08:
+                    case 0x09:
+                        return m.SystemInt32;
+                    case 0x0a:
+                    case 0x0b:
+                        return m.SystemInt64;
+                    case 0x18:
+                    case 0x19:
+                        return m.SystemIntPtr;
+                }
+                return this;
+            }
+        }
+
+        public TypeSpec VerificationType
+        {
+            get
+            {
+                switch(ReducedType.SimpleType)
+                {
+                    case 0x02:
+                    case 0x04:
+                        return m.SystemInt8;
+                    case 0x03:
+                    case 0x06:
+                        return m.SystemInt16;
+                    case 0x08:
+                        return m.SystemInt32;
+                    case 0x0a:
+                        return m.SystemInt64;
+                    case 0x18:
+                        return m.SystemIntPtr;
+                }
+                if(stype == SpecialType.MPtr)
+                {
+                    switch(other.ReducedType.SimpleType)
+                    {
+                        case 0x02:
+                        case 0x04:
+                            return new TypeSpec { m = m.SystemIntPtr.Type.m, stype = SpecialType.MPtr, other = m.SystemInt8 };
+                        case 0x03:
+                        case 0x06:
+                            return new TypeSpec { m = m.SystemIntPtr.Type.m, stype = SpecialType.MPtr, other = m.SystemInt16 };
+                        case 0x08:
+                            return new TypeSpec { m = m.SystemIntPtr.Type.m, stype = SpecialType.MPtr, other = m.SystemInt32 };
+                        case 0x0a:
+                            return new TypeSpec { m = m.SystemIntPtr.Type.m, stype = SpecialType.MPtr, other = m.SystemInt64 };
+                        case 0x18:
+                            return new TypeSpec { m = m.SystemIntPtr.Type.m, stype = SpecialType.MPtr, other = m.SystemIntPtr };
+                    }
+                }
+                return this;
+            }
+        }
+
+        public TypeSpec UnderlyingType
+        {
+            get
+            {
+                if(stype == SpecialType.None)
+                {
+                    var e = GetExtends();
+                    if (e == null)
+                        return this;
+                    if(e.Equals(m.SystemEnum))
+                    {
+                        var field_idx = (int)m.GetIntEntry(MetadataStream.tid_TypeDef,
+                            tdrow, 4);
+                        var fsig = (int)m.GetIntEntry(MetadataStream.tid_Field, field_idx,
+                            2);
+                        var value_ts = m.GetTypeSpec(ref fsig, gtparams, null);
+                        return value_ts;
+                    }
+                }
+                return this;
+            }
+        }
+
+        public void AddSignature(List<byte> sig, List<MetadataStream> mods)
+        {
+            switch(stype)
+            {
+                case SpecialType.None:
+                    {
+                        bool has_gtparams = true;
+                        if (gtparams == null || gtparams.Length == 0)
+                            has_gtparams = false;
+
+                        if (has_gtparams)
+                            throw new NotImplementedException();
+
+                        // emit as simple typedef signature
+                        var simple = SimpleType;
+                        if(simple != 0)
+                        {
+                            sig.Add((byte)simple);
+                        }
+                        else
+                        {
+                            if (IsValueType())
+                                sig.Add(0x31);
+                            else
+                                sig.Add(0x32);
+                            uint mod_tok = (uint)GetModIdx(m, mods);
+                            sig.AddRange(MetadataStream.SigWriteUSCompressed(mod_tok));
+                            uint tok = m.MakeCodedIndexEntry(MetadataStream.tid_TypeDef,
+                                tdrow, m.TypeDefOrRef);
+                            sig.AddRange(MetadataStream.SigWriteUSCompressed(tok));
+                        }      
+                    }
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private int GetModIdx(MetadataStream m, List<MetadataStream> mods)
+        {
+            for(int i = 0; i < mods.Count; i++)
+            {
+                if (mods[i].Equals(m))
+                    return i;
+            }
+            var ret = mods.Count;
+            mods.Add(m);
+            return ret;
         }
 
         public bool Equals(TypeSpec other)
@@ -245,6 +496,32 @@ namespace metadata
             if (m == null)
                 return "TypeSpec";
             return m.MangleType(this);
+        }
+
+        public bool IsAssignmentCompatibleWith(TypeSpec to_type)
+        {
+            // CIL 8.7.1
+            if (Equals(to_type))
+                return true;
+            if (IsSubclassOf(to_type))
+                return true;
+            // TODO: does this implement interface to_type?
+            if (stype == SpecialType.SzArray &&
+                to_type.stype == SpecialType.SzArray &&
+                other.IsArrayElementCompatibleWith(to_type.other))
+                return true;
+            // TODO: if this is SzArray<V> and to_type is IList<W> and V.IsArrayElementCompatible(W)
+
+            return false;
+        }
+
+        private bool IsArrayElementCompatibleWith(TypeSpec w)
+        {
+            var v = this.UnderlyingType;
+            w = w.UnderlyingType;
+            if (IsAssignmentCompatibleWith(w))
+                return true;
+            return VerificationType.Equals(w.VerificationType);
         }
     }
 }

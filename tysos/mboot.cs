@@ -27,7 +27,6 @@ namespace Multiboot
     [libsupcs.OutputCHeader]
     public class Header
     {
-        [libsupcs.OutputCHeader]
         public const uint Magic = 0x59545954; // "TYTY"
 
         public uint magic;

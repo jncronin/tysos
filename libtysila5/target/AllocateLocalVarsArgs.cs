@@ -66,7 +66,14 @@ namespace libtysila5.target
                 var this_size = GetCTSize(ir.Opcode.ct_object);
                 c.la_locs[laidx] = GetLALocation(cur_loc, this_size, c);
                 c.la_sizes[laidx] = this_size;
-                c.la_types[laidx] = ms.type;
+
+                // value type methods have mptr to type as their this pointer
+                if (ms.type.IsValueType())
+                {
+                    c.la_types[laidx] = ms.type.ManagedPointer;
+                }
+                else
+                    c.la_types[laidx] = ms.type;
 
                 la_locs[laidx] = cur_loc;
                 cur_loc += this_size;

@@ -14,6 +14,8 @@ regs = [ Rstack(), Rcontents(),
 	Ri32("eip"), Ri32("eax"), Ri32("ebx"), Ri32("ecx"),
 	Ri32("edx"), Ri32("edi"), Ri32("esi"), Ri32("esp"),
 	Ri32("ebp"), Rf64("st0"),
+	Rf64("xmm0"), Rf64("xmm1"), Rf64("xmm2"), Rf64("xmm3"),
+	Rf64("xmm4"), Rf64("xmm5"), Rf64("xmm6"), Rf64("xmm7"),
 	MultiReg("eaxedx", [ eax, edx ]) ];
 x86_def.regs = regs;
 
@@ -93,6 +95,10 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"and_rm32_imm8",
 	"xchg_r32_rm32",
 	"xchg_rm32_r32",
+
+	"movsd_xmm_xmmm64",
+	"movsd_xmmm64_xmm",
+	"cvtsd2si_r32_xmmm64",
 ]);
 
 function oc_map_handler(array entries, string val)

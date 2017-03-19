@@ -151,6 +151,7 @@ namespace libtysila5
                         {
                             var ehdr = ParseExceptionHeader(meth,
                                 ref ehdr_offset, is_fat, ms);
+                            ehdr.EhdrIdx = i;
                             ehdrs.Add(ehdr);
                         }
 

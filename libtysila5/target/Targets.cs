@@ -331,7 +331,15 @@ namespace libtysila5.target
                 metadata.TypeSpec v;
 
                 if (i == 0 && has_this)
-                    v = csite.ms.type;
+                {
+                    // value type methods have mptr to type as their this pointer
+                    if(csite.ms.type.IsValueType())
+                    {
+                        v = csite.ms.type.ManagedPointer;
+                    }
+                    else
+                        v = csite.ms.type;
+                }
                 else
                 {
                     while (m.GetRetTypeCustomMod(ref idx, out is_req, out token)) ;

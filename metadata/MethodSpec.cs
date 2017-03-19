@@ -32,6 +32,7 @@ namespace metadata
         public metadata.MetadataStream m;
         public int mdrow;
         public int msig;
+        public bool is_field;
 
         public TypeSpec[] gmparams;
         public TypeSpec type;
@@ -130,11 +131,73 @@ namespace metadata
             }
         }
 
+        /**<summary>Returns whether the method is virtual</summary> */
+        public bool IsVirtual
+        {
+            get
+            {
+                var flags = m.GetIntEntry(MetadataStream.tid_MethodDef,
+                    mdrow, 2);
+                return (flags & 0x40) != 0;
+            }
+        }
+
         public override string ToString()
         {
             if (m == null)
                 return "MethodSpec";
             return m.MangleMethod(this);
+        }
+
+        public FullySpecSignature FieldSignature
+        {
+            get
+            {
+                List<byte> sig = new List<byte>();
+                List<MetadataStream> mods = new List<MetadataStream>();
+
+                var sig_idx = (int)m.GetIntEntry(MetadataStream.tid_Field,
+                    mdrow, 2);
+
+                // Parse blob length
+                m.SigReadUSCompressed(ref sig_idx);
+
+                byte fld = m.sh_blob.di.ReadByte(sig_idx++);
+                if (fld != 0x6)
+                    throw new Exception("Bad field signature");
+
+                sig.Add(fld);
+
+                var ts = m.GetTypeSpec(ref sig_idx, gtparams, gmparams);
+                ts.AddSignature(sig, mods);
+
+                return new FullySpecSignature
+                {
+                    Modules = mods,
+                    Signature = sig
+                };
+            }
+        }
+
+        public FullySpecSignature MethodSignature
+        {
+            get
+            {
+                List<byte> sig = new List<byte>();
+                List<MetadataStream> mods = new List<MetadataStream>();
+                throw new NotImplementedException();
+            }
+        }
+
+        public FullySpecSignature Signature
+        {
+            get
+            {
+                if (is_field)
+                    return FieldSignature;
+                else
+                    return MethodSignature;
+            }
         }
     }
 }

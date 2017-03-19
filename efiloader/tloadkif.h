@@ -68,6 +68,7 @@ struct Multiboot_Header {
     int64_t __vtbl;
     int32_t __object_id;
     int64_t __mutex_lock;
+    uint32_t magic;
     uint64_t mmap;
     uint64_t modules;
     uint64_t heap_start;

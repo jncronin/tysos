@@ -38,7 +38,8 @@ namespace libtysila5.ir
             }
         }
 
-        static target.Target.Reg alloc_x86_reg(Code c, target.Target.Reg[] regs, ref int cur_reg, ref int cur_stack)
+        static target.Target.Reg alloc_x86_reg(Code c, target.Target.Reg[] regs, ref int cur_reg, ref int cur_stack,
+            int rsize = 4)
         {
             var x = c.t as target.x86.x86_Assembler;
 
@@ -50,7 +51,7 @@ namespace libtysila5.ir
             }
             else
             {
-                cur_stack -= 4;
+                cur_stack -= rsize;
                 return new target.Target.ContentsReg { basereg = x.r_ebp, disp = cur_stack, size = 4 };
             }
         }
@@ -65,7 +66,13 @@ namespace libtysila5.ir
             {
                 x.r_esi, x.r_edi, x.r_ecx, x.r_ebx
             };
+            target.Target.Reg[] rf = new target.Target.Reg[]
+            {
+                x.r_xmm0, x.r_xmm1, x.r_xmm2, x.r_xmm3,
+                x.r_xmm4, x.r_xmm5, x.r_xmm6, x.r_xmm7
+            };
             int cur_reg = 0;
+            int cur_rf = 0;
             int cur_stack = 0;
 
             foreach(var si in stack)
@@ -77,6 +84,9 @@ namespace libtysila5.ir
                     case Opcode.ct_object:
                     case Opcode.ct_ref:
                         si.reg = alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack);
+                        break;
+                    case Opcode.ct_float:
+                        si.reg = alloc_x86_reg(c, rf, ref cur_rf, ref cur_stack, 8);
                         break;
                     case Opcode.ct_int64:
                         si.reg = new target.Target.DoubleReg(

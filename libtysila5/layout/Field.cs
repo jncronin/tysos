@@ -91,6 +91,62 @@ namespace libtysila5.layout
             return cur_offset;
         }
 
+        public static int GetFieldOffset(metadata.TypeSpec ts,
+            string fname, target.Target t, bool is_static = false)
+        {
+            /* Iterate through methods looking for requested
+                one */
+            var first_fdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
+                ts.tdrow, 4);
+            var last_fdef = ts.m.GetLastFieldDef(ts.tdrow);
+
+            int cur_offset = 0;
+
+            if (is_static == false && !ts.IsValueType())
+            {
+                // Add a vtable entry
+                cur_offset += t.GetCTSize(ir.Opcode.ct_object);
+            }
+
+            for (uint fdef_row = first_fdef; fdef_row < last_fdef; fdef_row++)
+            {
+                // Ensure field is static if requested
+                var flags = ts.m.GetIntEntry(MetadataStream.tid_Field,
+                    (int)fdef_row, 0);
+                if (((flags & 0x10) == 0x10 && is_static == true) ||
+                    ((flags & 0x10) == 0 && is_static == false))
+                {
+                    // Check on name if we are looking for a particular field
+                    if (fname != null)
+                    {
+                        var ffname = ts.m.GetIntEntry(MetadataStream.tid_Field,
+                            (int)fdef_row, 1);
+                        if (MetadataStream.CompareString(ts.m, ffname, fname))
+                        {
+                            return cur_offset;
+                        }
+                    }
+
+                    // Increment by type size
+                    var fsig = (int)ts.m.GetIntEntry(MetadataStream.tid_Field,
+                        (int)fdef_row, 2);
+
+                    var ft = ts.m.GetFieldType(ref fsig, ts.gtparams, null);
+                    var ft_size = t.GetSize(ft);
+
+                    cur_offset += ft_size;
+                }
+            }
+
+            // Shouldn't get here if looking for a specific field
+            if (fname != null)
+                throw new MissingFieldException();
+
+            // Else return size of complete type
+            return cur_offset;
+        }
+
+
         public static int GetTypeSize(metadata.TypeSpec ts,
             target.Target t, bool is_static = false)
         {
@@ -103,7 +159,7 @@ namespace libtysila5.layout
                     {
                         return is_static ? 0 : (3 * t.GetPointerSize());
                     }
-                    return GetFieldOffset(ts, null, t, is_static);
+                    return GetFieldOffset(ts, (string)null, t, is_static);
                 case TypeSpec.SpecialType.SzArray:
                     if (is_static)
                         return 0;

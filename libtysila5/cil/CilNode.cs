@@ -101,6 +101,9 @@ namespace libtysila5.cil
 
         public bool visited = false;
 
+        public List<metadata.ExceptionHeader> try_starts = new List<metadata.ExceptionHeader>();
+        public List<metadata.ExceptionHeader> catch_starts = new List<metadata.ExceptionHeader>();
+
         public Opcode opcode;
         public int inline_int;
         public uint inline_uint;
@@ -312,6 +315,5 @@ namespace libtysila5.cil
         {
             return m.GetMethodSpec(inline_uint, c.ms.gtparams, c.ms.gmparams);
         }
-
     }
 }
