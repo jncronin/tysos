@@ -11,7 +11,7 @@ intmap("libtysila5.target", "Target", "rt", "rt_map", "init_rtmap", [
 
 export function Ri32(string name)
 {
-	ret = [ name = name, id = next_reg_id, type = rt_gpr, size = 32, mask = 1 << next_reg_id ];
+	ret = [ name = name, id = next_reg_id, type = rt_gpr, size = 4, mask = 1 << next_reg_id ];
 	next_reg_id = next_reg_id + 1;
 	export next_reg_id;
 	vargen(name, ret);
@@ -22,7 +22,7 @@ export function Ri32(string name)
 
 export function Rf32(string name)
 {
-	ret = [ name = name, id = next_reg_id, type = rt_float, size = 32, mask = 1 << next_reg_id ];
+	ret = [ name = name, id = next_reg_id, type = rt_float, size = 4, mask = 1 << next_reg_id ];
 	next_reg_id = next_reg_id + 1;
 	export next_reg_id;
 	vargen(name, ret);
@@ -52,7 +52,7 @@ export function MultiReg(string name, array regs)
 
 export function Ri64(string name)
 {
-	ret = [ name = name, id = next_reg_id, type = rt_gpr, size = 64, mask = 1 << next_reg_id ];
+	ret = [ name = name, id = next_reg_id, type = rt_gpr, size = 8, mask = 1 << next_reg_id ];
 	next_reg_id = next_reg_id + 1;
 	export next_reg_id;
 	vargen(name, ret);
@@ -63,7 +63,7 @@ export function Ri64(string name)
 
 export function Rf64(string name)
 {
-	ret = [ name = name, id = next_reg_id, type = rt_float, size = 64, mask = 1 << next_reg_id ];
+	ret = [ name = name, id = next_reg_id, type = rt_float, size = 8, mask = 1 << next_reg_id ];
 	next_reg_id = next_reg_id + 1;
 	export next_reg_id;
 	vargen(name, ret);

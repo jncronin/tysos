@@ -79,6 +79,10 @@ namespace libtysila5.target.x86
                     case x86_push_r32:
                         Code.Add(PlusRD(0x50, I.p[1].mreg));
                         break;
+                    case x86_push_imm32:
+                        Code.Add(0x68);
+                        AddImm32(Code, I.p[1].v);
+                        break;
                     case x86_pop_rm32:
                         Code.Add(0x8f);
                         Code.AddRange(ModRMSIB(0, I.p[1].mreg));
@@ -218,6 +222,17 @@ namespace libtysila5.target.x86
                             Code.AddRange(ModRMSIB(dreg, sreg));
                         }
                         break;
+                    case x86_add_rm32_r32:
+                        {
+                            var dreg = I.p[1].mreg;
+                            var sreg = I.p[2].mreg;
+                            if (dreg.Equals(sreg))
+                                sreg = I.p[3].mreg;
+
+                            Code.Add(0x01);
+                            Code.AddRange(ModRMSIB(sreg, dreg));
+                        }
+                        break;
                     case x86_call_rel32:
                         {
                             Code.Add(0xe8);
@@ -309,6 +324,11 @@ namespace libtysila5.target.x86
                     case x86_movsxbd:
                         Code.Add(0x0f);
                         Code.Add(0xbe);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+                    case x86_movsxwd:
+                        Code.Add(0x0f);
+                        Code.Add(0xbf);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
                     case x86_movzxbd:
@@ -571,6 +591,28 @@ namespace libtysila5.target.x86
                         Code.Add(0x2d);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
+
+                    case x86_cvtsi2sd_xmm_rm32:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0x2a);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
+                    case x86_mulsd_xmm_xmmm64:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0x59);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
+                    case x86_comisd_xmm_xmmm64:
+                        Code.Add(0x66);
+                        Code.Add(0x0f);
+                        Code.Add(0x2f);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
 
                     default:
                         throw new NotImplementedException(insts[(int)I.p[0].v]);

@@ -32,6 +32,8 @@ namespace libtysila5.ir
         public TypeSpec ts;
         public int _ct = 0;
 
+        public Spec.FullySpecSignature fss;
+
         public int ct { get { if (ts == null) return _ct; return Opcode.GetCTFromType(ts); } }
 
         public long min_l = long.MinValue;
@@ -90,8 +92,68 @@ namespace libtysila5.ir
                     n.is_meth_start = true;
                 else
                     n.is_eh_start = true;
-                DoConversion(n, c);
             }
+
+            int unconverted = 0;
+            do
+            {
+                unconverted = 0;
+
+                foreach(var n in c.cil)
+                {
+                    if (n.is_meth_start)
+                        DoConversion(n, c, new Stack<StackItem>());
+                    else if (n.is_eh_start)
+                    {
+                        var stack = new Stack<StackItem>();
+                        if (n.catch_starts.Count != 0)
+                        {
+                            if (n.catch_starts.Count > 1)
+                                throw new Exception("too many catch handlers");
+                            var ts = n.catch_starts[0].ClassToken;
+                            if (ts == null)
+                                throw new Exception("no exception object");
+                            stack.Push(new StackItem
+                            {
+                                ts = ts
+                            });
+                        }
+                        DoConversion(n, c, stack);
+                    }
+                    else if (n.try_starts.Count > 0)
+                        DoConversion(n, c, new Stack<StackItem>());
+                    else
+                    {
+                        bool any_prev_visited = false;
+                        Stack<StackItem> prev_stack = null;
+                        foreach (var prev in n.prev)
+                        {
+                            if(prev.opcode.opcode1 == cil.Opcode.SingleOpcodes.leave ||
+                                prev.opcode.opcode1 == cil.Opcode.SingleOpcodes.leave_s)
+                            {
+                                // leave empties stack
+                                any_prev_visited = true;
+                                prev_stack = new Stack<StackItem>();
+                                break;
+                            }
+                            else if (prev.visited)
+                            {
+                                any_prev_visited = true;
+                                prev_stack = prev.stack_after;
+                                break;
+                            }
+                        }
+                        if (any_prev_visited)
+                        {
+                            if (prev_stack == null)
+                                throw new Exception("no stack defined");
+                            DoConversion(n, c, prev_stack);
+                        }
+                        else
+                            unconverted++;
+                    }
+                }
+            } while (unconverted != 0);
 
             c.ir = new System.Collections.Generic.List<CilNode.IRNode>();
             foreach (var n in c.cil)
@@ -173,11 +235,19 @@ namespace libtysila5.ir
                             break;
                     }
 
-                    n.irnodes.Add(new CilNode.IRNode { parent = n, imm_l = imm, opcode = Opcode.oc_ldc, ct = Opcode.ct_int32, vt_size = 4, stack_after = stack_after, stack_before = stack_before });
+                    n.irnodes.Add(new CilNode.IRNode { parent = n, imm_l = imm, opcode = Opcode.oc_ldc, ctret = Opcode.ct_int32, vt_size = 4, stack_after = stack_after, stack_before = stack_before });
                     break;
 
                 case cil.Opcode.SingleOpcodes.ldc_i8:
                     stack_after = ldc(n, c, stack_before, n.inline_long, 0x0a);
+                    break;
+
+                case cil.Opcode.SingleOpcodes.ldc_r4:
+                    stack_after = ldc(n, c, stack_before, n.inline_long, 0x0c);
+                    break;
+
+                case cil.Opcode.SingleOpcodes.ldc_r8:
+                    stack_after = ldc(n, c, stack_before, n.inline_long, 0x0d);
                     break;
 
                 case cil.Opcode.SingleOpcodes.ldnull:
@@ -187,7 +257,7 @@ namespace libtysila5.ir
 
                     stack_after.Add(si);
                     imm = 0;
-                    n.irnodes.Add(new CilNode.IRNode { parent = n, imm_l = imm, opcode = Opcode.oc_ldc, ct = Opcode.ct_object, vt_size = c.t.GetPointerSize(), stack_after = stack_after, stack_before = stack_before });
+                    n.irnodes.Add(new CilNode.IRNode { parent = n, imm_l = imm, opcode = Opcode.oc_ldc, ctret = Opcode.ct_object, vt_size = c.t.GetPointerSize(), stack_after = stack_after, stack_before = stack_before });
                     break;
 
                 case cil.Opcode.SingleOpcodes.stloc_0:
@@ -366,7 +436,7 @@ namespace libtysila5.ir
                     stack_after = new Stack<StackItem>(stack_before);
                     var brtf_ct = get_brtf_type(n.opcode, stack_before.Peek().ct);
                     stack_after.Push(new StackItem { ts = ir.Opcode.GetTypeFromCT(brtf_ct, c.ms.m), min_l = 0, max_l = 0, min_ul = 0, max_ul = 0 });
-                    n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ct = brtf_ct, imm_l = 0, imm_ul = 0, stack_before = stack_before, stack_after = stack_after });
+                    n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ctret = brtf_ct, imm_l = 0, imm_ul = 0, stack_before = stack_before, stack_after = stack_after });
 
                     switch(n.opcode.opcode1)
                     {
@@ -496,6 +566,7 @@ namespace libtysila5.ir
                     break;
 
                 case cil.Opcode.SingleOpcodes.neg:
+                case cil.Opcode.SingleOpcodes.not:
                     stack_after = unnumop(n, c, stack_before, n.opcode.opcode1);
                     break;
 
@@ -764,6 +835,18 @@ namespace libtysila5.ir
                             stack_after = ldftn(n, c, stack_before);
                             break;
 
+                        case cil.Opcode.DoubleOpcodes.initobj:
+                            stack_after = initobj(n, c, stack_before);
+                            break;
+
+                        case cil.Opcode.DoubleOpcodes.rethrow:
+                            stack_after = rethrow(n, c, stack_before);
+                            break;
+
+                        case cil.Opcode.DoubleOpcodes.arglist:
+                            stack_after = arglist(n, c, stack_before);
+                            break;
+
                         default:
                             throw new NotImplementedException(n.ToString());
                     }
@@ -774,9 +857,92 @@ namespace libtysila5.ir
             }
 
             n.visited = true;
+            n.stack_after = stack_after;
 
-            foreach (var after in n.il_offsets_after)
-                DoConversion(c.offset_map[after], c, stack_after);
+            //foreach (var after in n.il_offsets_after)
+            //    DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static Stack<StackItem> arglist(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            // arglist is currently not implemented - throw a runtime exception
+            var stack_after = ldstr(n, c, stack_before, "arglist is not supported");
+
+            var ni_ts = c.ms.m.al.GetAssembly("mscorlib").GetTypeSpec("System", "NotImplementedException");
+            var ni_ctor_row = ni_ts.m.GetMethodDefRow(ni_ts, ".ctor",
+                c.special_meths.inst_Rv_s, c.special_meths);
+            var ni_ctor_ms = new MethodSpec
+            {
+                m = ni_ts.m,
+                type = ni_ts,
+                mdrow = ni_ctor_row,
+                msig = (int)ni_ts.m.GetIntEntry(MetadataStream.tid_MethodDef, ni_ctor_row, 4),
+            };
+
+            stack_after = newobj(n, c, stack_after, ni_ctor_ms);
+            stack_after = throw_(n, c, stack_after);
+
+            // push a System.RuntimeArgumentHandle anyway as further instructions will expect it
+            var srah_ts = c.ms.m.al.GetAssembly("mscorlib").GetTypeSpec("System", "RuntimeArgumentHandle");
+            var stack_after2 = new Stack<StackItem>(stack_after);
+            stack_after2.Push(new StackItem { ts = srah_ts });
+
+            return stack_after2;
+        }
+
+        private static Stack<StackItem> rethrow(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            bool in_catch = false;
+            foreach(var ehdr in c.ehdrs)
+            {
+                if(ehdr.EType == ExceptionHeader.ExceptionHeaderType.Catch)
+                {
+                    if((n.il_offset >= ehdr.HandlerILOffset) &&
+                        (n.il_offset <= (ehdr.HandlerILOffset + ehdr.HandlerLength)))
+                    {
+                        in_catch = true;
+                        break;
+                    }
+                }
+            }
+            if (!in_catch)
+                throw new Exception("rethrow called not in catch handler");
+
+            var stack_after = call(n, c, stack_before, false, "rethrow",
+                c.special_meths, c.special_meths.rethrow);
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> initobj(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var t = n.GetTokenAsTypeSpec(c);
+
+            var ts = stack_before.Peek().ts;
+            if (ts.stype != TypeSpec.SpecialType.MPtr)
+                throw new Exception("initobj stack value is not managed pointer");
+            
+            if (!t.IsAssignmentCompatibleWith(ts.other))
+                throw new Exception("initobj verification failed");
+
+            if(t.IsValueType)
+            {
+                var tsize = layout.Layout.GetTypeSize(t, c.t);
+
+                var stack_after = ldc(n, c, stack_before, tsize);
+
+                var stack_after2 = new Stack<StackItem>(stack_after);
+                stack_after2.Pop();
+                stack_after2.Pop();
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_zeromem, imm_l = layout.Layout.GetTypeSize(t, c.t), stack_before = stack_after, stack_after = stack_after2 });
+                return stack_after2;
+            }
+            else
+            {
+                var stack_after = ldc(n, c, stack_before, 0, 0x1c);
+                stack_after = stind(n, c, stack_after, c.t.GetPointerSize());
+                return stack_after;
+            }
         }
 
         private static Stack<StackItem> ldftn(CilNode n, Code c, Stack<StackItem> stack_before)
@@ -896,20 +1062,12 @@ namespace libtysila5.ir
             int sig_offset = c.t.st.GetSignatureAddress(sig_val, c.t);
 
             // build the object
-            var stack_after = ldc(n, c, stack_before, c.t.GetSize(push_ts), 0x18);
-            stack_after = call(n, c, stack_after, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
-
-            stack_after = copy_to_front(n, c, stack_after);
-            stack_after = ldlab(n, c, stack_after, push_ts.MangleType());
-            stack_after = stind(n, c, stack_after, c.t.GetPointerSize());
-
-            stack_after = copy_to_front(n, c, stack_after);
-            stack_after = ldc(n, c, stack_after, c.t.GetPointerSize(), 0x18);
-            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
-            stack_after = ldlab(n, c, stack_after, c.t.st.GetStringTableName(), sig_offset);
-            stack_after = stind(n, c, stack_after, c.t.GetPointerSize());
-
-            stack_after.Peek().ts = push_ts;
+            var stack_after = ldlab(n, c, stack_before, c.t.st.GetStringTableName(), sig_offset);
+            stack_after[stack_after.Count - 1] = new StackItem
+            {
+                ts = push_ts,
+                fss = sig_val
+            };
 
             return stack_after;
         }
@@ -919,7 +1077,7 @@ namespace libtysila5.ir
             if (ts == null)
                 ts = n.GetTokenAsTypeSpec(c);
 
-            if(ts.IsValueType())
+            if(ts.IsValueType)
             {
                 var esize = c.t.GetSize(ts);
                 return ldind(n, c, stack_before, ts);
@@ -977,9 +1135,9 @@ namespace libtysila5.ir
         {
             var ts = n.GetTokenAsTypeSpec(c);
 
-            if (ts.IsValueType())
+            if (ts.IsValueType)
             {
-                if(!ts.VerificationType.Equals(stack_before.Peek().ts.VerificationType))
+                if(!stack_before.Peek().ts.IsVerifierAssignableTo(ts))
                     throw new Exception("Box called with invalid parameter: " + ts.ToString() +
                         " vs " + stack_before.Peek().ts);
 
@@ -1022,7 +1180,7 @@ namespace libtysila5.ir
         {
             var ts = n.GetTokenAsTypeSpec(c);
 
-            if (ts.IsValueType())
+            if (ts.IsValueType)
             {
                 // TODO ensure stack item is a boxed instance of ts
 
@@ -1158,9 +1316,11 @@ namespace libtysila5.ir
             throw new Exception("Invalid argument to " + opcode.ToString() + ": " + ir.Opcode.ct_names[ct]);
         }
 
-        private static Stack<StackItem> newobj(CilNode n, Code c, Stack<StackItem> stack_before)
+        private static Stack<StackItem> newobj(CilNode n, Code c, Stack<StackItem> stack_before,
+            MethodSpec ctor = null)
         {
-            var ctor = n.GetTokenAsMethodSpec(c);
+            if(ctor == null)
+                ctor = n.GetTokenAsMethodSpec(c);
             var objtype = ctor.type;
 
             /* check if this is system.string */
@@ -1206,15 +1366,21 @@ namespace libtysila5.ir
         private static Stack<StackItem> newstr(CilNode n, Code c, Stack<StackItem> stack_before,
             MethodSpec ctor)
         {
-            // decide on the particular constructor
+            // Generates an instruction stream to determine the number of bytes
+            //  required for the entire string object (object size is added
+            //  at end).
+
+            // Decide on the particular constructor
             Stack<StackItem> stack_after = null;
 
             if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
                 c.special_meths.string_ci, null, null))
             {
-                // string(char, int32)
-                throw new NotImplementedException();
+                // string(char c, int32 count)
+                stack_after = copy_to_front(n, c, stack_before);
+                stack_after = ldc(n, c, stack_after, 2);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
@@ -1233,15 +1399,19 @@ namespace libtysila5.ir
                 c.special_meths,
                 c.special_meths.string_Pcii, null, null))
             {
-                // string(char*, int32, int32)
-                throw new NotImplementedException();
+                // string(char* value, int32 startIndex, int32 length)
+                stack_after = copy_to_front(n, c, stack_before);
+                stack_after = ldc(n, c, stack_after, 2);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
                 c.special_meths.string_Pa, null, null))
             {
-                // string(int8*)
-                throw new NotImplementedException();
+                // string(int8* value)
+                stack_after = copy_to_front(n, c, stack_before);
+                stack_after = call(n, c, stack_after, false,
+                    "strlen", c.special_meths, c.special_meths.strlen);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
@@ -1256,22 +1426,28 @@ namespace libtysila5.ir
                 c.special_meths,
                 c.special_meths.string_Pc, null, null))
             {
-                // string(char*)
-                throw new NotImplementedException();
+                // string(char* value)
+                stack_after = copy_to_front(n, c, stack_before);
+                stack_after = call(n, c, stack_after, false,
+                    "wcslen", c.special_meths, c.special_meths.wcslen);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
                 c.special_meths.string_PaiiEncoding, null, null))
             {
-                // string(int8*, int32, int32, Encoding)
-                throw new NotImplementedException();
+                // string(int8* value, int32 startIndex, int32 length, Encoding)
+                stack_after = copy_to_front(n, c, stack_before, 1);
+                stack_after = ldc(n, c, stack_after, 2);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
                 c.special_meths.string_Paii, null, null))
             {
-                // string(int8*, int32, int32)
-                throw new NotImplementedException();
+                // string(int8* value, int32 startIndex, int32 length)
+                stack_after = copy_to_front(n, c, stack_before, 1);
+                stack_after = ldc(n, c, stack_after, 2);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else
                 throw new NotSupportedException();
@@ -1481,7 +1657,7 @@ namespace libtysila5.ir
             if(to_type == null)
                 to_type = n.GetTokenAsTypeSpec(c);
 
-            if (to_type.IsValueType())
+            if (to_type.IsValueType)
                 to_type = to_type.Box;
 
             if(from_type != null &&
@@ -1495,10 +1671,7 @@ namespace libtysila5.ir
                 stack_after.Push(new StackItem { ts = to_type });
                 return stack_after;
             }
-            else if(from_type == null ||
-                from_type.IsSuperclassOf(to_type) ||
-                from_type.IsInterface ||
-                to_type.IsInterface)
+            else
             {
                 /* There is a chance the cast will succeed but we
                      need to resort to a runtime check */
@@ -1514,13 +1687,6 @@ namespace libtysila5.ir
 
                 return stack_after;
             }
-            else
-            {
-                /* There is no way the cast can succeed */
-                throw new NotImplementedException();
-
-                // TODO: handle interface casting
-            }
 
             throw new NotImplementedException();
         }
@@ -1535,7 +1701,7 @@ namespace libtysila5.ir
 
             stack_after.Add(si);
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, imm_l = v, opcode = Opcode.oc_ldc, ct = Opcode.GetCTFromType(si.ts), vt_size = c.t.GetSize(si.ts), stack_after = stack_after, stack_before = stack_before });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, imm_l = v, opcode = Opcode.oc_ldc, ctret = Opcode.GetCTFromType(si.ts), vt_size = c.t.GetSize(si.ts), stack_after = stack_after, stack_before = stack_before });
             return stack_after;
         }
 
@@ -1584,8 +1750,10 @@ namespace libtysila5.ir
 
             TypeSpec ts;
             MethodSpec fs;
-            if (!c.ms.m.GetFieldDefRow(table_id, row, out ts, out fs))
-                throw new Exception("Field not found");
+            fs = n.GetTokenAsMethodSpec(c);
+            ts = fs.type;
+            //if (!c.ms.m.GetFieldDefRow(table_id, row, out ts, out fs))
+                //throw new Exception("Field not found");
 
             fld_ts = c.ms.m.GetFieldType(fs, c.ms.gtparams, c.ms.gmparams);
 
@@ -1612,7 +1780,7 @@ namespace libtysila5.ir
             }
             else
             {
-                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ct = Opcode.ct_intptr, imm_l = fld_addr, stack_before = stack_before, stack_after = stack_after, arg_a = src_a, arg_b = 0 });
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ctret = Opcode.ct_intptr, imm_l = fld_addr, stack_before = stack_before, stack_after = stack_after, arg_a = src_a, arg_b = 0 });
             }
 
             stack_after.Push(si);
@@ -1781,7 +1949,7 @@ namespace libtysila5.ir
 
             var ct_src = st_src.ct;
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stind, ct = ct_src, vt_size = vt_size, stack_before = stack_before, stack_after = stack_after, arg_a = addr, arg_b = val });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stind, ct = ir.Opcode.ct_intptr, ct2 = ct_src, ctret = ir.Opcode.ct_unknown, vt_size = vt_size, stack_before = stack_before, stack_after = stack_after, arg_a = addr, arg_b = val });
 
             return stack_after;
         }
@@ -1866,8 +2034,14 @@ namespace libtysila5.ir
                 ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
                 m = ms.m;
                 mangled_meth = c.ms.m.MangleMethod(ms);
-                sig_idx = (int)ms.m.GetIntEntry(MetadataStream.tid_MethodDef, ms.mdrow,
-                    4);
+                if (ms.mdrow != 0)
+                {
+                    sig_idx = (int)ms.m.GetIntEntry(MetadataStream.tid_MethodDef, ms.mdrow,
+                        4);
+                }
+                else
+                    sig_idx = ms.msig;
+                
 
                 intcall_delegate intcall;
                 if(is_calli == false && intcalls.TryGetValue(mangled_meth, out intcall))
@@ -1882,7 +2056,7 @@ namespace libtysila5.ir
 
             var pc = m.GetMethodDefSigParamCountIncludeThis((int)sig_idx);
             var rt_idx = m.GetMethodDefSigRetTypeIndex((int)sig_idx);
-            var rt = m.GetTypeSpec(ref rt_idx, c.ms.gtparams, c.ms.gmparams);
+            var rt = m.GetTypeSpec(ref rt_idx, ms.gtparams, ms.gmparams);
 
             while (pc-- > 0)
                 stack_after.Pop();
@@ -1907,15 +2081,19 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> ldstr(CilNode n, Code c, Stack<StackItem> stack_before)
+        private static Stack<StackItem> ldstr(CilNode n, Code c, Stack<StackItem> stack_before,
+            string str = null)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
-            var tok = n.inline_uint;
-            if ((tok & 0x70000000) != 0x70000000)
-                throw new Exception("Invalid string token");
+            if (str == null)
+            {
+                var tok = n.inline_uint;
+                if ((tok & 0x70000000) != 0x70000000)
+                    throw new Exception("Invalid string token");
 
-            var str = c.ms.m.GetUserString((int)(tok & 0x00ffffffUL));
+                str = c.ms.m.GetUserString((int)(tok & 0x00ffffffUL));
+            }
 
             var str_addr = c.t.st.GetStringAddress(str, c.t);
             var st_name = c.t.st.GetStringTableName();
@@ -1967,7 +2145,7 @@ namespace libtysila5.ir
             si.ts = ts;
             stack_after.Push(si);
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_cmp, ct = ct_a, ct2 = ct_b, imm_ul = (uint)cc, stack_after = stack_after, stack_before = stack_before, arg_a = 1, arg_b = 0 });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_cmp, ct = ct_a, ct2 = ct_b, ctret = Opcode.ct_unknown, imm_ul = (uint)cc, stack_after = stack_after, stack_before = stack_before, arg_a = 1, arg_b = 0 });
 
             return stack_after;
         }
@@ -2016,6 +2194,9 @@ namespace libtysila5.ir
                 case cil.Opcode.SingleOpcodes.neg:
                     noc = Opcode.oc_neg;
                     break;
+                case cil.Opcode.SingleOpcodes.not:
+                    noc = Opcode.oc_not;
+                    break;
                 default:
                     throw new NotImplementedException();
             }
@@ -2032,8 +2213,12 @@ namespace libtysila5.ir
                 case Opcode.ct_int32:
                 case Opcode.ct_int64:
                 case Opcode.ct_intptr:
-                case Opcode.ct_float:
                     return ct;
+                case Opcode.ct_float:
+                    if (oc == cil.Opcode.SingleOpcodes.neg)
+                        return ct;
+                    else
+                        return Opcode.ct_unknown;                        
                 default:
                     return Opcode.ct_unknown;
             }
@@ -2048,7 +2233,10 @@ namespace libtysila5.ir
             if(src_a == -1)
             {
                 stack_after.Pop();
-                src_a = 1;
+                if (src_b == -1)
+                    src_a = 1;
+                else
+                    src_a = 0;
             }
             if(src_b == -1)
             {
@@ -2362,7 +2550,7 @@ namespace libtysila5.ir
             var vt_size = c.t.GetSize(ts);
             var ct = Opcode.GetCTFromType(ts);
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldloc, ct = ct, vt_size = vt_size, imm_l = v, stack_before = stack_before, stack_after = stack_after });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldloc, ctret = ct, vt_size = vt_size, imm_l = v, stack_before = stack_before, stack_after = stack_after });
 
             return stack_after;
         }
@@ -2378,7 +2566,7 @@ namespace libtysila5.ir
             var vt_size = c.t.GetSize(ts);
             var ct = Opcode.GetCTFromType(ts);
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stloc, ct = ct, vt_size = vt_size, imm_l = v, stack_before = stack_before, stack_after = stack_after });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stloc, ct = ct, ctret = Opcode.ct_unknown, vt_size = vt_size, imm_l = v, stack_before = stack_before, stack_after = stack_after });
 
             return stack_after;
         }

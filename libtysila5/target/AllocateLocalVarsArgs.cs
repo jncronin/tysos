@@ -68,7 +68,7 @@ namespace libtysila5.target
                 c.la_sizes[laidx] = this_size;
 
                 // value type methods have mptr to type as their this pointer
-                if (ms.type.IsValueType())
+                if (ms.type.IsValueType)
                 {
                     c.la_types[laidx] = ms.type.ManagedPointer;
                 }

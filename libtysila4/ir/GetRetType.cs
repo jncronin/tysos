@@ -35,7 +35,7 @@ namespace libtysila4.ir
                     if (ts.m.is_corlib && ts.m.simple_type_idx[ts.tdrow] != -1)
                         return GetCTFromType(ts.m.simple_type_idx[ts.tdrow]);
 
-                    if (ts.IsValueType())
+                    if (ts.IsValueType)
                         return ct_vt;
 
                     return ct_object;

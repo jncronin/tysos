@@ -78,7 +78,7 @@
 *                      u1g<integer>    # GenericMethodParam, followed by ParamNumber
 *                      u1R             # Ref - used to denote a generic reference type in a coalesced generic method
 *                      
-* <array-def>: <type name><rank>_<lobound 0>_ ... <lobound n-1>_<size 0>_ ... <size n-1>_
+* <array-def>: <type name><rank>_<lobound 0>_ ... <lobound n-1>__<size 0>_ ... <size n-1>_
 * <type name> is the base type of the array of type <string>
 * <rank>, <lobound n>, <size n> are all of type <integer>
 * 
@@ -188,6 +188,23 @@ namespace metadata
                     MangleType(ts.other, sb, ms);
                     break;
 
+                case TypeSpec.SpecialType.Array:
+                    sb.Append("u1A");
+                    MangleType(ts.other, sb, ms);
+                    sb.Append(ts.arr_rank.ToString());
+                    foreach(var lb in ts.arr_lobounds)
+                    {
+                        sb.Append("_");
+                        sb.Append(lb.ToString());
+                    }
+                    sb.Append("_");
+                    foreach(var s in ts.arr_sizes)
+                    {
+                        sb.Append("_");
+                        sb.Append(s.ToString());
+                    }
+                    break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -208,6 +225,9 @@ namespace metadata
 
             if (msig == 0)
                 throw new Exception("invalid method signature");
+
+            if (gtparams == null)
+                gtparams = t.gtparams;
 
             /* Get declaring type */
             MangleType(t, sb, ms);
@@ -249,7 +269,7 @@ namespace metadata
                 return m.mangle_override;
 
             return m.m.MangleMethod(m.type,
-                EncodeString(m.m.GetStringEntry(tid_MethodDef, m.mdrow, 3)),
+                m.name_override != null ? m.name_override : EncodeString(m.m.GetStringEntry(tid_MethodDef, m.mdrow, 3)),
                 m.msig, m.gtparams, m.gmparams, is_spec);
         }
 

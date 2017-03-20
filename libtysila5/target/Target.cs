@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 19:52:02 on 18 March 2017
+ * It was generated at 15:19:51 on 20 March 2017
  * from D:\tysos\branches\tysila3\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -170,6 +170,9 @@ namespace libtysila5.target.x86
 		public const int x86_movsd_xmm_xmmm64 = 88;
 		public const int x86_movsd_xmmm64_xmm = 89;
 		public const int x86_cvtsd2si_r32_xmmm64 = 90;
+		public const int x86_cvtsi2sd_xmm_rm32 = 91;
+		public const int x86_mulsd_xmm_xmmm64 = 92;
+		public const int x86_comisd_xmm_xmmm64 = 93;
 		
 		internal static void init_instrs()
 		{
@@ -243,6 +246,9 @@ namespace libtysila5.target.x86
 			insts[88] = "movsd_xmm_xmmm64";
 			insts[89] = "movsd_xmmm64_xmm";
 			insts[90] = "cvtsd2si_r32_xmmm64";
+			insts[91] = "cvtsi2sd_xmm_rm32";
+			insts[92] = "mulsd_xmm_xmmm64";
+			insts[93] = "comisd_xmm_xmmm64";
 		}
 	}
 }
@@ -2904,43 +2910,43 @@ namespace libtysila5.target
 			x86.r_stack = x86.regs[0];
 			x86.regs[1] = new Target.Reg { name = "contents", id = 1, type = 3, size = 0, mask = 2 };
 			x86.r_contents = x86.regs[1];
-			x86.regs[2] = new Target.Reg { name = "eip", id = 2, type = 0, size = 32, mask = 4 };
+			x86.regs[2] = new Target.Reg { name = "eip", id = 2, type = 0, size = 4, mask = 4 };
 			x86.r_eip = x86.regs[2];
-			x86.regs[3] = new Target.Reg { name = "eax", id = 3, type = 0, size = 32, mask = 8 };
+			x86.regs[3] = new Target.Reg { name = "eax", id = 3, type = 0, size = 4, mask = 8 };
 			x86.r_eax = x86.regs[3];
-			x86.regs[4] = new Target.Reg { name = "ebx", id = 4, type = 0, size = 32, mask = 16 };
+			x86.regs[4] = new Target.Reg { name = "ebx", id = 4, type = 0, size = 4, mask = 16 };
 			x86.r_ebx = x86.regs[4];
-			x86.regs[5] = new Target.Reg { name = "ecx", id = 5, type = 0, size = 32, mask = 32 };
+			x86.regs[5] = new Target.Reg { name = "ecx", id = 5, type = 0, size = 4, mask = 32 };
 			x86.r_ecx = x86.regs[5];
-			x86.regs[6] = new Target.Reg { name = "edx", id = 6, type = 0, size = 32, mask = 64 };
+			x86.regs[6] = new Target.Reg { name = "edx", id = 6, type = 0, size = 4, mask = 64 };
 			x86.r_edx = x86.regs[6];
-			x86.regs[7] = new Target.Reg { name = "edi", id = 7, type = 0, size = 32, mask = 128 };
+			x86.regs[7] = new Target.Reg { name = "edi", id = 7, type = 0, size = 4, mask = 128 };
 			x86.r_edi = x86.regs[7];
-			x86.regs[8] = new Target.Reg { name = "esi", id = 8, type = 0, size = 32, mask = 256 };
+			x86.regs[8] = new Target.Reg { name = "esi", id = 8, type = 0, size = 4, mask = 256 };
 			x86.r_esi = x86.regs[8];
-			x86.regs[9] = new Target.Reg { name = "esp", id = 9, type = 0, size = 32, mask = 512 };
+			x86.regs[9] = new Target.Reg { name = "esp", id = 9, type = 0, size = 4, mask = 512 };
 			x86.r_esp = x86.regs[9];
-			x86.regs[10] = new Target.Reg { name = "ebp", id = 10, type = 0, size = 32, mask = 1024 };
+			x86.regs[10] = new Target.Reg { name = "ebp", id = 10, type = 0, size = 4, mask = 1024 };
 			x86.r_ebp = x86.regs[10];
-			x86.regs[11] = new Target.Reg { name = "st0", id = 11, type = 1, size = 64, mask = 2048 };
+			x86.regs[11] = new Target.Reg { name = "st0", id = 11, type = 1, size = 8, mask = 2048 };
 			x86.r_st0 = x86.regs[11];
-			x86.regs[12] = new Target.Reg { name = "xmm0", id = 12, type = 1, size = 64, mask = 4096 };
+			x86.regs[12] = new Target.Reg { name = "xmm0", id = 12, type = 1, size = 8, mask = 4096 };
 			x86.r_xmm0 = x86.regs[12];
-			x86.regs[13] = new Target.Reg { name = "xmm1", id = 13, type = 1, size = 64, mask = 8192 };
+			x86.regs[13] = new Target.Reg { name = "xmm1", id = 13, type = 1, size = 8, mask = 8192 };
 			x86.r_xmm1 = x86.regs[13];
-			x86.regs[14] = new Target.Reg { name = "xmm2", id = 14, type = 1, size = 64, mask = 16384 };
+			x86.regs[14] = new Target.Reg { name = "xmm2", id = 14, type = 1, size = 8, mask = 16384 };
 			x86.r_xmm2 = x86.regs[14];
-			x86.regs[15] = new Target.Reg { name = "xmm3", id = 15, type = 1, size = 64, mask = 32768 };
+			x86.regs[15] = new Target.Reg { name = "xmm3", id = 15, type = 1, size = 8, mask = 32768 };
 			x86.r_xmm3 = x86.regs[15];
-			x86.regs[16] = new Target.Reg { name = "xmm4", id = 16, type = 1, size = 64, mask = 65536 };
+			x86.regs[16] = new Target.Reg { name = "xmm4", id = 16, type = 1, size = 8, mask = 65536 };
 			x86.r_xmm4 = x86.regs[16];
-			x86.regs[17] = new Target.Reg { name = "xmm5", id = 17, type = 1, size = 64, mask = 131072 };
+			x86.regs[17] = new Target.Reg { name = "xmm5", id = 17, type = 1, size = 8, mask = 131072 };
 			x86.r_xmm5 = x86.regs[17];
-			x86.regs[18] = new Target.Reg { name = "xmm6", id = 18, type = 1, size = 64, mask = 262144 };
+			x86.regs[18] = new Target.Reg { name = "xmm6", id = 18, type = 1, size = 8, mask = 262144 };
 			x86.r_xmm6 = x86.regs[18];
-			x86.regs[19] = new Target.Reg { name = "xmm7", id = 19, type = 1, size = 64, mask = 524288 };
+			x86.regs[19] = new Target.Reg { name = "xmm7", id = 19, type = 1, size = 8, mask = 524288 };
 			x86.r_xmm7 = x86.regs[19];
-			x86.regs[20] = new Target.Reg { name = "eaxedx", id = 20, type = 4, size = 32, mask = 72 };
+			x86.regs[20] = new Target.Reg { name = "eaxedx", id = 20, type = 4, size = 4, mask = 72 };
 			x86.r_eaxedx = x86.regs[20];
 			targets["x86"] = x86;
 		}

@@ -46,7 +46,7 @@ namespace libtysila4.layout
 
             int cur_offset = 0;
 
-            if (is_static == false && !ts.IsValueType())
+            if (is_static == false && !ts.IsValueType)
             {
                 // Add a vtable entry
                 cur_offset += t.GetCTSize(ir.Opcode.ct_object);

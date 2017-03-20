@@ -71,7 +71,7 @@ namespace libtysila5.ir
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
             StackItem si = new StackItem { _ct = ct, min_l = v, max_l = v };
             stack_after.Push(si);
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ct = Opcode.ct_intptr, imm_l = v, stack_before = stack_before, stack_after = stack_after });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ctret = Opcode.ct_intptr, imm_l = v, stack_before = stack_before, stack_after = stack_after });
             return stack_after;
         }
 
@@ -89,7 +89,7 @@ namespace libtysila5.ir
             stack_after = new Stack<StackItem>(stack_before);
             StackItem si2 = new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0x18) };
             stack_after.Push(si2);
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ct = Opcode.ct_intptr, imm_l = length_offset, stack_before = stack_before, stack_after = stack_after });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ctret = Opcode.ct_intptr, imm_l = length_offset, stack_before = stack_before, stack_after = stack_after });
 
             stack_before = stack_after;
             stack_after = new Stack<StackItem>(stack_before);

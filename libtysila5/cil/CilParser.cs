@@ -153,6 +153,7 @@ namespace libtysila5.cil
                     case Opcode.InlineVar.InlineString:
                     case Opcode.InlineVar.InlineTok:
                     case Opcode.InlineVar.InlineType:
+                    case Opcode.InlineVar.ShortInlineR:
                         n.inline_int = di.ReadInt(offset + boffset);
                         n.inline_uint = di.ReadUInt(offset + boffset);
                         n.inline_long = n.inline_int;
@@ -160,8 +161,24 @@ namespace libtysila5.cil
                         for (int i = 0; i < 4; i++)
                             n.inline_val[i] = di.ReadByte(offset + boffset);
                         offset += 4;
+
+                        if (n.opcode.inline == Opcode.InlineVar.ShortInlineR)
+                        {
+                            unsafe
+                            {
+                                fixed (int* ii = &n.inline_int)
+                                {
+                                    fixed (float* ifl = &n.inline_float)
+                                    {
+                                        *(int*)ifl = *ii;
+                                    }
+                                }
+                            }
+                            n.inline_double = n.inline_float;
+                        }
                         break;
                     case Opcode.InlineVar.InlineI8:
+                    case Opcode.InlineVar.InlineR:
                         n.inline_int = di.ReadInt(offset + boffset);
                         n.inline_uint = di.ReadUInt(offset + boffset);
                         n.inline_long = di.ReadLong(offset + boffset);
@@ -169,13 +186,22 @@ namespace libtysila5.cil
                         for (int i = 0; i < 8; i++)
                             n.inline_val[i] = di.ReadByte(offset + boffset);
                         offset += 8;
-                        break;
-                    case Opcode.InlineVar.InlineR:
-                        //line.inline_dbl = LSB_Assembler.FromByteArrayR8S(code, offset);
-                        //line.inline_val = new byte[8];
-                        //LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 8);
-                        throw new NotImplementedException();
-                        offset += 8;
+
+                        if (n.opcode.inline == Opcode.InlineVar.InlineR)
+                        {
+                            unsafe
+                            {
+                                fixed (long* ii = &n.inline_long)
+                                {
+                                    fixed (double* ifl = &n.inline_double)
+                                    {
+                                        *(long*)ifl = *ii;
+                                    }
+                                }
+                            }
+                            n.inline_float = (float)n.inline_double;
+                        }
+
                         break;
                     case Opcode.InlineVar.InlineVar:
                         //line.inline_int = LSB_Assembler.FromByteArrayI2S(code, offset);
@@ -194,13 +220,6 @@ namespace libtysila5.cil
                         n.inline_val = new byte[1];
                         n.inline_val[0] = di.ReadByte(offset + boffset);
                         offset += 1;
-                        break;
-                    case Opcode.InlineVar.ShortInlineR:
-                        //line.inline_sgl = LSB_Assembler.FromByteArrayR4S(code, offset);
-                        //line.inline_val = new byte[4];
-                        //LSB_Assembler.SetByteArrayS(line.inline_val, 0, code, offset, 4);
-                        throw new NotImplementedException();
-                        offset += 4;
                         break;
                     case Opcode.InlineVar.InlineSwitch:
                         uint switch_len = di.ReadUInt(offset + boffset);
@@ -289,6 +308,15 @@ namespace libtysila5.cil
             }
 
             ret.ehdrs = ehdrs;
+
+            foreach(var n in ret.cil)
+            {
+                foreach(var next in n.il_offsets_after)
+                {
+                    var next_n = ret.offset_map[next];
+                    next_n.prev.Add(n);
+                }
+            }
 
             return ret;
         }

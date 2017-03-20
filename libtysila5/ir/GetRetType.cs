@@ -42,7 +42,7 @@ namespace libtysila5.ir
                     if (extends != null && extends.Equals(ts.m.SystemEnum))
                         return ct_int32;
 
-                    if (ts.IsValueType())
+                    if (ts.IsValueType)
                         return ct_vt;
 
                     return ct_object;
@@ -112,7 +112,7 @@ namespace libtysila5.ir
                     return ct_ref;
 
                 case 0x11:
-                    return ct_vt;
+                    return ct_object;       // System.ValueType itself is a reference type
 
                 case 0x12:
                 case 0x14:

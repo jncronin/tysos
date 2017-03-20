@@ -99,6 +99,9 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"movsd_xmm_xmmm64",
 	"movsd_xmmm64_xmm",
 	"cvtsd2si_r32_xmmm64",
+	"cvtsi2sd_xmm_rm32",
+	"mulsd_xmm_xmmm64",
+	"comisd_xmm_xmmm64",
 ]);
 
 function oc_map_handler(array entries, string val)

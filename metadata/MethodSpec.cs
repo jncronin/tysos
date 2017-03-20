@@ -40,6 +40,7 @@ namespace metadata
         public List<string> aliases;
 
         public string mangle_override = null;
+        public string name_override = null;
 
         public override MetadataStream Metadata
         { get { return m; } }
@@ -174,7 +175,8 @@ namespace metadata
                 return new FullySpecSignature
                 {
                     Modules = mods,
-                    Signature = sig
+                    Signature = sig,
+                    OriginalSpec = this
                 };
             }
         }

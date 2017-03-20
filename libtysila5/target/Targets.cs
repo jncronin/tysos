@@ -142,6 +142,16 @@ namespace libtysila5.target
                     return false;
                 return b.Equals(dr.b);
             }
+
+            public override Reg SubReg(int sroffset, int srsize)
+            {
+                if (sroffset == 0)
+                    return a;
+                else if (sroffset == a.size)
+                    return b;
+                else
+                    throw new NotSupportedException();
+            }
         }
 
         public class ContentsReg : Reg, IEquatable<Reg>
@@ -173,6 +183,19 @@ namespace libtysila5.target
                     return false;
                 return disp == cr.disp;
             }
+
+            public override Reg SubReg(int sroffset, int srsize)
+            {
+                if (sroffset + srsize > size)
+                    throw new NotSupportedException();
+
+                return new ContentsReg
+                {
+                    basereg = basereg,
+                    disp = disp + sroffset,
+                    size = srsize
+                };
+            }
         }
 
         public class AddrAndContentsReg : Reg, IEquatable<Reg>
@@ -198,6 +221,11 @@ namespace libtysila5.target
             public int size;
             public ulong mask;
             public int stack_loc;
+
+            public virtual Reg SubReg(int sroffset, int srsize)
+            {
+                throw new NotSupportedException();
+            }
 
             public override string ToString()
             {
@@ -246,7 +274,7 @@ namespace libtysila5.target
                         if (simple != -1)
                             return GetCTSize(ir.Opcode.GetCTFromType(simple));
                     }
-                    if (ts.IsValueType())
+                    if (ts.IsValueType)
                     {
                         return layout.Layout.GetTypeSize(ts, this, false);
                     }
@@ -333,7 +361,7 @@ namespace libtysila5.target
                 if (i == 0 && has_this)
                 {
                     // value type methods have mptr to type as their this pointer
-                    if(csite.ms.type.IsValueType())
+                    if(csite.ms.type.IsValueType)
                     {
                         v = csite.ms.type.ManagedPointer;
                     }

@@ -35,6 +35,10 @@ namespace libtysila5.ir
         public int try_enter;
         public int catch_enter;
         public int leave;
+        public int rethrow;
+        public int strlen;
+        public int wcslen;
+        public int inst_Rv_s;
 
         public int string_ci;
         public int string_Zc;
@@ -80,6 +84,15 @@ namespace libtysila5.ir
                 new TypeSpec[] { I });
             leave = CreateMethodSignature(b, null,
                 new TypeSpec[] { I });
+            rethrow = CreateMethodSignature(b, null,
+                new TypeSpec[] { });
+            strlen = CreateMethodSignature(b, I,
+                new TypeSpec[] { Pa });
+            wcslen = CreateMethodSignature(b, I,
+                new TypeSpec[] { Pc });
+
+            inst_Rv_s = CreateMethodSignature(b, null,
+                new TypeSpec[] { s }, true);
 
             string_ci = CreateMethodSignature(null,
                 new TypeSpec[] { c, i }, true);
@@ -146,7 +159,7 @@ namespace libtysila5.ir
                     var stype = ts.m.simple_type_idx[ts.tdrow];
                     if (stype == -1)
                     {
-                        if (ts.IsValueType())
+                        if (ts.IsValueType)
                             tmp.Add(0x11);
                         else
                             tmp.Add(0x12);

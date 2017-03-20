@@ -69,7 +69,7 @@ namespace libtysila5.ir
             target.Target.Reg[] rf = new target.Target.Reg[]
             {
                 x.r_xmm0, x.r_xmm1, x.r_xmm2, x.r_xmm3,
-                x.r_xmm4, x.r_xmm5, x.r_xmm6, x.r_xmm7
+                x.r_xmm4, x.r_xmm5, x.r_xmm6
             };
             int cur_reg = 0;
             int cur_rf = 0;

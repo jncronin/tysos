@@ -46,7 +46,7 @@ namespace libtysila5.layout
 
             int cur_offset = 0;
 
-            if (is_static == false && !ts.IsValueType())
+            if (is_static == false && !ts.IsValueType)
             {
                 // Add a vtable entry
                 cur_offset += t.GetCTSize(ir.Opcode.ct_object);
@@ -102,7 +102,7 @@ namespace libtysila5.layout
 
             int cur_offset = 0;
 
-            if (is_static == false && !ts.IsValueType())
+            if (is_static == false && !ts.IsValueType)
             {
                 // Add a vtable entry
                 cur_offset += t.GetCTSize(ir.Opcode.ct_object);
@@ -157,7 +157,14 @@ namespace libtysila5.layout
                         ts.Equals(ts.m.SystemRuntimeMethodHandle) ||
                         ts.Equals(ts.m.SystemRuntimeFieldHandle))
                     {
-                        return is_static ? 0 : (3 * t.GetPointerSize());
+                        return is_static ? 0 : (t.GetPointerSize());
+                    }
+                    if (ts.m.classlayouts[ts.tdrow] != 0)
+                    {
+                        var size = ts.m.GetIntEntry(metadata.MetadataStream.tid_ClassLayout,
+                            ts.m.classlayouts[ts.tdrow],
+                            1);
+                        return (int)size;
                     }
                     return GetFieldOffset(ts, (string)null, t, is_static);
                 case TypeSpec.SpecialType.SzArray:
@@ -202,10 +209,16 @@ namespace libtysila5.layout
                     /* See if there is any data defined as an rva */
                     var rva = ts.m.fieldrvas[(int)fdef_row];
                     if (rva != 0)
-                        throw new NotImplementedException();
-
-                    for (int i = 0; i < ft_size; i++)
-                        os.Data.Add(0);
+                    {
+                        var rrva = (int)ts.m.ResolveRVA(rva);
+                        for (int i = 0; i < ft_size; i++)
+                            os.Data.Add(ts.m.file.ReadByte(rrva++));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ft_size; i++)
+                            os.Data.Add(0);
+                    }
 
                     cur_offset += ft_size;
                 }

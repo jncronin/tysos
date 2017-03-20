@@ -100,6 +100,7 @@ namespace libtysila5.cil
         public bool is_eh_start = false;
 
         public bool visited = false;
+        public util.Stack<ir.StackItem> stack_after;
 
         public List<metadata.ExceptionHeader> try_starts = new List<metadata.ExceptionHeader>();
         public List<metadata.ExceptionHeader> catch_starts = new List<metadata.ExceptionHeader>();
@@ -109,10 +110,14 @@ namespace libtysila5.cil
         public uint inline_uint;
         public long inline_long;
         public byte[] inline_val;
+        public double inline_double;
+        public float inline_float;
         public List<int> inline_array;
 
         public List<int> il_offsets_after = new List<int>();
         public int il_offset_after;
+
+        public List<CilNode> prev = new List<CilNode>();
 
         // prefixes
         public bool constrained;

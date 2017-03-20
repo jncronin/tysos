@@ -36,6 +36,7 @@ namespace metadata
         {
             public List<byte> Signature;
             public List<MetadataStream> Modules;
+            public Spec OriginalSpec;
         }
     }
 
@@ -86,7 +87,7 @@ namespace metadata
                 if (stype != 0)
                     return stype;
 
-                if (IsValueType())
+                if (IsValueType)
                     return 0x11;
 
                 return 0x12;
@@ -99,7 +100,7 @@ namespace metadata
             {
                 case SpecialType.Array:
                 case SpecialType.SzArray:
-                    return m.GetSimpleTypeSpec(0x1c);
+                    return m.SystemArray;
 
                 case SpecialType.Boxed:
                     return m.SystemValueType;
@@ -117,27 +118,39 @@ namespace metadata
             return ret;
         }
 
-        /**<summary>Is the type a descendent of System.ValueType?</summary> */
-        public bool IsValueType()
+        /**<summary>Is the type a boxed  value type?</summary> */
+        public bool IsBoxed
         {
-            switch(stype)
+            get
             {
-                case SpecialType.Array:
-                case SpecialType.Boxed:
-                case SpecialType.SzArray:
-                    return false;
-                case SpecialType.MPtr:
-                case SpecialType.Ptr:
-                    return true;
+                return stype == SpecialType.Boxed;
             }
-            var extends = GetExtends();
-            if (extends == null)
-                return false;
-            if (extends.Equals(m.SystemEnum))
-                return true;                
-            if (extends.m.simple_type_idx == null)
-                return false;
-            return (extends.m.simple_type_idx[extends.tdrow] == 0x11);
+        }
+
+        /**<summary>Is the type a descendent of System.ValueType?</summary> */
+        public bool IsValueType
+        {
+            get
+            {
+                switch (stype)
+                {
+                    case SpecialType.Array:
+                    case SpecialType.Boxed:
+                    case SpecialType.SzArray:
+                        return false;
+                    case SpecialType.MPtr:
+                    case SpecialType.Ptr:
+                        return true;
+                }
+                var extends = GetExtends();
+                if (extends == null)
+                    return false;
+                if (extends.Equals(m.SystemEnum))
+                    return true;
+                if (extends.m.simple_type_idx == null)
+                    return false;
+                return (extends.m.simple_type_idx[extends.tdrow] == 0x11);
+            }
         }
 
         /**<summary>Is this a superclass of another type?</summary> */
@@ -236,7 +249,8 @@ namespace metadata
                 return new FullySpecSignature
                 {
                     Modules = mods,
-                    Signature = sig
+                    Signature = sig,
+                    OriginalSpec = this
                 };
             }
         }
@@ -329,6 +343,28 @@ namespace metadata
             }
         }
 
+        public TypeSpec IntermediateType
+        {
+            get
+            {
+                var v = VerificationType;
+                if(v.stype == SpecialType.None)
+                {
+                    switch(v.SimpleType)
+                    {
+                        case 0x04:
+                        case 0x06:
+                        case 0x08:
+                            return m.SystemInt32;
+                        case 0x0c:
+                        case 0x0d:
+                            return m.GetSimpleTypeSpec(0x0d);
+                    }
+                }
+                return v;
+            }
+        }
+
         public TypeSpec UnderlyingType
         {
             get
@@ -338,14 +374,27 @@ namespace metadata
                     var e = GetExtends();
                     if (e == null)
                         return this;
-                    if(e.Equals(m.SystemEnum))
+                    if (e.Equals(m.SystemEnum))
                     {
                         var field_idx = (int)m.GetIntEntry(MetadataStream.tid_TypeDef,
                             tdrow, 4);
-                        var fsig = (int)m.GetIntEntry(MetadataStream.tid_Field, field_idx,
-                            2);
-                        var value_ts = m.GetTypeSpec(ref fsig, gtparams, null);
-                        return value_ts;
+
+                        // find first instance field
+                        while (true)
+                        {
+                            var fflags = m.GetIntEntry(MetadataStream.tid_Field, field_idx,
+                                0);
+                            if ((fflags & 0x10) == 0)
+                            {
+                                var fsig = (int)m.GetIntEntry(MetadataStream.tid_Field, field_idx,
+                                    2);
+                                m.SigReadUSCompressed(ref fsig);
+                                fsig++;
+                                var value_ts = m.GetTypeSpec(ref fsig, gtparams, null);
+                                return value_ts;
+                            }
+                            field_idx++;
+                        }
                     }
                 }
                 return this;
@@ -373,7 +422,7 @@ namespace metadata
                         }
                         else
                         {
-                            if (IsValueType())
+                            if (IsValueType)
                                 sig.Add(0x31);
                             else
                                 sig.Add(0x32);
@@ -384,6 +433,11 @@ namespace metadata
                             sig.AddRange(MetadataStream.SigWriteUSCompressed(tok));
                         }      
                     }
+                    break;
+
+                case SpecialType.SzArray:
+                    sig.Add(0x1d);
+                    other.AddSignature(sig, mods);
                     break;
 
                 default:
@@ -437,6 +491,7 @@ namespace metadata
 
                 case SpecialType.Ptr:
                 case SpecialType.MPtr:
+                case SpecialType.Boxed:
                     if (this.other == null && other.other == null)
                         return true;
                     if (this.other == null)
@@ -445,6 +500,27 @@ namespace metadata
 
                 case SpecialType.SzArray:
                     return this.other.Equals(other.other);
+
+                case SpecialType.Array:
+                    if (!this.other.Equals(other.other))
+                        return false;
+                    if (this.arr_rank != other.arr_rank)
+                        return false;
+                    if (this.arr_lobounds.Length != other.arr_lobounds.Length)
+                        return false;
+                    if (this.arr_sizes.Length != other.arr_sizes.Length)
+                        return false;
+                    for(int i = 0; i < this.arr_lobounds.Length; i++)
+                    {
+                        if (this.arr_lobounds[i] != other.arr_lobounds[i])
+                            return false;
+                    }
+                    for (int i = 0; i < this.arr_sizes.Length; i++)
+                    {
+                        if (this.arr_sizes[i] != other.arr_sizes[i])
+                            return false;
+                    }
+                    return true;
 
                 default:
                     throw new NotImplementedException();
@@ -496,6 +572,37 @@ namespace metadata
             if (m == null)
                 return "TypeSpec";
             return m.MangleType(this);
+        }
+
+        public bool IsVerifierAssignableTo(TypeSpec u)
+        {
+            // CIL III 1.8.1.2.3
+            if (Equals(u))
+                return true;
+            if (IsAssignableTo(u))
+                return true;
+
+
+            // TODO: more required here
+            return false;
+        }
+
+        public bool IsAssignableTo(TypeSpec u)
+        {
+            if (Equals(u))
+                return true;
+            var v = IntermediateType;
+            var w = u.IntermediateType;
+
+            if (v.Equals(w))
+                return true;
+
+            if (v.Equals(m.SystemInt32) && w.Equals(m.SystemIntPtr))
+                return true;
+            if (w.Equals(m.SystemInt32) && v.Equals(m.SystemIntPtr))
+                return true;
+
+            return IsAssignmentCompatibleWith(u);
         }
 
         public bool IsAssignmentCompatibleWith(TypeSpec to_type)

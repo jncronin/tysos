@@ -501,7 +501,7 @@ namespace libtysila4.target
                         if (simple != -1)
                             return GetCTSize(ir.Opcode.GetCTFromType(simple));
                     }
-                    if (ts.IsValueType())
+                    if (ts.IsValueType)
                     {
                         return layout.Layout.GetTypeSize(ts, this, false);
                     }

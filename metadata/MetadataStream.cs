@@ -36,6 +36,8 @@ namespace metadata
         public AssemblyLoader al;
         public DataInterface file;
 
+        public long ResolveRVA(long RVA) { return pef.ResolveRVA(RVA); }
+
         public bool wide_string = false;
         public bool wide_guid = false;
         public bool wide_blob = false;
@@ -56,6 +58,7 @@ namespace metadata
         public int[] fielddef_owners;
         public int[] enclosing_types;
         public uint[] fieldrvas;
+        public int[] classlayouts;
         public int[] gtparams;
         public int[] gmparams;
 
@@ -111,6 +114,7 @@ namespace metadata
         public BuiltInType SystemRuntimeFieldHandle;
         public BuiltInType SystemEnum;
         public BuiltInType SystemValueType;
+        public BuiltInType SystemArray;
 
         /* Consts for fast table indexing */
         public const int tid_Assembly = 0x20;
@@ -639,8 +643,9 @@ namespace metadata
                     {
                         m = this,
                         mdrow = (int)fdef_row,
-                        msig = 0,
-                        type = ts
+                        msig = (int)ts.m.GetIntEntry(tid_Field, (int)fdef_row, 2),
+                        type = ts,
+                        is_field = true
                     };
                     return fs;
                 }
@@ -659,11 +664,14 @@ namespace metadata
                     fs.m = this;
                     fs.msig = (int)GetIntEntry(table_id, row, 2);
                     fs.mdrow = row;
+                    fs.is_field = true;
                     ts = new TypeSpec();
                     ts.m = this;
                     ts.tdrow = fielddef_owners[row];
                     return true;
                 case (int)TableId.MemberRef:
+                    //GetMethodDefRow(table_id, row, out fs,
+                    //    gtparams, gmparams);
                     throw new NotImplementedException();
                 default:
                     throw new NotSupportedException();
@@ -709,6 +717,14 @@ namespace metadata
                         var name = GetStringEntry(table_id, row, 1);
                         var sig = GetIntEntry(table_id, row, 2);
 
+                        // determine if referencing a field or method
+                        var sig_check = (int)sig;
+                        SigReadUSCompressed(ref sig_check);
+                        var cc = sh_blob.di.ReadByte(sig_check);
+                        bool is_field = false;
+                        if (cc == 0x06)
+                            is_field = true;
+
                         switch(class_tableid)
                         {
                             case (int)TableId.MethodDef:
@@ -723,12 +739,20 @@ namespace metadata
                                     if (GetTypeRefRow(class_row, out ts) == false)
                                         throw new TypeLoadException();
 
-                                    var mdrow = ts.m.GetMethodDefRow(ts.tdrow, name, (int)sig, this);
-                                    ms = new MethodSpec();
-                                    ms.mdrow = mdrow;
-                                    ms.msig = (int)ts.m.GetIntEntry(tid_MethodDef, mdrow, 4);
-                                    ms.m = ts.m;
-                                    ms.type = ts;
+                                    if (is_field)
+                                    {
+                                        ms = ts.m.GetFieldDefRow(name, ts);
+                                        return true;
+                                    }
+                                    else
+                                    {
+                                        ms = new MethodSpec();
+                                        ms.m = ts.m;
+                                        ms.type = ts;
+                                        var mdrow = ts.m.GetMethodDefRow(ts, name, (int)sig, this);
+                                        ms.mdrow = mdrow;
+                                        ms.msig = (int)ts.m.GetIntEntry(tid_MethodDef, mdrow, 4);
+                                    }
                                     return true;
                                 }
                             case (int)TableId.TypeSpec:
@@ -737,28 +761,48 @@ namespace metadata
 
                                     SigReadUSCompressed(ref sig_idx);
 
-                                    var typespec_type = sh_blob.di.ReadByte(sig_idx++);
-
-                                    switch(typespec_type)
+                                    var newts = GetTypeSpec(ref sig_idx, gtparams, gmparams);
+                                    switch(newts.stype)
                                     {
-                                        case 0x15:
-                                            // GENERICINST
-                                            sig_idx--;
-                                            var newts = GetTypeSpec(ref sig_idx, gtparams, gmparams);
-
-                                            var mdrow = newts.m.GetMethodDefRow(newts.tdrow, name);
-                                            var msig = (int)newts.m.GetIntEntry(tid_MethodDef, mdrow, 4);
-
-                                            ms = new metadata.MethodSpec
+                                        case TypeSpec.SpecialType.None:
+                                            if (is_field)
                                             {
-                                                m = newts.m,
-                                                mdrow = mdrow,
-                                                msig = msig,
-                                                type = newts
-                                            };
-                                            return true;
-                                    }
+                                                ms = GetFieldDefRow(name, newts);
+                                                return true;
+                                            }
+                                            else
+                                            {
+                                                var mdrow = newts.m.GetMethodDefRow(newts, name, (int)sig, this);
+                                                var msig = (int)newts.m.GetIntEntry(tid_MethodDef, mdrow, 4);
 
+                                                ms = new metadata.MethodSpec
+                                                {
+                                                    m = newts.m,
+                                                    mdrow = mdrow,
+                                                    msig = msig,
+                                                    type = newts
+                                                };
+                                                return true;
+                                            }
+                                        case TypeSpec.SpecialType.Array:
+                                            if(is_field)
+                                            {
+                                                throw new NotImplementedException();
+                                            }
+                                            else
+                                            {
+                                                ms = new MethodSpec
+                                                {
+                                                    m = newts.m,
+                                                    msig = (int)sig,
+                                                    name_override = name,
+                                                    type = newts
+                                                };
+                                                return true;
+                                            }
+                                        default:
+                                            throw new NotImplementedException();
+                                    }
                                 }
                                 throw new NotImplementedException();
                         }
@@ -766,7 +810,36 @@ namespace metadata
                         throw new NotImplementedException();
                     }
                 case (int)TableId.MethodSpec:
-                    throw new NotImplementedException();
+                    {
+                        // build new gmparams from current ones
+                        var isig_idx = (int)GetIntEntry(tid_MethodSpec,
+                            row, 1);
+                        SigReadUSCompressed(ref isig_idx);
+                        var gi = sh_blob.di.ReadByte(isig_idx++);
+                        if (gi != 0x0a)
+                            throw new Exception("Invalid MethodSpec signature");
+                        var gmcount = SigReadUSCompressed(ref isig_idx);
+
+                        TypeSpec[] new_gmparams = new TypeSpec[gmcount];
+                        for(var gm_idx = 0; gm_idx < gmcount; gm_idx++)
+                        {
+                            var gmts = GetTypeSpec(ref isig_idx, gtparams, gmparams);
+                            new_gmparams[gm_idx] = gmts;
+                        }                        
+
+                        // now get instantiated method
+                        int Method_tid, Method_row;
+                        GetCodedIndexEntry(tid_MethodSpec, row, 0,
+                            MethodDefOrRef, out Method_tid, out Method_row);
+                                         
+                        MethodSpec base_method;
+                        GetMethodDefRow(Method_tid, Method_row,
+                            out base_method, gtparams, new_gmparams);
+                        base_method.gmparams = new_gmparams;
+
+                        ms = base_method;
+                        return true;
+                    }
 
                 case (int)TableId.Field:
                     ms = new MethodSpec
@@ -797,6 +870,7 @@ namespace metadata
                     {
                         m = this,
                         tdrow = row,
+                        gtparams = gtparams
                     };
 
                 case tid_TypeRef:
@@ -971,7 +1045,8 @@ namespace metadata
                     GetCodedIndexEntry(tok, TypeDefOrRef,
                         out tid, out trow);
 
-                    return GetTypeSpec(tid, trow, gtparams, gmparams);
+                    ts = GetTypeSpec(tid, trow, gtparams, gmparams);
+                    break;
 
                 case 0x13:
                     // VAR
@@ -1059,7 +1134,31 @@ namespace metadata
             return last_fdef;
         }
 
-        private int GetMethodDefRow(int tdrow, string name, int sig, MetadataStream sig_m)
+        public int GetMethodDefRow(TypeSpec ts, string name, int sig, MetadataStream sig_m)
+        {
+            var first_mdef = ts.m.GetIntEntry(tid_TypeDef, ts.tdrow, 5);
+            var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
+
+            for (uint mdef_row = first_mdef; mdef_row < last_mdef; mdef_row++)
+            {
+                var meth_name = ts.m.GetStringEntry(tid_MethodDef, (int)mdef_row, 3);
+
+                if (meth_name.Equals(name))
+                {
+                    // compare signatures
+                    var cur_sig = (int)ts.m.GetIntEntry(tid_MethodDef, (int)mdef_row, 4);
+
+                    if (CompareSignature(ts.m, cur_sig, ts.gtparams, null,
+                        sig_m, sig, ts.gtparams, null))
+                        return (int)mdef_row;
+                }
+            }
+
+            throw new NotImplementedException("cannot find " +
+                sig_m.MangleMethod(ts, name, sig));
+        }
+
+        /*private int GetMethodDefRow(int tdrow, string name, int sig, MetadataStream sig_m)
         {
             var first_mdef = GetIntEntry(tid_TypeDef, tdrow, 5);
             var last_mdef = GetLastMethodDef(tdrow);
@@ -1083,7 +1182,7 @@ namespace metadata
                 sig_m.MangleMethod(new TypeSpec { tdrow = tdrow, m = this },
                 name, sig));
 
-        }
+        }*/
         private int GetMethodDefRow(int tdrow, string name)
         {
             throw new NotImplementedException("Deprecated method");
@@ -1364,6 +1463,18 @@ namespace metadata
                 var field = GetIntEntry(tid_FieldRVA, i, 1);
 
                 fieldrvas[field] = rva;
+            }
+        }
+
+        /**<summary>Patch up class layouts</summary> */
+        internal void PatchClassLayouts()
+        {
+            classlayouts = new int[table_rows[tid_TypeDef] + 1];
+
+            for(int i = 1; i <= table_rows[tid_ClassLayout]; i++)
+            {
+                var tdrow = GetIntEntry(tid_ClassLayout, i, 2);
+                classlayouts[tdrow] = i;
             }
         }
 

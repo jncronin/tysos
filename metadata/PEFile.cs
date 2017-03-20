@@ -271,6 +271,7 @@ namespace metadata
             m.PatchMethodDefOwners();
             m.PatchFieldDefOwners();
             m.PatchFieldRVAs();
+            m.PatchClassLayouts();
             m.PatchGTypes();
             m.PatchUpEnclosingTypes();
             if(m.table_rows[MetadataStream.tid_Assembly] == 1 &&
@@ -292,6 +293,7 @@ namespace metadata
             m.SystemRuntimeFieldHandle = m.GetBuiltin("RuntimeFieldHandle");
             m.SystemEnum = m.GetBuiltin("Enum");
             m.SystemValueType = m.GetBuiltin("ValueType");
+            m.SystemArray = m.GetBuiltin("Array");
             
             return m;
         }
