@@ -8,7 +8,7 @@
 %token	LBRACK RBRACK DOT LT GT LSHIFT RSHIFT SEMICOLON LOR LAND OR AND APPEND ASSIGNIF
 %token	IF ELSE INCLUDE RULEFOR INPUTS DEPENDS ALWAYS SHELLCMD TYPROJECT SOURCES MKDIR FUNCTION RETURN EXPORT
 %token	ISDIR ISFILE DEFINED BUILD
-%token	INTEGER STRING VOID ARRAY OBJECT FUNCREF
+%token	INTEGER STRING VOID ARRAY OBJECT FUNCREF ANY NULL
 %token	FOR FOREACH IN WHILE DO
 
 %left	DOT
@@ -193,6 +193,7 @@ expr11		:	strlabelexpr					{ $$ = $1; }
 			|	arrayexpr						{ $$ = new ArrayExpression { val = $1 }; }
 			|	objexpr							{ $$ = new ObjExpression { val = $1 }; }
 			|	funcrefexpr						{ $$ = $1; }
+			|	NULL							{ $$ = new NullExpression(); }
 			;
 
 funcrefexpr	:	FUNCREF LABEL LPAREN typelist RPAREN	{ $$ = new FunctionRefExpression { name = $2, args = $4 }; }
@@ -230,6 +231,7 @@ argtype		:	INTEGER							{ $$ = Expression.EvalResult.ResultType.Int; }
 			|	OBJECT							{ $$ = Expression.EvalResult.ResultType.Object; }
 			|	VOID							{ $$ = Expression.EvalResult.ResultType.Void; }
 			|	FUNCTION						{ $$ = Expression.EvalResult.ResultType.Function; }
+			|	ANY								{ $$ = Expression.EvalResult.ResultType.Any; }
 			;
 
 arg			:	argtype LABEL					{ $$ = new FunctionStatement.FunctionArg { name = $2, argtype = $1 }; }

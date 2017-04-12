@@ -36,6 +36,25 @@ namespace libtysila5
             return Label;
         }
 
+        Dictionary<object, binary_library.ISymbol> st_cache =
+            new Dictionary<object, binary_library.ISymbol>(
+                new GenericEqualityComparerRef<object>());
+
+        public binary_library.ISymbol GetStringTableSymbol(binary_library.IBinaryFile of)
+        {
+            binary_library.ISymbol sym;
+            if(st_cache.TryGetValue(of, out sym))
+            {
+                return sym;
+            }
+            else
+            {
+                sym = of.CreateSymbol();
+                st_cache[of] = sym;
+                return sym;
+            }
+        }
+
         public int GetSignatureAddress(IEnumerable<byte> sig, target.Target t)
         {
             var ptr_size = t.GetCTSize(ir.Opcode.ct_object);
@@ -146,7 +165,7 @@ namespace libtysila5
             var rd = of.GetRDataSection();
             rd.Align(t.GetCTSize(ir.Opcode.ct_object));
 
-            var stab_lab = of.CreateSymbol();
+            var stab_lab = GetStringTableSymbol(of);
             stab_lab.DefinedIn = rd;
             stab_lab.Name = Label;
             stab_lab.ObjectType = binary_library.SymbolObjectType.Object;

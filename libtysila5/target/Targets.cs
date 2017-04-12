@@ -70,6 +70,7 @@ namespace libtysila5.target
         protected internal abstract MCInst[] SetupStack(int lv_size);
         protected internal abstract MCInst[] CreateMove(Reg src, Reg dest);
         protected internal abstract binary_library.IRelocationType GetDataToDataReloc();
+        protected internal abstract binary_library.IRelocationType GetDataToCodeReloc();
 
         protected internal virtual bool HasSideEffects(MCInst i)
         { return IsCall(i); }
@@ -100,7 +101,7 @@ namespace libtysila5.target
 
         public string name;
         public int ptype;
-        public HashTable instrs;
+        public Trie<InstructionHandler> instrs = new Trie<InstructionHandler>();
         public Reg[] regs;
 
         /** <summary>Return a hardware register that can be used for
@@ -115,6 +116,19 @@ namespace libtysila5.target
             init_rtmap();
         }
 
+        public int RationaliseCT(int ct)
+        {
+            switch(ct)
+            {
+                case Opcode.ct_intptr:
+                case Opcode.ct_object:
+                case Opcode.ct_ref:
+                    return ptype;
+                default:
+                    return ct;
+            }
+        }
+
         public class DoubleReg : Reg, IEquatable<Reg>
         {
             public Reg a, b;
@@ -124,6 +138,7 @@ namespace libtysila5.target
                 type = rt_multi;
                 a = _a;
                 b = _b;
+                size = a.size + b.size;
 
                 mask = a.mask | b.mask;
             }
@@ -272,7 +287,7 @@ namespace libtysila5.target
                     {
                         var simple = ts.m.simple_type_idx[ts.tdrow];
                         if (simple != -1)
-                            return GetCTSize(ir.Opcode.GetCTFromType(simple));
+                            return GetSTypeSize(simple);
                     }
                     if (ts.IsValueType)
                     {
@@ -282,6 +297,42 @@ namespace libtysila5.target
 
                 default:
                     return GetCTSize(Opcode.ct_object);
+            }
+        }
+
+        private int GetSTypeSize(int stype)
+        {
+            switch(stype)
+            {
+                case 0x02:
+                    return 1;
+                case 0x03:
+                    return 2;
+                case 0x04:
+                case 0x05:
+                    return 1;
+                case 0x06:
+                case 0x07:
+                    return 2;
+                case 0x08:
+                case 0x09:
+                    return 4;
+                case 0x0a:
+                case 0x0b:
+                    return 8;
+                case 0x0c:
+                    return 4;
+                case 0x0d:
+                    return 8;
+                case 0x0e:
+                case 0x16:
+                case 0x1c:
+                case 0x18:
+                case 0x19:
+                case 0x1b:
+                    return GetPointerSize();
+                default:
+                    throw new NotSupportedException();
             }
         }
 
@@ -425,6 +476,28 @@ namespace libtysila5.target
             }
 
             return ret;
+        }
+
+        public virtual bool IsLSB { get { return true; } }
+
+        public virtual byte[] IntPtrArray(byte[] v)
+        {
+            var ptr_size = GetPointerSize();
+            var isize = v.Length;
+            var r = new byte[ptr_size];
+            for(int i = 0; i < ptr_size; i++)
+            {
+                if (IsLSB)
+                {
+                    if (i < isize)
+                        r[i] = v[i];
+                    else
+                        r[i] = 0;
+                }
+                else
+                    throw new NotImplementedException();
+            }
+            return r;
         }
     }
 }

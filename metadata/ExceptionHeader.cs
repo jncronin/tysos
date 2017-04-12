@@ -29,10 +29,10 @@ namespace metadata
     {
         public enum ExceptionHeaderType
         {
-            Catch,
-            Filter,
-            Finally,
-            Fault
+            Catch = 0,
+            Filter = 1,
+            Finally = 2,
+            Fault = 4
         };
 
         public ExceptionHeaderType EType;

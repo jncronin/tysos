@@ -60,6 +60,7 @@ namespace libtysila5.cil
 
             public long imm_l;
             public ulong imm_ul;
+            public byte[] imm_val;
             public string imm_lab;
             public metadata.MethodSpec imm_ms;
             public metadata.TypeSpec imm_ts;
@@ -103,7 +104,7 @@ namespace libtysila5.cil
         public util.Stack<ir.StackItem> stack_after;
 
         public List<metadata.ExceptionHeader> try_starts = new List<metadata.ExceptionHeader>();
-        public List<metadata.ExceptionHeader> catch_starts = new List<metadata.ExceptionHeader>();
+        public List<metadata.ExceptionHeader> handler_starts = new List<metadata.ExceptionHeader>();
 
         public Opcode opcode;
         public int inline_int;

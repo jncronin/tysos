@@ -65,14 +65,6 @@ namespace libtysila5
                 }
             }
 
-            if (debug_passes != null)
-            {
-                debug_passes.Append("Assembling method ");
-                debug_passes.Append(mangled_name);
-                debug_passes.Append(Environment.NewLine);
-                debug_passes.Append(Environment.NewLine);
-            }
-
             // Get signature if not specified
             if (csite == 0)
             {
@@ -186,6 +178,54 @@ namespace libtysila5
 
             foreach (var sym in meth_syms)
                 sym.Size = ts.Data.Count - (int)sym.Offset;
+
+            foreach(var extra_sym in cil.extra_labels)
+            {
+                var esym = bf.CreateSymbol();
+                esym.DefinedIn = ts;
+                esym.Name = extra_sym.Name;
+                esym.ObjectType = binary_library.SymbolObjectType.Function;
+                esym.Offset = (ulong)extra_sym.Offset;
+                esym.Type = binary_library.SymbolType.Global;
+                ts.AddSymbol(esym);
+            }
+
+            /* Dump debug */
+            if(debug_passes != null)
+            {
+                libtysila5.cil.CilNode cur_cil_node = null;
+                libtysila5.cil.CilNode.IRNode cur_ir_node = null;
+
+                foreach (var sym in meth_syms)
+                    debug_passes.AppendLine(sym.Name + ":");
+
+                foreach(var mc in cil.mc)
+                {
+                    if(mc.parent != cur_ir_node)
+                    {
+                        cur_ir_node = mc.parent;
+
+                        if(cur_ir_node.parent != cur_cil_node)
+                        {
+                            cur_cil_node = cur_ir_node.parent;
+
+                            debug_passes.Append("  IL");
+                            debug_passes.Append(cur_cil_node.il_offset.ToString("X4"));
+                            debug_passes.Append(": ");
+                            debug_passes.AppendLine(cur_cil_node.ToString());
+                        }
+
+                        debug_passes.Append("    ");
+                        debug_passes.AppendLine(cur_ir_node.ToString());
+                    }
+                    debug_passes.Append("      ");
+                    debug_passes.Append(mc.offset.ToString("X8"));
+                    debug_passes.Append(": ");
+                    debug_passes.AppendLine(mc.ToString());
+                }
+                debug_passes.AppendLine();
+                debug_passes.AppendLine();
+            }
 
             return true;
         }

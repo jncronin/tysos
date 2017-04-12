@@ -25,14 +25,122 @@ using System.Text;
 using metadata;
 using libtysila5.target;
 
+/* Exception headers are pushed by entry to protected blocks
+ * They are composed of:
+ *  intptr EType
+ *  intptr Handler (native code offset)
+ *  intptr Catch Object (if applicable)
+ */
+
 namespace libtysila5.layout
 {
     public partial class Layout
     {
         public static int GetEhdrSize(Target t)
         {
-            // TODO
-            return 0;
+            return 3 * t.GetPointerSize();
+        }
+
+        public static void OutputEHdr(MethodSpecWithEhdr ms,
+            Target t, binary_library.IBinaryFile of)
+        {
+            var os = of.GetRDataSection();
+            os.Align(t.GetPointerSize());
+            var d = os.Data;
+
+            /* Symbol */
+            var sym = of.CreateSymbol();
+            sym.DefinedIn = os;
+            sym.Name = ms.ms.MangleMethod() + "EH";
+            sym.ObjectType = binary_library.SymbolObjectType.Object;
+            sym.Offset = (ulong)d.Count;
+            sym.Type = binary_library.SymbolType.Global;
+            os.AddSymbol(sym);
+
+            foreach(var ehdr in ms.c.ehdrs)
+            {
+                var v = t.IntPtrArray(BitConverter.GetBytes((int)ehdr.EType));
+                foreach (var b in v)
+                    d.Add(b);
+
+                /* Handler */
+                var hand_sym = of.CreateSymbol();
+                hand_sym.Name = ms.ms.MangleMethod() + "EH" + ehdr.EhdrIdx.ToString();
+                hand_sym.DefinedIn = null;
+
+                var hand_reloc = of.CreateRelocation();
+                hand_reloc.Addend = 0;
+                hand_reloc.DefinedIn = os;
+                hand_reloc.Offset = (ulong)d.Count;
+                hand_reloc.References = hand_sym;
+                hand_reloc.Type = t.GetDataToCodeReloc();
+                of.AddRelocation(hand_reloc);
+
+                for (int i = 0; i < t.GetPointerSize(); i++)
+                    d.Add(0);
+
+                /* Catch object */
+                if (ehdr.ClassToken != null)
+                {
+                    var catch_sym = of.CreateSymbol();
+                    catch_sym.Name = ehdr.ClassToken.MangleType();
+                    catch_sym.DefinedIn = null;
+
+                    var catch_reloc = of.CreateRelocation();
+                    catch_reloc.Addend = 0;
+                    catch_reloc.DefinedIn = os;
+                    catch_reloc.Offset = (ulong)d.Count;
+                    catch_reloc.References = catch_sym;
+                    catch_reloc.Type = t.GetDataToDataReloc();
+                    of.AddRelocation(catch_reloc);
+
+                    t.r.VTableRequestor.Request(ehdr.ClassToken);
+                }
+                for (int i = 0; i < t.GetPointerSize(); i++)
+                    d.Add(0);
+            }
+
+            sym.Size = (long)((ulong)d.Count - sym.Offset);
+        }
+
+        public class MethodSpecWithEhdr : Spec, IEquatable<MethodSpecWithEhdr>
+        {
+            public MethodSpec ms;
+            public Code c;
+
+            public override MetadataStream Metadata
+            {
+                get
+                {
+                    return ms.Metadata;
+                }
+            }
+
+            public bool Equals(MethodSpecWithEhdr other)
+            {
+                if (other == null)
+                    return false;
+                return ms.Equals(other.ms);
+            }
+
+            public override int GetHashCode()
+            {
+                return ms.GetHashCode();
+            }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as MethodSpecWithEhdr);
+            }
+
+            public static implicit operator MethodSpecWithEhdr(Code c)
+            {
+                return new MethodSpecWithEhdr
+                {
+                    c = c,
+                    ms = c.ms
+                };
+            }
         }
     }
 }

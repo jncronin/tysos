@@ -174,5 +174,10 @@ namespace libtysila5.target.x86
         {
             return new binary_library.elf.ElfFile.Rel_386_32();
         }
+
+        protected internal override IRelocationType GetDataToCodeReloc()
+        {
+            return new binary_library.elf.ElfFile.Rel_386_32();
+        }
     }
 }

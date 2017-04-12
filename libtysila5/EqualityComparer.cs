@@ -44,4 +44,20 @@ namespace libtysila5
             return x.Equals(y);
         }
     }
+
+    public class GenericEqualityComparerRef<T> : EqualityComparer<T> where T : class
+    {
+        public override int GetHashCode(T obj)
+        {
+            return obj.GetHashCode();
+        }
+
+        public override bool Equals(T x, T y)
+        {
+            if (x == null)
+                return y == null;
+
+            return x.Equals(y);
+        }
+    }
 }

@@ -92,7 +92,7 @@ namespace TableMap
             if (tok_name is LabelExpression)
             {
                 var tn = ((LabelExpression)tok_name).val;
-                s.SetDefine(tn, e);
+                s.SetLocalDefine(tn, e);
                 if (export)
                     ExportDef(tn, s);
             }
@@ -136,9 +136,91 @@ namespace TableMap
                 string member_name = ((LabelExpression)cur_member_lval).val;
                 o.objval[member_name] = e;
             }
+            else if (tok_name is LabelIndexedExpression)
+            {
+                var chain = get_chain(tok_name);
+
+                // left-most member must be a define
+                var lme = chain[0];
+                if (!(lme is LabelExpression))
+                    throw new Exception("unable to assign to " + tok_name.ToString());
+
+                var o = s.GetDefine(((LabelExpression)lme).val);
+
+                // Now iterate through the various members, looking for
+                //  what to set
+                o = follow_chain(o, chain, 1, chain.Count - 1, s);
+
+                if (o.Type != Expression.EvalResult.ResultType.Array)
+                    throw new Exception("unable to assign to " + tok_name.ToString());
+
+                var idx = ((LabelIndexedExpression)tok_name).index.Evaluate(s).AsInt;
+
+                // increase the array size as appropriate
+                if(idx >= o.arrval.Count)
+                {
+                    o.arrval.Capacity = idx * 3 / 2;
+                    while (idx >= o.arrval.Count)
+                        o.arrval.Add(new Expression.EvalResult { Type = Expression.EvalResult.ResultType.Null });
+                }
+                o.arrval[idx] = e;
+            }
             else
                 throw new NotImplementedException();
             return new Expression.EvalResult(0);
+        }
+
+        private Expression.EvalResult follow_chain(Expression.EvalResult o,
+            List<Expression> chain, int cur_idx, int max_idx,
+            MakeState s)
+        {
+            var next_member = chain[cur_idx];
+            Expression.EvalResult next_result = null;
+
+            if (next_member is LabelIndexedExpression)
+            {
+                var lie = next_member as LabelIndexedExpression;
+                if (o.Type != Expression.EvalResult.ResultType.Array)
+                    throw new Exception();
+                next_result = o.arrval[lie.index.Evaluate(s).AsInt];
+            }
+            else if (next_member is LabelMemberExpression)
+            {
+                var lme = next_member as LabelMemberExpression;
+                if (o.Type != Expression.EvalResult.ResultType.Object)
+                    throw new Exception();
+                next_result = o.objval[((LabelExpression)lme.member).val];
+            }
+            else
+                throw new NotImplementedException();
+
+            cur_idx++;
+            if (cur_idx == max_idx)
+                return next_result;
+
+            return follow_chain(next_result, chain, cur_idx, max_idx, s);
+        }
+
+        private List<Expression> get_chain(Expression tok_name)
+        {
+            List<Expression> ret = new List<Expression>();
+            Expression cur_expr = tok_name;
+
+            while(true)
+            {
+                ret.Insert(0, cur_expr);
+                if (cur_expr is LabelIndexedExpression)
+                {
+                    cur_expr = ((LabelIndexedExpression)cur_expr).label;
+                }
+                else if (cur_expr is LabelMemberExpression)
+                {
+                    cur_expr = ((LabelMemberExpression)cur_expr).label;
+                }
+                else
+                    break;
+            }
+            return ret;
         }
     }
 
@@ -238,8 +320,9 @@ namespace TableMap
 
             foreach (Expression.EvalResult i in e.arrval)
             {
-                MakeState cur_s = s.Clone();
-                cur_s.SetDefine(val, i);
+                //MakeState cur_s = s.Clone();
+                var cur_s = s;
+                cur_s.SetLocalDefine(val, i);
                 Expression.EvalResult ret = code.Execute(cur_s);
                 if (ret.AsInt != 0)
                     return ret;
@@ -288,6 +371,7 @@ namespace TableMap
         public virtual Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
         {
             MakeState new_s = s.Clone();
+            new_s.ClearLocalDefines();
 
             for (int i = 0; i < args.Count; i++)
             {
@@ -302,7 +386,7 @@ namespace TableMap
                     new_s.funcs[fs.Mangle()] = fs;
                 }
                 else
-                    new_s.SetDefine(args[i].name, passed_args[i]);
+                    new_s.SetLocalDefine(args[i].name, passed_args[i]);
             }
 
             code.Execute(new_s);
@@ -345,6 +429,9 @@ namespace TableMap
                     case Expression.EvalResult.ResultType.Function:
                         sb.Append("f");
                         break;
+                    case Expression.EvalResult.ResultType.Any:
+                        sb.Append("x");
+                        break;
                 }
             }
             return sb.ToString();
@@ -363,6 +450,7 @@ namespace TableMap
             }
 
             Expression.EvalResult e = s.GetDefine(v);
+            s.SetDefine(v, e);
             MakeState cur_s = s.parent;
             while (cur_s != null)
             {

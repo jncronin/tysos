@@ -11,7 +11,7 @@ kernel.exe: kernel.cs Makefile
 	$(TYBUILD) /unsafe /r:libsupcs kernel.cs
 
 kernel.o: kernel.exe $(TYSILA)
-	$(TYSILA) -t x86 -e kmain -L../../mono/corlib -fno-rtti -o kernel.o kernel.exe
+	$(TYSILA) -t x86 -e kmain -L../../mono/corlib -L../../libsupcs/bin/Release -fno-rtti -o kernel.o kernel.exe
 
 loader.o: loader.asm
 	$(YASM) -felf -o loader.o loader.asm

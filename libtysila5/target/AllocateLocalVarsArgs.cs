@@ -27,7 +27,9 @@ namespace libtysila5.target
                 int t_size = GetSize(type);
                 lv_locs[i] = cur_loc;
 
+                t_size = util.util.align(t_size, GetPointerSize());
                 c.lv_sizes[i] = t_size;
+
                 c.lv_types[i] = type;
                 c.lv_locs[i] = GetLVLocation(cur_loc, t_size, c);
 
@@ -91,7 +93,7 @@ namespace libtysila5.target
 
                 if (mreg.type == rt_stack)
                 {
-                    la_phys_locs[i] = GetLALocation(mreg.stack_loc, c.la_sizes[i], c);
+                    la_phys_locs[i] = GetLALocation(mreg.stack_loc, util.util.align(c.la_sizes[i], GetPointerSize()), c);
                     c.la_locs[i] = la_phys_locs[i];
                     c.la_needs_assign[i] = false;
                 }

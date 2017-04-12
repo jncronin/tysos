@@ -71,6 +71,13 @@ namespace libtysila5.target.x86
                     case Generic.g_mclabel:
                         il_starts[(int)I.p[1].v] = mc_offset;
                         break;
+                    case Generic.g_label:
+                        c.extra_labels.Add(new Code.Label
+                        {
+                            Offset = mc_offset + code_start,
+                            Name = I.p[1].str
+                        });
+                        break;
 
                     case x86_push_rm32:
                         Code.Add(0xff);
@@ -158,80 +165,96 @@ namespace libtysila5.target.x86
                     case x86_add_rm32_imm32:
                         Code.Add(0x81);
                         Code.AddRange(ModRMSIB(0, I.p[1].mreg));
-                        AddImm32(Code, I.p[3].v);
+                        AddImm32(Code, I.p[2].v);
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_add_rm32_imm8:
                         Code.Add(0x83);
                         Code.AddRange(ModRMSIB(0, I.p[1].mreg));
-                        AddImm8(Code, I.p[3].v);
+                        AddImm8(Code, I.p[2].v);
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_adc_r32_rm32:
                         Code.Add(0x13);
-                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_sub_rm32_imm32:
                         Code.Add(0x81);
                         Code.AddRange(ModRMSIB(5, I.p[1].mreg));
-                        AddImm32(Code, I.p[3].v);
+                        AddImm32(Code, I.p[2].v);
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_sub_rm32_imm8:
                         Code.Add(0x83);
                         Code.AddRange(ModRMSIB(5, I.p[1].mreg));
-                        AddImm8(Code, I.p[3].v);
+                        AddImm8(Code, I.p[2].v);
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_sub_r32_rm32:
                         Code.Add(0x2b);
-                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_and_r32_rm32:
                         Code.Add(0x23);
-                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_and_rm32_r32:
                         Code.Add(0x21);
-                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_or_r32_rm32:
                         Code.Add(0x0b);
-                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_or_rm32_r32:
                         Code.Add(0x09);
-                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_xor_r32_rm32:
                         Code.Add(0x33);
-                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_xor_rm32_r32:
                         Code.Add(0x31);
-                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_sbb_r32_rm32:
                         Code.Add(0x1b);
-                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[3].mreg));
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_add_r32_rm32:
-                        {
-                            var dreg = I.p[1].mreg;
-                            var sreg = I.p[2].mreg;
-                            if (dreg.Equals(sreg))
-                                sreg = I.p[3].mreg;
-
-                            Code.Add(0x03);
-                            Code.AddRange(ModRMSIB(dreg, sreg));
-                        }
+                        Code.Add(0x03);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_add_rm32_r32:
-                        {
-                            var dreg = I.p[1].mreg;
-                            var sreg = I.p[2].mreg;
-                            if (dreg.Equals(sreg))
-                                sreg = I.p[3].mreg;
-
-                            Code.Add(0x01);
-                            Code.AddRange(ModRMSIB(sreg, dreg));
-                        }
+                        Code.Add(0x01);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
                     case x86_call_rel32:
                         {
@@ -341,6 +364,27 @@ namespace libtysila5.target.x86
                         Code.Add(0xb7);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
+                    case x86_movsxbd_r32_rm8disp:
+                        Code.Add(0x0f);
+                        Code.Add(0xbe);
+                        Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
+                        break;
+                    case x86_movsxwd_r32_rm16disp:
+                        Code.Add(0x0f);
+                        Code.Add(0xbf);
+                        Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
+                        break;
+                    case x86_movzxbd_r32_rm8disp:
+                        Code.Add(0x0f);
+                        Code.Add(0xb6);
+                        Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
+                        break;
+                    case x86_movzxwd_r32_rm16disp:
+                        Code.Add(0x0f);
+                        Code.Add(0xb7);
+                        Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
+                        break;
+
                     case x86_jcc_rel32:
                         if (I.p[1].v != ir.Opcode.cc_never)
                         {
@@ -449,6 +493,11 @@ namespace libtysila5.target.x86
                         }
                         break;
 
+                    case x86_idiv_rm32:
+                        Code.Add(0xf7);
+                        Code.AddRange(ModRMSIB(7, I.p[1].mreg));
+                        break;
+
                     case x86_imul_r32_rm32_imm32:
                         Code.Add(0x69);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
@@ -518,16 +567,38 @@ namespace libtysila5.target.x86
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
                         break;
 
-                    case x86_movzxb_r32_rm32sibscaledisp:
+                    case x86_movzxbd_r32_rm8sibscaledisp:
                         Code.Add(0x0f);
                         Code.Add(0xb6);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
                         break;
 
-                    case x86_movzxw_r32_rm32sibscaledisp:
+                    case x86_movzxwd_r32_rm16sibscaledisp:
                         Code.Add(0x0f);
                         Code.Add(0xb7);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
+                        break;
+
+                    case x86_movsxbd_r32_rm8sibscaledisp:
+                        Code.Add(0x0f);
+                        Code.Add(0xbe);
+                        Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
+                        break;
+
+                    case x86_movsxwd_r32_rm16sibscaledisp:
+                        Code.Add(0x0f);
+                        Code.Add(0xbf);
+                        Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
+                        break;
+
+                    case x86_neg_rm32:
+                        Code.Add(0xf7);
+                        Code.AddRange(ModRMSIB(3, I.p[1].mreg));
+                        break;
+
+                    case x86_not_rm32:
+                        Code.Add(0xf7);
+                        Code.AddRange(ModRMSIB(2, I.p[1].mreg));
                         break;
 
                     case x86_lea_r32:
@@ -544,7 +615,17 @@ namespace libtysila5.target.x86
                     case x86_and_rm32_imm8:
                         Code.Add(0x83);
                         Code.AddRange(ModRMSIB(4, I.p[1].mreg));
-                        AddImm8(Code, I.p[3].v);
+                        AddImm8(Code, I.p[2].v);
+                        if (I.p.Length == 4)
+                            throw new Exception();
+                        break;
+
+                    case x86_and_rm32_imm32:
+                        Code.Add(0x81);
+                        Code.AddRange(ModRMSIB(4, I.p[1].mreg));
+                        AddImm8(Code, I.p[2].v);
+                        if (I.p.Length == 4)
+                            throw new Exception();
                         break;
 
                     case x86_sal_rm32_cl:
@@ -585,6 +666,20 @@ namespace libtysila5.target.x86
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
 
+                    case x86_movss_xmmm32_xmm:
+                        Code.Add(0xf3);
+                        Code.Add(0x0f);
+                        Code.Add(0x11);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                        break;
+
+                    case x86_movss_xmm_xmmm32:
+                        Code.Add(0xf3);
+                        Code.Add(0x0f);
+                        Code.Add(0x10);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
                     case x86_cvtsd2si_r32_xmmm64:
                         Code.Add(0xf2);
                         Code.Add(0x0f);
@@ -599,10 +694,45 @@ namespace libtysila5.target.x86
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
 
+                    case x86_cvtsd2ss_xmm_xmmm64:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0x5a);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
+                    case x86_cvtss2sd_xmm_xmmm32:
+                        Code.Add(0xf3);
+                        Code.Add(0x0f);
+                        Code.Add(0x5a);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
+                    case x86_addsd_xmm_xmmm64:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0x58);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
+                    case x86_subsd_xmm_xmmm64:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0x5c);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
                     case x86_mulsd_xmm_xmmm64:
                         Code.Add(0xf2);
                         Code.Add(0x0f);
                         Code.Add(0x59);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
+                    case x86_divsd_xmm_xmmm64:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0x5e);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
 

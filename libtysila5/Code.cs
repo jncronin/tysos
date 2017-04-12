@@ -71,5 +71,13 @@ namespace libtysila5
                 return _special;
             }
         }
+
+        public List<Label> extra_labels = new List<Label>();
+
+        public class Label
+        {
+            public int Offset;
+            public string Name;
+        }
     }
 }

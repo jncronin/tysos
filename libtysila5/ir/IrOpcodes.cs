@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\ir\IrOpcodes.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 15:19:51 on 20 March 2017
+ * It was generated at 16:33:07 on 12 April 2017
  * from D:\tysos\branches\tysila3\libtysila5\ir\IrOpcodes.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -91,27 +91,27 @@ namespace libtysila5.ir
 		public const int oc_ldlabaddr = 47;
 		public const int oc_stlabcontents = 48;
 		public const int oc_ldloca = 49;
-		public const int oc_ldsta = 50;
-		public const int oc_zeromem = 51;
-		public const int oc_swap = 52;
-		public const int oc_pop = 53;
-		public const int oc_phi = 54;
-		public const int oc_castclass = 55;
-		public const int oc_isinst = 56;
-		public const int oc_endfinally = 57;
-		public const int oc_ldc = 58;
-		public const int oc_ldloc = 59;
-		public const int oc_stloc = 60;
-		public const int oc_rem = 61;
-		public const int oc_ldarg = 62;
-		public const int oc_starg = 63;
-		public const int oc_ldarga = 64;
-		public const int oc_stackcopy = 65;
-		public const int oc_localloc = 66;
-		public const int oc_shr = 67;
-		public const int oc_shl = 68;
-		public const int oc_shr_un = 69;
-		public const int oc_switch = 70;
+		public const int oc_zeromem = 50;
+		public const int oc_swap = 51;
+		public const int oc_pop = 52;
+		public const int oc_phi = 53;
+		public const int oc_castclass = 54;
+		public const int oc_isinst = 55;
+		public const int oc_endfinally = 56;
+		public const int oc_ldc = 57;
+		public const int oc_ldloc = 58;
+		public const int oc_stloc = 59;
+		public const int oc_rem = 60;
+		public const int oc_ldarg = 61;
+		public const int oc_starg = 62;
+		public const int oc_ldarga = 63;
+		public const int oc_stackcopy = 64;
+		public const int oc_localloc = 65;
+		public const int oc_shr = 66;
+		public const int oc_shl = 67;
+		public const int oc_shr_un = 68;
+		public const int oc_switch = 69;
+		public const int oc_ldobja = 70;
 		
 		internal static void init_oc()
 		{
@@ -146,27 +146,27 @@ namespace libtysila5.ir
 			oc_names[47] = "ldlabaddr";
 			oc_names[48] = "stlabcontents";
 			oc_names[49] = "ldloca";
-			oc_names[50] = "ldsta";
-			oc_names[51] = "zeromem";
-			oc_names[52] = "swap";
-			oc_names[53] = "pop";
-			oc_names[54] = "phi";
-			oc_names[55] = "castclass";
-			oc_names[56] = "isinst";
-			oc_names[57] = "endfinally";
-			oc_names[58] = "ldc";
-			oc_names[59] = "ldloc";
-			oc_names[60] = "stloc";
-			oc_names[61] = "rem";
-			oc_names[62] = "ldarg";
-			oc_names[63] = "starg";
-			oc_names[64] = "ldarga";
-			oc_names[65] = "stackcopy";
-			oc_names[66] = "localloc";
-			oc_names[67] = "shr";
-			oc_names[68] = "shl";
-			oc_names[69] = "shr_un";
-			oc_names[70] = "switch";
+			oc_names[50] = "zeromem";
+			oc_names[51] = "swap";
+			oc_names[52] = "pop";
+			oc_names[53] = "phi";
+			oc_names[54] = "castclass";
+			oc_names[55] = "isinst";
+			oc_names[56] = "endfinally";
+			oc_names[57] = "ldc";
+			oc_names[58] = "ldloc";
+			oc_names[59] = "stloc";
+			oc_names[60] = "rem";
+			oc_names[61] = "ldarg";
+			oc_names[62] = "starg";
+			oc_names[63] = "ldarga";
+			oc_names[64] = "stackcopy";
+			oc_names[65] = "localloc";
+			oc_names[66] = "shr";
+			oc_names[67] = "shl";
+			oc_names[68] = "shr_un";
+			oc_names[69] = "switch";
+			oc_names[70] = "ldobja";
 		}
 	}
 }

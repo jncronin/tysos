@@ -69,6 +69,9 @@ array			return (int)Tokens.ARRAY;
 object			return (int)Tokens.OBJECT;
 void			return (int)Tokens.VOID;
 funcref			return (int)Tokens.FUNCREF;
+any				return (int)Tokens.ANY;
+
+null			return (int)Tokens.NULL;
 
 "/*"            BEGIN(comment); ++comment_nesting;
 "//".*          /* // comments to end of line */

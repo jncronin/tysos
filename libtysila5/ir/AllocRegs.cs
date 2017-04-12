@@ -52,7 +52,7 @@ namespace libtysila5.ir
             else
             {
                 cur_stack -= rsize;
-                return new target.Target.ContentsReg { basereg = x.r_ebp, disp = cur_stack, size = 4 };
+                return new target.Target.ContentsReg { basereg = target.x86.x86_Assembler.r_ebp, disp = cur_stack, size = 4 };
             }
         }
 
@@ -64,12 +64,20 @@ namespace libtysila5.ir
 
             target.Target.Reg[] r32 = new target.Target.Reg[]
             {
-                x.r_esi, x.r_edi, x.r_ecx, x.r_ebx
+                target.x86.x86_Assembler.r_esi,
+                target.x86.x86_Assembler.r_edi,
+                target.x86.x86_Assembler.r_ecx,
+                target.x86.x86_Assembler.r_ebx
             };
             target.Target.Reg[] rf = new target.Target.Reg[]
             {
-                x.r_xmm0, x.r_xmm1, x.r_xmm2, x.r_xmm3,
-                x.r_xmm4, x.r_xmm5, x.r_xmm6
+                target.x86.x86_Assembler.r_xmm0,
+                target.x86.x86_Assembler.r_xmm1,
+                target.x86.x86_Assembler.r_xmm2,
+                target.x86.x86_Assembler.r_xmm3,
+                target.x86.x86_Assembler.r_xmm4,
+                target.x86.x86_Assembler.r_xmm5,
+                target.x86.x86_Assembler.r_xmm6
             };
             int cur_reg = 0;
             int cur_rf = 0;
@@ -96,9 +104,9 @@ namespace libtysila5.ir
                     case Opcode.ct_vt:
                         {
                             var vt_size = c.t.GetSize(si.ts);
-                            if (vt_size <= 4)
+                            if (vt_size <= 4 && si.has_address_taken == false)
                                 si.reg = alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack);
-                            else if (vt_size <= 8)
+                            else if (vt_size <= 8 && si.has_address_taken == false)
                                 si.reg = new target.Target.DoubleReg(
                                     alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack),
                                     alloc_x86_reg(c, r32, ref cur_reg, ref cur_stack));
@@ -106,7 +114,7 @@ namespace libtysila5.ir
                             {
                                 vt_size = util.util.align(vt_size, 4);
                                 cur_stack -= vt_size;
-                                si.reg = new target.Target.ContentsReg { basereg = x.r_ebp, disp = cur_stack, size = vt_size };
+                                si.reg = new target.Target.ContentsReg { basereg = target.x86.x86_Assembler.r_ebp, disp = cur_stack, size = vt_size };
                             }
                             break;
                         }

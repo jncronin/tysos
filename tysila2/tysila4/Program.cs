@@ -179,12 +179,36 @@ namespace tysila4
                 }
             }
 
-            while (!t.r.MethodRequestor.Empty)
+            while (!t.r.Empty)
             {
-                var ms = t.r.MethodRequestor.GetNext();
-                libtysila5.libtysila.AssembleMethod(ms,
-                    bf, t, debug);
-                Console.WriteLine(ms.m.MangleMethod(ms));
+                if (!t.r.MethodRequestor.Empty)
+                {
+                    var ms = t.r.MethodRequestor.GetNext();
+                    libtysila5.libtysila.AssembleMethod(ms,
+                        bf, t, debug);
+                    Console.WriteLine(ms.m.MangleMethod(ms));
+                }
+                else if(!t.r.StaticFieldRequestor.Empty)
+                {
+                    var sf = t.r.StaticFieldRequestor.GetNext();
+                    libtysila5.layout.Layout.OutputStaticFields(sf,
+                        t, bf);
+                    Console.WriteLine(sf.MangleType() + "S");
+                }
+                else if(!t.r.EHRequestor.Empty)
+                {
+                    var eh = t.r.EHRequestor.GetNext();
+                    libtysila5.layout.Layout.OutputEHdr(eh,
+                        t, bf);
+                    Console.WriteLine(eh.ms.MangleMethod() + "EH");
+                }
+                else if(!t.r.VTableRequestor.Empty)
+                {
+                    var vt = t.r.VTableRequestor.GetNext();
+                    libtysila5.layout.Layout.OutputVTable(vt,
+                        t, bf);
+                    Console.WriteLine(vt.MangleType());
+                }
             }
 
             if (debug_file != null)
@@ -194,14 +218,6 @@ namespace tysila4
                 StreamWriter sw = new StreamWriter(debug_file);
                 sw.Write(d);
                 sw.Close();
-            }
-
-            /* and all static fields */
-            while (!t.r.StaticFieldRequestor.Empty)
-            {
-                var sf = t.r.StaticFieldRequestor.GetNext();
-                libtysila5.layout.Layout.OutputStaticFields(sf,
-                    t, bf);
             }
 
             /* String table */

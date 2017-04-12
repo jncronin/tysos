@@ -65,10 +65,9 @@ namespace libtysila5.cil
                         {
                             n.try_starts.Add(ehdr);
                         }
-                        if (ehdr.HandlerILOffset == offset &&
-                            ehdr.EType == metadata.ExceptionHeader.ExceptionHeaderType.Catch)
+                        if (ehdr.HandlerILOffset == offset)
                         {
-                            n.catch_starts.Add(ehdr);
+                            n.handler_starts.Add(ehdr);
                         }
                     }
                 }
@@ -159,7 +158,7 @@ namespace libtysila5.cil
                         n.inline_long = n.inline_int;
                         n.inline_val = new byte[4];
                         for (int i = 0; i < 4; i++)
-                            n.inline_val[i] = di.ReadByte(offset + boffset);
+                            n.inline_val[i] = di.ReadByte(offset + boffset + i);
                         offset += 4;
 
                         if (n.opcode.inline == Opcode.InlineVar.ShortInlineR)
@@ -184,7 +183,7 @@ namespace libtysila5.cil
                         n.inline_long = di.ReadLong(offset + boffset);
                         n.inline_val = new byte[8];
                         for (int i = 0; i < 8; i++)
-                            n.inline_val[i] = di.ReadByte(offset + boffset);
+                            n.inline_val[i] = di.ReadByte(offset + boffset + i);
                         offset += 8;
 
                         if (n.opcode.inline == Opcode.InlineVar.InlineR)

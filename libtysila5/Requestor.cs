@@ -33,24 +33,37 @@ namespace libtysila5
     {
         public abstract IndividualRequestor<TypeSpec> VTableRequestor { get; }
         public abstract IndividualRequestor<MethodSpec> MethodRequestor { get; }
-        public abstract IndividualRequestor<MethodSpec> MethodSpecRequestor { get; }
-        public abstract IndividualRequestor<MethodSpec> FieldSpecRequestor { get; }
+        public abstract IndividualRequestor<layout.Layout.MethodSpecWithEhdr> EHRequestor { get; }
         public abstract IndividualRequestor<TypeSpec> StaticFieldRequestor { get; }
+
+        public virtual bool Empty
+        {
+            get
+            {
+                if (!VTableRequestor.Empty)
+                    return false;
+                if (!MethodRequestor.Empty)
+                    return false;
+                if (!EHRequestor.Empty)
+                    return false;
+                if (!StaticFieldRequestor.Empty)
+                    return false;
+                return true;
+            }
+        }
     }
 
     public class CachingRequestor : Requestor
     {
         CachingIndividualRequestor<MethodSpec> m;
-        CachingIndividualRequestor<MethodSpec> ms;
-        CachingIndividualRequestor<MethodSpec> fs;
+        CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr> eh;
         CachingIndividualRequestor<TypeSpec> vt;
         CachingIndividualRequestor<TypeSpec> sf;
 
         public CachingRequestor(MetadataStream mstream = null)
         {
             m = new CachingIndividualRequestor<MethodSpec>(mstream);
-            ms = new CachingIndividualRequestor<MethodSpec>(mstream);
-            fs = new CachingIndividualRequestor<MethodSpec>(mstream);
+            eh = new CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr>(mstream);
             vt = new CachingIndividualRequestor<TypeSpec>(mstream);
             sf = new CachingIndividualRequestor<TypeSpec>(mstream);
         }
@@ -63,19 +76,11 @@ namespace libtysila5
             }
         }
 
-        public override IndividualRequestor<MethodSpec> MethodSpecRequestor
+        public override IndividualRequestor<layout.Layout.MethodSpecWithEhdr> EHRequestor
         {
             get
             {
-                return ms;
-            }
-        }
-
-        public override IndividualRequestor<MethodSpec> FieldSpecRequestor
-        {
-            get
-            {
-                return fs;
+                return eh;
             }
         }
 
@@ -129,6 +134,11 @@ namespace libtysila5
 
         public override void Request(T v)
         {
+            if(v is MethodSpec)
+            {
+                var ms = v as MethodSpec;
+            }
+
             if (m != null && m != v.Metadata)
                 return;
 

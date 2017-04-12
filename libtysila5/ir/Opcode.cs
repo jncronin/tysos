@@ -267,7 +267,7 @@ namespace libtysila5.ir
                     sb.Append(str);
                     break;
                 case Opcode.vl_br_target:
-                    sb.Append("bb" + v.ToString());
+                    sb.Append("IL" + v.ToString("X4"));
                     break;
                 case Opcode.vl_mreg:
                     sb.Append("%" + mreg.ToString());
@@ -305,6 +305,11 @@ namespace libtysila5.ir
         public static implicit operator Param(long v)
         {
             return new Param { t = Opcode.vl_c, v = v };
+        }
+
+        public static implicit operator Param(string v)
+        {
+            return new Param { t = Opcode.vl_str, str = v };
         }
     }
 }

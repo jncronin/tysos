@@ -1,13 +1,8 @@
-﻿nspace = "libtysila5.target.x86";
-assembler = "x86_Assembler";
-name = "x86";
+﻿name = "x86";
+nspace = "libtysila5.target." + name;
+assembler = name + "_Assembler";
 
-x86_def = [
-	name = name,
-	ptr_type = "int32",
-	nspace = nspace,
-	assembler = assembler
- ];
+x86_def = target_init("x86", 4, 0);
 
 next_reg_id = 0;
 regs = [ Rstack(), Rcontents(),
@@ -49,14 +44,22 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"mov_rm32disp_r32",
 	"mov_rm16disp_r32",
 	"mov_rm8disp_r32",
-	"movzxb_r32_rm32sibscaledisp",
-	"movzxw_r32_rm32sibscaledisp",
+	"movzxbd_r32_rm8sibscaledisp",
+	"movzxwd_r32_rm16sibscaledisp",
+	"movsxbd_r32_rm8sibscaledisp",
+	"movsxwd_r32_rm16sibscaledisp",
+	"neg_rm32",
+	"not_rm32",
 	"cmp_rm32_r32",
 	"cmp_r32_rm32",
 	"cmp_rm32_imm32",
 	"cmp_rm32_imm8",
 	"set_rm32",
 	"movsxbd", 	"movsxwd", 	"movzxbd", 	"movzxwd",
+	"movsxbd_r32_rm8disp",
+	"movzxbd_r32_rm8disp",
+	"movsxwd_r32_rm16disp",
+	"movzxwd_r32_rm16disp",
 	"jmp_rel32",
 	"jcc_rel32",
 	"call_rel32",
@@ -79,6 +82,7 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"adc_rm32_r32",
 	"sbb_r32_rm32",
 	"sbb_rm32_r32",
+	"idiv_rm32",
 	"imul_r32_rm32_imm32",
 	"imul_r32_rm32",
 	"lea_r32",
@@ -93,14 +97,22 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"sar_rm32_cl",
 	"shr_rm32_cl",
 	"and_rm32_imm8",
+	"and_rm32_imm32",
 	"xchg_r32_rm32",
 	"xchg_rm32_r32",
 
 	"movsd_xmm_xmmm64",
 	"movsd_xmmm64_xmm",
+	"movss_xmm_xmmm32",
+	"movss_xmmm32_xmm",
 	"cvtsd2si_r32_xmmm64",
 	"cvtsi2sd_xmm_rm32",
+	"cvtsd2ss_xmm_xmmm64",
+	"cvtss2sd_xmm_xmmm32",
+	"addsd_xmm_xmmm64",
+	"subsd_xmm_xmmm64",
 	"mulsd_xmm_xmmm64",
+	"divsd_xmm_xmmm64",
 	"comisd_xmm_xmmm64",
 ]);
 
@@ -120,6 +132,19 @@ function oc_map_handler(array entries, string val)
 	print(";\n");
 }
 
+/* Override some built-in instruction handler names */
+instr(x86_def, [ oc_shl ], "shift");
+instr(x86_def, [ oc_shr ], "shift");
+instr(x86_def, [ oc_shr_un ], "shift");
+
+/* Optimize complex instruction sequences */
+
+// the following is produced by string.get_Chars
+instr(x86_def, [ oc_ldc, oc_mul, oc_conv, oc_add, oc_ldc, oc_add, oc_ldind ], "getCharSeq");
+
+// the following is produced by initobj
+instr(x86_def, [ oc_ldc, oc_zeromem ], "ldc_zeromem");
+
 gpr = eaxreg | ebxreg | ecxreg | edxreg | esireg | edireg;
 gprmem = gpr | stackreg | contentsreg;
 
@@ -134,6 +159,9 @@ imm = [ vl_c32, vl_c ];
 gprmemimm = [ vl_stack32, vl_lv32, vl_arg32, vl_c32, vl_c, vl_stack,
 	vl_lv, vl_arg ];
 lvs = [ vl_lv32, vl_lv64, vl_lv ];
+
+
+
 
 multiinstr(name, oc_ldloca, [ lvs ], [ gpr ], [
 	[ "x86_lea_r32", "$d0", "$u0" ]
@@ -219,17 +247,6 @@ multiinstr(name, oc_ldind, [ gpr, imm ], [ gpr ],
 	[	[ "x86_mov_r32_rm32disp", "$d0", "$u0", "$u1" ],
 ], [ Gprs, 0 ], [ Gprs ], 0);
 
-multiinstr(name, oc_ldind, [ gpr, gpr, imm, imm ], [ gpr ],
-	[	[ "x86_mov_r32_rm32sibscaledisp", "$d0", "$u0", "$u1", "$u2", "$u3" ],
-], [ Gprs, Gprs, 0, 0 ], [ Gprs ], 0);
-
-multiinstr(name, oc_ldindzb, [ gpr, gpr, imm, imm ], [ gpr ],
-	[	[ "x86_movzxb_r32_rm32sibscaledisp", "$d0", "$u0", "$u1", "$u2", "$u3" ],
-], [ Gprs, Gprs, 0, 0 ], [ Gprs ], 0);
-
-multiinstr(name, oc_ldindzw, [ gpr, gpr, imm, imm ], [ gpr ],
-	[	[ "x86_movzxw_r32_rm32sibscaledisp", "$d0", "$u0", "$u1", "$u2", "$u3" ],
-], [ Gprs, Gprs, 0, 0 ], [ Gprs ], 0);
 
 
 /* These define a temporary internal register so that we can
@@ -314,6 +331,3 @@ x86_def.cc = cc_map(nspace, assembler, [
 x86_def.retcc = retcc_map(nspace, assembler, [
 	[ "ret_sysv", cc_ret_sysv ]
 ]);
-
-target_defs.add(x86_def);
-export target_defs;

@@ -285,6 +285,7 @@ namespace metadata
             m.SystemString = m.GetBuiltin("String");
             m.SystemInt8 = m.GetBuiltin("SByte");
             m.SystemInt16 = m.GetBuiltin("Int16");
+            m.SystemChar = m.GetBuiltin("Char");
             m.SystemInt32 = m.GetBuiltin("Int32");
             m.SystemInt64 = m.GetBuiltin("Int64");
             m.SystemIntPtr = m.GetBuiltin("IntPtr");

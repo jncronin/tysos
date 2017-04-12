@@ -150,6 +150,13 @@ namespace metadata
             return m.MangleMethod(this);
         }
 
+        public string MangleMethod()
+        {
+            if (mangle_override != null)
+                return mangle_override;
+            return m.MangleMethod(this);
+        }
+
         public FullySpecSignature FieldSignature
         {
             get

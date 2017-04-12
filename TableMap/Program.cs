@@ -56,6 +56,11 @@ namespace TableMap
                 new DefineBlobFunction().Execute(s);
                 new ToIntFunction().Execute(s);
                 new DumpBlobFunction().Execute(s);
+                new ToByteArrayFunction(4).Execute(s);
+                new ToByteArrayFunction(2).Execute(s);
+                new ToByteArrayFunction(1).Execute(s);
+                new ToByteArrayFunction(8).Execute(s);
+                new ThrowFunction().Execute(s);
 
                 FileInfo fi = new FileInfo(file);
 
@@ -165,6 +170,73 @@ namespace TableMap
         public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
         {
             return new Expression.EvalResult(int.Parse(passed_args[0].strval));
+        }
+    }
+
+    class ThrowFunction : FunctionStatement
+    {
+        public ThrowFunction()
+        {
+            name = "throw";
+            args = new List<FunctionArg> { new FunctionArg { argtype = Expression.EvalResult.ResultType.String }, new FunctionArg { argtype = Expression.EvalResult.ResultType.String } };
+        }
+
+        public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
+        {
+            var obj_type = passed_args[0].strval;
+            var msg = passed_args[1].strval;
+
+            var obj_ts = Type.GetType(obj_type);
+            var obj_ctor = obj_ts.GetConstructor(new Type[] { typeof(string) });
+            var obj = obj_ctor.Invoke(new object[] { msg });
+            throw obj as Exception;
+        }
+    }
+
+    class ToByteArrayFunction : FunctionStatement
+    {
+        int bc = 0;
+
+        public ToByteArrayFunction(int byte_count)
+        {
+            name = "tobytearray" + byte_count.ToString();
+            args = new List<FunctionArg> { new FunctionArg { argtype = Expression.EvalResult.ResultType.Any } };
+            bc = byte_count;
+        }
+
+        public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
+        {
+            IList<byte> ret = GetBytes(passed_args[0]);
+            if (ret == null)
+                throw new Exception("Cannot call " + name + " with " + passed_args[0].ToString());
+
+            List<Expression.EvalResult> r = new List<Expression.EvalResult>();
+            for(int i = 0; i < bc; i++)
+            {
+                if (i < ret.Count)
+                    r.Add(new Expression.EvalResult(ret[i]));
+                else
+                    r.Add(new Expression.EvalResult(0));
+            }
+            return new Expression.EvalResult(r);
+        }
+
+        private IList<byte> GetBytes(Expression.EvalResult e)
+        {
+            switch (e.Type)
+            {
+                case Expression.EvalResult.ResultType.Int:
+                    return BitConverter.GetBytes(e.intval);
+                case Expression.EvalResult.ResultType.String:
+                    return Encoding.UTF8.GetBytes(e.strval);
+                case Expression.EvalResult.ResultType.Array:
+                    var ret = new List<byte>();
+                    foreach (var aentry in e.arrval)
+                        ret.AddRange(GetBytes(aentry));
+                    return ret;
+                default:
+                    return null;
+            }
         }
     }
 

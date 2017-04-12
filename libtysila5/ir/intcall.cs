@@ -37,31 +37,20 @@ namespace libtysila5.ir
         static void init_intcalls()
         {
             intcalls["_Zu1S_9get_Chars_Rc_P2u1ti"] = string_getChars;
-            //intcalls["_Zu1S_10get_Length_Ri_P1u1t"] = string_getLength;
+            intcalls["_Zu1S_10get_Length_Ri_P1u1t"] = string_getLength;
         }
 
         static Stack<StackItem> string_getChars(CilNode n, Code c, Stack<StackItem> stack_before)
         {
-            var char_offset = 8;
+            var char_offset = layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c);
 
-            Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
-            stack_after.Pop();
-            StackItem si = new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0x18) };
-            stack_after.Push(si);
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_conv, ct = Opcode.ct_int32, stack_before = stack_before, stack_after = stack_after });
-
-            stack_after = push_constant(n, c, stack_after, 2);
-            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_intptr);
-            stack_after = push_constant(n, c, stack_after, char_offset);
+            var stack_after = ldc(n, c, stack_before, 2);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
+            stack_after = conv(n, c, stack_after, 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldc(n, c, stack_after, char_offset, 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
-
-            stack_before = stack_after;
-            stack_after = new Stack<StackItem>(stack_before);
-            stack_after.Pop();
-            StackItem si3 = new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0x03) };
-            stack_after.Push(si3);
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldind, ct = Opcode.ct_int32, vt_size = 2, stack_before = stack_before, stack_after = stack_after });
+            stack_after = ldind(n, c, stack_after, c.ms.m.SystemChar);
 
             return stack_after;
         }
@@ -77,31 +66,11 @@ namespace libtysila5.ir
 
         static Stack<StackItem> string_getLength(CilNode n, Code c, Stack<StackItem> stack_before)
         {
-            var length_offset = 4;
+            var length_offset = layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Length, c);
 
-            Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
-            stack_after.Pop();
-            StackItem si = new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0x18) };
-            stack_after.Push(si);
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_conv, ct = Opcode.ct_object, stack_before = stack_before, stack_after = stack_after });
-
-            stack_before = stack_after;
-            stack_after = new Stack<StackItem>(stack_before);
-            StackItem si2 = new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0x18) };
-            stack_after.Push(si2);
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldc, ctret = Opcode.ct_intptr, imm_l = length_offset, stack_before = stack_before, stack_after = stack_after });
-
-            stack_before = stack_after;
-            stack_after = new Stack<StackItem>(stack_before);
-            stack_after.Pop();
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_add, ct = Opcode.ct_intptr, stack_before = stack_before, stack_after = stack_after });
-
-            stack_before = stack_after;
-            stack_after = new Stack<StackItem>(stack_before);
-            stack_after.Pop();
-            StackItem si3 = new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0x08) };
-            stack_after.Push(si3);
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldind, ct = Opcode.ct_int32, vt_size = 4, stack_before = stack_before, stack_after = stack_after });
+            var stack_after = ldc(n, c, stack_before, length_offset, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.SystemInt32);
 
             return stack_after;
         }

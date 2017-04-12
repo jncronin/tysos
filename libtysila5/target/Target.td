@@ -1,11 +1,15 @@
 ﻿/* Output machine definition objects */
 
 target_defs = [];
+export target_defs;
 
 include "Maps.td";
+include "Trie.td";
 include "Register.td";
 include "Instr.td";
 include "cc.td";
+
+include "TargetInit.td";
 
 // Some generic instructions
 intmap("libtysila5.target", "Generic", "g", "insts", "init_instrs", [
@@ -17,6 +21,7 @@ intmap("libtysila5.target", "Generic", "g", "insts", "init_instrs", [
 	"restorecalleepreserves",
 	"loadaddress",
 	"mclabel",
+	"label",
 ]);
 
 // Include machine specific definitions here
@@ -29,8 +34,9 @@ function dump_target(object target_def)
 {
 	n = target_def.name;
 
-	dumpblob(n, n + "_instrs");
+	//dumpblob(n, n + "_instrs");
 
+	//trie_export(target_def.instrs, "instrs", "InstructionHandler");
 	
 	foreach(cc in target_def.cc)
 	{
@@ -45,7 +51,9 @@ function dump_target(object target_def)
 	print("\t\t\t" + n + ".name = \"" + n + "\";\n");
 	print("\t\t\t" + n + ".ptype = ir.Opcode.ct_" + target_def.ptr_type + ";\n");
 
-	print("\t\t\t" + n + ".instrs = " + n + "_instrs;\n");
+	print("\t\t\t" + n + ".instrs.trie = " + n + "_instrs;\n");
+	print("\t\t\t" + n + ".instrs.start = " + n + "_instrs_start;\n");
+	print("\t\t\t" + n + ".instrs.vals = " + n + "_instrs_vals;\n");
 
 	/* registers */
 	// first, get max register id
@@ -59,7 +67,8 @@ function dump_target(object target_def)
 		}
 	}
 	max_id = max_id + 1;
-	print("\t\t\t" + n + ".regs = new Target.Reg[" + max_id + "];\n");
+	print("\t\t\t" + target_def.nspace + "." + target_def.assembler + ".registers = new Target.Reg[" + max_id + "];\n");
+	print("\t\t\t" + n + ".regs = " + target_def.nspace + "." + target_def.assembler + ".registers;\n");
 	foreach(reg in target_def.regs)
 	{
 		print("\t\t\t" + n + ".regs[" + reg.id + "] = new Target.Reg { ");
@@ -67,7 +76,7 @@ function dump_target(object target_def)
 		print("type = " + reg.type + ", size = " + reg.size + ", ");
 		print("mask = " + reg.mask + " };\n");
 
-		print("\t\t\t" + n + ".r_" + reg.name + " = " + n + ".regs[" + reg.id + "];\n");
+		print("\t\t\t" + target_def.nspace + "." + target_def.assembler + ".r_" + reg.name + " = " + n + ".regs[" + reg.id + "];\n");
 	}
 
 	print("\t\t\ttargets[\"" + n + "\"] = " + n + ";\n");
@@ -90,10 +99,11 @@ foreach(target_def in target_defs)
 {
 	dump_target(target_def);
 }
-
-
-
 print("\t\t}\n");
+foreach(target_def in target_defs)
+{
+	trie_export(target_def.instrs, target_def.name + "_instrs", "InstructionHandler");
+}
 print("\t}\n");
 print("}\n");
 print("\n");
@@ -106,9 +116,10 @@ foreach(target_def in target_defs)
 	print("\tpublic partial class " + target_def.assembler + "\n");
 	print("\t{\n");
 
+	print("\t\tpublic static Target.Reg[] registers;\n");
 	foreach(reg in target_def.regs)
 	{
-		print("\t\tpublic Target.Reg r_" + reg.name + ";\n");
+		print("\t\tpublic static Target.Reg r_" + reg.name + ";\n");
 	}
 
 	/* Add an init_cc function */

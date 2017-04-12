@@ -216,6 +216,55 @@ namespace metadata
             }
         }
 
+        List<TypeSpec> ii = null;
+        /**<summary>Return a list of all implemented interfaces</summary> */
+        public List<TypeSpec> ImplementedInterfaces
+        {
+            get
+            {
+                if (ii != null)
+                    return ii;
+
+                ii = new List<TypeSpec>();
+                
+                for(int i = 1; i <= m.table_rows[MetadataStream.tid_InterfaceImpl]; i++)
+                {
+                    var Class = m.GetIntEntry(MetadataStream.tid_InterfaceImpl, i, 0);
+                    if(Class == tdrow)
+                    {
+                        int ref_id, ref_row;
+                        m.GetCodedIndexEntry(MetadataStream.tid_InterfaceImpl,
+                            i, 1, m.TypeDefOrRef, out ref_id, out ref_row);
+
+                        var iface = m.GetTypeSpec(ref_id, ref_row, gtparams);
+                        ii.Add(iface);
+                    }
+                }
+
+                return ii;
+            }
+        }
+
+        public bool IsSigned
+        {
+            get
+            {
+                if(stype == SpecialType.None)
+                {
+                    switch(SimpleType)
+                    {
+                        case 0x04:
+                        case 0x06:
+                        case 0x08:
+                        case 0x0a:
+                        case 0x18:
+                            return true;
+                    }
+                }
+                return false;
+            }
+        }
+
         public string MangleType()
         {
             return m.MangleType(this);
@@ -412,7 +461,7 @@ namespace metadata
                             has_gtparams = false;
 
                         if (has_gtparams)
-                            throw new NotImplementedException();
+                            sig.Add(0x15);
 
                         // emit as simple typedef signature
                         var simple = SimpleType;
@@ -431,12 +480,23 @@ namespace metadata
                             uint tok = m.MakeCodedIndexEntry(MetadataStream.tid_TypeDef,
                                 tdrow, m.TypeDefOrRef);
                             sig.AddRange(MetadataStream.SigWriteUSCompressed(tok));
-                        }      
+                        }
+
+                        if(has_gtparams)
+                        {
+                            sig.AddRange(MetadataStream.SigWriteUSCompressed((uint)gtparams.Length));
+                            foreach(var x in gtparams)
+                                x.AddSignature(sig, mods);
+                        }
                     }
                     break;
 
                 case SpecialType.SzArray:
                     sig.Add(0x1d);
+                    other.AddSignature(sig, mods);
+                    break;
+
+                case SpecialType.Boxed:
                     other.AddSignature(sig, mods);
                     break;
 

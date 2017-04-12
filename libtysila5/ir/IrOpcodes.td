@@ -56,7 +56,6 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"ldlabaddr",
 	"stlabcontents",
 	"ldloca",
-	"ldsta",
 	"zeromem",
 	"swap",
 	"pop",
@@ -75,6 +74,7 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"localloc",
 	"shr", "shl", "shr_un",
 	"switch",
+	"ldobja",
 ]);
 
 intmap("libtysila5.ir", "Opcode", "cc", "cc_names", "init_cc", [
@@ -111,6 +111,27 @@ multimap("libtysila5.ir", "Opcode", "cc_invert", "init_cc_invert", [
 	[ [ "b" ], "ae" ],
 	[ [ "be" ], "a" ]
 ], funcref cc_invert_map_handler(array, string));
+
+function cc_highcmp_map_handler(array cc, string invert_cc)
+{
+	print("\t\t\tcc_highcmp_map[cc_" + cc[0] + "] = cc_" + invert_cc + ";\n");
+}
+
+multimap("libtysila5.ir", "Opcode", "cc_highcmp", "init_cc_highcmp", [
+	[ [ "always" ], "never" ],
+	[ [ "never" ], "always" ],
+	[ [ "eq" ], "ne" ],
+	[ [ "ne" ], "eq" ],
+	[ [ "gt" ], "le" ],
+	[ [ "ge" ], "lt" ],
+	[ [ "lt" ], "ge" ],
+	[ [ "le" ], "gt" ],
+	[ [ "a" ], "be" ],
+	[ [ "ae" ], "b" ],
+	[ [ "b" ], "ae" ],
+	[ [ "be" ], "a" ]
+], funcref cc_highcmp_map_handler(array, string));
+
 
 intmap("libtysila5.ir", "Opcode", "ct", "ct_names", "init_ct", [
 	"unknown",

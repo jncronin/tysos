@@ -39,6 +39,8 @@ namespace libtysila5.ir
         public int strlen;
         public int wcslen;
         public int inst_Rv_s;
+        public int memcpy;
+        public int memset;
 
         public int string_ci;
         public int string_Zc;
@@ -90,6 +92,10 @@ namespace libtysila5.ir
                 new TypeSpec[] { Pa });
             wcslen = CreateMethodSignature(b, I,
                 new TypeSpec[] { Pc });
+            memcpy = CreateMethodSignature(I,
+                new TypeSpec[] { I, I, i });
+            memset = CreateMethodSignature(I,
+                new TypeSpec[] { I, i, i });
 
             inst_Rv_s = CreateMethodSignature(b, null,
                 new TypeSpec[] { s }, true);
@@ -114,6 +120,15 @@ namespace libtysila5.ir
             sh_blob = new BlobStream(b);
 
             al = m.al;
+        }
+
+        public MethodSpec GetMethodSpec(int msig)
+        {
+            return new MethodSpec
+            {
+                m = this,
+                msig = msig
+            };
         }
 
         internal int CreateMethodSignature(TypeSpec rettype, TypeSpec[] ps, bool has_this = false)

@@ -106,6 +106,7 @@ namespace metadata
         public BuiltInType SystemString;
         public BuiltInType SystemInt8;
         public BuiltInType SystemInt16;
+        public BuiltInType SystemChar;
         public BuiltInType SystemInt32;
         public BuiltInType SystemInt64;
         public BuiltInType SystemIntPtr;
@@ -866,12 +867,14 @@ namespace metadata
             switch(table_id)
             {
                 case tid_TypeDef:
-                    return new TypeSpec
+                    var ret = new TypeSpec
                     {
                         m = this,
                         tdrow = row,
-                        gtparams = gtparams
                     };
+                    if (ret.IsGeneric)
+                        ret.gtparams = gtparams;
+                    return ret;
 
                 case tid_TypeRef:
                     {

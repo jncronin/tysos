@@ -17,6 +17,7 @@ namespace TableMap
             {
                 case Tokens.NOT:
                     ea = a.Evaluate(s);
+                    check_null(ea);
                     if (ea.AsInt == 0)
                         return new EvalResult(1);
                     else
@@ -44,6 +45,9 @@ namespace TableMap
                     ea = a.Evaluate(s);
                     eb = b.Evaluate(s);
 
+                    check_null(ea);
+                    check_null(eb);
+
                     if (ea.Type == EvalResult.ResultType.Int && eb.Type == EvalResult.ResultType.Int)
                         return new EvalResult(ea.intval + eb.intval);
                     else if (ea.Type == EvalResult.ResultType.String && eb.Type == EvalResult.ResultType.String)
@@ -61,10 +65,15 @@ namespace TableMap
                     ea = a.Evaluate(s);
                     eb = b.Evaluate(s);
 
+                    check_null(ea);
+                    check_null(eb);
+
                     return new EvalResult(ea.AsInt * eb.AsInt);
 
                 case Tokens.MINUS:
                     ea = a.Evaluate(s);
+
+                    check_null(ea);
 
                     if (b == null)
                     {
@@ -78,6 +87,8 @@ namespace TableMap
                     else
                     {
                         eb = b.Evaluate(s);
+
+                        check_null(eb);
 
                         if (ea.Type == EvalResult.ResultType.String && (eb.Type == EvalResult.ResultType.Int || eb.Type == EvalResult.ResultType.Void))
                         {
@@ -143,7 +154,12 @@ namespace TableMap
                             else
                                 return new EvalResult(_false);
                         }
-                        else
+                        else if (ea.Type == EvalResult.ResultType.Null && eb.Type != EvalResult.ResultType.Null)
+                            return new EvalResult(_false);
+                        else if(ea.Type != EvalResult.ResultType.Null && eb.Type == EvalResult.ResultType.Null)
+                            return new EvalResult(_false);
+                        else if(ea.Type == EvalResult.ResultType.Null && eb.Type == EvalResult.ResultType.Null)
+                            return new EvalResult(_true);
                         {
                             if (ea.AsInt == eb.AsInt)
                                 return new EvalResult(_true);
@@ -156,6 +172,9 @@ namespace TableMap
                     ea = a.Evaluate(s);
                     eb = b.Evaluate(s);
 
+                    check_null(ea);
+                    check_null(eb);
+
                     if (ea.AsInt < eb.AsInt)
                         return new EvalResult(1);
                     else
@@ -165,6 +184,9 @@ namespace TableMap
                     ea = a.Evaluate(s);
                     eb = b.Evaluate(s);
 
+                    check_null(ea);
+                    check_null(eb);
+
                     if (ea.AsInt > eb.AsInt)
                         return new EvalResult(1);
                     else
@@ -173,21 +195,37 @@ namespace TableMap
                 case Tokens.LSHIFT:
                     ea = a.Evaluate(s);
                     eb = b.Evaluate(s);
+
+                    check_null(ea);
+                    check_null(eb);
+
                     return new EvalResult(ea.AsInt << eb.AsInt);
 
                 case Tokens.RSHIFT:
                     ea = a.Evaluate(s);
                     eb = b.Evaluate(s);
+
+                    check_null(ea);
+                    check_null(eb);
+
                     return new EvalResult(ea.AsInt >> eb.AsInt);
 
                 case Tokens.OR:
                     ea = a.Evaluate(s);
                     eb = b.Evaluate(s);
+
+                    check_null(ea);
+                    check_null(eb);
+
                     return new EvalResult(ea.AsInt | eb.AsInt);
 
                 case Tokens.AND:
                     ea = a.Evaluate(s);
                     eb = b.Evaluate(s);
+
+                    check_null(ea);
+                    check_null(eb);
+
                     return new EvalResult(ea.AsInt & eb.AsInt);
 
 
@@ -196,9 +234,15 @@ namespace TableMap
             throw new NotImplementedException(op.ToString());
         }
 
+        private void check_null(EvalResult ea)
+        {
+            if (ea.Type == EvalResult.ResultType.Null)
+                throw new Exception("null not allowed in expression");
+        }
+
         public class EvalResult
         {
-            public enum ResultType { Int, String, Void, Function, MakeRule, Object, Array };
+            public enum ResultType { Int, String, Void, Function, MakeRule, Object, Array, Any, Null };
 
             public ResultType Type;
 
@@ -266,6 +310,8 @@ namespace TableMap
                             return 1;
                         case ResultType.Void:
                             return 0;
+                        case ResultType.Null:
+                            return 0;
                         default:
                             throw new NotSupportedException();
                     }
@@ -296,6 +342,25 @@ namespace TableMap
                                 if (i != 0)
                                     sb.Append(", ");
                                 sb.Append(arrval[i].ToString());
+                            }
+                            sb.Append(" ]");
+                            return sb.ToString();
+                        }
+                    case ResultType.Null:
+                        return "null";
+                    case ResultType.Object:
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.Append("[ ");
+                            int i = 0;
+                            foreach(var kvp in objval)
+                            {
+                                if (i != 0)
+                                    sb.Append(", ");
+                                sb.Append(kvp.Key);
+                                sb.Append(" = ");
+                                sb.Append(kvp.Value.ToString());
+                                i++;
                             }
                             sb.Append(" ]");
                             return sb.ToString();
@@ -432,7 +497,14 @@ namespace TableMap
                 case EvalResult.ResultType.String:
                     return new EvalResult(new string(elabel.strval[eindex.AsInt], 1));
                 case EvalResult.ResultType.Array:
-                    return elabel.arrval[eindex.AsInt];
+                    {
+                        var idx = eindex.AsInt;
+                        if (idx < 0 || idx >= elabel.arrval.Count)
+                            return new EvalResult { Type = EvalResult.ResultType.Null };
+                        else
+                            return elabel.arrval[idx];
+                    }
+                    
                 case EvalResult.ResultType.Object:
                     return elabel.objval[eindex.strval];
                 default:
@@ -524,9 +596,14 @@ namespace TableMap
                             elabel.arrval.Add(new EvalResult(f.args[0].Evaluate(s).arrval));
                             return new EvalResult();
                         }
-                        else if(m == "3addav")
+                        else if (m == "3addav")
                         {
                             elabel.arrval.Add(new EvalResult());
+                            return new EvalResult();
+                        }
+                        else if (m == "3addan")
+                        {
+                            elabel.arrval.Add(new EvalResult { Type = EvalResult.ResultType.Null });
                             return new EvalResult();
                         }
                         else if (m == "8addrangeaa")
@@ -594,6 +671,14 @@ namespace TableMap
         }
     }
 
+    internal class NullExpression : Expression
+    {
+        public override EvalResult Evaluate(MakeState s)
+        {
+            return new EvalResult { Type = EvalResult.ResultType.Null };
+        }
+    }
+
     internal class ObjectExpression : Expression
     {
         public Dictionary<string, Expression.EvalResult> val =
@@ -622,12 +707,19 @@ namespace TableMap
 
         public string Mangle(MakeState s)
         {
+            List<Expression.EvalResult> ers = new List<EvalResult>();
+            foreach (var arg in args)
+                ers.Add(arg.Evaluate(s));
+            return Mangle(target, ers);
+        }
+
+        public static string Mangle(string target, List<Expression.EvalResult> args)
+        {
             StringBuilder sb = new StringBuilder();
             sb.Append(target.Length.ToString());
             sb.Append(target);
-            foreach (Expression arg in args)
+            foreach (var e in args)
             {
-                Expression.EvalResult e = arg.Evaluate(s);
                 switch (e.Type)
                 {
                     case EvalResult.ResultType.Int:
@@ -645,8 +737,14 @@ namespace TableMap
                     case EvalResult.ResultType.Void:
                         sb.Append("v");
                         break;
+                    case EvalResult.ResultType.Null:
+                        sb.Append("n");
+                        break;
                     case EvalResult.ResultType.Function:
                         sb.Append("f");
+                        break;
+                    case EvalResult.ResultType.Any:
+                        sb.Append("x");
                         break;
                 }
             }
@@ -655,16 +753,65 @@ namespace TableMap
 
         public override EvalResult Evaluate(MakeState s)
         {
-            string mangled_name = Mangle(s);
-            if (s.funcs.ContainsKey(mangled_name))
+            List<string> mangle_all = MangleAll(s);
+            foreach (var mangled_name in mangle_all)
             {
-                List<EvalResult> args_to_pass = new List<EvalResult>();
-                foreach (Expression arg in args)
-                    args_to_pass.Add(arg.Evaluate(s));
-                return s.funcs[mangled_name].Run(s, args_to_pass);
+                if (s.funcs.ContainsKey(mangled_name))
+                {
+                    List<EvalResult> args_to_pass = new List<EvalResult>();
+                    foreach (Expression arg in args)
+                        args_to_pass.Add(arg.Evaluate(s));
+                    return s.funcs[mangled_name].Run(s, args_to_pass);
+                }
+            }
+
+            throw new Statement.SyntaxException("unable to find function " + Mangle(s));
+        }
+
+        static Dictionary<string, List<string>> mangle_all_cache = new Dictionary<string, List<string>>();
+
+        private List<string> MangleAll(MakeState s)
+        {
+            var cache_key = Mangle(s);
+            List<string> ret;
+            if (mangle_all_cache.TryGetValue(cache_key, out ret))
+                return ret;
+
+            List<Expression.EvalResult> ers = new List<EvalResult>();
+            foreach (var arg in args)
+                ers.Add(arg.Evaluate(s));
+
+            ret = new List<string>();
+            for(int i = 0; i <= args.Count; i++)
+            {
+                MangleAllLine(i, 0, ret, ers);
+            }
+
+            mangle_all_cache[cache_key] = ret;
+            return ret;
+        }
+
+        private void MangleAllLine(int total_anys,
+            int cur_anys, List<string> ret,
+            List<Expression.EvalResult> args_in)
+        {
+            if (cur_anys == total_anys)
+            {
+                var m = Mangle(target, args_in);
+                if (!ret.Contains(m))
+                    ret.Add(m);
             }
             else
-                throw new Statement.SyntaxException("unable to find function " + mangled_name);
+            {
+                for(int i = 0; i < args_in.Count; i++)
+                {
+                    if (args_in[i].Type == EvalResult.ResultType.Any)
+                        continue;
+                    List<EvalResult> new_args_in = new List<EvalResult>(args_in);
+                    new_args_in[i] = new EvalResult { Type = EvalResult.ResultType.Any };
+                    MangleAllLine(total_anys, cur_anys + 1, ret, new_args_in);
+                }
+            }
         }
     }
 
