@@ -44,8 +44,13 @@ namespace libtysila5.layout
         */
 
         public static void OutputVTable(TypeSpec ts,
-            target.Target t, binary_library.IBinaryFile of)
+            target.Target t, binary_library.IBinaryFile of,
+            MetadataStream base_m = null)
         {
+            // Don't compile if not for this architecture
+            if (!t.IsTypeValid(ts))
+                return;
+
             var os = of.GetRDataSection();
             var d = os.Data;
             var ptr_size = t.GetCTSize(ir.Opcode.ct_object);
@@ -61,6 +66,9 @@ namespace libtysila5.layout
             sym.Offset = offset;
             sym.Type = binary_library.SymbolType.Global;
             os.AddSymbol(sym);
+
+            if (base_m != null && ts.m != base_m)
+                sym.Type = SymbolType.Weak;
 
             /* TIPtr */
             var tiptr_offset = t.st.GetSignatureAddress(ts.Signature, t);

@@ -42,8 +42,13 @@ namespace libtysila5.layout
         }
 
         public static void OutputEHdr(MethodSpecWithEhdr ms,
-            Target t, binary_library.IBinaryFile of)
+            Target t, binary_library.IBinaryFile of,
+            MetadataStream base_m = null)
         {
+            // Don't compile if not for this architecture
+            if (!t.IsMethodValid(ms.ms))
+                return;
+
             var os = of.GetRDataSection();
             os.Align(t.GetPointerSize());
             var d = os.Data;
@@ -56,6 +61,9 @@ namespace libtysila5.layout
             sym.Offset = (ulong)d.Count;
             sym.Type = binary_library.SymbolType.Global;
             os.AddSymbol(sym);
+
+            if (base_m != null && ms.ms.m != base_m)
+                sym.Type = binary_library.SymbolType.Weak;
 
             foreach(var ehdr in ms.c.ehdrs)
             {
@@ -114,6 +122,35 @@ namespace libtysila5.layout
                 {
                     return ms.Metadata;
                 }
+            }
+
+            public override bool IsInstantiatedGenericMethod
+            {
+                get
+                {
+                    return ms.IsInstantiatedGenericMethod;
+                }
+            }
+
+            public override bool IsInstantiatedGenericType
+            {
+                get
+                {
+                    return ms.IsInstantiatedGenericType;
+                }
+            }
+
+            public override bool IsArray
+            {
+                get
+                {
+                    return ms.IsArray;
+                }
+            }
+
+            public override IEnumerable<int> CustomAttributes(string ctor = null)
+            {
+                return ms.CustomAttributes(ctor);
             }
 
             public bool Equals(MethodSpecWithEhdr other)

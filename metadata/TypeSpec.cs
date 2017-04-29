@@ -32,11 +32,39 @@ namespace metadata
     {
         public abstract MetadataStream Metadata { get; }
 
+        public abstract bool IsInstantiatedGenericType { get; }
+        public abstract bool IsInstantiatedGenericMethod { get; }
+        public abstract bool IsArray { get; }
+
         public class FullySpecSignature
         {
             public List<byte> Signature;
             public List<MetadataStream> Modules;
             public Spec OriginalSpec;
+        }
+
+        public abstract IEnumerable<int> CustomAttributes(string ctor = null);
+
+        public IList<string> CustomAttributeNames
+        {
+            get
+            {
+                List<string> ret = new List<string>();
+                foreach(var idx in CustomAttributes())
+                {
+                    int type_tid, type_row;
+                    Metadata.GetCodedIndexEntry(MetadataStream.tid_CustomAttribute,
+                        idx, 1, Metadata.CustomAttributeType, out type_tid,
+                        out type_row);
+
+                    MethodSpec ca_ms;
+                    Metadata.GetMethodDefRow(type_tid, type_row, out ca_ms);
+                    var ca_ms_name = ca_ms.MangleMethod();
+
+                    ret.Add(ca_ms_name);
+                }
+                return ret;
+            }
         }
     }
 
@@ -147,6 +175,8 @@ namespace metadata
                     return false;
                 if (extends.Equals(m.SystemEnum))
                     return true;
+                if (this.Equals(m.SystemEnum))
+                    return false;
                 if (extends.m.simple_type_idx == null)
                     return false;
                 return (extends.m.simple_type_idx[extends.tdrow] == 0x11);
@@ -207,12 +237,25 @@ namespace metadata
             }
         }
 
-        /**<summary>Convert to a boxed instance</summary> */
+        /**<summary>Convert to a boxed instance if this is a value type</summary> */
         public TypeSpec Box
         {
             get
             {
+                if (!IsValueType)
+                    return this;
                 return new TypeSpec { m = m, stype = SpecialType.Boxed, other = this };
+            }
+        }
+
+        /**<summary>Unbox if this is a boxed value type</summary> */
+        public TypeSpec Unbox
+        {
+            get
+            {
+                if (stype != SpecialType.Boxed)
+                    return this;
+                return other;
             }
         }
 
@@ -270,11 +313,42 @@ namespace metadata
             return m.MangleType(this);
         }
 
+        public override bool IsInstantiatedGenericType
+        {
+            get
+            {
+                if (stype == SpecialType.Boxed)
+                    return other.IsInstantiatedGenericType;
+                if (IsGeneric && !IsGenericTemplate)
+                    return true;
+                return false;
+            }
+        }
+
+        public override bool IsInstantiatedGenericMethod
+        {
+            get
+            {
+                return false;
+            }
+        }
+
         public bool IsGeneric
         {
             get
             {
                 return m.gtparams[tdrow] != 0;
+            }
+        }
+
+        public override bool IsArray
+        {
+            get
+            {
+                if (stype == SpecialType.Array ||
+                    stype == SpecialType.SzArray)
+                    return true;
+                return false;
             }
         }
 
@@ -689,6 +763,59 @@ namespace metadata
             if (IsAssignmentCompatibleWith(w))
                 return true;
             return VerificationType.Equals(w.VerificationType);
+        }
+
+        public bool HasCustomAttribute(string ctor)
+        {
+            int cur_ca = m.td_custom_attrs[tdrow];
+
+            while (cur_ca != 0)
+            {
+                int type_tid, type_row;
+                m.GetCodedIndexEntry(MetadataStream.tid_CustomAttribute,
+                    cur_ca, 1, m.CustomAttributeType, out type_tid,
+                    out type_row);
+
+                MethodSpec ca_ms;
+                m.GetMethodDefRow(type_tid, type_row, out ca_ms);
+                var ca_ms_name = ca_ms.MangleMethod();
+
+                if (ca_ms_name.Equals(ctor))
+                    return true;
+
+                cur_ca = m.next_ca[cur_ca];
+            }
+
+            return false;
+        }
+
+        public override IEnumerable<int> CustomAttributes(string ctor = null)
+        {
+            int cur_ca = m.td_custom_attrs[tdrow];
+
+            while (cur_ca != 0)
+            {
+                if (ctor == null)
+                    yield return cur_ca;
+                else
+                {
+                    int type_tid, type_row;
+                    m.GetCodedIndexEntry(MetadataStream.tid_CustomAttribute,
+                        cur_ca, 1, m.CustomAttributeType, out type_tid,
+                        out type_row);
+
+                    MethodSpec ca_ms;
+                    m.GetMethodDefRow(type_tid, type_row, out ca_ms);
+                    var ca_ms_name = ca_ms.MangleMethod();
+
+                    if (ca_ms_name.Equals(ctor))
+                        yield return cur_ca;
+                }
+
+                cur_ca = m.next_ca[cur_ca];
+            }
+
+            yield break;
         }
     }
 }

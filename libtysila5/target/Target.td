@@ -33,27 +33,20 @@ include "x86/x86.td";
 function dump_target(object target_def)
 {
 	n = target_def.name;
+	ns = target_def.nspace;
 
-	//dumpblob(n, n + "_instrs");
-
-	//trie_export(target_def.instrs, "instrs", "InstructionHandler");
-	
 	foreach(cc in target_def.cc)
 	{
-		print("\t\t\ttarget." + n + "." + n + "_Assembler.init_" + cc[0] + "();\n");
+		print("\t\t\t" + ns + "." + n + "_Assembler.init_" + cc[0] + "();\n");
 	}
 	foreach(cc in target_def.retcc)
 	{
-		print("\t\t\ttarget." + n + "." + n + "_Assembler.init_" + cc[0] + "();\n");
+		print("\t\t\t" + ns + "." + n + "_Assembler.init_" + cc[0] + "();\n");
 	}
-	print("\t\t\tvar " + n + " = new " + n + "." +
+	print("\t\t\tvar " + n + " = new " + ns + "." +
 		n + "_Assembler();\n");
 	print("\t\t\t" + n + ".name = \"" + n + "\";\n");
 	print("\t\t\t" + n + ".ptype = ir.Opcode.ct_" + target_def.ptr_type + ";\n");
-
-	print("\t\t\t" + n + ".instrs.trie = " + n + "_instrs;\n");
-	print("\t\t\t" + n + ".instrs.start = " + n + "_instrs_start;\n");
-	print("\t\t\t" + n + ".instrs.vals = " + n + "_instrs_vals;\n");
 
 	/* registers */
 	// first, get max register id
@@ -102,7 +95,7 @@ foreach(target_def in target_defs)
 print("\t\t}\n");
 foreach(target_def in target_defs)
 {
-	trie_export(target_def.instrs, target_def.name + "_instrs", "InstructionHandler");
+
 }
 print("\t}\n");
 print("}\n");
@@ -111,6 +104,8 @@ print("\n");
 /* define register names so they can be used as target.r_etc */
 foreach(target_def in target_defs)
 {
+	n = target_def.name;
+
 	print("namespace " + target_def.nspace + "\n");
 	print("{\n");
 	print("\tpublic partial class " + target_def.assembler + "\n");
@@ -122,14 +117,15 @@ foreach(target_def in target_defs)
 		print("\t\tpublic static Target.Reg r_" + reg.name + ";\n");
 	}
 
+
 	/* Add an init_cc function */
 	print("\t\t\n");
 	print("\t\tvoid init_ccs()\n");
 	print("\t\t{\n");
-	print("\t\t\tinit_cc_callee_preserves_map();");
-	print("\t\t\tinit_cc_caller_preserves_map();");
-	print("\t\t\tinit_cc_map();");
-	print("\t\t\tinit_retcc_map();");
+	print("\t\t\tinit_cc_callee_preserves_map();\n");
+	print("\t\t\tinit_cc_caller_preserves_map();\n");
+	print("\t\t\tinit_cc_map();\n");
+	print("\t\t\tinit_retcc_map();\n");
 	print("\t\t}\n");
 
 	/* Add constructor */
@@ -137,7 +133,42 @@ foreach(target_def in target_defs)
 	print("\t\tinternal " + target_def.assembler + "()\n");
 	print("\t\t{\n");
 	print("\t\t\tinit_ccs();\n");
+
+	/* Registers used for allocating to various ct types */
+	foreach(cttype in target_def.ct_map)
+	{
+		x = 0;
+
+		foreach(ctdest in cttype[1])
+		{
+			x = x | ctdest.mask;
+		}
+
+		print("\t\t\tct_regs[" + cttype[0] + "] = " + x + ";\n");
+	}
+	if(target_def.ptr_type == "int32")
+	{
+		ct_ptr_type = ct_int32;
+	}
+	else
+	{
+		ct_ptr_type = ct_int64;
+	}
+	print("\t\t\tct_regs[" + ct_intptr + "] = ct_regs[" + ct_ptr_type + "];\n");
+	print("\t\t\tct_regs[" + ct_object + "] = ct_regs[" + ct_ptr_type + "];\n");
+	print("\t\t\tct_regs[" + ct_ref + "] = ct_regs[" + ct_ptr_type + "];\n");
+
+	print("\t\t\tinstrs.trie = " + n + "_instrs;\n");
+	print("\t\t\tinstrs.start = " + n + "_instrs_start;\n");
+	print("\t\t\tinstrs.vals = " + n + "_instrs_vals;\n");
+
+	print("\t\t\tpsize = " + target_def.ptr_size + ";\n");
+
 	print("\t\t}\n");
+	print("\t\t\n");
+
+	trie_export(target_def.instrs, target_def.name + "_instrs",
+		"InstructionHandler", "");
 
 	print("\t}\n");
 	print("}\n");

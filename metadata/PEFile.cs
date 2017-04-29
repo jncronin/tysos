@@ -273,13 +273,14 @@ namespace metadata
             m.PatchFieldRVAs();
             m.PatchClassLayouts();
             m.PatchGTypes();
-            m.PatchUpEnclosingTypes();
             if(m.table_rows[MetadataStream.tid_Assembly] == 1 &&
                 (m.assemblyName = m.GetStringEntry(MetadataStream.tid_Assembly, 1, 7)) == "mscorlib")
             {
                 m.is_corlib = true;
                 m.PatchSimpleTypes();
             }
+            m.PatchNestedTypes();
+            m.PatchCustomAttrs();
 
             m.SystemObject = m.GetBuiltin("Object");
             m.SystemString = m.GetBuiltin("String");

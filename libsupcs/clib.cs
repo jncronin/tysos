@@ -29,6 +29,7 @@ namespace libsupcs
         [libsupcs.MethodAlias("mbstrlen")]
         [libsupcs.MethodAlias("strlen")]
         [libsupcs.WeakLinkage]
+        [libsupcs.AlwaysCompile]
         unsafe internal static int MbStrLen(sbyte* value)
         {
             /* For ASCII strings only!  This doesn't properly handle UTF-8 yet */
@@ -45,6 +46,7 @@ namespace libsupcs
 
         [libsupcs.MethodAlias("wmemset")]
         [libsupcs.WeakLinkage]
+        [libsupcs.AlwaysCompile]
         unsafe internal static char* wmemset(char* wcs, char wc, int n)
         {
             char* dest = wcs;
@@ -55,6 +57,7 @@ namespace libsupcs
 
         [libsupcs.MethodAlias("memset")]
         [libsupcs.WeakLinkage]
+        [libsupcs.AlwaysCompile]
         unsafe internal static byte* memset(byte* s, int c, int n)
         {
             byte* dest = s;
@@ -65,6 +68,7 @@ namespace libsupcs
 
         [libsupcs.MethodAlias("memcmp")]
         [libsupcs.WeakLinkage]
+        [libsupcs.AlwaysCompile]
         unsafe internal static int memcmp(byte *s1, byte *s2, int n)
         {
             for(int i = 0; i < n; i++)
@@ -78,6 +82,7 @@ namespace libsupcs
 
         [libsupcs.MethodAlias("memcpy")]
         [libsupcs.WeakLinkage]
+        [libsupcs.AlwaysCompile]
         unsafe internal static byte* memcpy(byte* dest, byte* src, int n)
         {
             byte* d = dest;
@@ -88,6 +93,7 @@ namespace libsupcs
 
         [libsupcs.MethodAlias("memmove")]
         [libsupcs.WeakLinkage]
+        [libsupcs.AlwaysCompile]
         unsafe internal static byte* memmove(byte* dest, byte* src, int n)
         {
             byte* d = dest;
@@ -110,6 +116,7 @@ namespace libsupcs
 
         [libsupcs.MethodAlias("mbstowcs")]
         [libsupcs.WeakLinkage]
+        [libsupcs.AlwaysCompile]
         unsafe static void MbsToWcs(char* dest, sbyte* src, int length)
         {
             for (int i = 0; i < length; i++)

@@ -55,17 +55,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="dftest.cs" />
     <Compile Include="FileSystemFileLoader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XGetopt.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\libtysila4\libtysila4.csproj">
-      <Project>{92421728-3d38-4e32-adce-fafa1e30e477}</Project>
-      <Name>libtysila4</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\libtysila5\libtysila5.csproj">
       <Project>{82697295-1aff-4174-97bc-6562732305f3}</Project>
       <Name>libtysila5</Name>

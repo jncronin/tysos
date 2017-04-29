@@ -56,7 +56,6 @@ namespace metadata
 
         public int[] methoddef_owners;
         public int[] fielddef_owners;
-        public int[] enclosing_types;
         public uint[] fieldrvas;
         public int[] classlayouts;
         public int[] gtparams;
@@ -65,6 +64,14 @@ namespace metadata
         public int[] simple_type_idx;
         public int[] simple_type_rev_idx;
         public bool is_corlib = false;
+
+        public int[] nested_types;
+        public int[] next_nested_type;
+        public int[] nested_parent;
+
+        public int[] td_custom_attrs;
+        public int[] md_custom_attrs;
+        public int[] next_ca;
 
         public string AssemblyName { get { if (assemblyName == null) return "unnamed"; else return assemblyName; } }
         public string FullName { get { return AssemblyName + " " + AssemblyVersionString; } }
@@ -546,7 +553,12 @@ namespace metadata
             TypeSpec ts;
             var test = new nn { name = name, nspace = nspace };
             if (typedef_db.TryGetValue(test, out ts))
-                return ts;
+            {
+                var new_ts = new TypeSpec();
+                new_ts.m = this;
+                new_ts.tdrow = ts.tdrow;
+                return new_ts;
+            }
 
             for (int i = 1; i < table_rows[tid_TypeDef]; i++)
             {
@@ -618,7 +630,29 @@ namespace metadata
                         return true;
                     }
                 case (int)TableId.TypeRef:
-                    throw new NotImplementedException();
+                    {
+                        var enc_ts = GetTypeSpec(rs_tableid, rs_row);
+
+                        // find a particular nested type
+                        int cur_nested = enc_ts.m.nested_types[enc_ts.tdrow];
+                        while (cur_nested != 0)
+                        {
+                            // only compare the type name (namespace will be null)
+                            var nested_name = enc_ts.m.GetStringEntry(tid_TypeDef,
+                                cur_nested, 1);
+                            if (nested_name.Equals(typename))
+                            {
+                                var nested_ts = enc_ts.m.GetTypeSpec(tid_TypeDef,
+                                    cur_nested);
+                                ts = nested_ts;
+                                return true;
+                            }
+
+                            cur_nested = enc_ts.m.next_nested_type[cur_nested];
+                        }
+
+                        throw new NotSupportedException();
+                    }
             }
             throw new NotImplementedException();
         }
@@ -890,6 +924,30 @@ namespace metadata
                                 var other_ts = other_m.GetTypeSpec(other_namespace, other_name);
                                 return other_ts;
 
+                            case tid_TypeRef:
+                                {
+                                    var enc_ts = GetTypeSpec(rs_id, rs_row, gtparams, gmparams);
+
+                                    // find a particular nested type
+                                    int cur_nested = enc_ts.m.nested_types[enc_ts.tdrow];
+                                    while(cur_nested != 0)
+                                    {
+                                        // only compare the type name (namespace will be null)
+                                        var nested_name = enc_ts.m.GetStringEntry(tid_TypeDef,
+                                            cur_nested, 1);
+                                        if (nested_name.Equals(other_name))
+                                        {
+                                            var nested_ts = enc_ts.m.GetTypeSpec(tid_TypeDef,
+                                                cur_nested, gtparams, gmparams);
+                                            return nested_ts;
+                                        }
+
+                                        cur_nested = enc_ts.m.next_nested_type[cur_nested];
+                                    }
+
+                                    throw new NotSupportedException();
+                                }
+
                             default:
                                 throw new NotImplementedException();
                         }
@@ -1055,7 +1113,7 @@ namespace metadata
                     // VAR
                     var gtidx = SigReadUSCompressed(ref sig_idx);
                     if (gtparams == null)
-                        ts = new TypeSpec { stype = TypeSpec.SpecialType.MVar, idx = (int)gtidx };
+                        ts = new TypeSpec { stype = TypeSpec.SpecialType.Var, idx = (int)gtidx };
                     else
                         ts = gtparams[gtidx];
                     break;
@@ -1064,7 +1122,7 @@ namespace metadata
                     // MVAR
                     var gmidx = SigReadUSCompressed(ref sig_idx);
                     if (gmparams == null)
-                        ts = new TypeSpec { stype = TypeSpec.SpecialType.Var, idx = (int)gmidx };
+                        ts = new TypeSpec { stype = TypeSpec.SpecialType.MVar, idx = (int)gmidx };
                     else
                         ts = gmparams[gmidx];
                     break;
@@ -1481,19 +1539,6 @@ namespace metadata
             }
         }
 
-        internal void PatchUpEnclosingTypes()
-        {
-            enclosing_types = new int[table_rows[tid_TypeDef] + 1];
-
-            for(int i = 1; i <= table_rows[tid_NestedClass]; i++)
-            {
-                int nested = (int)GetIntEntry(tid_NestedClass, i, 0);
-                int enclosing = (int)GetIntEntry(tid_NestedClass, i, 1);
-
-                enclosing_types[nested] = enclosing;
-            }
-        }
-
         /**<summary>Patch up generic types</summary> */
         internal void PatchGTypes()
         {
@@ -1556,6 +1601,50 @@ namespace metadata
                         methoddef_owners[j] = i - 1;
                 }
                 prev_start = cur_start;
+            }
+        }
+
+        internal void PatchNestedTypes()
+        {
+            nested_types = new int[table_rows[tid_TypeDef] + 1];
+            next_nested_type = new int[table_rows[tid_TypeDef] + 1];
+            nested_parent = new int[table_rows[tid_TypeDef] + 1];
+
+            for (int i = 1; i <= table_rows[tid_NestedClass]; i++)
+            {
+                var NestedClass = (int)GetIntEntry(tid_NestedClass, i, 0);
+                var EnclosingClass = (int)GetIntEntry(tid_NestedClass, i, 1);
+
+                next_nested_type[NestedClass] = nested_types[EnclosingClass];
+                nested_types[EnclosingClass] = NestedClass;
+                nested_parent[NestedClass] = EnclosingClass;
+            }
+        }
+
+        internal void PatchCustomAttrs()
+        {
+            td_custom_attrs = new int[table_rows[tid_TypeDef] + 1];
+            md_custom_attrs = new int[table_rows[tid_MethodDef] + 1];
+            next_ca = new int[table_rows[tid_CustomAttribute] + 1];
+
+            for(int i = 0; i <= table_rows[tid_CustomAttribute]; i++)
+            {
+                int parent_tid, parent_row;
+                GetCodedIndexEntry(tid_CustomAttribute, i, 0,
+                    HasCustomAttribute, out parent_tid,
+                    out parent_row);
+
+                switch(parent_tid)
+                {
+                    case tid_TypeDef:
+                        next_ca[i] = td_custom_attrs[parent_row];
+                        td_custom_attrs[parent_row] = i;
+                        break;
+                    case tid_MethodDef:
+                        next_ca[i] = md_custom_attrs[parent_row];
+                        md_custom_attrs[parent_row] = i;
+                        break;
+                }
             }
         }
 

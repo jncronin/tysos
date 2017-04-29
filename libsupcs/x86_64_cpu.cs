@@ -63,6 +63,7 @@ namespace libsupcs.x86_64
             Lidt((UIntPtr)idt_ptr);
         }
 
+        [Bits64Only]
         public unsafe static void Sgdt(out void *addr, out ushort limit)
         {
             byte* ptr = stackalloc byte[10];

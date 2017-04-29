@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using libtysila5.util;
+using metadata;
 
 namespace libtysila5
 {
@@ -30,7 +31,8 @@ namespace libtysila5
     {
         public static bool AssembleMethod(metadata.MethodSpec ms,
             binary_library.IBinaryFile bf, target.Target t,
-            StringBuilder debug_passes = null)
+            StringBuilder debug_passes = null,
+            MetadataStream base_m = null)
         {
             var ts = bf.GetTextSection();
             t.bf = bf;
@@ -39,6 +41,10 @@ namespace libtysila5
             var csite = ms.msig;
             var mdef = ms.mdrow;
             var m = ms.m;
+
+            /* Don't compile if not for this architecture */
+            if (!t.IsMethodValid(ms))
+                return false;
 
             // Get mangled name for defining a symbol
             List<binary_library.ISymbol> meth_syms = new List<binary_library.ISymbol>();
@@ -51,19 +57,25 @@ namespace libtysila5
             ts.AddSymbol(meth_sym);
             meth_syms.Add(meth_sym);
 
-            if(ms.aliases != null)
+            foreach(var alias in ms.MethodAliases)
             {
-                foreach(var alias in ms.aliases)
-                {
-                    var alias_sym = bf.CreateSymbol();
-                    alias_sym.Name = alias;
-                    alias_sym.ObjectType = binary_library.SymbolObjectType.Function;
-                    alias_sym.Offset = (ulong)ts.Data.Count;
-                    alias_sym.Type = binary_library.SymbolType.Global;
-                    ts.AddSymbol(alias_sym);
-                    meth_syms.Add(alias_sym);
-                }
+                var alias_sym = bf.CreateSymbol();
+                alias_sym.Name = alias;
+                alias_sym.ObjectType = binary_library.SymbolObjectType.Function;
+                alias_sym.Offset = (ulong)ts.Data.Count;
+                alias_sym.Type = binary_library.SymbolType.Global;
+                ts.AddSymbol(alias_sym);
+                meth_syms.Add(alias_sym);
             }
+
+            binary_library.SymbolType sym_st = binary_library.SymbolType.Global;
+
+            if (ms.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs20WeakLinkageAttribute_7#2Ector_Rv_P1u1t"))
+                sym_st = binary_library.SymbolType.Weak;
+            if (base_m != null && ms.m != base_m)
+                sym_st = binary_library.SymbolType.Weak;
+            foreach (var sym in meth_syms)
+                sym.Type = sym_st;
 
             // Get signature if not specified
             if (csite == 0)
@@ -186,7 +198,7 @@ namespace libtysila5
                 esym.Name = extra_sym.Name;
                 esym.ObjectType = binary_library.SymbolObjectType.Function;
                 esym.Offset = (ulong)extra_sym.Offset;
-                esym.Type = binary_library.SymbolType.Global;
+                esym.Type = sym_st;
                 ts.AddSymbol(esym);
             }
 

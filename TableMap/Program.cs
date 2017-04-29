@@ -418,7 +418,7 @@ namespace TableMap
                         ToByteArray(a, ret);
                     break;
                 case Expression.EvalResult.ResultType.Int:
-                    CompressInt(v.intval, ret);
+                    CompressInt((int)v.intval, ret);
                     /*ret.Add((byte)(v.intval & 0xff));
                     ret.Add((byte)((v.intval >> 8) & 0xff));
                     ret.Add((byte)((v.intval >> 16) & 0xff));

@@ -55,13 +55,13 @@ namespace libtysila5.target.x86
             {
                 case 1:
                     if (_value.IsStack)
-                        oc = x86_mov_rm8disp_r32;
+                        oc = x86_mov_rm8disp_r8;
                     else
                         oc = x86_mov_rm8disp_imm32;
                     break;
                 case 2:
                     if (_value.IsStack)
-                        oc = x86_mov_rm16disp_r32;
+                        oc = x86_mov_rm16disp_r16;
                     else
                         oc = x86_mov_rm16disp_imm32;
                     break;

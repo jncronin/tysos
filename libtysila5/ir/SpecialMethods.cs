@@ -68,7 +68,7 @@ namespace libtysila5.ir
             var I = corlib.GetTypeSpec("System", "IntPtr");
             var o = corlib.GetSimpleTypeSpec(0x1c);
             var s = corlib.GetSimpleTypeSpec(0x0e);
-            var a = corlib.GetSimpleTypeSpec(0x0a);
+            var a = corlib.GetSimpleTypeSpec(0x04);
             var Pa = a.Pointer;
             var c = corlib.GetSimpleTypeSpec(0x03);
             var Pc = c.Pointer;

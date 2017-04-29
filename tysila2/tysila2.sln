@@ -1176,8 +1176,8 @@ Global
 		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile corlib|x86.ActiveCfg = Release|Any CPU
 		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile libsupcs|Any CPU.ActiveCfg = Release|Any CPU
 		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile libsupcs|Any CPU.Build.0 = Release|Any CPU
-		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile libsupcs|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile libsupcs|Mixed Platforms.Build.0 = Release|Any CPU
+		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile libsupcs|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile libsupcs|Mixed Platforms.Build.0 = Debug|Any CPU
 		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile libsupcs|Win32.ActiveCfg = Release|Any CPU
 		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile libsupcs|x64.ActiveCfg = Compile BareBones|Any CPU
 		{7D57589D-4C6C-4C24-945E-5A9CF736227E}.Compile libsupcs|x64.Build.0 = Compile BareBones|Any CPU
@@ -1324,8 +1324,8 @@ Global
 		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile corlib|x86.ActiveCfg = Release|Any CPU
 		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile libsupcs|Any CPU.ActiveCfg = Release|Any CPU
 		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile libsupcs|Any CPU.Build.0 = Release|Any CPU
-		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile libsupcs|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile libsupcs|Mixed Platforms.Build.0 = Release|Any CPU
+		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile libsupcs|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile libsupcs|Mixed Platforms.Build.0 = Debug|Any CPU
 		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile libsupcs|Win32.ActiveCfg = Release|Any CPU
 		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile libsupcs|x64.ActiveCfg = Compile BareBones|Any CPU
 		{7BDE9401-3793-4767-843F-0B6156718B60}.Compile libsupcs|x64.Build.0 = Compile BareBones|Any CPU
@@ -3242,8 +3242,8 @@ Global
 		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile corlib|x86.Build.0 = Release|Any CPU
 		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile libsupcs|Any CPU.ActiveCfg = Release|Any CPU
 		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile libsupcs|Any CPU.Build.0 = Release|Any CPU
-		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile libsupcs|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile libsupcs|Mixed Platforms.Build.0 = Release|Any CPU
+		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile libsupcs|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile libsupcs|Mixed Platforms.Build.0 = Debug|Any CPU
 		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile libsupcs|Win32.ActiveCfg = Release|Any CPU
 		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile libsupcs|Win32.Build.0 = Release|Any CPU
 		{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}.Compile libsupcs|x64.ActiveCfg = Debug|Any CPU
@@ -3332,8 +3332,8 @@ Global
 		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile corlib|x86.Build.0 = Release|Any CPU
 		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile libsupcs|Any CPU.ActiveCfg = Release|Any CPU
 		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile libsupcs|Any CPU.Build.0 = Release|Any CPU
-		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile libsupcs|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile libsupcs|Mixed Platforms.Build.0 = Release|Any CPU
+		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile libsupcs|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile libsupcs|Mixed Platforms.Build.0 = Debug|Any CPU
 		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile libsupcs|Win32.ActiveCfg = Release|Any CPU
 		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile libsupcs|Win32.Build.0 = Release|Any CPU
 		{62D134E0-864F-4100-BBA0-44A78948647A}.Compile libsupcs|x64.ActiveCfg = Debug|Any CPU
@@ -3602,8 +3602,8 @@ Global
 		{82697295-1AFF-4174-97BC-6562732305F3}.Compile corlib|x86.Build.0 = Release|Any CPU
 		{82697295-1AFF-4174-97BC-6562732305F3}.Compile libsupcs|Any CPU.ActiveCfg = Release|Any CPU
 		{82697295-1AFF-4174-97BC-6562732305F3}.Compile libsupcs|Any CPU.Build.0 = Release|Any CPU
-		{82697295-1AFF-4174-97BC-6562732305F3}.Compile libsupcs|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{82697295-1AFF-4174-97BC-6562732305F3}.Compile libsupcs|Mixed Platforms.Build.0 = Release|Any CPU
+		{82697295-1AFF-4174-97BC-6562732305F3}.Compile libsupcs|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{82697295-1AFF-4174-97BC-6562732305F3}.Compile libsupcs|Mixed Platforms.Build.0 = Debug|Any CPU
 		{82697295-1AFF-4174-97BC-6562732305F3}.Compile libsupcs|Win32.ActiveCfg = Release|Any CPU
 		{82697295-1AFF-4174-97BC-6562732305F3}.Compile libsupcs|Win32.Build.0 = Release|Any CPU
 		{82697295-1AFF-4174-97BC-6562732305F3}.Compile libsupcs|x64.ActiveCfg = Release|Any CPU

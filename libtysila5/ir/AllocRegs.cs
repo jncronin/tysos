@@ -33,8 +33,8 @@ namespace libtysila5.ir
         {
             foreach(var n in c.ir)
             {
-                DoAllocation(c, n.stack_before);
-                DoAllocation(c, n.stack_after);
+                DoAllocation(c, n.stack_before, c.t);
+                DoAllocation(c, n.stack_after, c.t);
             }
         }
 
@@ -53,6 +53,34 @@ namespace libtysila5.ir
             {
                 cur_stack -= rsize;
                 return new target.Target.ContentsReg { basereg = target.x86.x86_Assembler.r_ebp, disp = cur_stack, size = 4 };
+            }
+        }
+
+        private static void DoAllocation(Code c, Stack<StackItem> stack, target.Target t)
+        {
+            long alloced = 0;
+
+            foreach(var si in stack)
+            {
+                long avail = t.ct_regs[si.ct] & ~alloced;
+
+                if (avail != 0)
+                {
+                    // We have a valid allocation to use
+                    int idx = 0;
+                    while ((avail & 0x1) == 0)
+                    {
+                        idx++;
+                        avail >>= 1;
+                    }
+                    var reg = t.regs[idx];
+                    alloced |= (1L << idx);
+                    si.reg = reg;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
             }
         }
 

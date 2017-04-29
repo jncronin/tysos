@@ -1188,7 +1188,6 @@ namespace libtysila5.ir
         private static Stack<StackItem> box(CilNode n, Code c, Stack<StackItem> stack_before)
         {
             var ts = n.GetTokenAsTypeSpec(c);
-            c.t.r.VTableRequestor.Request(ts);
 
             if (ts.IsValueType)
             {
@@ -1197,6 +1196,7 @@ namespace libtysila5.ir
                         " vs " + stack_before.Peek().ts);
 
                 var boxed_ts = new metadata.TypeSpec { m = ts.m, stype = TypeSpec.SpecialType.Boxed, other = ts };
+                c.t.r.VTableRequestor.Request(boxed_ts);
                 var ptr_size = c.t.GetPointerSize();
                 var data_size = c.t.GetSize(ts);
                 var boxed_size = util.util.align(ptr_size + data_size, ptr_size);
@@ -1227,6 +1227,7 @@ namespace libtysila5.ir
             }
             else
             {
+                c.t.r.VTableRequestor.Request(ts);
                 return stack_before;
             }
         }
@@ -1377,7 +1378,7 @@ namespace libtysila5.ir
             if(ctor == null)
                 ctor = n.GetTokenAsMethodSpec(c);
             var objtype = ctor.type;
-            c.t.r.VTableRequestor.Request(objtype);
+            c.t.r.VTableRequestor.Request(objtype.Box);
             c.t.r.MethodRequestor.Request(ctor);
             var stack_after = new Stack<StackItem>(stack_before);
 
@@ -1624,7 +1625,7 @@ namespace libtysila5.ir
             var arr_type = new metadata.TypeSpec { m = arr_elem_type.m, stype = TypeSpec.SpecialType.SzArray, other = arr_elem_type };
             var et_size = c.t.GetSize(arr_elem_type);
 
-            c.t.r.VTableRequestor.Request(arr_elem_type);
+            c.t.r.VTableRequestor.Request(arr_elem_type.Box);
             c.t.r.VTableRequestor.Request(arr_type);
 
             /* Determine size of array object.
@@ -1837,7 +1838,7 @@ namespace libtysila5.ir
             //if (!c.ms.m.GetFieldDefRow(table_id, row, out ts, out fs))
                 //throw new Exception("Field not found");
 
-            fld_ts = c.ms.m.GetFieldType(fs, c.ms.gtparams, c.ms.gmparams);
+            fld_ts = c.ms.m.GetFieldType(fs, ts.gtparams, c.ms.gmparams);
 
             var fld_addr = layout.Layout.GetFieldOffset(ts, fs, c.t, is_static);
 
@@ -1858,7 +1859,7 @@ namespace libtysila5.ir
 
                 n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldlabaddr, ct = Opcode.ct_intptr, imm_lab = static_name, imm_l = fld_addr, stack_before = stack_before, stack_after = stack_after });
 
-                c.t.r.StaticFieldRequestor.Request(ts);
+                c.t.r.StaticFieldRequestor.Request(ts.Unbox);
             }
             else
             {
@@ -2112,6 +2113,7 @@ namespace libtysila5.ir
             string mangled_meth;
             int sig_idx;
             MethodSpec ms;
+            bool is_reinterpret_as = false;
             if (override_name != null)
             {
                 m = override_m;
@@ -2125,6 +2127,7 @@ namespace libtysila5.ir
                 ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
                 m = ms.m;
                 mangled_meth = c.ms.m.MangleMethod(ms);
+
                 if (ms.mdrow != 0)
                 {
                     sig_idx = (int)ms.m.GetIntEntry(MetadataStream.tid_MethodDef, ms.mdrow,
@@ -2132,22 +2135,45 @@ namespace libtysila5.ir
                 }
                 else
                     sig_idx = ms.msig;
-                
 
-                intcall_delegate intcall;
-                if(is_calli == false && intcalls.TryGetValue(mangled_meth, out intcall))
+                if (ms.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs28ReinterpretAsMethodAttribute_7#2Ector_Rv_P1u1t"))
                 {
-                    var r = intcall(n, c, stack_before);
-                    if (r != null)
-                        return r;
-                }
+                    // This is a 'Reinterpret As' method - handle accordingly
+                    is_reinterpret_as = true;
 
-                c.t.r.MethodRequestor.Request(ms);
+                    if (is_calli)
+                        throw new Exception("calli/callvirt to ReinterpretAs method");
+                }
+                else
+                {
+                    intcall_delegate intcall;
+
+                    if (is_calli == false && intcalls.TryGetValue(mangled_meth, out intcall))
+                    {
+                        var r = intcall(n, c, stack_before);
+                        if (r != null)
+                            return r;
+                    }
+
+                    c.t.r.MethodRequestor.Request(ms);
+                }
             }
 
             var pc = m.GetMethodDefSigParamCountIncludeThis((int)sig_idx);
             var rt_idx = m.GetMethodDefSigRetTypeIndex((int)sig_idx);
             var rt = m.GetTypeSpec(ref rt_idx, ms.gtparams, ms.gmparams);
+
+            if(is_reinterpret_as)
+            {
+                // Handle specially
+                var popped_st = stack_after.Pop();
+                var new_st = popped_st.Clone();
+                new_st.ts = rt;
+                stack_after.Push(new_st);
+
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stackcopy, arg_a = 0, res_a = 0, stack_before = stack_before, stack_after = stack_after });
+                return stack_after;
+            }
 
             while (pc-- > 0)
                 stack_after.Pop();

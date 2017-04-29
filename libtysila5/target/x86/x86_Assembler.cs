@@ -181,3 +181,10 @@ namespace libtysila5.target.x86
         }
     }
 }
+
+namespace libtysila5.target.x86_64
+{
+    partial class x86_64_Assembler : x86.x86_Assembler
+    {
+    }
+}

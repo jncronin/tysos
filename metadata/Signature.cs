@@ -231,6 +231,34 @@ namespace metadata
             }
         }
 
+        public int GetCustomAttrSigIdx(int ca_idx)
+        {
+            int val_idx = (int)GetIntEntry(tid_CustomAttribute,
+                ca_idx, 2);
+
+            SigReadUSCompressed(ref val_idx);
+            var prolog = sh_blob.di.ReadUShort(val_idx);
+
+            if (prolog == 0x0001)
+            {
+                val_idx += 2;
+
+                return val_idx;
+            }
+            return 0;
+        }
+
+        public string ReadCustomAttrString(ref int sig_idx)
+        {
+            var str_len = SigReadUSCompressed(ref sig_idx);
+            StringBuilder sb = new StringBuilder();
+            for (uint i = 0; i < str_len; i++)
+            {
+                sb.Append((char)sh_blob.di.ReadByte(sig_idx++));
+            }
+            return sb.ToString();
+        }
+
         // Internal functions that parse a bit of the signature
         internal uint SigReadUSCompressed(ref int idx, bool us = false)
         {

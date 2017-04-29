@@ -159,11 +159,11 @@ namespace TableMap
                 // increase the array size as appropriate
                 if(idx >= o.arrval.Count)
                 {
-                    o.arrval.Capacity = idx * 3 / 2;
+                    o.arrval.Capacity = (int)idx * 3 / 2;
                     while (idx >= o.arrval.Count)
                         o.arrval.Add(new Expression.EvalResult { Type = Expression.EvalResult.ResultType.Null });
                 }
-                o.arrval[idx] = e;
+                o.arrval[(int)idx] = e;
             }
             else
                 throw new NotImplementedException();
@@ -182,7 +182,7 @@ namespace TableMap
                 var lie = next_member as LabelIndexedExpression;
                 if (o.Type != Expression.EvalResult.ResultType.Array)
                     throw new Exception();
-                next_result = o.arrval[lie.index.Evaluate(s).AsInt];
+                next_result = o.arrval[(int)lie.index.Evaluate(s).AsInt];
             }
             else if (next_member is LabelMemberExpression)
             {

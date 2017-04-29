@@ -1,8 +1,11 @@
 ﻿name = "x86";
 nspace = "libtysila5.target." + name;
 assembler = name + "_Assembler";
+assembler_64 = "x86_64_Assembler";
 
 x86_def = target_init("x86", 4, 0);
+x86_64_def = target_init("x86_64", 8, 0);
+nspace_64 = x86_64_def.nspace;
 
 next_reg_id = 0;
 regs = [ Rstack(), Rcontents(),
@@ -14,18 +17,42 @@ regs = [ Rstack(), Rcontents(),
 	MultiReg("eaxedx", [ eax, edx ]) ];
 x86_def.regs = regs;
 
-// Mask of all usable registers in most instructions
-IntRegs = stackreg | contentsreg | eaxreg | ebxreg | ecxreg | edxreg | edireg | esireg;
-Gprs = eaxreg | ebxreg | ecxreg | edxreg | edireg | esireg;
+x86_64_def.regs = [ Rstack(), Rcontents(),
+	Ralias("eip", "rip", 8),
+	Ralias("eax", "rax", 8),
+	Ralias("ebx", "rbx", 8),
+	Ralias("ecx", "rcx", 8),
+	Ralias("edx", "rdx", 8),
+	Ralias("esi", "rsi", 8),
+	Ralias("edi", "rdi", 8),
+	Ri64("r8"),
+	Ri64("r9"),
+	Ri64("r10"),
+	Ri64("r11"),
+	Ri64("r12"),
+	Ri64("r13"),
+	Ri64("r14"),
+	Ri64("r15"),
+	xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+	Rf64("xmm8"), Rf64("xmm9"), Rf64("xmm10"), Rf64("xmm11"), 
+	Rf64("xmm12"), Rf64("xmm13"), Rf64("xmm14"), Rf64("xmm15"),
+	MultiReg("raxrdx", [ rax, rdx ]) ];
 
 // Where can cli types go?
-x86_def.ct_map = simple_map(nspace, assembler, "ct_map", "init_ctmap", [
-	[ vl_stack32, Gprs | stackreg ],
-	[ vl_arg32, Gprs | stackreg ],
-	[ vl_lv32, stackreg ],
-]);
+x86_def.ct_map = 
+	[
+		[ ct_int32, [ esi, edi, ecx, ebx ] ],
+		[ ct_int64, [ ] ],
+		[ ct_float, [ xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6 ] ],
+	];
+x86_64_def.ct_map = 
+	[
+		[ ct_int32, [ r8, r9, r10, r11, r12, r13, r14, r15, rsi, rdi, rcx, rbx ] ],
+		[ ct_int64, [ r8, r9, r10, r11, r12, r13, r14, r15, rsi, rdi, rcx, rbx ] ],
+		[ ct_float, [ xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 ] ],
+	];
 
-intmap(nspace, assembler, name, "insts", "init_instrs", [
+x86_instrs = [
 	"mov_rm32_r32",
 	"mov_r32_rm32",
 	"mov_r8_rm8",
@@ -42,8 +69,8 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"mov_rm16disp_imm32",
 	"mov_rm8disp_imm32",
 	"mov_rm32disp_r32",
-	"mov_rm16disp_r32",
-	"mov_rm8disp_r32",
+	"mov_rm16disp_r16",
+	"mov_rm8disp_r8",
 	"movzxbd_r32_rm8sibscaledisp",
 	"movzxwd_r32_rm16sibscaledisp",
 	"movsxbd_r32_rm8sibscaledisp",
@@ -114,188 +141,49 @@ intmap(nspace, assembler, name, "insts", "init_instrs", [
 	"mulsd_xmm_xmmm64",
 	"divsd_xmm_xmmm64",
 	"comisd_xmm_xmmm64",
-]);
+	"ucomisd_xmm_xmmm64",
+	"cmpsd_xmm_xmmm64_imm8",
 
-function oc_map_handler(array entries, string val)
-{
-	print("\t\t\oc_map[new int[] { ");
-	for(i = 0; i < entries.length; i = i + 1)
-	{
-		if(i != 0)
-		{
-			print(", ");
-		}
-		print(entries[i]);
-	}
-	print(" }] = ");
-	print(val);
-	print(";\n");
-}
+	// put x86_64 instructions after mov_r64_imm64
+	"mov_r64_imm64",
+	"mov_rm64_imm32",
+	"mov_r64_rm64",
+	"mov_rm64_r64",
+	"mov_r64_rm64disp",
+	"mov_r64_rm32disp",
+	"mov_r64_rm16disp",
+	"mov_r64_rm8disp",
+	"mov_rm64disp_r64",
+	"movsxbq_r64_rm8disp",
+	"movzxbq_r64_rm8disp",
+	"movsxwq_r64_rm16disp",
+	"movzxwq_r64_rm16disp",
+	"cmp_rm64_r64",
+	"cmp_r64_rm64",
+	"cmp_rm64_imm32",
+	"cmp_rm64_imm8",
+	"movsxdq_r64_rm64",
+];
+
+intmap(nspace, assembler, name, "insts", "init_instrs", x86_instrs);
 
 /* Override some built-in instruction handler names */
 instr(x86_def, [ oc_shl ], "shift");
 instr(x86_def, [ oc_shr ], "shift");
 instr(x86_def, [ oc_shr_un ], "shift");
+instr(x86_64_def, [ oc_shl ], "shift");
+instr(x86_64_def, [ oc_shr ], "shift");
+instr(x86_64_def, [ oc_shr_un ], "shift");
 
 /* Optimize complex instruction sequences */
 
 // the following is produced by string.get_Chars
 instr(x86_def, [ oc_ldc, oc_mul, oc_conv, oc_add, oc_ldc, oc_add, oc_ldind ], "getCharSeq");
+instr(x86_64_def, [ oc_ldc, oc_mul, oc_conv, oc_add, oc_ldc, oc_add, oc_ldind ], "getCharSeq");
 
 // the following is produced by initobj
 instr(x86_def, [ oc_ldc, oc_zeromem ], "ldc_zeromem");
-
-gpr = eaxreg | ebxreg | ecxreg | edxreg | esireg | edireg;
-gprmem = gpr | stackreg | contentsreg;
-
-//multimap("libtysila5.target.x86", "x86_Assembler", "oc_map", "init_oc_map",
-//[
-//	[ [ oc_ldc ], [ gprmem ], "ldc" ],
-//], funcref oc_map_handler(array, string));
-
-gprmem = [ vl_stack32, vl_lv32, vl_arg32, vl_stack, vl_lv, vl_arg ];
-gpr = [ vl_stack32, vl_stack ];
-imm = [ vl_c32, vl_c ];
-gprmemimm = [ vl_stack32, vl_lv32, vl_arg32, vl_c32, vl_c, vl_stack,
-	vl_lv, vl_arg ];
-lvs = [ vl_lv32, vl_lv64, vl_lv ];
-
-
-
-
-multiinstr(name, oc_ldloca, [ lvs ], [ gpr ], [
-	[ "x86_lea_r32", "$d0", "$u0" ]
-], [ contentsreg ], [ Gprs ], 0);
-
-multiinstr(name, oc_store, [ gprmem ], [ gpr ], [
-	[ "x86_mov_r32_rm32", "$d0", "$u0" ]
-], [ IntRegs ], [ Gprs ], 0);
-
-multiinstr(name, oc_store, [ gpr ], [ gprmem ], [
-	[ "x86_mov_rm32_r32", "$d0", "$u0" ]
-], [ Gprs ], [ IntRegs ], 0);
-
-multiinstr(name, oc_store, [ gprmem ], [ gprmem ], [
-	[ "x86_mov_r32_rm32", "$td0", "$u0" ],
-	[ "x86_mov_rm32_r32", "$d0", "$tu0" ]
-], [ IntRegs ], [ IntRegs ], 0);
-
-multiinstr(name, oc_store, [ imm ], [ gprmem ], [
-	[ "x86_mov_rm32_imm32", "$d0", "$u0" ]
-], [ 0 ], [ IntRegs ], 0);
-
-multiinstr(name, oc_store, [ gpr ], [ gprmem, gprmem ],
-	[	[ "x86_mov_rm32_r32", "$d0", "$u0" ],
-		[ "x86_mov_rm32_r32", "$d1", "$u0" ]
-], [ IntRegs ], [ IntRegs, IntRegs ], 0);
-
-instr(name, oc_nop, [], [], [], [], [], 0);
-
-multiinstr(name, oc_cmp, [ gpr, gprmem ], [ gpr ],
-	[	[ "x86_cmp_r32_rm32", "$u0", "$u1" ],
-		[ "x86_set_rm32", "$cc", "$td0" ],
-		[ "x86_movsxbd", "$d0", "$tu0" ]
-], [ Gprs, IntRegs ], [ Gprs ], 0);
-
-multiinstr(name, oc_cmp, [ gprmem, gpr ], [ gpr ],
-	[	[ "x86_cmp_rm32_r32", "$u0", "$u1" ],
-		[ "x86_set_rm32", "$cc", "$td0" ],
-		[ "x86_movsxbd", "$d0", "$tu0" ]
-], [ IntRegs, Gprs ], [ Gprs ], 0);
-
-multiinstr(name, oc_cmp, [ gprmem, imm ], [ gpr ],
-	[	[ "x86_cmp_rm32_imm32", "$u0", "$u1" ],
-		[ "x86_set_rm32", "$cc", "$td0" ],
-		[ "x86_movsxbd", "$d0", "$tu0" ]
-], [ IntRegs, 0 ], [ Gprs ], 0);
-
-multiinstr(name, oc_cmp, [ imm, gprmem ], [ gpr ],
-	[	[ "x86_cmp_rm32_imm32", "$u1", "$u0" ],
-		[ "x86_set_rm32", "$icc", "$td0" ],
-		[ "x86_movsxbd", "$d0", "$tu0" ]
-], [ 0, IntRegs ], [ Gprs ], 0);
-
-multiinstr(name, oc_brif, [ gpr, gprmem ], [ ],
-	[	[ "x86_cmp_r32_rm32", "$u0", "$u1" ],
-		[ "x86_jcc_rel32", "$cc", "$br1" ]
-], [ Gprs, IntRegs ], [ ], 0);
-
-multiinstr(name, oc_brif, [ gprmem, gpr ], [ ],
-	[	[ "x86_cmp_rm32_r32", "$u0", "$u1" ],
-		[ "x86_jcc_rel32", "$cc", "$br1" ]
-], [ IntRegs, Gprs ], [ ], 0);
-
-multiinstr(name, oc_brif, [ imm, gprmem ], [ ],
-	[	[ "x86_cmp_rm32_imm32", "$u1", "$u0" ],
-		[ "x86_jcc_rel32", "$icc", "$br1" ]
-], [ 0, IntRegs ], [ ], 0);
-
-multiinstr(name, oc_brif, [ gprmem, imm ], [ ],
-	[	[ "x86_cmp_rm32_imm32", "$u0", "$u1" ],
-		[ "x86_jcc_rel32", "$cc", "$br1" ]
-], [ IntRegs, 0 ], [ ], 0);
-
-multiinstr(name, oc_mul, [ gprmem, imm ], [ gpr ],
-	[	[ "x86_imul_r32_rm32_imm32", "$d0", "$u0", "$u1" ],
-], [ IntRegs, 0 ], [ Gprs ], 0);
-
-multiinstr(name, oc_ldind, [ gpr, gpr ], [ gpr ],
-	[	[ "x86_mov_r32_rm32sib", "$d0", "$u0", "$u1" ],
-], [ Gprs, Gprs ], [ Gprs ], 0);
-
-multiinstr(name, oc_ldind, [ gpr, imm ], [ gpr ],
-	[	[ "x86_mov_r32_rm32disp", "$d0", "$u0", "$u1" ],
-], [ Gprs, 0 ], [ Gprs ], 0);
-
-
-
-/* These define a temporary internal register so that we can
-	handle the times when the destination is not the same as the
-	first source operand.  The register allocator should coalesce
-	them back together if possible.  The extra parameter to the
-	add/sub is to ensure the dead-code eliminator doesn't remove
-	the first assign (as its value it never used) */
-multiinstr(name, oc_add, [ gprmem, gprmem ], [ gprmem ],
-	[	[ "x86_mov_r32_rm32", "$td0", "$u0" ],
-		[ "x86_add_r32_rm32", "$td0", "$tu0", "$u1" ],
-		[ "x86_mov_rm32_r32", "$d0", "$tu0" ]
-], [ IntRegs, IntRegs ], [ IntRegs ], 0);
-
-multiinstr(name, oc_add, [ gprmem, gprmem ], [ gprmem ],
-	[	[ "x86_mov_r32_rm32", "$td0", "$u0" ],
-		[ "x86_add_r32_rm32", "$td0", "$tu0", "$u1" ],
-		[ "x86_mov_rm32_r32", "$d0", "$tu0" ]
-], [ IntRegs, IntRegs ], [ IntRegs ], 0);
-
-multiinstr(name, oc_add, [ gprmem, imm ], [ gprmem ],
-	[	[ "x86_mov_r32_rm32", "$td0", "$u0" ],
-		[ "x86_add_rm32_imm32", "$td0", "$tu0", "$u1" ],
-		[ "x86_mov_rm32_r32", "$d0", "$tu0" ]
-], [ IntRegs, 0 ], [ IntRegs ], 0);
-
-multiinstr(name, oc_add, [ imm, gprmem ], [ gprmem ],
-	[	[ "x86_mov_r32_rm32", "$td0", "$u1" ],
-		[ "x86_add_rm32_imm32", "$td0", "$tu0", "$u0" ],
-		[ "x86_mov_rm32_r32", "$d0", "$tu0" ]
-], [ 0, IntRegs ], [ IntRegs ], 0);
-
-
-instr(name, oc_br, [], [],
-	[	[ "x86_jmp_rel32", "$br0" ]
-], [ IntRegs, IntRegs ], [ IntRegs ], 0);
-
-/* These are used programatically and shouldn't automatically
-	be used to lower anything (thus use of oc_null) */
-instr(name, oc_null, [], [],
-	[	[ "x86_ret" ]
-], [], [], 0);
-multiinstr(name, oc_null, [ gprmem ], [],
-	[	[ "x86_pop_rm32", "$u0" ]
-], [ ], [ ], 0);
-multiinstr(name, oc_null, [ gprmem ], [],
-	[	[ "x86_push_rm32", "$u0" ]
-], [ ], [ ], 0);
-
+instr(x86_64_def, [ oc_ldc, oc_zeromem ], "ldc_zeromem");
 
 // Calling conventions
 // SysV
@@ -329,5 +217,38 @@ x86_def.cc = cc_map(nspace, assembler, [
 	[ "sysv", cc_sysv ]
 ]);
 x86_def.retcc = retcc_map(nspace, assembler, [
+	[ "ret_sysv", cc_ret_sysv ]
+]);
+
+cc_sysv_64 = cc(nspace_64, assembler_64, "sysv",
+[
+	[ ct_int32, [ stack ] ],
+	[ ct_intptr, [ stack ] ],
+	[ ct_int64, [ stack ] ],
+	[ ct_object, [ stack ] ],
+	[ ct_ref, [ stack ] ],
+	[ ct_vt, [ stack ] ],
+	[ ct_float, [ stack ] ],
+],
+raxreg | rcxreg | rdxreg,			// caller preserves
+rbxreg | rsireg | rdireg			// callee preserves
+);
+
+cc_ret_sysv_64 = cc(nspace_64, assembler_64, "ret_sysv",
+[
+	[ ct_int32, [ rax ] ],
+	[ ct_intptr, [ rax ] ],
+	[ ct_object, [ rax ] ],
+	[ ct_ref, [ rax ] ],
+
+	[ ct_int64, [ rax ] ],
+
+	[ ct_float, [ xmm0 ] ],
+]);
+
+x86_64_def.cc = cc_map(nspace_64, assembler_64, [
+	[ "sysv", cc_sysv ]
+]);
+x86_64_def.retcc = retcc_map(nspace_64, assembler_64, [
 	[ "ret_sysv", cc_ret_sysv ]
 ]);

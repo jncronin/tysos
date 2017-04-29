@@ -391,8 +391,8 @@ namespace metadata
 
             // Get namespace of outermost enclosing type
             int outermost = td_idx;
-            while (enclosing_types[outermost] != 0)
-                outermost = enclosing_types[outermost];
+            while (nested_parent[outermost] != 0)
+                outermost = nested_parent[outermost];
             string nspace = EncodeString(GetStringEntry(tid_TypeDef, outermost, 2));
 
             StringBuilder name_sb = new StringBuilder();
@@ -442,9 +442,9 @@ namespace metadata
 
         private void AppendEnclosingType(int td_idx, StringBuilder name_sb)
         {
-            if(enclosing_types[td_idx] != 0)
+            if(nested_parent[td_idx] != 0)
             {
-                AppendEnclosingType(enclosing_types[td_idx], name_sb);
+                AppendEnclosingType(nested_parent[td_idx], name_sb);
                 name_sb.Append("+");
             }
             name_sb.Append(GetStringEntry(tid_TypeDef, td_idx, 1));

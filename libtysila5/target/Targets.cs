@@ -45,6 +45,10 @@ namespace libtysila5.target
             new Dictionary<int, string>(
                 new GenericEqualityComparer<int>());
 
+        internal Dictionary<int, long> ct_regs =
+            new Dictionary<int, long>(
+                new GenericEqualityComparer<int>());
+
         public Dictionary<string, ulong> cc_callee_preserves_map
             = new Dictionary<string, ulong>(
                 new GenericEqualityComparer<string>());
@@ -101,6 +105,7 @@ namespace libtysila5.target
 
         public string name;
         public int ptype;
+        protected internal int psize;
         public Trie<InstructionHandler> instrs = new Trie<InstructionHandler>();
         public Reg[] regs;
 
@@ -254,8 +259,6 @@ namespace libtysila5.target
             {
                 if (other.type != type)
                     return false;
-                if (other.size != size)
-                    return false;
                 if (other.id != id)
                     return false;
                 if (other.stack_loc != stack_loc)
@@ -330,6 +333,7 @@ namespace libtysila5.target
                 case 0x18:
                 case 0x19:
                 case 0x1b:
+                case 0x11:
                     return GetPointerSize();
                 default:
                     throw new NotSupportedException();
@@ -347,7 +351,7 @@ namespace libtysila5.target
             }
         }
 
-        protected internal virtual int GetPointerSize()
+        public virtual int GetPointerSize()
         {
             return GetCTSize(ptype);
         }
@@ -498,6 +502,60 @@ namespace libtysila5.target
                     throw new NotImplementedException();
             }
             return r;
+        }
+
+        public virtual bool IsTypeValid(metadata.TypeSpec ts)
+        {
+            if (ts.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs19Bits32OnlyAttribute_7#2Ector_Rv_P1u1t") &&
+                GetPointerSize() != 4)
+                return false;
+            if (ts.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs19Bits64OnlyAttribute_7#2Ector_Rv_P1u1t") &&
+                GetPointerSize() != 8)
+                return false;
+
+            bool is_arch_dependent = false;
+            bool is_required_arch = false;
+            foreach (var idx in ts.CustomAttributes("_ZN14libsupcs#2Edll8libsupcs22ArchDependentAttribute_7#2Ector_Rv_P2u1tu1S"))
+            {
+                var sig_idx = ts.m.GetCustomAttrSigIdx(idx);
+                var arch = ts.m.ReadCustomAttrString(ref sig_idx);
+                is_arch_dependent = true;
+                if (arch.Equals(name))
+                    is_required_arch = true;
+            }
+
+            if (is_arch_dependent && !is_required_arch)
+                return false;
+
+            return true;
+        }
+
+        public virtual bool IsMethodValid(metadata.MethodSpec ms)
+        {
+            if (!IsTypeValid(ms.type))
+                return false;
+            if (ms.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs19Bits32OnlyAttribute_7#2Ector_Rv_P1u1t") &&
+                GetPointerSize() != 4)
+                return false;
+            if (ms.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs19Bits64OnlyAttribute_7#2Ector_Rv_P1u1t") &&
+                GetPointerSize() != 8)
+                return false;
+
+            bool is_arch_dependent = false;
+            bool is_required_arch = false;
+            foreach (var idx in ms.CustomAttributes("_ZN14libsupcs#2Edll8libsupcs22ArchDependentAttribute_7#2Ector_Rv_P2u1tu1S"))
+            {
+                var sig_idx = ms.m.GetCustomAttrSigIdx(idx);
+                var arch = ms.m.ReadCustomAttrString(ref sig_idx);
+                is_arch_dependent = true;
+                if (arch.Equals(name))
+                    is_required_arch = true;
+            }
+
+            if (is_arch_dependent && !is_required_arch)
+                return false;
+
+            return true;
         }
     }
 }

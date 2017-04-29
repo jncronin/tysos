@@ -100,15 +100,19 @@ namespace libtysila5.target.x86
                     case x86_mov_r32_rm32:
                     case x86_mov_r8_rm8:
                     case x86_mov_r16_rm16:
+                    case x86_mov_r64_rm64:
                         if (I.p[0].v == x86_mov_r8_rm8)
                             Code.Add(0x8a);
-                        else if(I.p[0].v == x86_mov_r16_rm16)
+                        else if (I.p[0].v == x86_mov_r16_rm16)
                         {
                             Code.Add(0x67);
                             Code.Add(0x8b);
                         }
                         else
+                        {
+                            Code.Add(Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                             Code.Add(0x8b);
+                        }
 
                         switch(I.p[2].t)
                         {
@@ -133,10 +137,14 @@ namespace libtysila5.target.x86
                         }
                         break;
                     case x86_mov_rm32_r32:
+                    case x86_mov_rm64_r64:
+                        Code.Add(Rex(I.p[0].v, I.p[2].mreg, I.p[1].mreg));
                         Code.Add(0x89);
                         Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
                         break;
+                    case x86_mov_rm64_imm32:
                     case x86_mov_rm32_imm32:
+                        Code.Add(Rex(I.p[0].v, null, I.p[1].mreg));
                         Code.Add(0xc7);
                         Code.AddRange(ModRMSIB(0, I.p[1].mreg));
 
@@ -280,10 +288,14 @@ namespace libtysila5.target.x86
                             break;
                         }
                     case x86_cmp_rm32_r32:
+                    case x86_cmp_rm64_r64:
+                        Code.Add(Rex(I.p[0].v, I.p[2].mreg, I.p[1].mreg));
                         Code.Add(0x39);
                         Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
                         break;
                     case x86_cmp_r32_rm32:
+                    case x86_cmp_r64_rm64:
+                        Code.Add(Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x3b);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
@@ -352,6 +364,11 @@ namespace libtysila5.target.x86
                     case x86_movsxwd:
                         Code.Add(0x0f);
                         Code.Add(0xbf);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+                    case x86_movsxdq_r64_rm64:
+                        Code.Add(Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
+                        Code.Add(0x63);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
                     case x86_movzxbd:
@@ -516,6 +533,8 @@ namespace libtysila5.target.x86
                         break;
 
                     case x86_mov_r32_rm32disp:
+                    case x86_mov_r64_rm64disp:
+                        Code.Add(Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x8b);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
                         break;
@@ -547,18 +566,21 @@ namespace libtysila5.target.x86
                         AddImm8(Code, I.p[3].v);
                         break;
 
-
-                    case x86_mov_rm8disp_r32:
+                    case x86_mov_rm8disp_r8:
+                        Code.Add(Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg));
                         Code.Add(0x88);
                         Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                         break;
-                    case x86_mov_rm16disp_r32:
+                    case x86_mov_rm16disp_r16:
                         Code.Add(0x67); // CHECK
+                        Code.Add(Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg));
                         Code.Add(0x89);
                         Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                         break;
                     case x86_mov_rm32disp_r32:
+                    case x86_mov_rm64disp_r64:
                         Code.Add(0x89);
+                        Code.Add(Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg));
                         Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                         break;
 
@@ -743,6 +765,20 @@ namespace libtysila5.target.x86
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
 
+                    case x86_ucomisd_xmm_xmmm64:
+                        Code.Add(0x66);
+                        Code.Add(0x0f);
+                        Code.Add(0x2e);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
+                    case x86_cmpsd_xmm_xmmm64_imm8:
+                        Code.Add(0xf2);
+                        Code.Add(0x0f);
+                        Code.Add(0xc2);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        AddImm8(Code, I.p[3].v);
+                        break;
 
                     default:
                         throw new NotImplementedException(insts[(int)I.p[0].v]);
@@ -759,6 +795,22 @@ namespace libtysila5.target.x86
                 var offset = dest_offset - src - 4;
                 InsertImm32(Code, offset, src);
             }
+        }
+
+        private byte Rex(long oc, Reg r, Reg rm_ocreg, Reg sib_index = null)
+        {
+            int rex = 0;
+            if (oc >= x86_mov_r64_imm64)
+                rex |= 0x8;
+            if (r != null && r.id >= x86_64.x86_64_Assembler.r_r8.id)
+                rex |= 0x4;
+            if (rm_ocreg != null && rm_ocreg.id >= x86_64.x86_64_Assembler.r_r8.id)
+                rex |= 0x1;
+            if(sib_index != null && sib_index.id >= x86_64.x86_64_Assembler.r_r8.id)
+                rex |= 0x2;
+            if (rex != 0)
+                return (byte)(0x40 | rex);
+            return 0;
         }
 
         private void InsertImm32(List<byte> c, int v, int offset)
@@ -814,37 +866,37 @@ namespace libtysila5.target.x86
 
         private int GetR(Reg r)
         {
-            if (r == r_eax)
+            if (r.Equals(r_eax))
                 return 0;
-            else if (r == r_ecx)
+            else if (r.Equals(r_ecx))
                 return 1;
-            else if (r == r_edx)
+            else if (r.Equals(r_edx))
                 return 2;
-            else if (r == r_ebx)
+            else if (r.Equals(r_ebx))
                 return 3;
-            else if (r == r_esp)
+            else if (r.Equals(r_esp))
                 return 4;
-            else if (r == r_ebp)
+            else if (r.Equals(r_ebp))
                 return 5;
-            else if (r == r_esi)
+            else if (r.Equals(r_esi))
                 return 6;
-            else if (r == r_edi)
+            else if (r.Equals(r_edi))
                 return 7;
-            else if (r == r_xmm0)
+            else if (r.Equals(r_xmm0))
                 return 0;
-            else if (r == r_xmm1)
+            else if (r.Equals(r_xmm1))
                 return 1;
-            else if (r == r_xmm2)
+            else if (r.Equals(r_xmm2))
                 return 2;
-            else if (r == r_xmm3)
+            else if (r.Equals(r_xmm3))
                 return 3;
-            else if (r == r_xmm4)
+            else if (r.Equals(r_xmm4))
                 return 4;
-            else if (r == r_xmm5)
+            else if (r.Equals(r_xmm5))
                 return 5;
-            else if (r == r_xmm6)
+            else if (r.Equals(r_xmm6))
                 return 6;
-            else if (r == r_xmm7)
+            else if (r.Equals(r_xmm7))
                 return 7;
 
             throw new NotSupportedException();
@@ -852,21 +904,21 @@ namespace libtysila5.target.x86
 
         private byte PlusRD(int v, Reg mreg)
         {
-            if (mreg == r_eax)
+            if (mreg.Equals(r_eax))
                 return (byte)(v + 0);
-            else if (mreg == r_ecx)
+            else if (mreg.Equals(r_ecx))
                 return (byte)(v + 1);
-            else if (mreg == r_edx)
+            else if (mreg.Equals(r_edx))
                 return (byte)(v + 2);
-            else if (mreg == r_ebx)
+            else if (mreg.Equals(r_ebx))
                 return (byte)(v + 3);
-            else if (mreg == r_esp)
+            else if (mreg.Equals(r_esp))
                 return (byte)(v + 4);
-            else if (mreg == r_ebp)
+            else if (mreg.Equals(r_ebp))
                 return (byte)(v + 5);
-            else if (mreg == r_esi)
+            else if (mreg.Equals(r_esi))
                 return (byte)(v + 6);
-            else if (mreg == r_edi)
+            else if (mreg.Equals(r_edi))
                 return (byte)(v + 7);
 
             throw new NotSupportedException();
@@ -936,37 +988,37 @@ namespace libtysila5.target.x86
                 rm = cr.basereg;
             }
 
-            if (rm == r_eax)
+            if (rm.Equals(r_eax))
                 return 0;
-            else if (rm == r_ecx)
+            else if (rm.Equals(r_ecx))
                 return 1;
-            else if (rm == r_edx)
+            else if (rm.Equals(r_edx))
                 return 2;
-            else if (rm == r_ebx)
+            else if (rm.Equals(r_ebx))
                 return 3;
-            else if (rm == r_esp)
+            else if (rm.Equals(r_esp))
                 return 4;
-            else if (rm == r_ebp)
+            else if (rm.Equals(r_ebp))
                 return 5;
-            else if (rm == r_esi)
+            else if (rm.Equals(r_esi))
                 return 6;
-            else if (rm == r_edi)
+            else if (rm.Equals(r_edi))
                 return 7;
-            else if (rm == r_xmm0)
+            else if (rm.Equals(r_xmm0))
                 return 0;
-            else if (rm == r_xmm1)
+            else if (rm.Equals(r_xmm1))
                 return 1;
-            else if (rm == r_xmm2)
+            else if (rm.Equals(r_xmm2))
                 return 2;
-            else if (rm == r_xmm3)
+            else if (rm.Equals(r_xmm3))
                 return 3;
-            else if (rm == r_xmm4)
+            else if (rm.Equals(r_xmm4))
                 return 4;
-            else if (rm == r_xmm5)
+            else if (rm.Equals(r_xmm5))
                 return 5;
-            else if (rm == r_xmm6)
+            else if (rm.Equals(r_xmm6))
                 return 6;
-            else if (rm == r_xmm7)
+            else if (rm.Equals(r_xmm7))
                 return 7;
 
             throw new NotSupportedException();

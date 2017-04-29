@@ -134,13 +134,13 @@ namespace libtysila5
 
         public override void Request(T v)
         {
-            if(v is MethodSpec)
-            {
-                var ms = v as MethodSpec;
-            }
-
             if (m != null && m != v.Metadata)
+            {
+                if(!v.IsInstantiatedGenericType && 
+                    !v.IsInstantiatedGenericMethod &&
+                    !v.IsArray)
                 return;
+            }
 
             if(!done_and_pending.Contains(v))
             {

@@ -92,10 +92,10 @@ namespace TableMap
 
                         if (ea.Type == EvalResult.ResultType.String && (eb.Type == EvalResult.ResultType.Int || eb.Type == EvalResult.ResultType.Void))
                         {
-                            int rem_amount = eb.AsInt;
+                            long rem_amount = eb.AsInt;
                             if (rem_amount > ea.strval.Length)
                                 rem_amount = ea.strval.Length;
-                            return new EvalResult(ea.strval.Substring(0, ea.strval.Length - rem_amount));
+                            return new EvalResult(ea.strval.Substring(0, ea.strval.Length - (int)rem_amount));
                         }
                         else if (ea.Type == EvalResult.ResultType.String && eb.Type == EvalResult.ResultType.String)
                         {
@@ -199,7 +199,7 @@ namespace TableMap
                     check_null(ea);
                     check_null(eb);
 
-                    return new EvalResult(ea.AsInt << eb.AsInt);
+                    return new EvalResult(ea.AsInt << (int)eb.AsInt);
 
                 case Tokens.RSHIFT:
                     ea = a.Evaluate(s);
@@ -208,7 +208,7 @@ namespace TableMap
                     check_null(ea);
                     check_null(eb);
 
-                    return new EvalResult(ea.AsInt >> eb.AsInt);
+                    return new EvalResult(ea.AsInt >> (int)eb.AsInt);
 
                 case Tokens.OR:
                     ea = a.Evaluate(s);
@@ -247,7 +247,7 @@ namespace TableMap
             public ResultType Type;
 
             public string strval;
-            public int intval;
+            public long intval;
             public Dictionary<string, EvalResult> objval;
             public FunctionStatement funcval;
             public List<EvalResult> arrval;
@@ -256,7 +256,7 @@ namespace TableMap
             {
                 Type = ResultType.Void;
             }
-            public EvalResult(int i)
+            public EvalResult(long i)
             {
                 Type = ResultType.Int;
                 intval = i;
@@ -296,7 +296,7 @@ namespace TableMap
                 arrval = new List<EvalResult>(earr);
             }
 
-            public int AsInt
+            public long AsInt
             {
                 get
                 {
@@ -495,14 +495,14 @@ namespace TableMap
             switch(elabel.Type)
             {
                 case EvalResult.ResultType.String:
-                    return new EvalResult(new string(elabel.strval[eindex.AsInt], 1));
+                    return new EvalResult(new string(elabel.strval[(int)eindex.AsInt], 1));
                 case EvalResult.ResultType.Array:
                     {
                         var idx = eindex.AsInt;
                         if (idx < 0 || idx >= elabel.arrval.Count)
                             return new EvalResult { Type = EvalResult.ResultType.Null };
                         else
-                            return elabel.arrval[idx];
+                            return elabel.arrval[(int)idx];
                     }
                     
                 case EvalResult.ResultType.Object:
@@ -567,11 +567,11 @@ namespace TableMap
                         }
                         else if(m == "9substringsi")
                         {
-                            return new EvalResult(elabel.strval.Substring(f.args[0].Evaluate(s).AsInt));
+                            return new EvalResult(elabel.strval.Substring((int)f.args[0].Evaluate(s).AsInt));
                         }
                         else if(m == "9substringsii")
                         {
-                            return new EvalResult(elabel.strval.Substring(f.args[0].Evaluate(s).AsInt, f.args[1].Evaluate(s).AsInt));
+                            return new EvalResult(elabel.strval.Substring((int)f.args[0].Evaluate(s).AsInt, (int)f.args[1].Evaluate(s).AsInt));
                         }
                         break;
 
@@ -613,27 +613,27 @@ namespace TableMap
                         }
                         else if (m == "6insertaii")
                         {
-                            elabel.arrval.Insert(f.args[1].Evaluate(s).intval, new EvalResult(f.args[0].Evaluate(s).intval));
+                            elabel.arrval.Insert((int)f.args[1].Evaluate(s).intval, new EvalResult(f.args[0].Evaluate(s).intval));
                             return new EvalResult();
                         }
                         else if (m == "6insertais")
                         {
-                            elabel.arrval.Insert(f.args[1].Evaluate(s).intval, new EvalResult(f.args[0].Evaluate(s).strval));
+                            elabel.arrval.Insert((int)f.args[1].Evaluate(s).intval, new EvalResult(f.args[0].Evaluate(s).strval));
                             return new EvalResult();
                         }
                         else if (m == "6insertaio")
                         {
-                            elabel.arrval.Insert(f.args[1].Evaluate(s).intval, new EvalResult(f.args[0].Evaluate(s).objval));
+                            elabel.arrval.Insert((int)f.args[1].Evaluate(s).intval, new EvalResult(f.args[0].Evaluate(s).objval));
                             return new EvalResult();
                         }
                         else if (m == "6insertaia")
                         {
-                            elabel.arrval.Insert(f.args[1].Evaluate(s).intval, new EvalResult(f.args[0].Evaluate(s).arrval));
+                            elabel.arrval.Insert((int)f.args[1].Evaluate(s).intval, new EvalResult(f.args[0].Evaluate(s).arrval));
                             return new EvalResult();
                         }
                         else if (m == "6removeai")
                         {
-                            elabel.arrval.RemoveAt(f.args[0].Evaluate(s).intval);
+                            elabel.arrval.RemoveAt((int)f.args[0].Evaluate(s).intval);
                             return new EvalResult();
                         }
                         break;

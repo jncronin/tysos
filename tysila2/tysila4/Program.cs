@@ -38,7 +38,7 @@ namespace tysila4
             "This is free software.  Please see the source for copying conditions.  There is no warranty, " +
             "not even for merchantability or fitness for a particular purpose";
 
-        static string comment = nl + "tysila" + nl + "ver: " + libtysila4.libtysila.VersionString + nl;
+        static string comment = nl + "tysila" + nl + "ver: " + libtysila5.libtysila.VersionString + nl;
 
         public static List<string> search_dirs = new List<string> {
             "",
@@ -64,7 +64,7 @@ namespace tysila4
             char c;
             var go = new XGetoptCS.XGetopt();
             var arg_str = "t:L:f:e:o:d:";
-            string target = "x86";
+            string target = "x86_64";
             string debug_file = null;
             string output_file = null;
             string epoint = null;
@@ -167,6 +167,14 @@ namespace tysila4
                     }
                 }
 
+                /* See if we have an always compile attribute */
+                if(ms.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs22AlwaysCompileAttribute_7#2Ector_Rv_P1u1t") ||
+                    ms.type.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs22AlwaysCompileAttribute_7#2Ector_Rv_P1u1t"))
+                {
+                    mflags = 6;
+                    tflags = 1;
+                }
+
                 ms.msig = (int)m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
                     i, 4);
 
@@ -179,34 +187,49 @@ namespace tysila4
                 }
             }
 
+            /* Also assemble all public non-generic type infos */
+            for (int i = 1; i <= m.table_rows[metadata.MetadataStream.tid_TypeDef]; i++)
+            {
+                var flags = (int)m.GetIntEntry(metadata.MetadataStream.tid_TypeDef,
+                    i, 0);
+                if (((flags & 0x7) != 0x1) &&
+                    ((flags & 0x7) != 0x2))
+                    continue;
+                var ts = new metadata.TypeSpec { m = m, tdrow = i };
+                if (ts.IsGeneric)
+                    continue;
+                t.r.StaticFieldRequestor.Request(ts);
+                t.r.VTableRequestor.Request(ts.Box);
+            }
+
             while (!t.r.Empty)
             {
                 if (!t.r.MethodRequestor.Empty)
                 {
                     var ms = t.r.MethodRequestor.GetNext();
                     libtysila5.libtysila.AssembleMethod(ms,
-                        bf, t, debug);
+                        bf, t, debug, m);
                     Console.WriteLine(ms.m.MangleMethod(ms));
                 }
                 else if(!t.r.StaticFieldRequestor.Empty)
                 {
                     var sf = t.r.StaticFieldRequestor.GetNext();
                     libtysila5.layout.Layout.OutputStaticFields(sf,
-                        t, bf);
+                        t, bf, m);
                     Console.WriteLine(sf.MangleType() + "S");
                 }
                 else if(!t.r.EHRequestor.Empty)
                 {
                     var eh = t.r.EHRequestor.GetNext();
                     libtysila5.layout.Layout.OutputEHdr(eh,
-                        t, bf);
+                        t, bf, m);
                     Console.WriteLine(eh.ms.MangleMethod() + "EH");
                 }
                 else if(!t.r.VTableRequestor.Empty)
                 {
                     var vt = t.r.VTableRequestor.GetNext();
                     libtysila5.layout.Layout.OutputVTable(vt,
-                        t, bf);
+                        t, bf, m);
                     Console.WriteLine(vt.MangleType());
                 }
             }
@@ -222,6 +245,22 @@ namespace tysila4
 
             /* String table */
             st.WriteToOutput(bf, m, t);
+
+            /* Include original metadata */
+            var rdata = bf.GetRDataSection();
+            rdata.Align(t.GetPointerSize());
+            var mdsym = bf.CreateSymbol();
+            mdsym.DefinedIn = rdata;
+            mdsym.Name = m.AssemblyName;
+            mdsym.ObjectType = binary_library.SymbolObjectType.Object;
+            mdsym.Offset = (ulong)rdata.Data.Count;
+            mdsym.Type = binary_library.SymbolType.Global;
+            var len = m.file.GetLength();
+            mdsym.Size = len;
+            rdata.AddSymbol(mdsym);
+
+            for(int i = 0; i < len; i++)
+                rdata.Data.Add(m.file.ReadByte(i));           
 
             /* Write output file */
             bf.Filename = output_file;

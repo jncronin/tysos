@@ -245,26 +245,32 @@ namespace libsupcs
     public class IoOperations
     {
         [ArchDependent("x86_64")]
+        [ArchDependent("x86")]
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         public static extern void PortOut(ushort port, byte v);
 
         [ArchDependent("x86_64")]
+        [ArchDependent("x86")]
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         public static extern void PortOut(ushort port, ushort v);
 
         [ArchDependent("x86_64")]
+        [ArchDependent("x86")]
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         public static extern void PortOut(ushort port, uint v);
 
         [ArchDependent("x86_64")]
+        [ArchDependent("x86")]
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         public static extern byte PortInb(ushort port);
 
         [ArchDependent("x86_64")]
+        [ArchDependent("x86")]
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         public static extern ushort PortInw(ushort port);
 
         [ArchDependent("x86_64")]
+        [ArchDependent("x86")]
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         public static extern uint PortInd(ushort port);
     }

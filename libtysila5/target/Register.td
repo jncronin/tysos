@@ -94,3 +94,35 @@ export function Rcontents()
 	return ret;
 }
 
+export function Ralias(string orig, string new)
+{
+	orig_val = varget("orig");
+	ret = [
+		name = new,
+		id = orig_val.id,
+		type = orig_val.type,
+		size = orig_val.size,
+		mask = orig_val.mask
+	];
+	vargen(ret.name, ret);
+	vargen(ret.name + "reg", ret.mask);
+
+	return ret;
+}
+
+export function Ralias(string orig, string new, int new_size)
+{
+	orig_val = varget(orig);
+	ret = [
+		name = new,
+		id = orig_val.id,
+		type = orig_val.type,
+		size = new_size,
+		mask = orig_val.mask
+	];
+	vargen(ret.name, ret);
+	vargen(ret.name + "reg", ret.mask);
+
+	return ret;
+}
+

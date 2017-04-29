@@ -177,8 +177,13 @@ namespace libtysila5.layout
         }
 
         public static void OutputStaticFields(metadata.TypeSpec ts,
-            target.Target t, binary_library.IBinaryFile of)
+            target.Target t, binary_library.IBinaryFile of,
+            MetadataStream base_m = null)
         {
+            // Don't compile if not for this architecture
+            if (!t.IsTypeValid(ts))
+                return;
+
             var os = of.GetDataSection();
             os.Align(t.GetCTSize(ir.Opcode.ct_object));
 
@@ -237,6 +242,9 @@ namespace libtysila5.layout
                 os.AddSymbol(sym);
 
                 sym.Size = os.Data.Count - (int)offset;
+
+                if (base_m != null && ts.m != base_m)
+                    sym.Type = binary_library.SymbolType.Weak;
             }
         }
     }
