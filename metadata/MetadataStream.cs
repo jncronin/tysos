@@ -31,7 +31,7 @@ namespace metadata
 
         internal string assemblyName;
 
-        protected internal PEFile.StreamHeader sh_string, sh_guid, sh_blob, sh_us, sh_tables;
+        public PEFile.StreamHeader sh_string, sh_guid, sh_blob, sh_us, sh_tables;
         internal PEFile pef;
         public AssemblyLoader al;
         public DataInterface file;
@@ -122,7 +122,13 @@ namespace metadata
         public BuiltInType SystemRuntimeFieldHandle;
         public BuiltInType SystemEnum;
         public BuiltInType SystemValueType;
+        public BuiltInType SystemVoid;
         public BuiltInType SystemArray;
+        public BuiltInType SystemByte;
+        public BuiltInType SystemUInt16;
+        public BuiltInType SystemUInt32;
+        public BuiltInType SystemUInt64;
+        public BuiltInType SystemDelegate;
 
         /* Consts for fast table indexing */
         public const int tid_Assembly = 0x20;
@@ -560,7 +566,7 @@ namespace metadata
                 return new_ts;
             }
 
-            for (int i = 1; i < table_rows[tid_TypeDef]; i++)
+            for (int i = 1; i <= table_rows[tid_TypeDef]; i++)
             {
                 var cur_name = GetIntEntry(tid_TypeDef, i, 1);
                 if (CompareString(this, cur_name, name))
@@ -672,11 +678,13 @@ namespace metadata
                 // Check on name
                 var fname = ts.m.GetIntEntry(tid_Field,
                     (int)fdef_row, 1);
-                if(CompareString(this, fname, name))
+                var fnames = ts.m.GetStringEntry(tid_Field,
+                    (int)fdef_row, 1);
+                if(CompareString(ts.m, fname, name))
                 {
                     var fs = new MethodSpec
                     {
-                        m = this,
+                        m = ts.m,
                         mdrow = (int)fdef_row,
                         msig = (int)ts.m.GetIntEntry(tid_Field, (int)fdef_row, 2),
                         type = ts,
@@ -1100,13 +1108,27 @@ namespace metadata
 
                 case 0x11:
                 case 0x12:
+                case 0x91:
+                case 0x92:
+                    MetadataStream cur_m = this;
+                    if (b > 0x90)
+                    {
+                        // Tysila specific extensions to metadata where what follows
+                        // is encoded length followed by metadata name
+                        var mlen = SigReadUSCompressed(ref sig_idx);
+                        StringBuilder sb = new StringBuilder();
+                        for (uint i = 0; i < mlen; i++)
+                            sb.Append((char)sh_blob.di.ReadByte(sig_idx++));
+
+                        cur_m = al.GetAssembly(sb.ToString());
+                    }
                     // CLASS or vtype
                     var tok = SigReadUSCompressed(ref sig_idx);
                     int tid, trow;
                     GetCodedIndexEntry(tok, TypeDefOrRef,
                         out tid, out trow);
 
-                    ts = GetTypeSpec(tid, trow, gtparams, gmparams);
+                    ts = cur_m.GetTypeSpec(tid, trow, gtparams, gmparams);
                     break;
 
                 case 0x13:
@@ -1195,6 +1217,43 @@ namespace metadata
             return last_fdef;
         }
 
+        public MethodSpec GetMethodSpec(TypeSpec ts, string name, int sig, MetadataStream sig_m)
+        {
+            var first_mdef = ts.m.GetIntEntry(tid_TypeDef, ts.tdrow, 5);
+            var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
+
+            var ret = new MethodSpec { type = ts, m = ts.m };
+
+            for (uint mdef_row = first_mdef; mdef_row < last_mdef; mdef_row++)
+            {
+                var meth_name = ts.m.GetStringEntry(tid_MethodDef, (int)mdef_row, 3);
+
+                if (meth_name.Equals(name))
+                {
+                    var cur_sig = (int)ts.m.GetIntEntry(tid_MethodDef, (int)mdef_row, 4);
+
+                    if (sig_m == null)
+                    {
+                        ret.msig = cur_sig;
+                        ret.mdrow = (int)mdef_row;
+                        return ret;
+                    }
+                    // compare signatures
+
+                    if (CompareSignature(ts.m, cur_sig, ts.gtparams, null,
+                        sig_m, sig, ts.gtparams, null))
+                    {
+                        ret.msig = cur_sig;
+                        ret.mdrow = (int)mdef_row;
+                        return ret;
+                    }
+                }
+            }
+
+            throw new NotImplementedException("cannot find " +
+                sig_m.MangleMethod(ts, name, sig));
+        }
+
         public int GetMethodDefRow(TypeSpec ts, string name, int sig, MetadataStream sig_m)
         {
             var first_mdef = ts.m.GetIntEntry(tid_TypeDef, ts.tdrow, 5);
@@ -1206,6 +1265,8 @@ namespace metadata
 
                 if (meth_name.Equals(name))
                 {
+                    if (sig_m == null)
+                        return (int)mdef_row;
                     // compare signatures
                     var cur_sig = (int)ts.m.GetIntEntry(tid_MethodDef, (int)mdef_row, 4);
 

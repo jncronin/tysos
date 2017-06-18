@@ -30,7 +30,7 @@ namespace tysos
     class TString
     {
         [libsupcs.AlwaysCompile]
-        [libsupcs.MethodAlias("_Zu1SM_0_12InternalJoin_Ru1S_P4u1Su1Zu1Sii")]
+        [libsupcs.MethodAlias("_Zu1S_12InternalJoin_Ru1S_P4u1Su1Zu1Sii")]
         public static string InternalJoin(string separator, string[] value, int sIndex, int count)
         {
             StringBuilder sb = new StringBuilder();
@@ -50,7 +50,7 @@ namespace tysos
         }
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.MethodAlias("_Zu1SM_0_13InternalSplit_Ru1Zu1S_P3u1tu1Zci")]
+        [libsupcs.MethodAlias("_Zu1S_13InternalSplit_Ru1Zu1S_P3u1tu1Zci")]
         static string[] InternalSplit(string s, char[] separator, int count)
         {
             List<int> start_chars = new List<int>();
@@ -119,7 +119,7 @@ namespace tysos
         }
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.MethodAlias("_Zu1SM_0_15InternalReplace_Ru1S_P4u1tu1Su1SW22System#2EGlobalization11CompareInfo")]
+        [libsupcs.MethodAlias("_Zu1S_15InternalReplace_Ru1S_P4u1tu1Su1SW22System#2EGlobalization11CompareInfo")]
         static string InternalReplace(string str, string old_value, string new_value, System.Globalization.CompareInfo ci)
         {
             StringBuilder sb = new StringBuilder();
@@ -150,7 +150,7 @@ namespace tysos
         }
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.MethodAlias("_Zu1SM_0_12InternalTrim_Ru1S_P3u1tu1Zci")]
+        [libsupcs.MethodAlias("_Zu1S_12InternalTrim_Ru1S_P3u1tu1Zci")]
         static string InternalTrim(string str, char[] chars, int typ)
         {
             /* If typ = 0 then trim start and end
@@ -210,7 +210,7 @@ namespace tysos
         }
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.MethodAlias("_Zu1SM_0_22InternalLastIndexOfAny_Ri_P4u1tu1Zcii")]
+        [libsupcs.MethodAlias("_Zu1S_22InternalLastIndexOfAny_Ri_P4u1tu1Zcii")]
         static int InternalLastIndexOfAny(string str, char[] chars, int startIndex, int count)
         {
             for (int i = startIndex; (i > (startIndex - count)) && (i >= 0); i--)
@@ -228,7 +228,7 @@ namespace tysos
     class TChar
     {
         [libsupcs.AlwaysCompile]
-        [libsupcs.MethodAlias("_ZcM_0_20GetDataTablePointers_Rv_P7RPhRPhRPdRPtRPtRPtRPt")]
+        [libsupcs.MethodAlias("_Zc_20GetDataTablePointers_Rv_P7RPhRPhRPdRPtRPtRPtRPt")]
         static unsafe void GetDataTablePointers(out byte* category_data, out byte* numeric_data,
             out double* numeric_data_values, out ushort* to_lower_data_low,
             out ushort* to_lower_data_high, out ushort* to_upper_data_low,

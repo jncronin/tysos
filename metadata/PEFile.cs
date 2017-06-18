@@ -295,7 +295,13 @@ namespace metadata
             m.SystemRuntimeFieldHandle = m.GetBuiltin("RuntimeFieldHandle");
             m.SystemEnum = m.GetBuiltin("Enum");
             m.SystemValueType = m.GetBuiltin("ValueType");
+            m.SystemVoid = m.GetBuiltin("Void");
             m.SystemArray = m.GetBuiltin("Array");
+            m.SystemByte = m.GetBuiltin("Byte");
+            m.SystemUInt16 = m.GetBuiltin("UInt16");
+            m.SystemUInt32 = m.GetBuiltin("UInt32");
+            m.SystemUInt64 = m.GetBuiltin("UInt64");
+            m.SystemDelegate = m.GetBuiltin("Delegate");
             
             return m;
         }

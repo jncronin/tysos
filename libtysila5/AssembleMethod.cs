@@ -32,7 +32,8 @@ namespace libtysila5
         public static bool AssembleMethod(metadata.MethodSpec ms,
             binary_library.IBinaryFile bf, target.Target t,
             StringBuilder debug_passes = null,
-            MetadataStream base_m = null)
+            MetadataStream base_m = null,
+            Code code_override = null)
         {
             var ts = bf.GetTextSection();
             t.bf = bf;
@@ -44,6 +45,12 @@ namespace libtysila5
 
             /* Don't compile if not for this architecture */
             if (!t.IsMethodValid(ms))
+                return false;
+
+            // Get method RVA, don't compile if no body
+            var rva = m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
+                mdef, 0);
+            if (rva == 0 && code_override == null)
                 return false;
 
             // Get mangled name for defining a symbol
@@ -84,100 +91,104 @@ namespace libtysila5
                     mdef, 4);
             }
 
-            // Get method RVA
-            var rva = m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
-                mdef, 0);
-            if (rva == 0)
-                return false;
 
-            var meth = m.GetRVA(rva);
-
-            var flags = meth.ReadByte(0);
-            int max_stack = 0;
-            long code_size = 0;
-            long lvar_sig_tok = 0;
-            int boffset = 0;
-            List<metadata.ExceptionHeader> ehdrs = null;
-            bool has_exceptions = false;
-
-            if ((flags & 0x3) == 0x2)
+            Code cil;
+            if (code_override == null)
             {
-                // Tiny header
-                code_size = flags >> 2;
-                max_stack = 8;
-                boffset = 1;
-            }
-            else if ((flags & 0x3) == 0x3)
-            {
-                // Fat header
-                uint fat_flags = meth.ReadUShort(0) & 0xfffU;
-                int fat_hdr_len = (meth.ReadUShort(0) >> 12) * 4;
-                max_stack = meth.ReadUShort(2);
-                code_size = meth.ReadUInt(4);
-                lvar_sig_tok = meth.ReadUInt(8);
-                boffset = fat_hdr_len;
 
-                if ((flags & 0x8) == 0x8)
+
+                var meth = m.GetRVA(rva);
+
+                var flags = meth.ReadByte(0);
+                int max_stack = 0;
+                long code_size = 0;
+                long lvar_sig_tok = 0;
+                int boffset = 0;
+                List<metadata.ExceptionHeader> ehdrs = null;
+                bool has_exceptions = false;
+
+                if ((flags & 0x3) == 0x2)
                 {
-                    has_exceptions = true;
+                    // Tiny header
+                    code_size = flags >> 2;
+                    max_stack = 8;
+                    boffset = 1;
+                }
+                else if ((flags & 0x3) == 0x3)
+                {
+                    // Fat header
+                    uint fat_flags = meth.ReadUShort(0) & 0xfffU;
+                    int fat_hdr_len = (meth.ReadUShort(0) >> 12) * 4;
+                    max_stack = meth.ReadUShort(2);
+                    code_size = meth.ReadUInt(4);
+                    lvar_sig_tok = meth.ReadUInt(8);
+                    boffset = fat_hdr_len;
 
-                    ehdrs = new List<metadata.ExceptionHeader>();
-
-                    int ehdr_offset = boffset + (int)code_size;
-                    ehdr_offset = util.util.align(ehdr_offset, 4);
-
-                    while (true)
+                    if ((flags & 0x8) == 0x8)
                     {
-                        int kind = meth.ReadByte(ehdr_offset);
+                        has_exceptions = true;
 
-                        if ((kind & 0x1) != 0x1)
-                            throw new Exception("Invalid exception header");
+                        ehdrs = new List<metadata.ExceptionHeader>();
 
-                        bool is_fat = false;
-                        if ((kind & 0x40) == 0x40)
-                            is_fat = true;
+                        int ehdr_offset = boffset + (int)code_size;
+                        ehdr_offset = util.util.align(ehdr_offset, 4);
 
-                        int data_size = meth.ReadInt(ehdr_offset);
-                        data_size >>= 8;
-                        if (is_fat)
-                            data_size &= 0xffffff;
-                        else
-                            data_size &= 0xff;
-
-                        int clause_count;
-                        if (is_fat)
-                            clause_count = (data_size - 4) / 24;
-                        else
-                            clause_count = (data_size - 4) / 12;
-
-                        ehdr_offset += 4;
-                        for(int i = 0; i < clause_count; i++)
+                        while (true)
                         {
-                            var ehdr = ParseExceptionHeader(meth,
-                                ref ehdr_offset, is_fat, ms);
-                            ehdr.EhdrIdx = i;
-                            ehdrs.Add(ehdr);
-                        }
+                            int kind = meth.ReadByte(ehdr_offset);
 
-                        if ((kind & 0x80) != 0x80)
-                            break;
+                            if ((kind & 0x1) != 0x1)
+                                throw new Exception("Invalid exception header");
+
+                            bool is_fat = false;
+                            if ((kind & 0x40) == 0x40)
+                                is_fat = true;
+
+                            int data_size = meth.ReadInt(ehdr_offset);
+                            data_size >>= 8;
+                            if (is_fat)
+                                data_size &= 0xffffff;
+                            else
+                                data_size &= 0xff;
+
+                            int clause_count;
+                            if (is_fat)
+                                clause_count = (data_size - 4) / 24;
+                            else
+                                clause_count = (data_size - 4) / 12;
+
+                            ehdr_offset += 4;
+                            for(int i = 0; i < clause_count; i++)
+                            {
+                                var ehdr = ParseExceptionHeader(meth,
+                                    ref ehdr_offset, is_fat, ms);
+                                ehdr.EhdrIdx = i;
+                                ehdrs.Add(ehdr);
+                            }
+
+                            if ((kind & 0x80) != 0x80)
+                                break;
+                        }
                     }
                 }
+                else
+                    throw new Exception("Invalid method header flags");
+
+                /* Parse CIL code */
+                cil = libtysila5.cil.CilParser.ParseCIL(meth,
+                    ms, boffset, (int)code_size, lvar_sig_tok,
+                    has_exceptions, ehdrs);
+
+                /* Allocate local vars and args */
+                t.AllocateLocalVarsArgs(cil);
+
+                /* Convert to IR */
+                cil.t = t;
+                ir.ConvertToIR.DoConversion(cil);
             }
             else
-                throw new Exception("Invalid method header flags");
+                cil = code_override;
 
-            /* Parse CIL code */
-            var cil = libtysila5.cil.CilParser.ParseCIL(meth,
-                ms, boffset, (int)code_size, lvar_sig_tok,
-                has_exceptions, ehdrs);
-
-            /* Allocate local vars and args */
-            t.AllocateLocalVarsArgs(cil);
-
-            /* Convert to IR */
-            cil.t = t;
-            ir.ConvertToIR.DoConversion(cil);
 
             /* Allocate registers */
             ir.AllocRegs.DoAllocation(cil);

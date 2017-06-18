@@ -337,6 +337,8 @@ namespace metadata
         {
             get
             {
+                if (m.gtparams == null)
+                    return false;
                 return m.gtparams[tdrow] != 0;
             }
         }
@@ -485,6 +487,41 @@ namespace metadata
                     }
                 }
                 return v;
+            }
+        }
+
+        public bool IsEnum
+        {
+            get
+            {
+                if (stype != SpecialType.None)
+                    return false;
+                var e = GetExtends();
+                if (e == null)
+                    return false;
+                return e.Equals(m.SystemEnum);
+            }
+        }
+
+        public bool IsDelegate
+        {
+            get
+            {
+                if (stype != SpecialType.None)
+                    return false;
+                var flags = m.GetIntEntry(MetadataStream.tid_TypeDef,
+                    tdrow, 0);
+                if ((flags & 0x100) != 0x100)
+                    return false;
+
+                var e = GetExtends();
+                while(e != null)
+                {
+                    if (e.Equals(m.SystemDelegate))
+                        return true;
+                    e = e.GetExtends();
+                }
+                return false;
             }
         }
 

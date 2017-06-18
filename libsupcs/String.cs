@@ -28,7 +28,7 @@ namespace libsupcs
 {
     class String
     {
-        [MethodAlias("_Zu1SM_0_14InternalStrcpy_Rv_P5u1Siu1Sii")]
+        [MethodAlias("_Zu1S_14InternalStrcpy_Rv_P5u1Siu1Sii")]
         static unsafe bool InternalStrcpy(byte *dest, int destPos, byte *src, int srcPos, int count)
         {
             /* Get size of src and dest */
@@ -54,7 +54,7 @@ namespace libsupcs
             return true;
         }
 
-        [MethodAlias("_Zu1SM_0_14InternalStrcpy_Rv_P3u1Siu1S")]
+        [MethodAlias("_Zu1S_14InternalStrcpy_Rv_P3u1Siu1S")]
         static unsafe bool InternalStrcpy(byte* dest, int destPos, byte* src)
         {
             /* Get size of src and dest */

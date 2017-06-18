@@ -128,5 +128,13 @@ namespace libsupcs
                 src++;
             }
         }
+
+        [libsupcs.MethodAlias("abort")]
+        [libsupcs.WeakLinkage]
+        [libsupcs.AlwaysCompile]
+        static void Abort()
+        {
+            while (true) ;
+        }
     }
 }

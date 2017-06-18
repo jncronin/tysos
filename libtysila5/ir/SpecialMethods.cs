@@ -169,15 +169,23 @@ namespace libtysila5.ir
             switch(ts.stype)
             {
                 case TypeSpec.SpecialType.None:
-                    if (ts.m.is_corlib == false)
-                        throw new NotSupportedException();
-                    var stype = ts.m.simple_type_idx[ts.tdrow];
+                    int stype = -1;
+                    if(ts.m.simple_type_idx != null)
+                        stype = ts.m.simple_type_idx[ts.tdrow];
                     if (stype == -1)
                     {
+                        int val = 0;
                         if (ts.IsValueType)
-                            tmp.Add(0x11);
+                            val = 0x11;
                         else
-                            tmp.Add(0x12);
+                            val = 0x12;
+
+                        val |= 0x80;
+                        tmp.Add((byte)val);
+
+                        CompressInt(tmp, ts.m.AssemblyName.Length);
+                        foreach (var ch in ts.m.AssemblyName)
+                            tmp.Add((byte)ch);
 
                         // create typedef pointer
                         var tok = corlib.MakeCodedIndexEntry(
@@ -186,7 +194,8 @@ namespace libtysila5.ir
                             TypeDefOrRef);
                         CompressInt(tmp, tok);
                     }
-                    tmp.Add((byte)stype);
+                    else
+                        tmp.Add((byte)stype);
                     break;
                 case TypeSpec.SpecialType.Ptr:
                     tmp.Add(0x0f);

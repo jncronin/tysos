@@ -76,6 +76,47 @@ namespace libtysila5.target
         protected internal abstract binary_library.IRelocationType GetDataToDataReloc();
         protected internal abstract binary_library.IRelocationType GetDataToCodeReloc();
 
+        public virtual void InitIntcalls() { }
+
+        public virtual string GetCType(metadata.TypeSpec ts)
+        {
+            switch(ts.stype)
+            {
+                case metadata.TypeSpec.SpecialType.None:
+                    switch(ts.SimpleType)
+                    {
+                        case 0x02:
+                        case 0x08:
+                            return "int32_t";
+                        case 0x03:
+                        case 0x06:
+                            return "int16_t";
+                        case 0x04:
+                            return "int8_t";
+                        case 0x05:
+                            return "uint8_t";
+                        case 0x07:
+                            return "uint16_t";
+                        case 0x09:
+                            return "uint32_t";
+                        case 0x0a:
+                            return "int64_t";
+                        case 0x0b:
+                            return "uint64_t";
+                        case 0x0c:
+                            return "float";
+                        case 0x0d:
+                            return "double";
+                        case 0x18:
+                            return "INTPTR";
+                        case 0x19:
+                            return "UINTPTR";
+                    }
+                    break;
+            }
+            return "INTPTR";
+        }
+
         protected internal virtual bool HasSideEffects(MCInst i)
         { return IsCall(i); }
 
@@ -123,7 +164,7 @@ namespace libtysila5.target
 
         public int RationaliseCT(int ct)
         {
-            switch(ct)
+            switch (ct)
             {
                 case Opcode.ct_intptr:
                 case Opcode.ct_object:
@@ -283,10 +324,10 @@ namespace libtysila5.target
 
         internal int GetSize(metadata.TypeSpec ts)
         {
-            switch(ts.stype)
+            switch (ts.stype)
             {
                 case metadata.TypeSpec.SpecialType.None:
-                    if(ts.m.is_corlib)
+                    if (ts.m.is_corlib)
                     {
                         var simple = ts.m.simple_type_idx[ts.tdrow];
                         if (simple != -1)
@@ -305,7 +346,7 @@ namespace libtysila5.target
 
         private int GetSTypeSize(int stype)
         {
-            switch(stype)
+            switch (stype)
             {
                 case 0x02:
                     return 1;
@@ -416,7 +457,7 @@ namespace libtysila5.target
                 if (i == 0 && has_this)
                 {
                     // value type methods have mptr to type as their this pointer
-                    if(csite.ms.type.IsValueType)
+                    if (csite.ms.type.IsValueType)
                     {
                         v = csite.ms.type.ManagedPointer;
                     }
@@ -437,7 +478,7 @@ namespace libtysila5.target
                 Reg r = null;
 
                 int cur_cc_next;
-                if(cc_next.TryGetValue(ct, out cur_cc_next) == false)
+                if (cc_next.TryGetValue(ct, out cur_cc_next) == false)
                     cur_cc_next = 0;
 
                 int[] cc_map;
@@ -489,7 +530,7 @@ namespace libtysila5.target
             var ptr_size = GetPointerSize();
             var isize = v.Length;
             var r = new byte[ptr_size];
-            for(int i = 0; i < ptr_size; i++)
+            for (int i = 0; i < ptr_size; i++)
             {
                 if (IsLSB)
                 {
@@ -557,5 +598,12 @@ namespace libtysila5.target
 
             return true;
         }
+
+        public virtual Reg AllocateValueType(Code c, metadata.TypeSpec ts, ref long alloced, ref int cur_stack)
+        {
+            return AllocateStackLocation(c, GetSize(ts), ref cur_stack);
+        }
+
+        public abstract Reg AllocateStackLocation(Code c, int size, ref int cur_stack);
     }
 }

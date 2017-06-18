@@ -92,7 +92,8 @@ namespace libtysila5.layout
         }
 
         public static int GetFieldOffset(metadata.TypeSpec ts,
-            string fname, target.Target t, bool is_static = false)
+            string fname, target.Target t, bool is_static = false,
+            List<TypeSpec> field_types = null, List<string> field_names = null)
         {
             /* Iterate through methods looking for requested
                 one */
@@ -106,6 +107,19 @@ namespace libtysila5.layout
             {
                 // Add a vtable entry
                 cur_offset += t.GetCTSize(ir.Opcode.ct_object);
+
+                if (field_types != null)
+                    field_types.Add(ts.m.SystemIntPtr);
+                if (field_names != null)
+                    field_names.Add("__vtbl");
+
+                // Add a mutex lock entry
+                cur_offset += t.GetCTSize(ir.Opcode.ct_intptr);
+
+                if (field_types != null)
+                    field_types.Add(ts.m.SystemIntPtr);
+                if (field_names != null)
+                    field_names.Add("__mutex_lock");
             }
 
             for (uint fdef_row = first_fdef; fdef_row < last_fdef; fdef_row++)
@@ -133,6 +147,15 @@ namespace libtysila5.layout
 
                     var ft = ts.m.GetFieldType(ref fsig, ts.gtparams, null);
                     var ft_size = t.GetSize(ft);
+
+                    if (field_types != null)
+                        field_types.Add(ft);
+                    if(field_names != null)
+                    {
+                        var cur_fname = ts.m.GetStringEntry(MetadataStream.tid_Field,
+                            (int)fdef_row, 1);
+                        field_names.Add(cur_fname);
+                    }
 
                     cur_offset += ft_size;
                 }
@@ -171,6 +194,11 @@ namespace libtysila5.layout
                     if (is_static)
                         return 0;
                     return GetArrayObjectSize(t);
+                case TypeSpec.SpecialType.Boxed:
+                    if (is_static)
+                        return 0;
+                    return GetTypeSize(ts.m.SystemObject, t) +
+                        GetTypeSize(ts.Unbox, t);
                 default:
                     throw new NotImplementedException();
             }

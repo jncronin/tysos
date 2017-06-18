@@ -178,6 +178,11 @@ namespace libtysila5.layout
                     ms = c.ms
                 };
             }
+
+            public static implicit operator MethodSpecWithEhdr(MethodSpec ms)
+            {
+                return new MethodSpecWithEhdr { ms = ms, c = null };
+            }
         }
     }
 }

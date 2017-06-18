@@ -1,6 +1,6 @@
-global _ZN5tysos14tysos#2Ex86_6412TaskSwitcherM_0_16do_x86_64_switch_Rv_P4yU5tysos6Threadyy
+global _ZN5tysos14tysos#2Ex86_6412TaskSwitcherM_16do_x86_64_switch_Rv_P4yU5tysos6Threadyy
 
-_ZN5tysos14tysos#2Ex86_6412TaskSwitcherM_0_16do_x86_64_switch_Rv_P4yU5tysos6Threadyy:
+_ZN5tysos14tysos#2Ex86_6412TaskSwitcherM_16do_x86_64_switch_Rv_P4yU5tysos6Threadyy:
 	; static void do_x86_64_switch(ulong cur_thread_pointer,
 	;	Thread next_thread,
 	;	ulong tsi_offset_within_thread,

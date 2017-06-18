@@ -125,7 +125,7 @@ namespace libsupcs
         }
 
         [AlwaysCompile]
-        [MethodAlias("_ZW6System4TypeM_0_15MakeGenericType_RV4Type_P2V4Typeu1ZV4Type")]
+        [MethodAlias("_ZW6System4Type_15MakeGenericType_RV4Type_P2V4Typeu1ZV4Type")]
         internal static TysosGenericType MakeGenericType(TysosType type_def, TysosType[] p)
         {
             if (!type_def.IsGenericTypeDefinition)

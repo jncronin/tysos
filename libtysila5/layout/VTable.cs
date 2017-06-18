@@ -35,6 +35,7 @@ namespace libtysila5.layout
             TIPtr (just to a glorified TypeSpec)
             IFacePtr (to list of implemented interfaces)
             Extends (to base classes for quick castclassex)
+            TypeSize (to allow MemberwiseClone to work without full Reflection)
             Method 0
             ...
 
@@ -50,6 +51,10 @@ namespace libtysila5.layout
             // Don't compile if not for this architecture
             if (!t.IsTypeValid(ts))
                 return;
+
+            // If its a delegate type we also need to output its methods
+            if (ts.IsDelegate)
+                t.r.DelegateRequestor.Request(ts);
 
             var os = of.GetRDataSection();
             var d = os.Data;
@@ -120,6 +125,11 @@ namespace libtysila5.layout
             }
             for (int i = 0; i < ptr_size; i++, offset++)
                 d.Add(0);
+
+            /* Type size */
+            var tsize = t.IntPtrArray(BitConverter.GetBytes(GetTypeSize(ts, t)));
+            foreach (var b in tsize)
+                d.Add(b);
 
             if (!ts.IsGenericTemplate)
             {
@@ -332,18 +342,22 @@ namespace libtysila5.layout
                         (int)mdef_row, out impl_ms, impl_ts.gtparams, null);
                     impl_ms.type = impl_ts;
 
-                    if (MetadataStream.CompareString(impl_ms.m,
-                        impl_ms.m.GetIntEntry(MetadataStream.tid_MethodDef, (int)mdef_row, 3),
-                        decl_ms.m,
-                        decl_ms.m.GetIntEntry(MetadataStream.tid_MethodDef, (int)decl_ms.mdrow, 3)))
+                    if ((flags & 0x400) != 0x400)
                     {
-                        if (MetadataStream.CompareSignature(impl_ms.m, impl_ms.msig,
-                            impl_ts.gtparams, null,
-                            decl_ms.m, decl_ms.msig, impl_ts.gtparams, null))
+                        // Not marked abstract
+                        if (MetadataStream.CompareString(impl_ms.m,
+                            impl_ms.m.GetIntEntry(MetadataStream.tid_MethodDef, (int)mdef_row, 3),
+                            decl_ms.m,
+                            decl_ms.m.GetIntEntry(MetadataStream.tid_MethodDef, (int)decl_ms.mdrow, 3)))
                         {
-                            // this is the correct one
-                            t.r.MethodRequestor.Request(impl_ms);
-                            return impl_ms;
+                            if (MetadataStream.CompareSignature(impl_ms.m, impl_ms.msig,
+                                impl_ts.gtparams, null,
+                                decl_ms.m, decl_ms.msig, impl_ts.gtparams, null))
+                            {
+                                // this is the correct one
+                                t.r.MethodRequestor.Request(impl_ms);
+                                return impl_ms;
+                            }
                         }
                     }
                 }
@@ -426,7 +440,7 @@ namespace libtysila5.layout
         private static int GetVTableMethLength(TypeSpec ts)
         {
             if (ts == null)
-                return 3; // tiptr, ifaceptr, extends
+                return 4; // tiptr, ifaceptr, extends, type_size
 
             var extends = ts.GetExtends();
             var vtbl_length = GetVTableMethLength(extends);

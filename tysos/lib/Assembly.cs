@@ -36,7 +36,7 @@ namespace tysos.lib
         [FieldReferenceAliasAddress("_A8mscorlib")]
         static IntPtr mscorlib_assembly;
 
-        [libsupcs.MethodAlias("_ZW19System#2EReflection8AssemblyM_0_20GetExecutingAssembly_RV8Assembly_P0")]
+        [libsupcs.MethodAlias("_ZW19System#2EReflection8Assembly_20GetExecutingAssembly_RV8Assembly_P0")]
         static System.Reflection.Assembly GetExecutingAssembly()
         {
             // Return the System.Reflection.Assembly object of the code which called this function
@@ -54,7 +54,7 @@ namespace tysos.lib
             return prev_method.DeclaringType.Assembly;
         }
 
-        [libsupcs.MethodAlias("_ZW19System#2EReflection8AssemblyM_0_27GetManifestResourceInternal_Ru1I_P4u1tu1SRiRV6Module")]
+        [libsupcs.MethodAlias("_ZW19System#2EReflection8Assembly_27GetManifestResourceInternal_Ru1I_P4u1tu1SRiRV6Module")]
         IntPtr GetManifestResourceInternal(string name, out int size, out System.Reflection.Module module)
         {
             /* Return the address (and fill out size and module fields) of a resource embedded in the assembly.

@@ -324,8 +324,8 @@ namespace libsupcs
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern int GetVtblFieldOffset();
 
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        public static extern int GetObjectIdFieldOffset();
+        //[MethodImpl(MethodImplOptions.InternalCall)]
+        //public static extern int GetObjectIdFieldOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern int GetVtblTypeInfoPtrOffset();
@@ -406,6 +406,12 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public unsafe static extern void* GetReturnAddress();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern void Spinlock(void* ptr);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern void Spinunlock(void* ptr);
     }
 
     public class ArrayOperations
@@ -417,8 +423,8 @@ namespace libsupcs
         public static unsafe extern int GetElemSizeOffset();
 
         /** <summary>Get the number of items in the inner array (multiply by elemsize to get the byte length) */
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        public static unsafe extern int GetInnerArrayLengthOffset();
+        //[MethodImpl(MethodImplOptions.InternalCall)]
+        //public static unsafe extern int GetInnerArrayLengthOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static unsafe extern int GetElemTypeOffset();

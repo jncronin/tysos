@@ -59,6 +59,8 @@ EFI_STATUS load_module(const char *fname, UINTPTR *vaddr, size_t *length, EFI_PH
 	load_file(fmod, flen, paddr);
 	printf(" done.\n");
 
+	fclose(fmod);
+
 	if(length)
 		*length = (size_t)flen;
 	if(paddr_out)

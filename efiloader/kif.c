@@ -39,47 +39,14 @@ void *kmalloc(size_t n)
 	if(kif_cur + (EFI_PHYSICAL_ADDRESS)n > kif_end)
 	{
 		printf("error: kmalloc: out of space (cannot allocate %i bytes)\n", n);
-		return NULL;
+		while (1);
+		//return NULL;
 	}
 	void *ret = (void *)kif_cur;
 	kif_cur += (EFI_PHYSICAL_ADDRESS)n;
 	kif_cur = align(kif_cur, 8);
 
 	return ret;
-}
-
-void kCreateString(struct System_String **obj, const char *s)
-{
-    int l = strlen(s);
-    int i;
-    uint16_t *p;
-    *obj = (struct System_String *)kmalloc(sizeof(struct System_String) + l * sizeof(uint16_t));
-    Init_System_String(*obj);
-    (*obj)->length = l;
-    p = &((*obj)->start_char);
-    for(i = 0; i < l; i++)
-        p[i] = (uint16_t)s[i];
-	(*obj)->__vtbl += mb_adjust;
-}
-
-void kCreateRefArray(struct __array **arr_obj, int len)
-{
-    *arr_obj = (struct __array *)kmalloc(sizeof(struct __array));
-    (*arr_obj)->__object_id = 0;		// TODO
-    (*arr_obj)->rank = 1;
-    (*arr_obj)->elem_size = sizeof(uint64_t);
-	(*arr_obj)->lobounds = (INTPTR)kmalloc(sizeof(int32_t));
-	(*arr_obj)->sizes = (INTPTR)kmalloc(sizeof(int32_t));
-	(*arr_obj)->inner_array = (INTPTR)kmalloc(len * sizeof(INTPTR));
-	(*arr_obj)->inner_array_length = len;
-
-	*(int32_t *)(INTPTR)(*arr_obj)->lobounds = 0;
-	*(int32_t *)(INTPTR)(*arr_obj)->sizes = len;
-	memset((void *)(*arr_obj)->inner_array, 0, len * sizeof(INTPTR));
-
-	(*arr_obj)->__vtbl += mb_adjust;
-	(*arr_obj)->lobounds += mb_adjust;
-	(*arr_obj)->sizes += mb_adjust;
 }
 
 EFI_STATUS kif_init(EFI_PHYSICAL_ADDRESS p_kif, EFI_PHYSICAL_ADDRESS len, struct Multiboot_Header **mbheader)

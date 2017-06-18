@@ -89,6 +89,7 @@ namespace binary_library.elf
         Dictionary<string, int> RMachineTypes;
         Dictionary<string, ElfClass> RBinaryTypes;
         Dictionary<string, ElfData> RDataTypes;
+        Dictionary<string, string> MachToBinaryTypes;
 
         public override Bitness Bitness
         {
@@ -647,6 +648,9 @@ namespace binary_library.elf
             RDataTypes["x86_64"] = ElfData.ELFDATA2LSB;
             RDataTypes["jca"] = ElfData.ELFDATA2LSB;
 
+            MachToBinaryTypes = new Dictionary<string, string>();
+            MachToBinaryTypes["x86_64"] = "elf64";
+
             InitRelocTypes();
         }
 
@@ -662,6 +666,10 @@ namespace binary_library.elf
                 base.Architecture = value;
                 e_machine = RMachineTypes[value];
                 ed = RDataTypes[value];
+
+                string bt;
+                if (MachToBinaryTypes.TryGetValue(value, out bt))
+                    BinaryType = bt;
 
                 switch(e_machine)
                 {

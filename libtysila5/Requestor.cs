@@ -32,9 +32,10 @@ namespace libtysila5
     public abstract class Requestor
     {
         public abstract IndividualRequestor<TypeSpec> VTableRequestor { get; }
-        public abstract IndividualRequestor<MethodSpec> MethodRequestor { get; }
+        public abstract IndividualRequestor<layout.Layout.MethodSpecWithEhdr> MethodRequestor { get; }
         public abstract IndividualRequestor<layout.Layout.MethodSpecWithEhdr> EHRequestor { get; }
         public abstract IndividualRequestor<TypeSpec> StaticFieldRequestor { get; }
+        public abstract IndividualRequestor<TypeSpec> DelegateRequestor { get; }
 
         public virtual bool Empty
         {
@@ -48,6 +49,8 @@ namespace libtysila5
                     return false;
                 if (!StaticFieldRequestor.Empty)
                     return false;
+                if (!DelegateRequestor.Empty)
+                    return false;
                 return true;
             }
         }
@@ -55,20 +58,22 @@ namespace libtysila5
 
     public class CachingRequestor : Requestor
     {
-        CachingIndividualRequestor<MethodSpec> m;
+        CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr> m;
         CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr> eh;
         CachingIndividualRequestor<TypeSpec> vt;
         CachingIndividualRequestor<TypeSpec> sf;
+        CachingIndividualRequestor<TypeSpec> d;
 
         public CachingRequestor(MetadataStream mstream = null)
         {
-            m = new CachingIndividualRequestor<MethodSpec>(mstream);
+            m = new CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr>(mstream);
             eh = new CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr>(mstream);
             vt = new CachingIndividualRequestor<TypeSpec>(mstream);
             sf = new CachingIndividualRequestor<TypeSpec>(mstream);
+            d = new CachingIndividualRequestor<TypeSpec>(mstream);
         }
 
-        public override IndividualRequestor<MethodSpec> MethodRequestor
+        public override IndividualRequestor<layout.Layout.MethodSpecWithEhdr> MethodRequestor
         {
             get
             {
@@ -99,6 +104,14 @@ namespace libtysila5
                 return sf;
             }
         }
+
+        public override IndividualRequestor<TypeSpec> DelegateRequestor
+        {
+            get
+            {
+                return d;
+            }
+        }
     }
 
     public abstract class IndividualRequestor<T> where T : IEquatable<T>
@@ -106,6 +119,7 @@ namespace libtysila5
         public abstract T GetNext();
         public abstract bool Empty { get; }
         public abstract void Request(T v);
+        public abstract void Remove(T v);
     }
 
     public class CachingIndividualRequestor<T> : IndividualRequestor<T> where T : Spec, IEquatable<T>
@@ -147,6 +161,12 @@ namespace libtysila5
                 done_and_pending.Add(v);
                 pending.Push(v);
             }
+        }
+
+        public override void Remove(T v)
+        {
+            if (done_and_pending.Contains(v))
+                done_and_pending.Remove(v);
         }
     }
 }

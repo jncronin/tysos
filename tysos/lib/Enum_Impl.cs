@@ -60,7 +60,7 @@ namespace tysos
             return value_field.FieldType as libsupcs.TysosType;
         }
 
-        [libsupcs.MethodAlias("_ZW6System4EnumM_0_9get_value_Ru1O_P1u1t")]
+        [libsupcs.MethodAlias("_ZW6System4Enum_9get_value_Ru1O_P1u1t")]
         [libsupcs.AlwaysCompile]
         static object System_Enum_get_value(System.Enum enum_type)
         {
@@ -99,7 +99,7 @@ namespace tysos
             throw new System.Exception("Invalid underlying enum type: " + field_type.FullName);
         }
 
-        [libsupcs.MethodAlias("_ZW6System12MonoEnumInfoM_0_13get_enum_info_Rv_P2V4TypeRV12MonoEnumInfo")]
+        [libsupcs.MethodAlias("_ZW6System12MonoEnumInfo_13get_enum_info_Rv_P2V4TypeRV12MonoEnumInfo")]
         [libsupcs.AlwaysCompile]
         static void get_enum_info(Type enumType, out MonoEnumInfo info)
         {
@@ -131,7 +131,7 @@ namespace tysos
             info = ret;
         }
 
-        [libsupcs.MethodAlias("_ZW6System4EnumM_0_8ToObject_Ru1O_P2V4Typeu1O")]
+        [libsupcs.MethodAlias("_ZW6System4Enum_8ToObject_Ru1O_P2V4Typeu1O")]
         [libsupcs.AlwaysCompile]
         static object to_object(libsupcs.TysosType enum_type, object value)
         {

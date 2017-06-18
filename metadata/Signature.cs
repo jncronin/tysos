@@ -260,7 +260,7 @@ namespace metadata
         }
 
         // Internal functions that parse a bit of the signature
-        internal uint SigReadUSCompressed(ref int idx, bool us = false)
+        public uint SigReadUSCompressed(ref int idx, bool us = false)
         {
             PEFile.StreamHeader sh = sh_blob;
             if (us)

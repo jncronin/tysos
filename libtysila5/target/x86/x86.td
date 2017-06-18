@@ -127,6 +127,12 @@ x86_instrs = [
 	"and_rm32_imm32",
 	"xchg_r32_rm32",
 	"xchg_rm32_r32",
+	"out_dx_al",
+	"out_dx_ax",
+	"out_dx_eax",
+	"in_al_dx",
+	"in_ax_dx",
+	"in_eax_dx",
 
 	"movsd_xmm_xmmm64",
 	"movsd_xmmm64_xmm",
@@ -163,6 +169,21 @@ x86_instrs = [
 	"cmp_rm64_imm32",
 	"cmp_rm64_imm8",
 	"movsxdq_r64_rm64",
+	"xor_r64_rm64",
+	"xor_rm64_r64",
+	"and_r64_rm64",
+	"and_rm64_r64",
+	"or_r64_rm64",
+	"or_rm64_r64",
+	"neg_rm64",
+	"not_rm64",
+	"imul_r64_rm64",
+	"idiv_rm64",
+	"sal_rm64_cl",
+	"sar_rm64_cl",
+	"shr_rm64_cl",
+	"cvtsi2sd_xmm_rm64",
+	"cvtsd2si_r64_xmmm64",
 ];
 
 intmap(nspace, assembler, name, "insts", "init_instrs", x86_instrs);
@@ -184,6 +205,12 @@ instr(x86_64_def, [ oc_ldc, oc_mul, oc_conv, oc_add, oc_ldc, oc_add, oc_ldind ],
 // the following is produced by initobj
 instr(x86_def, [ oc_ldc, oc_zeromem ], "ldc_zeromem");
 instr(x86_64_def, [ oc_ldc, oc_zeromem ], "ldc_zeromem");
+
+// x86-specific instructions
+instr(x86_def, [ oc_x86_portin ], "portin");
+instr(x86_def, [ oc_x86_portout ], "portout");
+instr(x86_64_def, [ oc_x86_portin ], "portin");
+instr(x86_64_def, [ oc_x86_portout ], "portout");
 
 // Calling conventions
 // SysV

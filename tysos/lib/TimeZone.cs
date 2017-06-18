@@ -28,7 +28,7 @@ namespace tysos.lib
     class TimeZone
     {
         [libsupcs.AlwaysCompile]
-        [libsupcs.MethodAlias("_ZW6System21CurrentSystemTimeZoneM_0_15GetTimeZoneData_Rb_P3iRu1ZxRu1Zu1S")]
+        [libsupcs.MethodAlias("_ZW6System21CurrentSystemTimeZone_15GetTimeZoneData_Rb_P3iRu1ZxRu1Zu1S")]
         static bool GetTimeZoneData(int year, out long[] data, out string[] names)
         {
             /* data[0] =        start of DST (in ticks)

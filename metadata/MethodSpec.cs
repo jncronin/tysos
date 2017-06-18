@@ -211,6 +211,11 @@ namespace metadata
 
         public bool HasCustomAttribute(string ctor)
         {
+            return GetCustomAttribute(ctor) != -1;
+        }
+
+        public int GetCustomAttribute(string ctor)
+        { 
             int cur_ca = m.md_custom_attrs[mdrow];
 
             while (cur_ca != 0)
@@ -225,12 +230,12 @@ namespace metadata
                 var ca_ms_name = ca_ms.MangleMethod();
 
                 if (ca_ms_name.Equals(ctor))
-                    return true;
+                    return cur_ca;
 
                 cur_ca = m.next_ca[cur_ca];
             }
 
-            return false;
+            return -1;
         }
 
         public override IEnumerable<int> CustomAttributes(string ctor = null)

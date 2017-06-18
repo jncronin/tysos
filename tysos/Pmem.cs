@@ -30,7 +30,7 @@ namespace tysos
     unsafe partial class Pmem
     {
         /** A Bitmap class storing free pages as '1' and non-free as '0' */
-        public class Bitmap
+        public unsafe class Bitmap
         {
             ulong* bmp;
 
@@ -44,7 +44,7 @@ namespace tysos
             ulong _bmp_entries_in_bytes;
             ulong _bmp_entries_in_qwords;
 
-            ulong spinlock_addr;
+            byte* spinlock_addr;
 
             public Bitmap(ulong bmp_addr, ulong bmp_maxlength, ulong base_addr, ulong page_size, ulong max_addr)
             {
@@ -77,15 +77,15 @@ namespace tysos
                     bmp[i] = 0UL;
 
                 // Get some memory to use as a spinlock
-                spinlock_addr = gc.gc.Alloc(8);
+                spinlock_addr = (byte*)gc.gc.Alloc(8);
                 *(ulong*)spinlock_addr = 0;
             }
 
             public void ReleasePage(ulong addr)
             {
-                lib.Monitor.spinlockb(spinlock_addr);
+                libsupcs.OtherOperations.Spinlock(spinlock_addr);
                 _ReleasePage(addr);
-                lib.Monitor.spinunlockb(spinlock_addr);
+                libsupcs.OtherOperations.Spinunlock(spinlock_addr);
             }
 
             void _ReleasePage(ulong addr)
@@ -109,9 +109,9 @@ namespace tysos
 
             public ulong GetPage(ulong addr)
             {
-                lib.Monitor.spinlockb(spinlock_addr);
+                libsupcs.OtherOperations.Spinlock(spinlock_addr);
                 ulong ret = _GetPage(addr);
-                lib.Monitor.spinunlockb(spinlock_addr);
+                libsupcs.OtherOperations.Spinunlock(spinlock_addr);
                 return ret;
             }
 
@@ -134,9 +134,9 @@ namespace tysos
 
             public ulong GetFreePage()
             {
-                lib.Monitor.spinlockb(spinlock_addr);
+                libsupcs.OtherOperations.Spinlock(spinlock_addr);
                 ulong ret = _GetFreePage();
-                lib.Monitor.spinunlockb(spinlock_addr);
+                libsupcs.OtherOperations.Spinunlock(spinlock_addr);
                 return ret;
             }
 

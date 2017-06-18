@@ -95,7 +95,7 @@ namespace libsupcs
             ret._Assembly = elem_type._Assembly;
             ret._Module = elem_type._Module;
             ret.Events = new IntPtr(0);
-            ret.Extends = TysosType.ReinterpretAsType(OtherOperations.GetStaticObjectAddress("_ZW6System5ArrayTI"));
+            ret.Extends = TysosType.ReinterpretAsType(OtherOperations.GetStaticObjectAddress("_ZW6System5Array"));
             ret.Fields = new IntPtr(0);
             ret.Flags = 0x1;    // public
             ret.ImplFlags = TysosType.IF_ZBA | TysosType.IF_DYNAMIC;
@@ -176,7 +176,7 @@ namespace libsupcs
             return idx - *lobounds;            
         }
 
-        [MethodAlias("_ZW6System5ArrayM_0_13ClearInternal_Rv_P3V5Arrayii")]
+        [MethodAlias("_ZW6System5Array_13ClearInternal_Rv_P3V5Arrayii")]
         private unsafe static void ClearInternal(byte *arr, int index, int length)
         {
             int etSize = *(int*)(arr + ArrayOperations.GetElemSizeOffset());
@@ -186,7 +186,7 @@ namespace libsupcs
                 length * etSize);
         }
 
-        [MethodAlias("_ZW6System5ArrayM_0_8FastCopy_Rb_P5V5ArrayiV5Arrayii")]
+        [MethodAlias("_ZW6System5Array_8FastCopy_Rb_P5V5ArrayiV5Arrayii")]
         private unsafe static bool FastCopy(byte* srcArr, int sourceIndex, byte* destArr,
             int destIndex, int length)
         {
@@ -200,8 +200,11 @@ namespace libsupcs
                 return false;
 
             /* Calculate start offsets and byte length */
-            int srcIAItems = *(int*)(srcArr + ArrayOperations.GetInnerArrayLengthOffset());
-            int destIAItems = *(int*)(destArr + ArrayOperations.GetInnerArrayLengthOffset());
+            //int srcIAItems = *(int*)(srcArr + ArrayOperations.GetInnerArrayLengthOffset());
+            //int destIAItems = *(int*)(destArr + ArrayOperations.GetInnerArrayLengthOffset());
+            int srcIAItems = 0;
+            int destIAItems = 0;
+            throw new NotImplementedException();
             int srcLB = **(int**)(srcArr + ArrayOperations.GetLoboundsOffset());
             int destLB = **(int**)(destArr + ArrayOperations.GetLoboundsOffset());
             int etSize = *(int*)(srcArr + ArrayOperations.GetElemSizeOffset());
@@ -292,7 +295,8 @@ namespace libsupcs
             *(int*)sizes = size;
             *(UIntPtr*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetSizesOffset())) = sizes;
 
-            *(int*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetInnerArrayLengthOffset())) = size;
+            //*(int*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetInnerArrayLengthOffset())) = size;
+            throw new NotImplementedException();
 
             UIntPtr inner_array = CastOperations.ReinterpretAsUIntPtr(MemoryOperations.GcMalloc(new IntPtr(size * elemtype.GetClassSize())));
             *(UIntPtr*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetInnerArrayOffset())) = inner_array;
@@ -313,7 +317,8 @@ namespace libsupcs
             *(int*)sizes = size;
             *(UIntPtr*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetSizesOffset())) = sizes;
 
-            *(int*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetInnerArrayLengthOffset())) = size;
+            //*(int*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetInnerArrayLengthOffset())) = size;
+            throw new NotImplementedException();
 
             UIntPtr inner_array = CastOperations.ReinterpretAsUIntPtr(MemoryOperations.GcMalloc(new IntPtr(size * elemtype.GetClassSize())));
             *(UIntPtr*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetInnerArrayOffset())) = inner_array;
@@ -324,9 +329,8 @@ namespace libsupcs
             byte* ret = (byte*)CastOperations.ReinterpretAsPointer(MemoryOperations.GcMalloc(new IntPtr(libsupcs.ArrayOperations.GetArrayClassSize())));
 
             /* Add in the object fields */
-            TysosType ti = TysosType.ReinterpretAsType(OtherOperations.GetStaticObjectAddress("_Zu1ZhTI"));
+            TysosType ti = TysosType.ReinterpretAsType(OtherOperations.GetStaticObjectAddress("_Zu1Zh"));
             *(IntPtr*)(ret + libsupcs.ClassOperations.GetVtblFieldOffset()) = ti.VTable;
-            *(int*)(ret + libsupcs.ClassOperations.GetObjectIdFieldOffset()) = TysosType.obj_id++;
 
             /* Add in the array fields */
             int* lobounds = (int*)CastOperations.ReinterpretAsPointer(MemoryOperations.GcMalloc(new IntPtr(4)));
@@ -337,7 +341,8 @@ namespace libsupcs
             *sizes = length;
             *(int**)(ret + libsupcs.ArrayOperations.GetSizesOffset()) = sizes;
 
-            *(int*)(ret + libsupcs.ArrayOperations.GetInnerArrayLengthOffset()) = length;
+            //*(int*)(ret + libsupcs.ArrayOperations.GetInnerArrayLengthOffset()) = length;
+            throw new NotImplementedException();
 
             *(int*)(ret + libsupcs.ArrayOperations.GetRankOffset()) = 1;
 

@@ -1,11 +1,13 @@
 ﻿// Say hi
 
+setoutputcolor(["cyan"]);
 print("--------------------------------\n");
 print("Building tysos\n");
 print("--------------------------------\n");
 print("\n");
 print("Configuration\n");
 print("--------------------------------\n");
+setoutputcolor([]);
 
 // Configuration
 TARGET ?= input("Architecture", [ "x86_64", "x86", "arm" ], "x86_64");
@@ -16,9 +18,10 @@ ROOT ?= input("Path to root tysos directory", "../../..");
 function x86_yasm()
 {
 	export YASM = find("nasm", "nasm compatible compiler", NASM);
-	export rulefor "%.o" inputs { "%.asm" } depends { "test.tmk" } {
+	rulefor("%.o", [ "%.asm" ], [ "test.tmk" ], function()
+	{
 		shellcmd("$YASM $YASMFLAGS -o $_RULE_OUTPUT $_RULE_INPUT");
-	}
+	});
 }
 
 function find_xorriso()
@@ -58,12 +61,14 @@ if (TARGET == "x86_64")
 	XAR = find("x86_64-elf-ar", "cross archiver for x86_64-elf", XAR);
 	XRANLIB = find("x86_64-elf-ranlib", "cross ranlib for x86_64-elf", XRANLIB);
 	YASMFLAGS = "-felf64";
-	TYSILAARCH = "x86_64s-elf64-tysos";
+	TYSILAARCH = "x86_64";
 	TLARCH = "x86_64-elf-tyobj";
 	LDFLAGS = "-fno-use-linker-plugin -Ttext 0x40000000 -nostdlib";
 	TYSOS_CPU_OBJ = [ tycobj("x86_64/cpu.o"), tycobj("x86_64/halt.o"), tycobj("x86_64/exceptions.o"), tycobj("x86_64/switcher.o") ];
-	LIBSUPCS_CPU_OBJ = [ ROOT + "/libsupcs/x86_64_arith.o", ROOT + "/libsupcs/x86_64_cpu.o", ROOT + "/libsupcs/x86_64_Invoke.o" ];
-	CFLAGS = "-ffreestanding -mno-red-zone -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-3dnow";
+	LIBSUPCS_CPU_OBJ = [ ROOT + "/libsupcs/x86_64_cpu.o",
+		ROOT + "/libsupcs/x86_64_Invoke.o",
+		ROOT + "/libsupcs/x86_64_Spinlock.o" ];
+	CFLAGS = "-ffreestanding -mno-red-zone";
 	USE_UEFI = 1;
 	
 	x86_yasm();
@@ -73,7 +78,7 @@ else if (TARGET == "x86")
 	XCC = find("i586-elf-gcc", "cross compiler for i586-elf", XCC);
 	XAR = find("i586-elf-gcc", "cross archiver for i586-elf", XAR);
 	YASMFLAGS = "-felf";
-	TYSILAARCH = "i586-elf-tysos";
+	TYSILAARCH = "i586";
 	TLARCH = "x86-elf-tyobj";
 	USE_GRUB = 1;
 
@@ -100,9 +105,11 @@ if(USE_GRUB)
 	grub_finds();
 }
 
+setoutputcolor(["cyan"]);
 print("--------------------------------\n");
 print("Building\n");
 print("--------------------------------\n");
+setoutputcolor([]);
 
 // Rules
 function objfromexe(string exe)
@@ -114,8 +121,8 @@ function tobjfromexe(string exe)
 	return dir(exe) + "/" + basefname(exe) + ".to";
 }
 
-TYSILAPROJ = ROOT + "/tysila2/tysila2.csproj";
-TYSILA = typroject(TYSILAPROJ, "Release", "3.5", 1);
+TYSILAPROJ = ROOT + "/tysila2/tysila4/tysila4.csproj";
+TYSILA = typroject(TYSILAPROJ, "Release", "4.0", 1);
 TYSOS = typroject(ROOT + "/tysos/tysos.csproj", "Release", "3.5", 1);
 TYSOSOBJ = objfromexe(TYSOS);
 MSCORLIB = ROOT + "/mono/corlib/mscorlib.dll";
@@ -129,7 +136,24 @@ LIBASMOBJ = objfromexe(typroject(ROOT + "/libasm/libasm.csproj", "Release", "3.5
 LIBTYSILAOBJ = objfromexe(typroject(ROOT + "/libtysila/libtysila.csproj", "Release", "3.5", 1));
 MSCORLIBDIR = dir(MSCORLIB);
 TYSOSDIR = dir(TYSOS);
+LIBSUPCSDIR = dir(LIBSUPCS);
 TINYGCOBJ = ROOT + "/tinygc/gc.o";
+
+LIBSUPCS_COMPILER_RT = [
+	ROOT + "/libsupcs/compiler_rt/ashldi3.o",
+	ROOT + "/libsupcs/compiler_rt/ashrdi3.o",
+	ROOT + "/libsupcs/compiler_rt/divdi3.o",
+	ROOT + "/libsupcs/compiler_rt/fixdfdi.o",
+	ROOT + "/libsupcs/compiler_rt/fixunsdfdi.o",
+	ROOT + "/libsupcs/compiler_rt/fixunsdfsi.o",
+	ROOT + "/libsupcs/compiler_rt/floatdidf.o",
+	ROOT + "/libsupcs/compiler_rt/floatundidf.o",
+	ROOT + "/libsupcs/compiler_rt/lshrdi3.o",
+	ROOT + "/libsupcs/compiler_rt/moddi3.o",
+	ROOT + "/libsupcs/compiler_rt/muldi3.o",
+	ROOT + "/libsupcs/compiler_rt/negdi2.o",
+	ROOT + "/libsupcs/compiler_rt/udivmoddi4.o"
+];
 
 KERNEL = ROOT + "/tysos.bin";
 
@@ -139,17 +163,20 @@ CHAR_CONVERSIONS_PROG = typroject(CC_DIR + "/char-conversions.csproj");
 CC_INTERMEDIATE = CC_DIR + "/category-dump";
 CC_OUTPUT = CC_DIR + "/char-conversions.cs";
 
-rulefor CC_INTERMEDIATE depends { CHAR_CONVERSIONS_PROG } {
+rulefor(CC_INTERMEDIATE, [], [ CHAR_CONVERSIONS_PROG ], function()
+{
 	shellcmd("$CHAR_CONVERSIONS_PROG --dump $CC_INTERMEDIATE");
-}
+});
 
-rulefor CC_OUTPUT inputs { CC_INTERMEDIATE } depends { CHAR_CONVERSIONS_PROG } {
+rulefor(CC_OUTPUT, [ CC_INTERMEDIATE ], [ CHAR_CONVERSIONS_PROG ], function()
+{
 	shellcmd("$CHAR_CONVERSIONS_PROG --encode $CC_INTERMEDIATE CategoryData $CC_OUTPUT");
-}
+});
 
-rulefor ROOT + "/tysos/lib/char-conversions.cs" inputs { CC_OUTPUT } {
+rulefor(ROOT + "/tysos/lib/char-conversions.cs", [ CC_OUTPUT ], [], function()
+{
 	cp(_RULE_INPUT, _RULE_OUTPUT);
-}
+});
 
 /* Rules for UnicodeData */
 US_DIR = ROOT + "/unicode_support";
@@ -157,13 +184,15 @@ US_PROG = typroject(US_DIR + "/unicode_support.csproj");
 US_INPUT = US_DIR + "/UnicodeData.txt";
 US_OUTPUT = US_DIR + "/UnicodeData.cs";
 
-rulefor US_OUTPUT inputs { US_INPUT } depends { US_PROG } {
+rulefor(US_OUTPUT, [ US_INPUT ], [ US_PROG ], function()
+{
 	shellcmd("$US_PROG -o $US_OUTPUT $US_INPUT");
-}
+});
 
-rulefor ROOT + "/tysos/lib/UnicodeData.cs" inputs { US_OUTPUT } {
+rulefor(ROOT + "/tysos/lib/UnicodeData.cs", [ US_OUTPUT ], [], function()
+{
 	cp(_RULE_INPUT, _RULE_OUTPUT);
-}
+});
 
 /* Rules for mscorlib sources */
 CORLIB_DIR = ROOT + "/mono/corlib";
@@ -172,7 +201,8 @@ CORLIB_OPTS = CORLIB_DIR + "/corlib.dll.sources.options";
 CORLIB_TY_SRCS = CORLIB_DIR + "/corlib.dll.ty.sources";
 CORLIB_DLL = CORLIB_DIR + "/mscorlib.dll";
 
-rulefor CORLIB_TY_SRCS inputs { CORLIB_SRC, CORLIB_OPTS } {
+rulefor(CORLIB_TY_SRCS, [ CORLIB_SRC, CORLIB_OPTS ], [], function()
+{
 	f_a = fopen(CORLIB_OPTS);
 	b_a = [];
 	f_a.Read(b_a, 0, f_a.Length);
@@ -189,45 +219,52 @@ rulefor CORLIB_TY_SRCS inputs { CORLIB_SRC, CORLIB_OPTS } {
 	f_o = fopen(CORLIB_TY_SRCS);
 	f_o.Write(b_o, 0, b_o.length);
 	f_o.Close();
-}
+});
 
 build(CORLIB_TY_SRCS);
 typroject(CORLIB_TY_SRCS);
 
 /* Rules for assembling CLR binaries */
-rulefor "%.obj" inputs { "%.exe" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR -L$TYSOSDIR $_RULE_INPUT");
-}
-rulefor "%.obj" inputs { "%.dll" } depends { TYSILA, CORLIB_DLL, "test.tmk" } {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS --arch $TYSILAARCH -q -c -L$MSCORLIBDIR -L$TYSOSDIR $_RULE_INPUT");
-}
+rulefor("%.obj", [ "%.exe" ], [ TYSILA, CORLIB_DLL, "test.tmk" ], function()
+{
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+});
+rulefor("%.obj", [ "%.dll" ], [ TYSILA, CORLIB_DLL, "test.tmk" ], function()
+{
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+});
 /*rulefor "%.to" inputs { "%.obj" } depends { TL, "test.tmk" } {
 	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
 }*/
-rulefor "%.to" inputs { "%.obj" } depends { "test.tmk" } {
+rulefor("%.to", [ "%.obj" ], [ "test.tmk" ], function() {
 	cp(_RULE_INPUT, _RULE_OUTPUT);
-}
+});
 
 /* Rule for linking the kernel */
-rulefor KERNEL inputs { TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ, tycobj("undefined.o"),
-	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA } {
+rulefor(KERNEL, [ TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ,
+	tycobj("undefined.o"),
+	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA ], [],
+	function()
+{
 	shellcmd("$XCC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");
-}
+});
 
 /* Rules for C/asm code */
-rulefor "%.o" inputs { "%.c" } depends { "test.tmk" } {
+rulefor("%.o", [ "%.c" ], [ "test.tmk" ], function() {
 	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
-}
+});
 
-rulefor "%.o" inputs { "%.s" } depends { "test.tmk" } {
+rulefor("%.o", [ "%.s" ], [ "test.tmk" ], function() {
 	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
-}
+});
 
 /* Rule for libsupcs library (contains C# and native code) */
-rulefor LIBSUPCSA inputs { LIBSUPCSOBJ, LIBSUPCS_CPU_OBJ } depends { "test.tmk" } {
+rulefor(LIBSUPCSA, [ LIBSUPCSOBJ ] + LIBSUPCS_CPU_OBJ + LIBSUPCS_COMPILER_RT,
+	[ "test.tmk" ], function()
+{
 	shellcmd("$XAR -cru $_RULE_OUTPUT $_RULE_INPUTS");
 	shellcmd("$XRANLIB $_RULE_OUTPUT");
-}
+});
 
 /* Rules for EFI applications */
 
@@ -238,48 +275,66 @@ EFICFLAGS = "-I" + EFILIBCDIR + "/inc -I" + EFILIBCDIR + "/efi/inc -I" + EFILIBC
 	+ EFILIBCDIR + " -I" + EFILIBCDIR + "/efi -I" + ZLIBDIR + " -I" + CONFUSEDIR + " -ffreestanding -std=gnu11 -Wall -Wextra -Werror";
 EFILDFLAGS = "-nostdlib -fno-use-linker-plugin -Wl,-dll -shared -Wl,--subsystem,10 -e efi_main";
 
-rulefor "%.efi.o" inputs { "%.c" } depends { "test.tmk" } {
+rulefor("%.efi.o", [ "%.c" ], [ "test.tmk" ], function() {
+	return(shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -c $_RULE_INPUT"));
+});
+rulefor("%.efi.o", [ "%.s" ], [ "test.tmk" ], function() {
 	shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -c $_RULE_INPUT");
-}
-rulefor "%.efi.o" inputs { "%.s" } depends { "test.tmk" } {
-	shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -c $_RULE_INPUT");
-}
+});
 
 EFILIBC = EFILIBCDIR + "/libefilibc.a";
-rulefor EFILIBC inputs { EFILIBCDIR + "/abort.efi.o", EFILIBCDIR + "/atof.efi.o", 
+rulefor(EFILIBC, [
+	EFILIBCDIR + "/abort.efi.o", EFILIBCDIR + "/atof.efi.o", 
 	EFILIBCDIR + "/atoi.efi.o", EFILIBCDIR + "/console.efi.o", EFILIBCDIR + "/data.efi.o",
 	EFILIBCDIR + "/efilibc.efi.o", EFILIBCDIR + "/file.efi.o", EFILIBCDIR + "/malloc.efi.o", EFILIBCDIR + "/misc.efi.o", EFILIBCDIR + "/printf.efi.o",
 	EFILIBCDIR + "/scanf.efi.o", EFILIBCDIR + "/serial.efi.o", EFILIBCDIR + "/string.efi.o", EFILIBCDIR + "/strtod.efi.o", EFILIBCDIR + "/strtol.efi.o",
-	EFILIBCDIR + "/strtoll.efi.o", EFILIBCDIR + "/strtoull.efi.o" } depends { "test.tmk" } {
+	EFILIBCDIR + "/strtoll.efi.o", EFILIBCDIR + "/strtoull.efi.o" ],
+	[ "test.tmk" ],
+	function()
+{
 	shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
-}
+});
 
 ZLIB = ZLIBDIR + "/libz.a";
-rulefor ZLIB inputs { ZLIBDIR + "/adler32.efi.o", ZLIBDIR + "/compress.efi.o", ZLIBDIR + "/crc32.efi.o",
+rulefor(ZLIB, [ ZLIBDIR + "/adler32.efi.o", ZLIBDIR + "/compress.efi.o", ZLIBDIR + "/crc32.efi.o",
 	ZLIBDIR + "/deflate.efi.o", ZLIBDIR + "/gzclose.efi.o", ZLIBDIR + "/gzlib.efi.o", ZLIBDIR + "/gzread.efi.o",
 	ZLIBDIR + "/gzwrite.efi.o", ZLIBDIR + "/infback.efi.o", ZLIBDIR + "/inffast.efi.o", ZLIBDIR + "/inflate.efi.o",
-	ZLIBDIR + "/inftrees.efi.o", ZLIBDIR + "/trees.efi.o", ZLIBDIR + "/uncompr.efi.o", ZLIBDIR + "/zutil.efi.o" } depends { "test.tmk" }
+	ZLIBDIR + "/inftrees.efi.o", ZLIBDIR + "/trees.efi.o", ZLIBDIR + "/uncompr.efi.o", ZLIBDIR + "/zutil.efi.o" ],
+	[ "test.tmk" ],
+	function()
 {
 	shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
-}
+});
 
 CONFUSE = CONFUSEDIR + "/libconfuse.a";
-rulefor CONFUSE inputs { CONFUSEDIR + "/confuse.efi.o", CONFUSEDIR + "/lexer.efi.o" } depends { "test.tmk" }
+rulefor(CONFUSE, [ CONFUSEDIR + "/confuse.efi.o", CONFUSEDIR + "/lexer.efi.o" ],
+	[ "test.tmk" ],
+	function()
 {
 	shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
-}
+});
 
 EFILOADER = ROOT + "/efiloader/efiloader.bin";
-rulefor EFILOADER inputs { ROOT + "/efiloader/main.efi.o", ROOT + "/efiloader/tloadkif.efi.o", ROOT + "/efiloader/load.efi.o",
+rulefor(EFILOADER, [ ROOT + "/efiloader/main.efi.o", ROOT + "/efiloader/tloadkif.efi.o", ROOT + "/efiloader/load.efi.o",
 	ROOT + "/efiloader/elf.efi.o", ROOT + "/efiloader/vmem.efi.o", ROOT + "/efiloader/modules.efi.o",
-	ROOT + "/efiloader/kif.efi.o", ROOT + "/efiloader/cfg.efi.o", ROOT + "/efiloader/tramp.efi.o" } depends { EFILIBC, ZLIB, CONFUSE } {
-	shellcmd("$EFICC -o $_RULE_OUTPUT $EFILDFLAGS -L$EFILIBCDIR -L$ZLIBDIR -L$CONFUSEDIR $_RULE_INPUTS -lz -lconfuse -lefilibc -lgcc");
-}
-
-rulefor ROOT + "/efiloader/tloadkif.c" inputs { TYSOS } depends { TYSILA, MSCORLIB }
+	ROOT + "/efiloader/kif.efi.o", ROOT + "/efiloader/cfg.efi.o", ROOT + "/efiloader/tramp.efi.o" ],
+	[ EFILIBC, ZLIB, CONFUSE ],
+	function()
 {
-	shellcmd("$TYSILA --arch $TYSILAARCH -q -L$MSCORLIBDIR --output-header $ROOT/efiloader/tloadkif.h --output-cinit $ROOT/efiloader/tloadkif.c $TYSOS");
-}
+	shellcmd("$EFICC -o $_RULE_OUTPUT $EFILDFLAGS -L$EFILIBCDIR -L$ZLIBDIR -L$CONFUSEDIR $_RULE_INPUTS -lz -lconfuse -lefilibc -lgcc");
+});
+// Special case tloadkif so it uses kmalloc rather than malloc
+rulefor(ROOT + "/efiloader/tloadkif.efi.o",
+	[ ROOT + "/efiloader/tloadkif.c" ], [], function()
+{
+	return(shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -Dmalloc=kmalloc -c $_RULE_INPUT"));
+});
+
+
+rulefor(ROOT + "/efiloader/tloadkif.c", [ TYSOS ], [ TYSILA, MSCORLIB ], function()
+{
+	shellcmd("$TYSILA -t $TYSILAARCH -q -L$MSCORLIBDIR -L$LIBSUPCSDIR -H $ROOT/efiloader/tloadkif.h -C $ROOT/efiloader/tloadkif.c $TYSOS");
+});
 
 /* TinyGC garbage collection library and associated support files */
 SETJMP = "../../../tinygc/setjmp." + TARGET + ".o";
@@ -289,15 +344,19 @@ if(DEBUG) {
 	TINYGC_SRCS.add(ROOT + "/tinygc/serport.tgc.o");
 }
 
-rulefor "%.tgc.o" inputs { "%.c" } depends { "test.tmk" } {
+rulefor("%.tgc.o", [ "%.c" ], [ "test.tmk" ], function()
+{
 	shellcmd("$XCC -o $_RULE_OUTPUT -I$ROOT/tinygc $CFLAGS -c $_RULE_INPUT");
-}
+});
 
-rulefor TINYGCOBJ inputs { TINYGC_SRCS } depends { "test.tmk" } {
+rulefor(TINYGCOBJ, TINYGC_SRCS, [ "test.tmk" ], function()
+{
 	shellcmd("$XCC -Wl,-r $LDFLAGS -o $_RULE_OUTPUT $_RULE_INPUTS");
-}
+});
 
+setoutputcolor(["cyan"]);
 print("Building for $TARGET\n");
+setoutputcolor([]);
 
 OUTDIR = ROOT + "/iso_image";
 autodir(OUTDIR);
@@ -340,7 +399,8 @@ ELTORITO = GRUBDIR + "/eltorito.img";
 
 if(defined(USE_GRUB))
 {
-	rulefor ISOIMAGE inputs { KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG } depends { ISODIR, BOOTDIR, GRUBDIR, CDBOOT }
+	rulefor(ISOIMAGE, [ KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG ],
+		[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT ], function()
 	{
 		cp(KERNEL, ISODIR);
 		cp(GRUBCFG, GRUBDIR);
@@ -373,7 +433,7 @@ if(defined(USE_GRUB))
 		feltorito.Write(bcoreimg, 0, fcoreimg.Length);
 
 		shellcmd("$XORRISO -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
-	}
+	});
 }
 else if(defined(USE_UEFI))
 {
@@ -383,7 +443,9 @@ else if(defined(USE_UEFI))
 
 	BOOT_MNU = OUTDIR + "/boot.mnu";
 
-	rulefor ISOIMAGE inputs { KERNEL, LIBSUPCS, MSCORLIB, PROCESSES, EFILOADER, BOOT_MNU } depends { IMGDIR, IMGDIR + "/EFI/BOOT", IMGDIR + "/boot", ISODIR }
+	rulefor(ISOIMAGE, [ KERNEL, LIBSUPCS, MSCORLIB, EFILOADER, BOOT_MNU ] + PROCESSES,
+		[ IMGDIR, IMGDIR + "/EFI/BOOT", IMGDIR + "/boot", ISODIR ],
+		function()
 	{
 		cp(KERNEL, IMGDIR);
 		cp(LIBSUPCS, IMGDIR);
@@ -402,19 +464,33 @@ else if(defined(USE_UEFI))
 
 		shellcmd("$MKFAT -o $ISODIR/efi.img $IMGDIR");
 		shellcmd("$XORRISO -as mkisofs -R -f --efi-boot efi.img -no-emul-boot -o $ISOIMAGE $ISODIR");
-	}
+	});
 }
 
 if(MAKE_ISO == "y")
 {
-	build(ISOIMAGE);
+	if(build(ISOIMAGE))
+	{
+		setoutputcolor(["red"]);
+		print("--------------------------------\n");
+		print("Error\n");
+		setoutputcolor([]);
+		return;
+	}
 }
 else
 {
-	build(KERNEL);
-	build(PROCESSES);
+	if(build(KERNEL) || build(PROCESSES))
+	{
+		setoutputcolor(["red"]);
+		print("--------------------------------\n");
+		print("Error\n");
+		setoutputcolor([]);
+		return;
+	}
 }
 
-
+setoutputcolor(["cyan"]);
 print("--------------------------------\n");
 print("Done\n");
+setoutputcolor([]);

@@ -129,7 +129,7 @@ namespace tysos.gc
         {
             try
             {
-                lib.Monitor.spinlockb(cur_arena + arena_lock);
+                libsupcs.OtherOperations.Spinlock((byte *)(cur_arena + arena_lock));
 
                 ulong node_addr = addr - blk_header_length;
 
@@ -144,7 +144,7 @@ namespace tysos.gc
             }
             finally
             {
-                lib.Monitor.spinunlockb(cur_arena + arena_lock);
+                libsupcs.OtherOperations.Spinunlock((byte*)cur_arena + arena_lock);
             }
         }
 
@@ -153,7 +153,7 @@ namespace tysos.gc
         {
             try
             {
-                lib.Monitor.spinlockb(cur_arena + arena_lock);
+                libsupcs.OtherOperations.Spinlock((byte*)cur_arena + arena_lock);
 
                 if (size <= *(ulong*)(cur_arena + arena_small_cutoff))
                     return do_small_alloc(cur_arena, size);
@@ -212,7 +212,7 @@ namespace tysos.gc
             }
             finally
             {
-                lib.Monitor.spinunlockb(cur_arena + arena_lock);
+                libsupcs.OtherOperations.Spinunlock((byte*)cur_arena + arena_lock);
             }
         }
 

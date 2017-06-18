@@ -34,12 +34,12 @@ namespace tysos
             env_vars = new Dictionary<string,string>(new Program.MyGenericEqualityComparer<string>());
         }
 
-        [libsupcs.MethodAlias("_ZW6System11EnvironmentM_0_11get_NewLine_Ru1S_P0")]
+        [libsupcs.MethodAlias("_ZW6System11Environment_11get_NewLine_Ru1S_P0")]
         [libsupcs.AlwaysCompile]
         static string Environment_GetNewLine()
         { return "\n"; }
 
-        [libsupcs.MethodAlias("_ZW6System11EnvironmentM_0_30internalGetEnvironmentVariable_Ru1S_P1u1S")]
+        [libsupcs.MethodAlias("_ZW6System11Environment_30internalGetEnvironmentVariable_Ru1S_P1u1S")]
         [libsupcs.AlwaysCompile]
         static string GetEnvVar(string var_name)
         {
@@ -50,21 +50,21 @@ namespace tysos
             return "";
         }
 
-        [libsupcs.MethodAlias("_ZW6System11EnvironmentM_0_12get_Platform_RV10PlatformID_P0")]
+        [libsupcs.MethodAlias("_ZW6System11Environment_12get_Platform_RV10PlatformID_P0")]
         [libsupcs.AlwaysCompile]
         static int get_Platform()
         {
             return 128;
         }
 
-        [libsupcs.MethodAlias("_ZW6System11EnvironmentM_0_18GetOSVersionString_Ru1S_P0")]
+        [libsupcs.MethodAlias("_ZW6System11Environment_18GetOSVersionString_Ru1S_P0")]
         [libsupcs.AlwaysCompile]
         static string GetOSVersionString()
         {
             return "0.2.0.0";
         }
 
-        [libsupcs.MethodAlias("_ZW6System11EnvironmentM_0_15internalGetHome_Ru1S_P0")]
+        [libsupcs.MethodAlias("_ZW6System11Environment_15internalGetHome_Ru1S_P0")]
         [libsupcs.AlwaysCompile]
         static string internalGetHome()
         {

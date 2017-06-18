@@ -560,7 +560,7 @@ namespace libsupcs
         public override bool IsGenericType { get { return (ImplFlags & IF_GT) == IF_GT; } }
         public override bool IsGenericTypeDefinition { get { return (ImplFlags & IF_GTD) == IF_GTD; } }
 
-        [MethodAlias("_ZW6System4TypeM_0_18type_is_subtype_of_Rb_P3V4TypeV4Typeb")]
+        [MethodAlias("_ZW6System4Type_18type_is_subtype_of_Rb_P3V4TypeV4Typeb")]
         [AlwaysCompile]
         static bool IsSubtypeOf(TysosType subclass, TysosType superclass, bool check_interfaces)
         {
@@ -588,7 +588,7 @@ namespace libsupcs
             return false;
         }
 
-        [MethodAlias("_ZW6System4TypeM_0_23type_is_assignable_from_Rb_P2V4TypeV4Type")]
+        [MethodAlias("_ZW6System4Type_23type_is_assignable_from_Rb_P2V4TypeV4Type")]
         [AlwaysCompile]
         static bool IsAssignableFrom(TysosType cur_type, TysosType from_type)
         {
@@ -632,7 +632,7 @@ namespace libsupcs
             return (ImplFlags & IF_VTYPE) == IF_VTYPE;
         }
 
-        [MethodAlias("_ZW6System4TypeM_0_15make_array_type_RV4Type_P2u1ti")]
+        [MethodAlias("_ZW6System4Type_15make_array_type_RV4Type_P2u1ti")]
         [AlwaysCompile]
         static TysosType make_array_type(TysosType cur_type, int rank)
         {
@@ -650,7 +650,6 @@ namespace libsupcs
             {
                 void* addr = CastOperations.ReinterpretAsPointer(ret);
                 *(IntPtr*)((byte*)addr + libsupcs.ClassOperations.GetVtblFieldOffset()) = this.VTable;
-                *(int*)((byte*)addr + libsupcs.ClassOperations.GetObjectIdFieldOffset()) = obj_id++;
             }
 
             return ret;
@@ -658,7 +657,7 @@ namespace libsupcs
 
         static internal int obj_id = 0;
 
-        [MethodAlias("_Zu1OM_0_7GetType_RW6System4Type_P1u1t")]
+        [MethodAlias("_Zu1O_7GetType_RW6System4Type_P1u1t")]
         [AlwaysCompile]
         static unsafe TysosType Object_GetType(void ***obj)
         {
@@ -672,7 +671,7 @@ namespace libsupcs
                 return ret;
         }
 
-        [MethodAlias("_ZW6System4TypeM_0_14EqualsInternal_Rb_P2u1tV4Type")]
+        [MethodAlias("_ZW6System4Type_14EqualsInternal_Rb_P2u1tV4Type")]
         [AlwaysCompile]
         static bool EqualsInternal(TysosType a, TysosType b)
         {
@@ -797,7 +796,7 @@ namespace libsupcs
         }
 
         [AlwaysCompile]
-        [MethodAlias("_ZW6System9ValueTypeM_0_14InternalEquals_Rb_P3u1Ou1ORu1Zu1O")]
+        [MethodAlias("_ZW6System9ValueType_14InternalEquals_Rb_P3u1Ou1ORu1Zu1O")]
         private static unsafe bool ValueType_InternalEquals(void ***o1, void ***o2, out void* fields)
         {
             fields = null;

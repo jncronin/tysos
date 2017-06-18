@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using binary_library;
 using libtysila5.ir;
+using libtysila5.util;
 using metadata;
 
 namespace libtysila5.target.x86
@@ -32,6 +33,36 @@ namespace libtysila5.target.x86
         static x86_Assembler()
         {
             init_instrs();
+        }
+
+        public override void InitIntcalls()
+        {
+            ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortOut_Rv_P2th"] = portout_byte;
+            ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortInb_Rh_P1t"] = portin_byte;
+        }
+
+        private static util.Stack<StackItem> portin_byte(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
+        {
+            var stack_after = new util.Stack<StackItem>(stack_before);
+
+            stack_after.Pop();
+            stack_after.Push(new StackItem { ts = c.ms.m.SystemByte, min_ul = 0, max_ul = 255 });
+
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_x86_portin, vt_size = 1, stack_before = stack_before, stack_after = stack_after, arg_a = 0, res_a = 0 });
+
+            return stack_after;
+        }
+
+        private static util.Stack<StackItem> portout_byte(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
+        {
+            var stack_after = new util.Stack<StackItem>(stack_before);
+
+            stack_after.Pop();
+            stack_after.Pop();
+
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_x86_portout, vt_size = 1, stack_before = stack_before, stack_after = stack_after, arg_a = 1, arg_b = 0 });
+
+            return stack_after;
         }
 
         protected internal override Reg GetMoveDest(MCInst i)
@@ -178,6 +209,14 @@ namespace libtysila5.target.x86
         protected internal override IRelocationType GetDataToCodeReloc()
         {
             return new binary_library.elf.ElfFile.Rel_386_32();
+        }
+
+        public override Reg AllocateStackLocation(Code c, int size, ref int cur_stack)
+        {
+            size = util.util.align(size, psize);
+            cur_stack -= size;
+
+            return new ContentsReg { basereg = r_ebp, disp = cur_stack, size = size };
         }
     }
 }

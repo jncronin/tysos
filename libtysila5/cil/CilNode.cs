@@ -133,7 +133,7 @@ namespace libtysila5.cil
 
         public override string ToString()
         {
-            return opcode.ToString();
+            return opcode == null ? "" : opcode.ToString();
         }
 
         public bool HasConstant

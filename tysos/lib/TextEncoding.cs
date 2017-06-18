@@ -27,7 +27,7 @@ namespace tysos.lib
 {
     class TextEncoding
     {
-        [libsupcs.MethodAlias("_ZW13System#2EText8EncodingM_0_16InternalCodePage_Ru1S_P1Ri")]
+        [libsupcs.MethodAlias("_ZW13System#2EText8Encoding_16InternalCodePage_Ru1S_P1Ri")]
         [libsupcs.AlwaysCompile]
         static string InternalCodePage(ref int cp)
         {

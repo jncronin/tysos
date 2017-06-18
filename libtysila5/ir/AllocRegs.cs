@@ -56,31 +56,48 @@ namespace libtysila5.ir
             }
         }
 
+        internal static target.Target.Reg DoAllocation(Code c, int ct, target.Target t, ref long alloced, ref int cur_stack)
+        {
+            long avail = t.ct_regs[ct] & ~alloced;
+
+            if (avail != 0)
+            {
+                // We have a valid allocation to use
+                int idx = 0;
+                while ((avail & 0x1) == 0)
+                {
+                    idx++;
+                    avail >>= 1;
+                }
+                var reg = t.regs[idx];
+                alloced |= (1L << idx);
+                return reg;
+            }
+            else
+            {
+                return t.AllocateStackLocation(c, t.GetCTSize(ct), ref cur_stack);
+            }
+        }
+
+        protected static target.Target.Reg DoAllocation(Code c, StackItem si, target.Target t, ref long alloced, ref int cur_stack)
+        {
+            si.reg = DoAllocation(c, si.ct, t, ref alloced, ref cur_stack);
+            return si.reg;
+        }
+
         private static void DoAllocation(Code c, Stack<StackItem> stack, target.Target t)
         {
             long alloced = 0;
+            int stack_loc = 0;
 
             foreach(var si in stack)
             {
-                long avail = t.ct_regs[si.ct] & ~alloced;
-
-                if (avail != 0)
+                if (si.ct == Opcode.ct_vt)
                 {
-                    // We have a valid allocation to use
-                    int idx = 0;
-                    while ((avail & 0x1) == 0)
-                    {
-                        idx++;
-                        avail >>= 1;
-                    }
-                    var reg = t.regs[idx];
-                    alloced |= (1L << idx);
-                    si.reg = reg;
+                    si.reg = t.AllocateValueType(c, si.ts, ref alloced, ref stack_loc);
                 }
                 else
-                {
-                    throw new NotImplementedException();
-                }
+                    DoAllocation(c, si, t, ref alloced, ref stack_loc);
             }
         }
 

@@ -27,7 +27,7 @@ namespace tysos.lib
 {
     class Security
     {
-        [libsupcs.MethodAlias("_ZW17System#2ESecurity15SecurityManagerM_0_19get_SecurityEnabled_Rb_P0")]
+        [libsupcs.MethodAlias("_ZW17System#2ESecurity15SecurityManager_19get_SecurityEnabled_Rb_P0")]
         [libsupcs.AlwaysCompile]
         static bool get_SecurityEnabled() { return false; }
     }

@@ -33,6 +33,16 @@ namespace metadata
             new Dictionary<string, MetadataStream>(
                 new GenericEqualityComparer<string>());
 
+        bool require_version_match = true;
+
+        /**<summary>Is the version required to match when loading an assembly?</summary>
+         */
+        public virtual bool RequireVersionMatch
+        {
+            get { return require_version_match; }
+            set { require_version_match = value; }
+        }
+
         /**<summary>Load an assembly (even if it is already loaded).  See
         GetAssembly to avoid unnecessary loads</summary> */
         public abstract System.IO.Stream LoadAssembly(string name);
@@ -53,6 +63,8 @@ namespace metadata
                 return ms;
 
             var s = LoadAssembly(name);
+            if (s == null)
+                return null;
             PEFile p = new metadata.PEFile();
             ms = p.Parse(s, this);
 
@@ -78,18 +90,22 @@ namespace metadata
                 if(ms.MajorVersion == major &&
                     ms.MinorVersion == minor &&
                     ms.BuildVersion == build &&
-                    ms.RevisionVersion == revision)
+                    ms.RevisionVersion == revision ||
+                    RequireVersionMatch == false)
                 return ms;
             }
 
             var s = LoadAssembly(name);
+            if (s == null)
+                return null;
             PEFile p = new metadata.PEFile();
             ms = p.Parse(s, this);
 
             if (ms.MajorVersion == major &&
                     ms.MinorVersion == minor &&
                     ms.BuildVersion == build &&
-                    ms.RevisionVersion == revision)
+                    ms.RevisionVersion == revision ||
+                    RequireVersionMatch == false)
             {
                 cache[simple_name] = ms;
                 return ms;

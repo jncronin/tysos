@@ -27,7 +27,7 @@ namespace tysos.lib
 {
     class CompareInfo
     {
-        [libsupcs.MethodAlias("_ZW22System#2EGlobalization11CompareInfoM_0_14internal_index_Ri_P7u1tu1Siiu1SV14CompareOptionsb")]
+        [libsupcs.MethodAlias("_ZW22System#2EGlobalization11CompareInfo_14internal_index_Ri_P7u1tu1Siiu1SV14CompareOptionsb")]
         [libsupcs.AlwaysCompile]
         static int internal_index(System.Globalization.CompareInfo _this, string source, int sIndex, int count, string value, System.Globalization.CompareOptions options, bool first)
         {
@@ -70,7 +70,7 @@ namespace tysos.lib
             return -1;
         }
 
-        [libsupcs.MethodAlias("_ZW22System#2EGlobalization11CompareInfoM_0_14internal_index_Ri_P7u1tu1SiicV14CompareOptionsb")]
+        [libsupcs.MethodAlias("_ZW22System#2EGlobalization11CompareInfo_14internal_index_Ri_P7u1tu1SiicV14CompareOptionsb")]
         [libsupcs.AlwaysCompile]
         static int internal_index(System.Globalization.CompareInfo _this, string source, int sIndex, int count, char value, System.Globalization.CompareOptions options, bool first)
         {

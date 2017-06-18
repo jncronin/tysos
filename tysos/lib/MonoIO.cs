@@ -39,24 +39,24 @@ namespace tysos.lib
         [libsupcs.ReinterpretAsMethod]
         internal static extern tysos.IFile ReinterpretAsIFile(IntPtr handle);
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_23get_VolumeSeparatorChar_Rc_P0")]
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_26get_DirectorySeparatorChar_Rc_P0")]
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_29get_AltDirectorySeparatorChar_Rc_P0")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_23get_VolumeSeparatorChar_Rc_P0")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_26get_DirectorySeparatorChar_Rc_P0")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_29get_AltDirectorySeparatorChar_Rc_P0")]
         [libsupcs.AlwaysCompile]
         static char get_DirectorySeparatorChar() { return '/'; }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_17get_PathSeparator_Rc_P0")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_17get_PathSeparator_Rc_P0")]
         [libsupcs.AlwaysCompile]
         static char get_PathSeparator() { return ':'; }
 
-        [libsupcs.MethodAlias("_ZW6System13ConsoleDriverM_0_6Isatty_Rb_P1u1I")]
+        [libsupcs.MethodAlias("_ZW6System13ConsoleDriver_6Isatty_Rb_P1u1I")]
         [libsupcs.AlwaysCompile]
         static bool Isatty(lib.File handle)
         {
             return handle.Isatty;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_17get_ConsoleOutput_Ru1I_P0")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_17get_ConsoleOutput_Ru1I_P0")]
         [libsupcs.AlwaysCompile]
         static tysos.lib.File get_ConsoleOutput()
         {
@@ -64,7 +64,7 @@ namespace tysos.lib
             return Program.arch.CurrentCpu.CurrentThread.owning_process.stdout;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_16get_ConsoleInput_Ru1I_P0")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_16get_ConsoleInput_Ru1I_P0")]
         [libsupcs.AlwaysCompile]
         static tysos.lib.File get_ConsoleInput()
         {
@@ -72,7 +72,7 @@ namespace tysos.lib
             return Program.arch.CurrentCpu.CurrentThread.owning_process.stdin;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_16get_ConsoleError_Ru1I_P0")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_16get_ConsoleError_Ru1I_P0")]
         [libsupcs.AlwaysCompile]
         static tysos.lib.File get_ConsoleError()
         {
@@ -80,7 +80,7 @@ namespace tysos.lib
             return Program.arch.CurrentCpu.CurrentThread.owning_process.stderr;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_11GetFileType_RV12MonoFileType_P2u1IRV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_11GetFileType_RV12MonoFileType_P2u1IRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static MonoFileType GetFileType(tysos.lib.File handle, out MonoIOError err)
         {
@@ -88,7 +88,7 @@ namespace tysos.lib
             return handle.FileType;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_4Read_Ri_P5u1Iu1ZhiiRV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_4Read_Ri_P5u1Iu1ZhiiRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static int Read(lib.File handle, byte[] dest, int dest_offset, int count, out MonoIOError error)
         {
@@ -111,7 +111,7 @@ namespace tysos.lib
             return ret;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_5Write_Ri_P5u1Iu1ZhiiRV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_5Write_Ri_P5u1Iu1ZhiiRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static int Write(lib.File handle, byte[] src, int src_offset, int count, out MonoIOError error)
         {
@@ -134,7 +134,7 @@ namespace tysos.lib
             return ret;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_19GetCurrentDirectory_Ru1S_P1RV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_19GetCurrentDirectory_Ru1S_P1RV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static string GetCurrentDirectory(out MonoIOError error)
         {
@@ -142,7 +142,7 @@ namespace tysos.lib
             return Program.arch.CurrentCpu.CurrentThread.owning_process.current_directory;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_17GetFileAttributes_RV14FileAttributes_P2u1SRV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_17GetFileAttributes_RV14FileAttributes_P2u1SRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static System.IO.FileAttributes GetFileAttributes(string path, out MonoIOError error)
         {
@@ -163,7 +163,7 @@ namespace tysos.lib
             return fa;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_20GetFileSystemEntries_Ru1Zu1S_P5u1Su1SiiRV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_20GetFileSystemEntries_Ru1Zu1S_P5u1Su1SiiRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static string[] GetFileSystemEntries(string path, string path_with_pattern, int attrs, int mask, out MonoIOError error)
         {
@@ -184,7 +184,7 @@ namespace tysos.lib
             return ret;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_19SetCurrentDirectory_Rb_P2u1SRV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_19SetCurrentDirectory_Rb_P2u1SRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static bool SetCurrentDirectory(string path, out MonoIOError error)
         {
@@ -208,7 +208,7 @@ namespace tysos.lib
             return true;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_4Open_Ru1I_P6u1SV8FileModeV10FileAccessV9FileShareV11FileOptionsRV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_4Open_Ru1I_P6u1SV8FileModeV10FileAccessV9FileShareV11FileOptionsRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static internal lib.File Open(string name, System.IO.FileMode mode, System.IO.FileAccess access,
             System.IO.FileShare share, System.IO.FileOptions options, out MonoIOError error)
@@ -226,7 +226,7 @@ namespace tysos.lib
             return ret;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_5Close_Rb_P2u1IRV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_5Close_Rb_P2u1IRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static bool Close(lib.File handle, out MonoIOError error)
         {
@@ -242,7 +242,7 @@ namespace tysos.lib
             return error == MonoIOError.ERROR_SUCCESS;
         }
 
-        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIOM_0_11GetFileStat_Rb_P3u1SRV10MonoIOStatRV11MonoIOError")]
+        [libsupcs.MethodAlias("_ZW11System#2EIO6MonoIO_11GetFileStat_Rb_P3u1SRV10MonoIOStatRV11MonoIOError")]
         [libsupcs.AlwaysCompile]
         static bool GetFileStat(string path, out MonoIOStat stat, out MonoIOError error)
         {

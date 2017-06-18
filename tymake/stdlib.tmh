@@ -18,15 +18,15 @@ if(!defined(STDLIB_TMH))
 
 		_depends.add(dir(_p.OutputFile));
 
-		export rulefor _p.OutputFile inputs { _p.Sources } depends { _depends }
+		rulefor(_p.OutputFile, _p.Sources, _depends, function()
 		{
 			_p.Build();
-		}
+		});
 
-		export rulefor dir(_p.OutputFile)
+		rulefor(dir(_p.OutputFile), [], [], function()
 		{
 			mkdir(_RULE_OUTPUT);
-		}
+		});
 
 		return _p.OutputFile;
 	}

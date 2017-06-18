@@ -139,7 +139,7 @@ namespace tysos
         }
 
         // Override the IsValidPtr function in libsupcs.x86_64_Unwinder()
-        [libsupcs.MethodAlias("_ZN8libsupcs17libsupcs#2Ex86_648UnwinderM_0_10IsValidPtr_Rb_P1y")]
+        [libsupcs.MethodAlias("_ZN8libsupcs17libsupcs#2Ex86_648Unwinder_10IsValidPtr_Rb_P1y")]
         private static bool IsValidPtr(ulong ptr)
         { return cur_vmem.is_valid(ptr); }
 

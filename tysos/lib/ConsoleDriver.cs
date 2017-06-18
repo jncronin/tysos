@@ -53,7 +53,7 @@ namespace tysos.lib
             int GetHeight();
         }
 
-        [libsupcs.MethodAlias("_ZW6System13ConsoleDriverM_0_8TtySetup_Rb_P4u1SRhRhRh")]
+        [libsupcs.MethodAlias("_ZW6System13ConsoleDriver_8TtySetup_Rb_P4u1SRhRhRh")]
         [libsupcs.AlwaysCompile]
         static bool TtySetup(string teardown, out byte verase, out byte vsusp, out byte intr)
         {
@@ -63,14 +63,14 @@ namespace tysos.lib
             return true;
         }
 
-        [libsupcs.MethodAlias("_ZW6System13ConsoleDriverM_0_7SetEcho_Rb_P1b")]
+        [libsupcs.MethodAlias("_ZW6System13ConsoleDriver_7SetEcho_Rb_P1b")]
         [libsupcs.AlwaysCompile]
         static bool SetEcho(bool want_echo)
         {
             return true;
         }
 
-        [libsupcs.MethodAlias("_ZW6System13ConsoleDriverM_0_10GetTtySize_Rb_P3u1IRiRi")]
+        [libsupcs.MethodAlias("_ZW6System13ConsoleDriver_10GetTtySize_Rb_P3u1IRiRi")]
         [libsupcs.AlwaysCompile]
         static bool GetTtySize(IntPtr handle, out int width, out int height)
         {
@@ -100,7 +100,7 @@ namespace tysos.lib
             return false;
         }
 
-        [libsupcs.MethodAlias("_ZW6System13ConsoleDriverM_0_20InternalKeyAvailable_Ri_P1i")]
+        [libsupcs.MethodAlias("_ZW6System13ConsoleDriver_20InternalKeyAvailable_Ri_P1i")]
         [libsupcs.AlwaysCompile]
         static int InternalKeyAvailable(int ms_timeout)
         {

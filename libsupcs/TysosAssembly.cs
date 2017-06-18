@@ -33,14 +33,14 @@ namespace libsupcs
 {
     /* System.Reflection.Assembly defines an internal constructor, so we cannot subclass
      * it directly outside of corlib therefore we need to use the following attribute */
-    [ExtendsOverride("_ZW19System#2EReflection8AssemblyTI")]
+    [ExtendsOverride("_ZW19System#2EReflection8Assembly")]
     [VTableAlias("__tysos_assembly_vt")]
     public class TysosAssembly
     {
         [NullTerminatedListOf(typeof(TysosType))]
         IntPtr _Types;
 
-        [MethodAlias("_ZW19System#2EReflection8AssemblyM_0_8GetTypes_Ru1ZU6System4Type_P2u1tb")]
+        [MethodAlias("_ZW19System#2EReflection8Assembly_8GetTypes_Ru1ZU6System4Type_P2u1tb")]
         System.Type[] GetTypes(bool exportedOnly)
         {
             unsafe
@@ -81,7 +81,7 @@ namespace libsupcs
         }
     }
 
-    [ExtendsOverride("_ZW19System#2EReflection6ModuleTI")]
+    [ExtendsOverride("_ZW19System#2EReflection6Module")]
     [VTableAlias("__tysos_module_vt")]
     public class TysosModule
     {

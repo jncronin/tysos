@@ -28,20 +28,23 @@ namespace libsupcs
 {
     class Buffer
     {
-        [MethodAlias("_ZW6System6BufferM_0_17BlockCopyInternal_Rb_P5V5ArrayiV5Arrayii")]
+        [MethodAlias("_ZW6System6Buffer_17BlockCopyInternal_Rb_P5V5ArrayiV5Arrayii")]
         static unsafe bool BlockCopyInternal(byte* src, int srcOffset, byte* dest, int destOffset,
             int count)
         {
             /* Return false on overflow within src or dest */
             int srcElemSize = *(int*)(src + ArrayOperations.GetElemSizeOffset());
-            int srcIALength = *(int*)(src + ArrayOperations.GetInnerArrayLengthOffset());
+            //int srcIALength = *(int*)(src + ArrayOperations.GetInnerArrayLengthOffset());
+            int srcIALength = 0;
+            throw new NotImplementedException();
             int srcByteSize = srcElemSize * srcIALength;
 
             if ((srcOffset + count) > srcByteSize)
                 return false;
 
             int destElemSize = *(int *)(dest + ArrayOperations.GetElemSizeOffset());
-            int destIALength = *(int*)(dest + ArrayOperations.GetInnerArrayLengthOffset());
+            //int destIALength = *(int*)(dest + ArrayOperations.GetInnerArrayLengthOffset());
+            int destIALength = 0;
             int destByteSize = destElemSize * destIALength;
 
             if ((destOffset + count) > destByteSize)
@@ -57,12 +60,13 @@ namespace libsupcs
             return true;
         }
 
-        [MethodAlias("_ZW6System6BufferM_0_18ByteLengthInternal_Ri_P1V5Array")]
+        [MethodAlias("_ZW6System6Buffer_18ByteLengthInternal_Ri_P1V5Array")]
         static unsafe int ByteLengthInternal(byte* arr)
         {
             int elemSize = *(int*)(arr + ArrayOperations.GetElemSizeOffset());
-            int iaLength = *(int*)(arr + ArrayOperations.GetInnerArrayLengthOffset());
-            return elemSize * iaLength;
+            //int iaLength = *(int*)(arr + ArrayOperations.GetInnerArrayLengthOffset());
+            throw new NotImplementedException();
+            //return elemSize * iaLength;
         }
     }
 }

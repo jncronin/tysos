@@ -1,37 +1,39 @@
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr0_Ry_P0:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr0_Rv_P1y:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr2_Ry_P0:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr2_Rv_P1y:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr3_Ry_P0:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr3_Rv_P1y:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr4_Ry_P0:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr4_Rv_P1y:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_4Lidt_Rv_P2yt:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Ltr_Rv_P1y:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_9set_Mxcsr_Rv_P1j:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_9get_Mxcsr_Rj_P0:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_6_Cpuid_Rv_P2jPj:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_RBP_Ry_P0:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_RSP_Ry_P0:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5RdMsr_Ry_P1j:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5WrMsr_Rv_P2jy:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Tsc_Ry_P0:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Sti_Rv_P0:function
-weak _ZX16MemoryOperationsM_0_19QuickClearAligned16_Rv_P2yy:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Cli_Rv_P0:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_RBP_Rv_P1y:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Int_Rv_P1h:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_10ReadFSData_RPv_P1i:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_10ReadGSData_RPv_P1i:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_11WriteFSData_Rv_P2iPv:function
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_11WriteGSData_Rv_P2iPv:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr0_Ry_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr0_Rv_P1y:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr2_Ry_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr2_Rv_P1y:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr3_Ry_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr3_Rv_P1y:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr4_Ry_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr4_Rv_P1y:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_4Lidt_Rv_P2yt:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Ltr_Rv_P1y:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_9set_Mxcsr_Rv_P1j:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_9get_Mxcsr_Rj_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_6_Cpuid_Rv_P2jPj:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_RBP_Ry_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_RSP_Ry_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_5RdMsr_Ry_P1j:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_5WrMsr_Rv_P2jy:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Tsc_Ry_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Sti_Rv_P0:function
+weak _ZX16MemoryOperations_19QuickClearAligned16_Rv_P2yy:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Cli_Rv_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_RBP_Rv_P1y:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Int_Rv_P1h:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_10ReadFSData_RPv_P1i:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_10ReadGSData_RPv_P1i:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_11WriteFSData_Rv_P2iPv:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_11WriteGSData_Rv_P2iPv:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_6Invlpg_Rv_P1y:function
+weak _ZN14libsupcs#2Edll8libsupcs15OtherOperations_4Exit_Rv_P0:function
 
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5Break_Rv_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_5Break_Rv_P0:function
 
-weak _ZW6System4MathM_0_5Round_Rd_P1d:function
-weak _ZW6System4MathM_0_5Floor_Rd_P1d:function
+weak _ZN14libsupcs#2Edll8libsupcs15OtherOperations_4Halt_Rv_P0:function
 
-weak _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_6Invlpg_Rv_P1y:function
+weak _ZW6System4Math_5Round_Rd_P1d:function
+weak _ZW6System4Math_5Floor_Rd_P1d:function
 
 weak __memcpy:function
 weak __memmove:function
@@ -44,39 +46,39 @@ weak _conv_u8_r8:function
 extern __display_halt
 extern __undefined_func
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr3_Ry_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr3_Ry_P0:
 	mov	rax, cr3
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr3_Rv_P1y:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr3_Rv_P1y:
 	mov cr3, rdi
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr0_Ry_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr0_Ry_P0:
 	mov	rax, cr0
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr0_Rv_P1y:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr0_Rv_P1y:
 	mov cr0, rdi
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr2_Ry_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr2_Ry_P0:
 	mov	rax, cr2
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr2_Rv_P1y:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr2_Rv_P1y:
 	mov cr2, rdi
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Cr4_Ry_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr4_Ry_P0:
 	mov	rax, cr4
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_Cr4_Rv_P1y:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr4_Rv_P1y:
 	mov cr4, rdi
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_4Lidt_Rv_P2yt:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_4Lidt_Rv_P2yt:
 	push rbp
 	mov rbp, rsp
 
@@ -97,11 +99,11 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_4Lidt_Rv_P2yt:
 	leave
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Ltr_Rv_P1y:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Ltr_Rv_P1y:
 	ltr di
 	ret
 
-_ZX16MemoryOperationsM_0_19QuickClearAligned16_Rv_P2yy:
+_ZX16MemoryOperations_19QuickClearAligned16_Rv_P2yy:
 	push rbp
 	mov rbp, rsp
 
@@ -222,29 +224,29 @@ __memmove:
 	leave
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_RBP_Ry_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_RBP_Ry_P0:
 	mov rax, rbp
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_RSP_Ry_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_RSP_Ry_P0:
 	mov rax, rsp
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_9set_Mxcsr_Rv_P1j:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_9set_Mxcsr_Rv_P1j:
 	sub rsp, 8
 	mov dword [rsp], edi
 	ldmxcsr [rsp]
 	add rsp, 8
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_9get_Mxcsr_Rj_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_9get_Mxcsr_Rj_P0:
 	sub rsp, 8
 	stmxcsr [rsp]
 	mov dword eax, [rsp]
 	add rsp, 8
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_6_Cpuid_Rv_P2jPj:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_6_Cpuid_Rv_P2jPj:
 	; void _Cpuid(uint req_no, uint *buf)
 	push rbx
 	
@@ -262,7 +264,7 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_6_Cpuid_Rv_P2jPj:
 	pop rbx
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5RdMsr_Ry_P1j:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_5RdMsr_Ry_P1j:
 	; static ulong RdMsr(uint reg_no)
 	mov dword ecx, edi
 	rdmsr
@@ -273,7 +275,7 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5RdMsr_Ry_P1j:
 	add rsp, 8
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5WrMsr_Rv_P2jy:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_5WrMsr_Rv_P2jy:
 	; static void WrMsr(uint reg_no, ulong val)
 	mov dword ecx, edi
 	mov rax, rsi
@@ -282,7 +284,7 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5WrMsr_Rv_P2jy:
 	wrmsr
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7get_Tsc_Ry_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Tsc_Ry_P0:
 	rdtsc
 	sub rsp, 8
 	mov dword [rsp], eax
@@ -300,7 +302,15 @@ _conv_u8_r8:
 	hlt
 	jmp .haltloop
 
-_ZW6System4MathM_0_5Round_Rd_P1d:
+_ZN14libsupcs#2Edll8libsupcs15OtherOperations_4Exit_Rv_P0:
+_ZN14libsupcs#2Edll8libsupcs15OtherOperations_4Halt_Rv_P0:
+.l0:
+	xchg bx, bx
+	pause
+	hlt
+	jmp .l0
+
+_ZW6System4Math_5Round_Rd_P1d:
 	; rely on the mxcsr rounding mode being round-to-even (set up in Arch)
 
 	push		rdi
@@ -310,7 +320,7 @@ _ZW6System4MathM_0_5Round_Rd_P1d:
 
 	ret
 
-_ZW6System4MathM_0_5Floor_Rd_P1d:
+_ZW6System4Math_5Floor_Rd_P1d:
 	; set up rounding mode to floor (towards negative infinity)
 
 	sub rsp, 8
@@ -340,45 +350,45 @@ _ZW6System4MathM_0_5Floor_Rd_P1d:
 
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Sti_Rv_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Sti_Rv_P0:
 	sti
 	ret
 	
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Cli_Rv_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Cli_Rv_P0:
 	cli
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_5Break_Rv_P0:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_5Break_Rv_P0:
 	int3
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_6Invlpg_Rv_P1y:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_6Invlpg_Rv_P1y:
 	mov rax, rdi
 	invlpg [rax]
 
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_7set_RBP_Rv_P1y:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_RBP_Rv_P1y:
 	mov rbp, rdi
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_10ReadFSData_RPv_P1i:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_10ReadFSData_RPv_P1i:
 	mov rax, [fs:rdi]
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_10ReadGSData_RPv_P1i:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_10ReadGSData_RPv_P1i:
 	mov rax, [gs:rdi]
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_11WriteFSData_Rv_P2iPv:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_11WriteFSData_Rv_P2iPv:
 	mov [fs:rdi], rsi
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_11WriteGSData_Rv_P2iPv:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_11WriteGSData_Rv_P2iPv:
 	mov [gs:rdi], rsi
 	ret
 
-_ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Int_Rv_P1h:
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Int_Rv_P1h:
 	mov rax, rdi
 	cmp rax, 256
 	
@@ -390,7 +400,7 @@ _ZN8libsupcs17libsupcs#2Ex86_643CpuM_0_3Int_Rv_P1h:
 
 .invalid:
 	ret
-	
+
 ; a table containing int 0, ret, nop, int 1, ret, nop, int 2, ...
 .int_list:
 %assign i 0

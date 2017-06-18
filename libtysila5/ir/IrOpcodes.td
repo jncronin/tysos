@@ -75,6 +75,9 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"shr", "shl", "shr_un",
 	"switch",
 	"ldobja",
+
+	"x86_portin",
+	"x86_portout",
 ]);
 
 intmap("libtysila5.ir", "Opcode", "cc", "cc_names", "init_cc", [

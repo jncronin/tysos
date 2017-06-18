@@ -27,10 +27,12 @@ using metadata;
 /* Array object is:
  * 
  * vtbl pointer
+ * mutex lock
  * elemtype vtbl pointer
  * lobounds array pointer
  * sizes array pointer
  * data array pointer
+ * intptr rank
  * int etsize
  * 
  * followed by
@@ -46,17 +48,19 @@ namespace libtysila5.layout
         public enum ArrayField
         {
             VtblPointer,
+            MutexLock,
             ElemTypeVtblPointer,
             LoboundsPointer,
             SizesPointer,
             DataArrayPointer,
+            Rank,
             ElemTypeSize
         }
 
         public static int GetArrayObjectSize(target.Target t)
         {
-            // round up to 6x intptr size so size is aligned to word size
-            return 6 * t.GetPointerSize();
+            // round up to 8x intptr size so size is aligned to word size
+            return 8 * t.GetPointerSize();
         }
 
         public static int GetArrayFieldOffset(ArrayField af, target.Target t)
@@ -65,16 +69,20 @@ namespace libtysila5.layout
             {
                 case ArrayField.VtblPointer:
                     return 0;
+                case ArrayField.MutexLock:
+                    return 1;
                 case ArrayField.ElemTypeVtblPointer:
-                    return t.GetPointerSize();
-                case ArrayField.LoboundsPointer:
                     return 2 * t.GetPointerSize();
-                case ArrayField.SizesPointer:
+                case ArrayField.LoboundsPointer:
                     return 3 * t.GetPointerSize();
-                case ArrayField.DataArrayPointer:
+                case ArrayField.SizesPointer:
                     return 4 * t.GetPointerSize();
-                case ArrayField.ElemTypeSize:
+                case ArrayField.DataArrayPointer:
                     return 5 * t.GetPointerSize();
+                case ArrayField.Rank:
+                    return 6 * t.GetPointerSize();
+                case ArrayField.ElemTypeSize:
+                    return 7 * t.GetPointerSize();
                 default:
                     throw new NotSupportedException();
             }

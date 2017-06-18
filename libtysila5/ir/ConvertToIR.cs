@@ -1210,9 +1210,16 @@ namespace libtysila5.ir
                 stack_after = ldlab(n, c, stack_after, c.ms.m.MangleType(ts));
                 stack_after = stind(n, c, stack_after, ptr_size);
 
+                /* Store mutex lock */
+                stack_after = copy_to_front(n, c, stack_after);
+                stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.MutexLock, c.t), 0x18);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+                stack_after = ldc(n, c, stack_after, 0, 0x18);
+                stack_after = stind(n, c, stack_after, ptr_size);
+
                 // set object
                 stack_after = copy_to_front(n, c, stack_after);
-                stack_after = ldc(n, c, stack_after, ptr_size, 0x18);
+                stack_after = ldc(n, c, stack_after, layout.Layout.GetTypeSize(ts.m.SystemObject, c.t), 0x18);
                 stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
                 stack_after = stind(n, c, stack_after, data_size, 2, 0);
 
@@ -1334,7 +1341,7 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> throw_(CilNode n, Code c, Stack<StackItem> stack_before)
+        internal static Stack<StackItem> throw_(CilNode n, Code c, Stack<StackItem> stack_before)
         {
             return call(n, c, stack_before, false, "throw", c.special_meths, c.special_meths.throw_);
         }
@@ -1372,7 +1379,7 @@ namespace libtysila5.ir
             throw new Exception("Invalid argument to " + opcode.ToString() + ": " + ir.Opcode.ct_names[ct]);
         }
 
-        private static Stack<StackItem> newobj(CilNode n, Code c, Stack<StackItem> stack_before,
+        internal static Stack<StackItem> newobj(CilNode n, Code c, Stack<StackItem> stack_before,
             MethodSpec ctor = null)
         {
             if(ctor == null)
@@ -1414,6 +1421,13 @@ namespace libtysila5.ir
                 /* store vtbl pointer */
                 stack_after = copy_to_front(n, c, stack_after);
                 stack_after = ldlab(n, c, stack_after, vtname);
+                stack_after = stind(n, c, stack_after, intptrsize);
+
+                /* Store mutex lock */
+                stack_after = copy_to_front(n, c, stack_after);
+                stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.MutexLock, c.t), 0x18);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+                stack_after = ldc(n, c, stack_after, 0, 0x18);
                 stack_after = stind(n, c, stack_after, intptrsize);
             }
 
@@ -1673,6 +1687,13 @@ namespace libtysila5.ir
             stack_after = ldlab(n, c, stack_after, c.ms.m.MangleType(arr_type));
             stack_after = stind(n, c, stack_after, intptr_size);
 
+            /* Store mutex lock */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.MutexLock, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = ldc(n, c, stack_after, 0, 0x18);
+            stack_after = stind(n, c, stack_after, intptr_size);
+
             /* Store etype vtbl pointer */
             stack_after = copy_to_front(n, c, stack_after);
             stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.ElemTypeVtblPointer, c.t), 0x18);
@@ -1805,7 +1826,7 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> ldind(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts)
+        internal static Stack<StackItem> ldind(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
@@ -1829,11 +1850,12 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> ldflda(CilNode n, Code c, Stack<StackItem> stack_before, bool is_static, out TypeSpec fld_ts, int src_a = 0)
+        internal static Stack<StackItem> ldflda(CilNode n, Code c, Stack<StackItem> stack_before, bool is_static, out TypeSpec fld_ts, int src_a = 0,
+            MethodSpec fs = null)
         {
             TypeSpec ts;
-            MethodSpec fs;
-            fs = n.GetTokenAsMethodSpec(c);
+            if(fs == null)
+                fs = n.GetTokenAsMethodSpec(c);
             ts = fs.type;
             //if (!c.ms.m.GetFieldDefRow(table_id, row, out ts, out fs))
                 //throw new Exception("Field not found");
@@ -1846,6 +1868,7 @@ namespace libtysila5.ir
             StackItem si = new StackItem
             {
                 _ct = Opcode.ct_intptr,
+                ts = fld_ts.ManagedPointer,
                 max_l = fld_addr,
                 max_ul = (ulong)fld_addr,
                 min_l = fld_addr,
@@ -1945,7 +1968,7 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> ldarg(CilNode n, Code c, Stack<StackItem> stack_before, int v)
+        internal static Stack<StackItem> ldarg(CilNode n, Code c, Stack<StackItem> stack_before, int v)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
@@ -2013,7 +2036,7 @@ namespace libtysila5.ir
         }
 
 
-        private static Stack<StackItem> stind(CilNode n, Code c, Stack<StackItem> stack_before, int vt_size, int val = 0, int addr = 1)
+        internal static Stack<StackItem> stind(CilNode n, Code c, Stack<StackItem> stack_before, int vt_size, int val = 0, int addr = 1)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
@@ -2101,7 +2124,7 @@ namespace libtysila5.ir
             }
         }
 
-        private static Stack<StackItem> call(CilNode n, Code c, Stack<StackItem> stack_before, bool is_calli = false, string override_name = null, MetadataStream override_m = null, int override_msig = 0,
+        internal static Stack<StackItem> call(CilNode n, Code c, Stack<StackItem> stack_before, bool is_calli = false, string override_name = null, MetadataStream override_m = null, int override_msig = 0,
             int calli_ftn = 0)
         {
             if (calli_ftn != 0)
@@ -2155,6 +2178,31 @@ namespace libtysila5.ir
                             return r;
                     }
 
+                    var ca_mra = ms.GetCustomAttribute("_ZN14libsupcs#2Edll8libsupcs29MethodReferenceAliasAttribute_7#2Ector_Rv_P2u1tu1S");
+                    if(ca_mra != -1)
+                    {
+                        // This is a call to a method that has a different name
+                        int val_idx = (int)m.GetIntEntry(MetadataStream.tid_CustomAttribute,
+                            ca_mra, 2);
+
+                        m.SigReadUSCompressed(ref val_idx);
+                        var prolog = m.sh_blob.di.ReadUShort(val_idx);
+                        if (prolog == 0x0001)
+                        {
+                            val_idx += 2;
+
+                            var str_len = m.SigReadUSCompressed(ref val_idx);
+                            StringBuilder sb = new StringBuilder();
+                            for (uint i = 0; i < str_len; i++)
+                            {
+                                sb.Append((char)m.sh_blob.di.ReadByte(val_idx++));
+                            }
+                            mangled_meth = sb.ToString();
+                            ms = new MethodSpec { m = ms.m, msig = ms.msig, gmparams = ms.gmparams, mdrow = ms.mdrow, mangle_override = mangled_meth, type = ms.type };
+                        }
+
+                    }
+
                     c.t.r.MethodRequestor.Request(ms);
                 }
             }
@@ -2198,7 +2246,7 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> ldstr(CilNode n, Code c, Stack<StackItem> stack_before,
+        internal static Stack<StackItem> ldstr(CilNode n, Code c, Stack<StackItem> stack_before,
             string str = null)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
@@ -2341,7 +2389,7 @@ namespace libtysila5.ir
             }
         }
 
-        private static Stack<StackItem> binnumop(CilNode n, Code c, Stack<StackItem> stack_before, cil.Opcode.SingleOpcodes oc,
+        internal static Stack<StackItem> binnumop(CilNode n, Code c, Stack<StackItem> stack_before, cil.Opcode.SingleOpcodes oc,
             int ct_ret = Opcode.ct_unknown,
             int src_a = -1, int src_b = -1, int res_a = -1)
         {

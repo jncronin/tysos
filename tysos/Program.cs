@@ -43,7 +43,7 @@ namespace tysos
 
         [libsupcs.MethodAlias("kmain")]
         [libsupcs.Profile(false)]
-        static void KMain(Multiboot.Header mboot)
+        public static void KMain(Multiboot.Header mboot)
         {
             // Disable profiling until we have enabled the arch.DebugOutput port
             do_profile = false;
@@ -341,16 +341,16 @@ namespace tysos
 
         private static void CreateKernelThreads()
         {
-            Process kernel_pmem = Process.Create("kernel_pmem", stab.GetAddress("_ZN5tysos5tysos7PmemM_0_12TaskFunction_Rv_P1u1t"), 0x1000, arch.VirtualRegions, stab, new object[] { arch.PhysMem });
+            Process kernel_pmem = Process.Create("kernel_pmem", stab.GetAddress("_ZN5tysos5tysos7Pmem_12TaskFunction_Rv_P1u1t"), 0x1000, arch.VirtualRegions, stab, new object[] { arch.PhysMem });
             //arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_pmem.startup_thread);
             kernel_pmem.started = true;
 
-            Process kernel_idle = Process.Create("kernel_idle", stab.GetAddress("_ZN5tysos5tysos7ProgramM_0_12IdleFunction_Rv_P0"), 0x1000, arch.VirtualRegions, stab, new object[] { });
+            Process kernel_idle = Process.Create("kernel_idle", stab.GetAddress("_ZN5tysos5tysos7Program_12IdleFunction_Rv_P0"), 0x1000, arch.VirtualRegions, stab, new object[] { });
             kernel_idle.startup_thread.priority = 0;
             arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_idle.startup_thread);
             kernel_idle.started = true;
 
-            /*Process kernel_gc = Process.Create("kernel_gc", stab.GetAddress("_ZN5tysos10tysos#2Egc2gcM_0_16CollectionThread_Rv_P0"), 0x10000, arch.VirtualRegions, stab, new object[] { });
+            /*Process kernel_gc = Process.Create("kernel_gc", stab.GetAddress("_ZN5tysos10tysos#2Egc2gc_16CollectionThread_Rv_P0"), 0x10000, arch.VirtualRegions, stab, new object[] { });
             kernel_gc.startup_thread.priority = 10;
             arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_gc.startup_thread);
             kernel_gc.started = true;*/
@@ -644,7 +644,8 @@ namespace tysos
         [libsupcs.AlwaysCompile]
         static void DisplayHalt()
         {
-            Formatter.WriteLine("System halted", arch.BootInfoOutput);
+            if(arch != null && arch.BootInfoOutput != null)
+                Formatter.WriteLine("System halted", arch.BootInfoOutput);
         }
 
         [libsupcs.MethodAlias("__cxa_pure_virtual")]
@@ -697,7 +698,7 @@ namespace tysos
                 return arch.CurrentCpu.CurrentThread.thread_id;
         }
 
-        [libsupcs.MethodAlias("_ZW18System#2EThreading6ThreadM_0_22CurrentThread_internal_RV6Thread_P0")]
+        [libsupcs.MethodAlias("_ZW18System#2EThreading6Thread_22CurrentThread_internal_RV6Thread_P0")]
         [libsupcs.AlwaysCompile]
         static unsafe System.Threading.Thread GetCurThread()
         {
@@ -713,21 +714,21 @@ namespace tysos
             return (System.Threading.Thread)t;*/
         }
 
-        [libsupcs.MethodAlias("_ZX15OtherOperationsM_0_18GetFunctionAddress_Ru1I_P1u1S")]
+        [libsupcs.MethodAlias("_ZX15OtherOperations_18GetFunctionAddress_Ru1I_P1u1S")]
         [libsupcs.AlwaysCompile]
         static ulong GetFunctionAddress(string name)
         {
             return stab.GetAddress(name);
         }
 
-        [libsupcs.MethodAlias("_ZX15OtherOperationsM_0_22GetStaticObjectAddress_Ru1I_P1u1S")]
+        [libsupcs.MethodAlias("_ZX15OtherOperations_22GetStaticObjectAddress_Ru1I_P1u1S")]
         [libsupcs.AlwaysCompile]
         static ulong GetStaticObjectAddress(string name)
         {
             return stab.GetAddress(name);
         }
 
-        [libsupcs.MethodAlias("_ZW18System#2EThreading6ThreadM_0_23GetCachedCurrentCulture_RU22System#2EGlobalization11CultureInfo_P1u1t")]
+        [libsupcs.MethodAlias("_ZW18System#2EThreading6Thread_23GetCachedCurrentCulture_RU22System#2EGlobalization11CultureInfo_P1u1t")]
         [libsupcs.AlwaysCompile]
         static System.Globalization.CultureInfo Thread_GetCachedCurrentCulture(System.Threading.Thread thread)
         {
@@ -736,24 +737,6 @@ namespace tysos
              */
 
             return System.Globalization.CultureInfo.InvariantCulture;
-        }
-
-        [libsupcs.MethodAlias("__floatundidf")]
-        static void floatundidf()
-        {
-            throw new NotImplementedException("__floatundidf");
-        }
-
-        [libsupcs.MethodAlias("__negdf2")]
-        static void negdf2()
-        {
-            throw new NotImplementedException("__negdf2");
-        }
-
-        [libsupcs.MethodAlias("__negsf2")]
-        static void negsf2()
-        {
-            throw new NotImplementedException("__negsf2");
         }
 
         internal static void IdleFunction()
@@ -786,12 +769,14 @@ namespace tysos
             return false;
         }
 
+        [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("jit_tm")]
         static IntPtr JitCompile(libsupcs.TysosMethod meth)
         {
             throw new Exception("JIT compilation of dynamic methods not supported");
         }
 
+        [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("jit_addrof")]
         static System.IntPtr GetAddressOfObject(string name)
         {
@@ -799,6 +784,7 @@ namespace tysos
         }
 
         static object log_lock;
+        [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("__log")]
         [libsupcs.Uninterruptible]
         static void Log(int level, string category, string message)

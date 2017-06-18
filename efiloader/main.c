@@ -39,13 +39,11 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 EFI_STATUS load_module(const char *fname, UINTPTR *addr, size_t *length, EFI_PHYSICAL_ADDRESS *paddr);
 EFI_STATUS build_page_tables(EFI_PHYSICAL_ADDRESS *pml4t_out);
 EFI_STATUS kif_init(EFI_PHYSICAL_ADDRESS p_kif, EFI_PHYSICAL_ADDRESS len, struct Multiboot_Header **mbheader);
-void kCreateString(struct System_String **obj, const char *s);
 EFI_STATUS parse_cfg_file();
 const char *cfg_get_kpath();
 const char *cfg_get_kcmdline();
 struct cfg_module *cfg_iterate_modules();
 int cfg_get_modcount();
-void kCreateRefArray(struct __array **arr_obj, int len);
 void *kmalloc(size_t n);
 
 EFI_PHYSICAL_ADDRESS elf_kernel;
@@ -327,24 +325,30 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	struct cfg_module *mod;
 	int mod_count = cfg_get_modcount();
 	struct __array *mod_array;
-	kCreateRefArray(&mod_array, mod_count);
-	struct Multiboot_Module **mod_ia = (struct Multiboot_Module **)mod_array->inner_array;
+	struct Multiboot_Module **mod_ia =
+		(struct Multiboot_Module **)Create_Ref_Array(&mod_array, mod_count);
+	(*mod_ia)->__vtbl += mb_adjust;
 	int cur_mod_idx = 0;
 	while((mod = cfg_iterate_modules()))
 	{
 		UINTPTR mod_addr, mod_len;
-		load_module(mod->path, &mod_addr, &mod_len, (EFI_PHYSICAL_ADDRESS *)&mod_ia[cur_mod_idx]->base_addr);
 		mod_ia[cur_mod_idx] = (struct Multiboot_Module *)kmalloc(sizeof(struct Multiboot_Module));
+		load_module(mod->path, &mod_addr, &mod_len, (EFI_PHYSICAL_ADDRESS *)&mod_ia[cur_mod_idx]->base_addr);
 		Init_Multiboot_Module(mod_ia[cur_mod_idx]);
 		mod_ia[cur_mod_idx]->virt_base_addr = mod_addr;
 		mod_ia[cur_mod_idx]->length = mod_len;
+		mod_ia[cur_mod_idx]->__vtbl += mb_adjust;
 
-		kCreateString((struct System_String **)&(mod_ia[cur_mod_idx]->name), mod->name);
+		CreateString((struct System_String **)&(mod_ia[cur_mod_idx]->name), mod->name);
+		(*(struct System_String **)&(mod_ia[cur_mod_idx]->name))->__vtbl += mb_adjust;
+		mod_ia[cur_mod_idx]->name += mb_adjust;
 
 		printf("module: %s at %x\n", mod->name, mod_addr);
 		cur_mod_idx++;
 	}
 	mod_array->inner_array += mb_adjust;
+	mod_array->lobounds += mb_adjust;
+	mod_array->sizes += mb_adjust;
 	mbheader->modules = (uint64_t)mod_array + mb_adjust;
 
 	/* Allocate space for the kernel initial heap */
@@ -406,9 +410,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	printf("pmlt4 at %x\n", pml4t);
 
 	/* Build the kif */
-	kCreateString((struct System_String **)&mbheader->loader_name, "efiloader");
+	CreateString((struct System_String **)&mbheader->loader_name, "efiloader");
+	(*((struct System_String **)&mbheader->loader_name))->__vtbl += mb_adjust;
 	mbheader->loader_name += mb_adjust;
-	kCreateString((struct System_String **)&mbheader->cmdline, cfg_get_kcmdline());
+	CreateString((struct System_String **)&mbheader->cmdline, cfg_get_kcmdline());
+	(*((struct System_String **)&mbheader->cmdline))->__vtbl += mb_adjust;
 	mbheader->cmdline += mb_adjust;
 	mbheader->has_vga = 0;
 	mbheader->tysos_paddr = (uint64_t)elf_kernel;
@@ -577,8 +583,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	UINTN map_entries = map_size / desc_size;
 	printf("EFI memory map has %i entries\n", map_entries);
 	struct __array *mmap_array;
-	kCreateRefArray(&mmap_array, map_entries);
-	struct Multiboot_MemoryMap **mmap_ia = (struct Multiboot_MemoryMap **)mmap_array->inner_array;
+	struct Multiboot_MemoryMap **mmap_ia =
+		(struct Multiboot_MemoryMap **)Create_Ref_Array(&mmap_array, map_entries);
+	(*mmap_ia)->__vtbl += mb_adjust;
 	mbheader->mmap = (uint64_t)mmap_array + mb_adjust;
 
 	for(UINTN map_idx = 0; map_idx < map_entries; map_idx++)
@@ -595,6 +602,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		mmap_ia[map_idx]->type = (int32_t)efi_md->Type;
 	}
 	mmap_array->inner_array += mb_adjust;
+	mmap_array->lobounds += mb_adjust;
+	mmap_array->sizes += mb_adjust;
 
 	printf("Success - running trampoline function\n");
 	trampoline_func((uint64_t)ehdr->e_entry, (uint64_t)pml4t, (uint64_t)mbheader + mb_adjust, (uint64_t)__halt_func,

@@ -27,20 +27,20 @@ namespace tysos.lib
 {
     class GC
     {
-        [libsupcs.MethodAlias("_ZW6System2GCM_0_16SuppressFinalize_Rv_P1u1O")]
+        [libsupcs.MethodAlias("_ZW6System2GC_16SuppressFinalize_Rv_P1u1O")]
         [libsupcs.AlwaysCompile]
         static void SuppressFinalize(object o)
         {
         }
 
-        [libsupcs.MethodAlias("_ZW6System2GCM_0_17get_MaxGeneration_Ri_P0")]
+        [libsupcs.MethodAlias("_ZW6System2GC_17get_MaxGeneration_Ri_P0")]
         [libsupcs.AlwaysCompile]
         static int get_MaxGeneration()
         {
             return 0;
         }
 
-        [libsupcs.MethodAlias("_ZW6System2GCM_0_15InternalCollect_Rv_P1i")]
+        [libsupcs.MethodAlias("_ZW6System2GC_15InternalCollect_Rv_P1i")]
         [libsupcs.AlwaysCompile]
         static void InternalCollect(int generation)
         {

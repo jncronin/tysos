@@ -27,7 +27,7 @@ namespace tysos.lib
 {
     class DateTime
     {
-        [libsupcs.MethodAlias("_ZW6System8DateTimeM_0_6GetNow_Rx_P0")]
+        [libsupcs.MethodAlias("_ZW6System8DateTime_6GetNow_Rx_P0")]
         [libsupcs.AlwaysCompile]
         static long GetNow()
         {

@@ -22,7 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace libtysila5
@@ -54,6 +53,8 @@ namespace libtysila5
             public override Stream LoadAssembly(string name)
             {
                 var flr = f.LoadFile(name);
+                if (flr == null)
+                    return null;
                 return flr.Stream;
             }
         }

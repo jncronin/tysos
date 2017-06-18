@@ -1,4 +1,4 @@
-global _ZX11TysosMethodM_0_14InternalInvoke_Ru1O_P3u1IiPv
+global _ZX11TysosMethod_14InternalInvoke_Ru1O_P3u1IiPv
 
 global __x86_64_invoke
 extern memcpy
