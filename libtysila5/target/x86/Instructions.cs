@@ -1195,8 +1195,8 @@ namespace libtysila5.target.x86
                         c.special_meths.GetMethodSpec(c.special_meths.memcpy),
                         new ir.Param[]
                         {
-                            new ir.Param { t = ir.Opcode.vl_stack, mreg = dest },
-                            new ir.Param { t = ir.Opcode.vl_stack, mreg = src },
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = dest },
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = src },
                             vt_size
                         },
                         null, "memcpy", temp_reg));
@@ -1665,6 +1665,9 @@ namespace libtysila5.target.x86
                 else if(arg.t == ir.Opcode.vl_stack)
                 {
                     // interpret this as lea eax, mreg; push eax;
+                    if (!(arg.mreg is ContentsReg))
+                        throw new NotImplementedException();
+
                     r.Add(inst(x86_lea_r32, temp_reg, arg.mreg, n));
                     r.Add(inst(x86_push_r32, temp_reg, n));
                 }
@@ -1785,6 +1788,9 @@ namespace libtysila5.target.x86
                     var act_dest_cr = act_dest as ContentsReg;
                     act_dest_cr.disp += push_length;
                 }
+
+                if (!(act_dest is ContentsReg))
+                    throw new NotImplementedException();
 
                 r.Add(inst(x86_lea_r32, r_eax, act_dest, n));
                 r.Add(inst(x86_push_r32, r_eax, n));
@@ -3412,7 +3418,7 @@ namespace libtysila5.target.x86
                         c.special_meths.GetMethodSpec(c.special_meths.memcpy),
                         new ir.Param[] {
                             addr,
-                            new ir.Param { t = ir.Opcode.vl_stack, mreg = val },
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = val },
                             n.vt_size },
                         null, "memcpy"));
                     return r;
@@ -3614,7 +3620,7 @@ namespace libtysila5.target.x86
                     c.special_meths.GetMethodSpec(c.special_meths.memset),
                     new ir.Param[]
                     {
-                            new ir.Param { t = ir.Opcode.vl_stack, mreg = dest },
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = dest },
                             0,
                             size
                     },
@@ -3839,6 +3845,8 @@ namespace libtysila5.target.x86
                 dest = r_eax;
 
             List<MCInst> r = new List<MCInst>();
+            if (!(src is ContentsReg))
+                throw new NotImplementedException();
             r.Add(inst(x86_lea_r32, dest, src, n));
 
             handle_move(act_dest, dest, r, n, c);
@@ -3863,6 +3871,9 @@ namespace libtysila5.target.x86
                 dest = r_eax;
 
             List<MCInst> r = new List<MCInst>();
+            if (!(src is ContentsReg))
+                throw new NotImplementedException();
+
             r.Add(inst(x86_lea_r32, dest, src, n));
 
             handle_move(act_dest, dest, r, n, c);
@@ -3964,6 +3975,9 @@ namespace libtysila5.target.x86
                 addr = r_edx;
 
             List<MCInst> r = new List<MCInst>();
+            if (!(src is ContentsReg))
+                throw new NotImplementedException();
+
             r.Add(inst(x86_lea_r32, addr, src, n));
             handle_move(act_addr, addr, r, n, c);
 

@@ -62,6 +62,7 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_27GetVtblExtendsVtblPtrOffset_Ri_P0"] = class_getVtblExtendsPtrOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_22GetBoxedTypeDataOffset_Ri_P0"] = class_getBoxedTypeDataOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_18GetVtblFieldOffset_Ri_P0"] = class_getVtblFieldOffset;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_21GetVtblTypeSizeOffset_Ri_P0"] = class_getVtblTypeSizeOffset;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU1_Rh_P1u1U"] = peek_Byte;
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU2_Rt_P1u1U"] = peek_Ushort;
@@ -140,6 +141,11 @@ namespace libtysila5.ir
         private static Stack<StackItem> class_getVtblInterfacesPtrOffset(CilNode n, Code c, Stack<StackItem> stack_before)
         {
             return ldc(n, c, stack_before, 1 * c.t.GetPointerSize());
+        }
+
+        private static Stack<StackItem> class_getVtblTypeSizeOffset(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            return ldc(n, c, stack_before, 3 * c.t.GetPointerSize());
         }
 
         private static Stack<StackItem> array_getLoboundsOffset(CilNode n, Code c, Stack<StackItem> stack_before)

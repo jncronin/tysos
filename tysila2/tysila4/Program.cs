@@ -270,7 +270,7 @@ namespace tysila4
                     else if(!t.r.DelegateRequestor.Empty)
                     {
                         var d = t.r.DelegateRequestor.GetNext();
-                        libtysila5.libtysila.CreateDelegate(d, t);
+                        libtysila5.ir.ConvertToIR.CreateDelegate(d, t);
                         if (!quiet)
                             Console.WriteLine(d.MangleType() + "D");
                     }

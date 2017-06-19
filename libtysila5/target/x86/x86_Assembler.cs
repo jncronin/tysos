@@ -38,7 +38,11 @@ namespace libtysila5.target.x86
         public override void InitIntcalls()
         {
             ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortOut_Rv_P2th"] = portout_byte;
+            ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortOut_Rv_P2tt"] = portout_word;
+            ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortOut_Rv_P2tj"] = portout_dword;
             ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortInb_Rh_P1t"] = portin_byte;
+            ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortInw_Rt_P1t"] = portin_word;
+            ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortInd_Rj_P1t"] = portin_dword;
         }
 
         private static util.Stack<StackItem> portin_byte(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
@@ -53,6 +57,30 @@ namespace libtysila5.target.x86
             return stack_after;
         }
 
+        private static util.Stack<StackItem> portin_word(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
+        {
+            var stack_after = new util.Stack<StackItem>(stack_before);
+
+            stack_after.Pop();
+            stack_after.Push(new StackItem { ts = c.ms.m.SystemUInt16, min_ul = 0, max_ul = ushort.MaxValue });
+
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_x86_portin, vt_size = 2, stack_before = stack_before, stack_after = stack_after, arg_a = 0, res_a = 0 });
+
+            return stack_after;
+        }
+
+        private static util.Stack<StackItem> portin_dword(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
+        {
+            var stack_after = new util.Stack<StackItem>(stack_before);
+
+            stack_after.Pop();
+            stack_after.Push(new StackItem { ts = c.ms.m.SystemUInt32, min_ul = 0, max_ul = uint.MaxValue });
+
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_x86_portin, vt_size = 4, stack_before = stack_before, stack_after = stack_after, arg_a = 0, res_a = 0 });
+
+            return stack_after;
+        }
+
         private static util.Stack<StackItem> portout_byte(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
         {
             var stack_after = new util.Stack<StackItem>(stack_before);
@@ -61,6 +89,30 @@ namespace libtysila5.target.x86
             stack_after.Pop();
 
             n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_x86_portout, vt_size = 1, stack_before = stack_before, stack_after = stack_after, arg_a = 1, arg_b = 0 });
+
+            return stack_after;
+        }
+
+        private static util.Stack<StackItem> portout_word(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
+        {
+            var stack_after = new util.Stack<StackItem>(stack_before);
+
+            stack_after.Pop();
+            stack_after.Pop();
+
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_x86_portout, vt_size = 2, stack_before = stack_before, stack_after = stack_after, arg_a = 1, arg_b = 0 });
+
+            return stack_after;
+        }
+
+        private static util.Stack<StackItem> portout_dword(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
+        {
+            var stack_after = new util.Stack<StackItem>(stack_before);
+
+            stack_after.Pop();
+            stack_after.Pop();
+
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_x86_portout, vt_size = 4, stack_before = stack_before, stack_after = stack_after, arg_a = 1, arg_b = 0 });
 
             return stack_after;
         }

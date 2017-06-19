@@ -96,6 +96,15 @@ namespace libtysila5.ir
                 {
                     si.reg = t.AllocateValueType(c, si.ts, ref alloced, ref stack_loc);
                 }
+                else if(si.has_address_taken)
+                {
+                    int size = 0;
+                    if (si.ts.IsValueType)
+                        size = layout.Layout.GetTypeSize(si.ts, t, false);
+                    else
+                        size = t.GetPointerSize();
+                    si.reg = t.AllocateStackLocation(c, size, ref stack_loc);
+                }
                 else
                     DoAllocation(c, si, t, ref alloced, ref stack_loc);
             }

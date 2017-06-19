@@ -38,6 +38,7 @@ namespace libtysila5
             var ts = bf.GetTextSection();
             t.bf = bf;
             t.text_section = ts;
+            binary_library.SymbolType sym_st = binary_library.SymbolType.Global;
 
             var csite = ms.msig;
             var mdef = ms.mdrow;
@@ -50,6 +51,22 @@ namespace libtysila5
             // Get method RVA, don't compile if no body
             var rva = m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
                 mdef, 0);
+
+            /* Is this an array method? */
+            if (rva == 0 &&
+                ms.type.stype == TypeSpec.SpecialType.Array &&
+                code_override == null)
+            {
+                if (ms.name_override == "Get")
+                {
+                    code_override = ir.ConvertToIR.CreateArrayGet(ms, t);
+                }
+                else
+                    throw new NotImplementedException(ms.name_override);
+
+                sym_st = binary_library.SymbolType.Weak;
+            }
+
             if (rva == 0 && code_override == null)
                 return false;
 
@@ -75,7 +92,6 @@ namespace libtysila5
                 meth_syms.Add(alias_sym);
             }
 
-            binary_library.SymbolType sym_st = binary_library.SymbolType.Global;
 
             if (ms.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs20WeakLinkageAttribute_7#2Ector_Rv_P1u1t"))
                 sym_st = binary_library.SymbolType.Weak;
@@ -91,12 +107,9 @@ namespace libtysila5
                     mdef, 4);
             }
 
-
             Code cil;
             if (code_override == null)
             {
-
-
                 var meth = m.GetRVA(rva);
 
                 var flags = meth.ReadByte(0);

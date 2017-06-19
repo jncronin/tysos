@@ -80,7 +80,8 @@ namespace libtysila5.ir
                 str_val = str_val,
                 ts = ts,
                 _ct = _ct,
-                ms = ms
+                ms = ms,
+                has_address_taken = has_address_taken
             };
         }
     }

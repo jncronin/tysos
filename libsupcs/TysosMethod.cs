@@ -73,9 +73,9 @@ namespace libsupcs
             public bool IsFinally { get { if ((Flags & 0x2) == 0x2) return true; return false; } }
         }
 
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
-        [MethodReferenceAlias("__invoke")]
-        static extern object InternalInvoke(IntPtr meth, Object[] parameters, TysosType rettype);
+        //[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
+        //[MethodReferenceAlias("__invoke")]
+        //static extern object InternalInvoke(IntPtr meth, Object[] parameters, TysosType rettype);
 
         public override System.Reflection.CallingConventions CallingConvention
         {
@@ -171,7 +171,8 @@ namespace libsupcs
                 //return InternalInvoke(MethodAddress, p_length, (p == null) ? null : MemoryOperations.GetInternalArray(p));
             }
 
-            return InternalInvoke(MethodAddress, p, this._ReturnType);
+            throw new NotImplementedException();
+            //return InternalInvoke(MethodAddress, p, this._ReturnType);
         }
 
         public override RuntimeMethodHandle MethodHandle

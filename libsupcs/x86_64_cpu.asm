@@ -6,7 +6,7 @@ weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr3_Ry_P0:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr3_Rv_P1y:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr4_Ry_P0:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr4_Rv_P1y:function
-weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_4Lidt_Rv_P2yt:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_4Lidt_Rv_P1Pv:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Ltr_Rv_P1y:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_9set_Mxcsr_Rv_P1j:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_9get_Mxcsr_Rj_P0:function
@@ -27,6 +27,7 @@ weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_11WriteFSData_Rv_P2iPv:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_11WriteGSData_Rv_P2iPv:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_6Invlpg_Rv_P1y:function
 weak _ZN14libsupcs#2Edll8libsupcs15OtherOperations_4Exit_Rv_P0:function
+weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_4Sgdt_Rv_P1Pv:function
 
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_5Break_Rv_P0:function
 
@@ -78,25 +79,12 @@ _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7set_Cr4_Rv_P1y:
 	mov cr4, rdi
 	ret
 
-_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_4Lidt_Rv_P2yt:
-	push rbp
-	mov rbp, rsp
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_4Lidt_Rv_P1Pv:
+	lidt [rdi]
+	ret
 
-	sub rsp, 0x10
-	
-	mov rax, rdi
-	mov rcx, rax
-
-	shr rcx, 48
-	shl rcx, 16
-	add rax, rsi
-
-	mov [rsp], rax
-	mov [rsp + 8], rcx
-
-	lidt [rsp]
-
-	leave
+_ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_4Sgdt_Rv_P1Pv:
+	sgdt [rdi]
 	ret
 
 _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_3Ltr_Rv_P1y:

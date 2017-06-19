@@ -796,33 +796,89 @@ namespace libsupcs
         }
 
         [AlwaysCompile]
-        [MethodAlias("_ZW6System9ValueType_14InternalEquals_Rb_P3u1Ou1ORu1Zu1O")]
-        private static unsafe bool ValueType_InternalEquals(void ***o1, void ***o2, out void* fields)
+        [WeakLinkage]
+        [MethodAlias("_Zu1L_14InternalEquals_Rb_P3u1Ou1ORu1Zu1O")]
+        private static unsafe bool ValueType_InternalEquals(void** o1, void** o2, out void* fields)
         {
+            /* This doesn't yet perform the required behaviour.  Currently, we just
+             * perform a byte-by-byte comparison, however if any of the fields are
+             * reference types we should instead run .Equals() on them.
+             * 
+             * If we were to pass the references in the fields array i.e.
+             * [ obj1_field1, obj2_field1, obj1_field2, obj2_field2, ... ]
+             * then mono would do this for us.
+             * 
+             * We need to check both type equality and byte-by-bye equality */
+
             fields = null;
 
-            void** vtbl_o1 = *o1;
-            void** vtbl_o2 = *o2;
+            void* o1vt = *o1;
+            void* o2vt = *o2;
 
-            void* ti_o1 = *vtbl_o1;
-            void* ti_o2 = *vtbl_o2;
-
-            TysosType type_o1 = ReinterpretAsType(ti_o1);
-            TysosType type_o2 = ReinterpretAsType(ti_o2);
-
-            if (type_o1.ClassSize != type_o2.ClassSize)
+            // This needs fixing for dynamic types
+            if (o1vt != o2vt)
                 return false;
 
-            int header_size = libsupcs.ClassOperations.GetBoxedTypeDataOffset();
-            int compare_size = type_o1.ClassSize - header_size;
+            // Get type sizes
+            int o1tsize = *(int*)((byte*)o1vt + ClassOperations.GetVtblTypeSizeOffset());
+            int o2tsize = *(int*)((byte*)o2vt + ClassOperations.GetVtblTypeSizeOffset());
 
-            byte *o1_ptr = (byte*)o1 + header_size;
-            byte *o2_ptr = (byte*)o2 + header_size;
+            if (o1tsize != o2tsize)
+                return false;
 
-            if (MemoryOperations.MemCmp(o1_ptr, o2_ptr, compare_size) == 0)
+            int header_size = ClassOperations.GetBoxedTypeDataOffset();
+
+            byte* o1_ptr = (byte*)o1 + header_size;
+            byte* o2_ptr = (byte*)o2 + header_size;
+
+            if (MemoryOperations.MemCmp(o1_ptr, o2_ptr, o1tsize) == 0)
                 return true;
             else
                 return false;
+        }
+
+        [AlwaysCompile]
+        [WeakLinkage]
+        [MethodAlias("_Zu1L_19InternalGetHashCode_Ri_P2u1ORu1Zu1O")]
+        private static unsafe int ValueType_InternalGetHashCode(void** o, out void* fields)
+        {
+            /* This doesn't yet perform the required behaviour.  Currently, we just
+             * perform a byte-by-byte hash, however if any of the fields are
+             * reference types we should instead run .GetHashCode() on them.
+             * 
+             * If we were to pass the references in the fields array i.e.
+             * [ field1, field2, ... ]
+             * then mono would do this for us. */
+
+            fields = null;
+
+            void* ovt = *o;
+
+            // Get type size
+            int otsize = *(int*)((byte*)ovt + ClassOperations.GetVtblTypeSizeOffset());
+
+            // Get pointer to data
+            int header_size = ClassOperations.GetBoxedTypeDataOffset();
+
+            byte* o_ptr = (byte*)o + header_size;
+
+            // ELF hash
+            uint h = 0, g;
+            for(int i = 0; i < otsize; i++)
+            {
+                h = (h << 4) + *o_ptr++;
+                g = h & 0xf0000000;
+                if(g != 0)
+                {
+                    h ^= g >> 24;
+                }
+                h &= ~g;
+            }
+
+            unchecked
+            {
+                return (int)h;
+            }
         }
     }
 }

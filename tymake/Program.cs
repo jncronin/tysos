@@ -71,9 +71,17 @@ namespace tymake
                 if (arg == "-")
                     immediate = true;
                 else if (Statement.FileDirExists(arg))
-                    TymakeLib.ExecuteFile(arg, s);
+                {
+                    var ret = TymakeLib.ExecuteFile(arg, s);
+                    if (ret.AsInt != 0)
+                        System.Diagnostics.Debugger.Break();
+                }
                 else
-                    TymakeLib.ExecuteString(arg, s);
+                {
+                    var ret = TymakeLib.ExecuteString(arg, s);
+                    if (ret.AsInt != 0)
+                        System.Diagnostics.Debugger.Break();
+                }
             }
 
             if(immediate)

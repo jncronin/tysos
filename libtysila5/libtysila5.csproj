@@ -39,6 +39,7 @@
     <Compile Include="cil\Opcode.cs" />
     <Compile Include="cil\OpcodeList.cs" />
     <Compile Include="Code.cs" />
+    <Compile Include="Array.cs" />
     <Compile Include="Delegate.cs" />
     <Compile Include="EqualityComparer.cs" />
     <Compile Include="FileLoader.cs" />

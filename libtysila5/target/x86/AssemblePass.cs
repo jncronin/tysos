@@ -80,6 +80,7 @@ namespace libtysila5.target.x86
                         break;
 
                     case x86_push_rm32:
+                        AddRex(Code, Rex(0, null, I.p[1].mreg));
                         Code.Add(0xff);
                         Code.AddRange(ModRMSIB(6, I.p[1].mreg));
                         break;
@@ -92,10 +93,12 @@ namespace libtysila5.target.x86
                         AddImm32(Code, I.p[1].v);
                         break;
                     case x86_pop_rm32:
+                        AddRex(Code, Rex(0, null, I.p[1].mreg));
                         Code.Add(0x8f);
                         Code.AddRange(ModRMSIB(0, I.p[1].mreg));
                         break;
                     case x86_pop_r32:
+                        AddRex(Code, Rex(0, null, I.p[1].mreg));
                         Code.Add(PlusRD(0x58, I.p[1].mreg));
                         break;
                     case x86_mov_r32_rm32:
@@ -604,8 +607,8 @@ namespace libtysila5.target.x86
                         break;
                     case x86_mov_rm32disp_r32:
                     case x86_mov_rm64disp_r64:
-                        Code.Add(0x89);
                         AddRex(Code, Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg));
+                        Code.Add(0x89);
                         Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                         break;
 
@@ -653,6 +656,7 @@ namespace libtysila5.target.x86
                         break;
 
                     case x86_lea_r32:
+                        AddRex(Code, Rex(0, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x8d);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
@@ -1022,21 +1026,21 @@ namespace libtysila5.target.x86
             else if (mreg.Equals(r_edi))
                 return (byte)(v + 7);
             else if (mreg.Equals(x86_64.x86_64_Assembler.r_r8))
-                return 0;
+                return (byte)(v + 0);
             else if (mreg.Equals(x86_64.x86_64_Assembler.r_r9))
-                return 1;
+                return (byte)(v + 1);
             else if (mreg.Equals(x86_64.x86_64_Assembler.r_r10))
-                return 2;
+                return (byte)(v + 2);
             else if (mreg.Equals(x86_64.x86_64_Assembler.r_r11))
-                return 3;
+                return (byte)(v + 3);
             else if (mreg.Equals(x86_64.x86_64_Assembler.r_r12))
-                return 4;
+                return (byte)(v + 4);
             else if (mreg.Equals(x86_64.x86_64_Assembler.r_r13))
-                return 5;
+                return (byte)(v + 5);
             else if (mreg.Equals(x86_64.x86_64_Assembler.r_r14))
-                return 6;
+                return (byte)(v + 6);
             else if (mreg.Equals(x86_64.x86_64_Assembler.r_r15))
-                return 7;
+                return (byte)(v + 7);
 
             throw new NotSupportedException();
         }

@@ -45,7 +45,7 @@ namespace libsupcs.x86_64
             ulong *idt_ptr = stackalloc ulong[2];
             idt_ptr[1] = (addr >> 48) & 0xffffUL;
             idt_ptr[0] = (addr << 16) | ((ulong)limit & 0xffffUL);
-            Lidt((UIntPtr)idt_ptr);
+            Lidt(idt_ptr);
         }
 
         [Bits32Only]
@@ -60,7 +60,7 @@ namespace libsupcs.x86_64
             uint *idt_ptr = stackalloc uint[2];
             idt_ptr[1] = (addr >> 16) & 0xffffU;
             idt_ptr[0] = (addr << 16) | ((uint)limit & 0xffffU);
-            Lidt((UIntPtr)idt_ptr);
+            Lidt(idt_ptr);
         }
 
         [Bits64Only]
@@ -130,7 +130,7 @@ namespace libsupcs.x86_64
         public static unsafe extern void Sgdt(void* ptr);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public static extern void Lidt(UIntPtr idt_ptr);
+        public unsafe static extern void Lidt(void* ptr);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern void Ltr(ulong selector);

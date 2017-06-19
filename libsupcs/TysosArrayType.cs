@@ -233,6 +233,7 @@ namespace libsupcs
             return true;
         }
 
+        [AlwaysCompile]
         [MethodAlias("__array_address")]
         internal unsafe UIntPtr Address(Array array, int idx)
         {
@@ -240,6 +241,7 @@ namespace libsupcs
             return OtherOperations.Add((UIntPtr)MemoryOperations.GetInternalArray(array), (UIntPtr)(vindex * get_elem_size(array)));
         }
 
+        [AlwaysCompile]
         [MethodAlias("__array_get")]
         internal unsafe IntPtr Get(Array array, int idx)
         {
@@ -259,6 +261,7 @@ namespace libsupcs
             }
         }
 
+        [AlwaysCompile]
         [MethodAlias("__array_set")]
         internal unsafe void Set(Array array, int idx, IntPtr val)
         {
@@ -280,6 +283,7 @@ namespace libsupcs
             }
         }
 
+        [AlwaysCompile]
         [MethodAlias("__array_ctor_1")]
         internal unsafe void ctor1(Array array, int size)
         {
@@ -302,6 +306,7 @@ namespace libsupcs
             *(UIntPtr*)(OtherOperations.Add(CastOperations.ReinterpretAsIntPtr(array), (IntPtr)ArrayOperations.GetInnerArrayOffset())) = inner_array;
         }
 
+        [AlwaysCompile]
         [MethodAlias("__array_ctor_2")]
         internal unsafe void ctor2(Array array, int lobound, int size)
         {

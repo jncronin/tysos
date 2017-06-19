@@ -36,8 +36,8 @@ namespace tysos
         [libsupcs.ReinterpretAsMethod]
         internal static extern libsupcs.TysosMethod.EHClause ReinterpretAsEHClause(ulong addr);
 
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        internal static extern void CallExceptionHandler(ulong addr, ulong rbp);
+        //[MethodImpl(MethodImplOptions.InternalCall)]
+        //internal static extern void CallExceptionHandler(ulong addr, ulong rbp);
 
         [libsupcs.MethodAlias("sthrow")]
         [libsupcs.AlwaysCompile]
@@ -138,7 +138,8 @@ namespace tysos
                             {
                                 if ((prev_rip >= try_start) && (prev_rip < try_end))
                                 {
-                                    CallExceptionHandler(handler_start, prev_rbp);
+                                    throw new NotImplementedException();
+                                    //CallExceptionHandler(handler_start, prev_rbp);
                                     return;
                                 }
                             }

@@ -27,9 +27,9 @@ using libtysila5.util;
 using metadata;
 using libtysila5.ir;
 
-namespace libtysila5
+namespace libtysila5.ir
 {
-    public partial class libtysila
+    public partial class ConvertToIR
     {
         static MethodSpec delegate_m_target;
         static MethodSpec delegate_method_ptr;
