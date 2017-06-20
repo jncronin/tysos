@@ -1772,6 +1772,7 @@ namespace libtysila5.target.x86
                     case ir.Opcode.ct_vt:
                     case ir.Opcode.ct_int64:
                     case ir.Opcode.ct_float:
+                        throw new Exception("Doesn't support calling conventions");
                         handle_push(to_pass, ref push_length, r, n, c);
                         break;
 
@@ -2958,6 +2959,18 @@ namespace libtysila5.target.x86
                     r.Add(inst(x86_sub_rm32_imm8, r_esp, lv_size, n));
                 else
                     r.Add(inst(x86_sub_rm32_imm32, r_esp, lv_size, n));
+            }
+
+            /* Move incoming arguments to the appropriate locations */
+            for(int i = 0; i < c.la_needs_assign.Length; i++)
+            {
+                if(c.la_needs_assign[i])
+                {
+                    var from = c.incoming_args[i];
+                    var to = c.la_locs[i];
+
+                    handle_move(to, from, r, n, c);
+                }
             }
 
             var regs_to_save = c.regs_used | c.t.cc_callee_preserves_map["sysv"];

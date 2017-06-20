@@ -277,5 +277,20 @@ namespace libtysila5.target.x86_64
 {
     partial class x86_64_Assembler : x86.x86_Assembler
     {
+        public override int GetCCClassFromCT(int ct, int size, TypeSpec ts, string cc)
+        {
+            if (cc == "sysv")
+            {
+                switch (ct)
+                {
+                    case Opcode.ct_vt:
+                        // breaks spec - need to only use MEMORY for those more than 32 bytes
+                        //  but we don't wupport splitting arguments up yet
+                        return sysvc_MEMORY;
+                }
+            }
+
+            return base.GetCCClassFromCT(ct, size, ts, cc);
+        }
     }
 }

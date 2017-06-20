@@ -475,7 +475,7 @@ if(MAKE_ISO == "y")
 		print("--------------------------------\n");
 		print("Error\n");
 		setoutputcolor([]);
-		return;
+		return(-1);
 	}
 }
 else
@@ -486,7 +486,7 @@ else
 		print("--------------------------------\n");
 		print("Error\n");
 		setoutputcolor([]);
-		return;
+		return(-1);
 	}
 }
 

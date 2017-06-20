@@ -58,8 +58,14 @@ namespace libtysila5.target
         public Dictionary<string, Dictionary<int, int[]>> cc_map
             = new Dictionary<string, Dictionary<int, int[]>>(
                 new GenericEqualityComparer<string>());
+        public Dictionary<string, Dictionary<int, int>> cc_classmap
+            = new Dictionary<string, Dictionary<int, int>>(
+                new GenericEqualityComparer<string>());
         public Dictionary<string, Dictionary<int, int[]>> retcc_map
             = new Dictionary<string, Dictionary<int, int[]>>(
+                new GenericEqualityComparer<string>());
+        public Dictionary<string, Dictionary<int, int>> retcc_classmap
+            = new Dictionary<string, Dictionary<int, int>>(
                 new GenericEqualityComparer<string>());
 
         protected internal abstract int GetCondCode(MCInst i);
@@ -419,6 +425,8 @@ namespace libtysila5.target
         protected internal virtual Reg[] GetRegLocs(ir.Param csite,
             ref int stack_loc,
             Dictionary<int, int[]> cc,
+            Dictionary<int, int> cc_classmap,
+            string cc_name,
             out int[] la_sizes,
             out metadata.TypeSpec[] la_types)
         {
@@ -475,6 +483,11 @@ namespace libtysila5.target
                 la_sizes[i] = size;
 
                 var ct = ir.Opcode.GetCTFromType(v);
+                if (cc_classmap.ContainsKey(ct))
+                    ct = cc_classmap[ct];
+                else
+                    ct = GetCCClassFromCT(ct, size, v, cc_name);
+
                 Reg r = null;
 
                 int cur_cc_next;
@@ -508,6 +521,7 @@ namespace libtysila5.target
                     }
                     else
                         r = regs[reg_id];
+
                 }
                 else
                 {
@@ -521,6 +535,11 @@ namespace libtysila5.target
             }
 
             return ret;
+        }
+
+        public virtual int GetCCClassFromCT(int ct, int size, metadata.TypeSpec ts, string cc)
+        {
+            return ct;
         }
 
         public virtual bool IsLSB { get { return true; } }

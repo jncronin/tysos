@@ -39,7 +39,6 @@ namespace libtysila5.target
                 if (diff != 0)
                     cur_loc = cur_loc - diff + GetPointerSize();
             }
-            c.lv_total_size = cur_loc;
 
             /* Do the same for local args */
             int la_count = m.GetMethodDefSigParamCountIncludeThis(
@@ -53,12 +52,14 @@ namespace libtysila5.target
             cur_loc = 0;
 
             var cc = cc_map["sysv"];
+            var cc_class_map = cc_classmap["sysv"];
             int stack_loc = 0;
             var la_phys_locs = GetRegLocs(new ir.Param
             {
                 m = m,
                 ms = c.ms,
-            }, ref stack_loc, cc,
+            }, ref stack_loc, cc, cc_class_map,
+            "sysv",
             out c.la_sizes, out c.la_types);
             c.incoming_args = la_phys_locs;
 
@@ -89,6 +90,9 @@ namespace libtysila5.target
             for (int i = 0; i < la_count; i++)
             {
                 var mreg = la_phys_locs[i];
+                metadata.TypeSpec type = m.SystemObject;
+                if (i > 0 || !m.GetMethodDefSigHasNonExplicitThis(c.ms.msig))
+                    type = m.GetTypeSpec(ref idx, c.ms.gtparams, c.ms.gmparams);
 
                 if (mreg.type == rt_stack)
                 {
@@ -98,14 +102,17 @@ namespace libtysila5.target
                 }
                 else
                 {
-                    throw new NotImplementedException();
-                    var type = m.GetTypeSpec(ref idx, c.ms.gtparams, c.ms.gmparams);
-                    var la_size = GetSize(type);
-                    la_locs[laidx++] = cur_loc;
+                    c.la_needs_assign[i] = true;
+
+                    var la_size = util.util.align(GetSize(type), GetPointerSize());
+                    c.la_locs[i] = GetLVLocation(cur_loc, la_size, c);
+
+                    la_locs[i] = cur_loc;
                     cur_loc += la_size;
                 }
             }
 
+            c.lv_total_size = cur_loc;
         }
     }
 }

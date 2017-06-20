@@ -39,6 +39,33 @@ export function intmap(string namespace, string class, string name, string map_n
 	return next_intmap_id - 1;
 }
 
+/* Generate a simple list of constants, i.e. like intmap but without the dictionary */
+export function intlist(string namespace, string class, string name, array entries)
+{
+	print("namespace " + namespace + "\n");
+	print("{\n");
+	print("\tpartial class " + class + "\n");
+	print("\t{\n");
+
+	old_intmap_id = next_intmap_id;
+	
+	foreach(entry in entries)
+	{
+		print("\t\tpublic const int " + name + "_" + entry + " = " + next_intmap_id + ";\n");
+		vargen(name + "_" + entry, next_intmap_id);
+		next_intmap_id = next_intmap_id + 1;
+		export next_intmap_id;
+	}
+
+	print("\t}\n");
+	print("}\n");
+	print("\n");
+
+	export next_intmap_id;
+	return next_intmap_id - 1;
+}
+
+
 /* Generate a simple hash map from index to item (int to int) */
 export function simple_map(string namespace, string class, string map_name, string init_func, array entries,
 	int do_string, string to_type)

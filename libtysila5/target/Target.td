@@ -126,6 +126,8 @@ foreach(target_def in target_defs)
 	print("\t\t\tinit_cc_caller_preserves_map();\n");
 	print("\t\t\tinit_cc_map();\n");
 	print("\t\t\tinit_retcc_map();\n");
+	print("\t\t\tinit_cc_classmap();\n");
+	print("\t\t\tinit_retcc_classmap();\n");
 	print("\t\t}\n");
 
 	/* Add constructor */

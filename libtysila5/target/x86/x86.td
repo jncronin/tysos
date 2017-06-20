@@ -247,15 +247,39 @@ x86_def.retcc = retcc_map(nspace, assembler, [
 	[ "ret_sysv", cc_ret_sysv ]
 ]);
 
+
+x64_sysv_int = [ rdi, rsi, rdx, rcx, r8, r9, stack ];
+x64_sysv_sse = [ xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, stack ];
+
+// Here we define some register classes for the calling convention
+intlist(nspace_64, assembler_64, "sysvc", [
+	"MEMORY",
+	"INTEGER",
+	"SSE",
+	"SSEUP",
+	"X87",
+	"X87UP",
+	"COMPLEX_X87",
+]);
+
+// Define which classes particular cli types belong to
+//  We ignore ct_vt because we handle this specially in code
+// Then, define the actual calling convention in terms of classes and
+//  the registers they use
 cc_sysv_64 = cc(nspace_64, assembler_64, "sysv",
 [
-	[ ct_int32, [ stack ] ],
-	[ ct_intptr, [ stack ] ],
-	[ ct_int64, [ stack ] ],
-	[ ct_object, [ stack ] ],
-	[ ct_ref, [ stack ] ],
-	[ ct_vt, [ stack ] ],
-	[ ct_float, [ stack ] ],
+	[ ct_int32, sysvc_INTEGER ],
+	[ ct_intptr, sysvc_INTEGER ],
+	[ ct_int64, sysvc_INTEGER ],
+	[ ct_object, sysvc_INTEGER ],
+	[ ct_ref, sysvc_INTEGER ],
+	[ ct_float, sysvc_SSE ],
+]
+,
+[
+	[ sysvc_INTEGER, x64_sysv_int ],
+	[ sysvc_SSE, x64_sysv_sse ],
+	[ sysvc_MEMORY, [ stack  ] ],
 ],
 raxreg | rcxreg | rdxreg,			// caller preserves
 rbxreg | rsireg | rdireg			// callee preserves
@@ -276,6 +300,7 @@ cc_ret_sysv_64 = cc(nspace_64, assembler_64, "ret_sysv",
 x86_64_def.cc = cc_map(nspace_64, assembler_64, [
 	[ "sysv", cc_sysv ]
 ]);
+
 x86_64_def.retcc = retcc_map(nspace_64, assembler_64, [
 	[ "ret_sysv", cc_ret_sysv ]
 ]);

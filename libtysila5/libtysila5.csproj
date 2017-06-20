@@ -68,8 +68,6 @@
     <Compile Include="target\Targets.cs" />
     <Compile Include="target\Trie.cs" />
     <Compile Include="target\x86\AssemblePass.cs" />
-    <Compile Include="target\x86\call.cs" />
-    <Compile Include="target\x86\conv.cs" />
     <Compile Include="target\x86\Instructions.cs" />
     <Compile Include="target\x86\lab.cs" />
     <Compile Include="target\x86\stind.cs" />

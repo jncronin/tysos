@@ -4,7 +4,15 @@ export function cc(string namespace, string class, string name,
 {
 	return cc(namespace, class, name, map, 0, 0);
 }
+
 export function cc(string namespace, string class, string name,
+	array map, int caller_preserves, int callee_preserves)
+{
+	return(cc(namespace, class, name, [], map, caller_preserves, callee_preserves));
+}
+
+export function cc(string namespace, string class, string name,
+	array class_map,
 	array map, int caller_preserves, int callee_preserves)
 {
 	print("namespace " + namespace + "\n");
@@ -14,9 +22,17 @@ export function cc(string namespace, string class, string name,
 	print("\t\tpublic static System.Collections.Generic.Dictionary<int, int[]> cc_map_" + name + " = ");
 	print("new System.Collections.Generic.Dictionary<int, int[]>");
 	print("(new libtysila5.GenericEqualityComparer<int>());\n");
+	print("\t\tpublic static System.Collections.Generic.Dictionary<int, int> cc_classmap_" + name + " = ");
+	print("new System.Collections.Generic.Dictionary<int, int>");
+	print("(new libtysila5.GenericEqualityComparer<int>());\n");
 
 	print("\t\tinternal static void init_" + name + "()\n");
 	print("\t\t{\n");
+
+	foreach(entry in class_map)
+	{
+		print("\t\t\tcc_classmap_" + name + "[" + entry[0] + "] = " + entry[1] + ";\n");
+	}
 
 	foreach(entry in map)
 	{
@@ -38,7 +54,7 @@ export function cc(string namespace, string class, string name,
 	print("}\n");
 	print("\n");
 
-	return "cc_map_" + name;
+	return [ "cc_map_" + name, "cc_classmap_" + name ];
 }
 
 export function cc_map(string namespace, string class, array entries)
@@ -56,12 +72,37 @@ export function cc_map(string namespace, string class, array entries)
 	simple_map(namespace, class, "cc_callee_preserves_map",
 		"init_cc_callee_preserves_map", callee,
 		1, "");
-	return simple_map(namespace, class, "cc_map", "init_cc_map", entries,
+
+	cc_arr = [];
+	foreach(e in entries)
+	{
+		cc_arr.add([ e[0], e[1][0] ]);
+	}
+	cc_classmap_arr = [];
+	foreach(e in entries)
+	{
+		cc_classmap_arr.add([ e[0], e[1][1] ]);
+	}
+	simple_map(namespace, class, "cc_classmap", "init_cc_classmap", cc_classmap_arr,
+		1, "");
+	return simple_map(namespace, class, "cc_map", "init_cc_map", cc_arr,
 		1, "");
 }
 
 export function retcc_map(string namespace, string class, array entries)
 {
-	return simple_map(namespace, class, "retcc_map", "init_retcc_map", entries,
+	cc_arr = [];
+	foreach(e in entries)
+	{
+		cc_arr.add([ e[0], e[1][0] ]);
+	}
+	cc_classmap_arr = [];
+	foreach(e in entries)
+	{
+		cc_classmap_arr.add([ e[0], e[1][1] ]);
+	}
+	simple_map(namespace, class, "retcc_classmap", "init_retcc_classmap", cc_classmap_arr,
+		1, "");
+	return simple_map(namespace, class, "retcc_map", "init_retcc_map", cc_arr,
 		1, "");
 }

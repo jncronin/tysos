@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 18:08:29 on 18 June 2017
+ * It was generated at 18:46:08 on 19 June 2017
  * from D:\tysos\branches\tysila3\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -362,6 +362,7 @@ namespace libtysila5.target.x86
 	partial class x86_Assembler
 	{
 		public static System.Collections.Generic.Dictionary<int, int[]> cc_map_sysv = new System.Collections.Generic.Dictionary<int, int[]>(new libtysila5.GenericEqualityComparer<int>());
+		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
 			cc_map_sysv[86] = new int[] { 25, };
@@ -383,6 +384,7 @@ namespace libtysila5.target.x86
 	partial class x86_Assembler
 	{
 		public static System.Collections.Generic.Dictionary<int, int[]> cc_map_ret_sysv = new System.Collections.Generic.Dictionary<int, int[]>(new libtysila5.GenericEqualityComparer<int>());
+		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_ret_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_ret_sysv()
 		{
 			cc_map_ret_sysv[86] = new int[] { 7, };
@@ -424,9 +426,31 @@ namespace libtysila5.target.x86
 {
 	partial class x86_Assembler
 	{
+		internal void init_cc_classmap()
+		{
+			cc_classmap["sysv"] = cc_classmap_sysv;
+		}
+	}
+}
+
+namespace libtysila5.target.x86
+{
+	partial class x86_Assembler
+	{
 		internal void init_cc_map()
 		{
 			cc_map["sysv"] = cc_map_sysv;
+		}
+	}
+}
+
+namespace libtysila5.target.x86
+{
+	partial class x86_Assembler
+	{
+		internal void init_retcc_classmap()
+		{
+			retcc_classmap["ret_sysv"] = cc_classmap_ret_sysv;
 		}
 	}
 }
@@ -446,16 +470,33 @@ namespace libtysila5.target.x86_64
 {
 	partial class x86_64_Assembler
 	{
+		public const int sysvc_MEMORY = 153;
+		public const int sysvc_INTEGER = 154;
+		public const int sysvc_SSE = 155;
+		public const int sysvc_SSEUP = 156;
+		public const int sysvc_X87 = 157;
+		public const int sysvc_X87UP = 158;
+		public const int sysvc_COMPLEX_X87 = 159;
+	}
+}
+
+namespace libtysila5.target.x86_64
+{
+	partial class x86_64_Assembler
+	{
 		public static System.Collections.Generic.Dictionary<int, int[]> cc_map_sysv = new System.Collections.Generic.Dictionary<int, int[]>(new libtysila5.GenericEqualityComparer<int>());
+		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_map_sysv[86] = new int[] { 25, };
-			cc_map_sysv[88] = new int[] { 25, };
-			cc_map_sysv[87] = new int[] { 25, };
-			cc_map_sysv[90] = new int[] { 25, };
-			cc_map_sysv[91] = new int[] { 25, };
-			cc_map_sysv[92] = new int[] { 25, };
-			cc_map_sysv[89] = new int[] { 25, };
+			cc_classmap_sysv[86] = 154;
+			cc_classmap_sysv[88] = 154;
+			cc_classmap_sysv[87] = 154;
+			cc_classmap_sysv[90] = 154;
+			cc_classmap_sysv[91] = 154;
+			cc_classmap_sysv[89] = 155;
+			cc_map_sysv[154] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
+			cc_map_sysv[155] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
+			cc_map_sysv[153] = new int[] { 25, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 1664;
@@ -468,6 +509,7 @@ namespace libtysila5.target.x86_64
 	partial class x86_64_Assembler
 	{
 		public static System.Collections.Generic.Dictionary<int, int[]> cc_map_ret_sysv = new System.Collections.Generic.Dictionary<int, int[]>(new libtysila5.GenericEqualityComparer<int>());
+		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_ret_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_ret_sysv()
 		{
 			cc_map_ret_sysv[86] = new int[] { 7, };
@@ -509,9 +551,31 @@ namespace libtysila5.target.x86_64
 {
 	partial class x86_64_Assembler
 	{
+		internal void init_cc_classmap()
+		{
+			cc_classmap["sysv"] = cc_classmap_sysv;
+		}
+	}
+}
+
+namespace libtysila5.target.x86_64
+{
+	partial class x86_64_Assembler
+	{
 		internal void init_cc_map()
 		{
 			cc_map["sysv"] = cc_map_sysv;
+		}
+	}
+}
+
+namespace libtysila5.target.x86_64
+{
+	partial class x86_64_Assembler
+	{
+		internal void init_retcc_classmap()
+		{
+			retcc_classmap["ret_sysv"] = cc_classmap_ret_sysv;
 		}
 	}
 }
@@ -703,6 +767,8 @@ namespace libtysila5.target.x86
 			init_cc_caller_preserves_map();
 			init_cc_map();
 			init_retcc_map();
+			init_cc_classmap();
+			init_retcc_classmap();
 		}
 		
 		internal x86_Assembler()
@@ -837,6 +903,8 @@ namespace libtysila5.target.x86_64
 			init_cc_caller_preserves_map();
 			init_cc_map();
 			init_retcc_map();
+			init_cc_classmap();
+			init_retcc_classmap();
 		}
 		
 		internal x86_64_Assembler()
