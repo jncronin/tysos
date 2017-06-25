@@ -32,7 +32,6 @@
 * 
 * <prefix>:    P               # unmanaged pointer to
 *              R               # reference to
-*              B               # boxed type
 * 
 * <nested-name>:   N<module count><module><nspace count><nspace><name count><type name>
 *                      # type specified by module, name space and name
@@ -136,6 +135,183 @@ namespace metadata
             MangleType(ts, sb, ms);
 
             return sb.ToString();
+        }
+
+        public TypeSpec DemangleType(string s)
+        {
+            ManglerState ms = new ManglerState();
+
+            int i = 0;
+            if (!Munch(s, ref i, "_Z"))
+                throw new ArgumentException();
+            return DemangleType(s, ref i, ms);
+        }
+
+        private TypeSpec DemangleType(string s, ref int i, ManglerState ms)
+        {
+            string module = ms.cur_module, nspace = ms.cur_nspace, name;
+
+            if (Munch(s, ref i, "P"))
+            {
+                return new TypeSpec
+                {
+                    stype = TypeSpec.SpecialType.Ptr,
+                    other = DemangleType(s, ref i, ms)
+                };
+            }
+            else if (Munch(s, ref i, "R"))
+            {
+                return new TypeSpec
+                {
+                    stype = TypeSpec.SpecialType.MPtr,
+                    other = DemangleType(s, ref i, ms)
+                };
+            }
+            else if (Munch(s, ref i, "u1Z"))
+            {
+                return new TypeSpec
+                {
+                    stype = TypeSpec.SpecialType.SzArray,
+                    other = DemangleType(s, ref i, ms)
+                };
+            }
+            else if (Munch(s, ref i, "u1A"))
+            {
+                throw new NotImplementedException();
+            }
+            else if (Munch(s, ref i, "v"))
+                return SystemVoid;
+            else if (Munch(s, ref i, "c"))
+                return SystemChar;
+            else if (Munch(s, ref i, "b"))
+                throw new NotImplementedException(); //bool
+            else if (Munch(s, ref i, "a"))
+                return SystemInt8;
+            else if (Munch(s, ref i, "h"))
+                return SystemByte;
+            else if (Munch(s, ref i, "s"))
+                return SystemInt16;
+            else if (Munch(s, ref i, "t"))
+                return SystemUInt16;
+            else if (Munch(s, ref i, "i"))
+                return SystemInt32;
+            else if (Munch(s, ref i, "j"))
+                return SystemUInt32;
+            else if (Munch(s, ref i, "x"))
+                return SystemInt64;
+            else if (Munch(s, ref i, "y"))
+                return SystemUInt64;
+            else if (Munch(s, ref i, "f"))
+                throw new NotImplementedException(); //r4
+            else if (Munch(s, ref i, "d"))
+                throw new NotImplementedException(); //r8
+            else if (Munch(s, ref i, "u1I"))
+                return SystemIntPtr;
+            else if (Munch(s, ref i, "u1U"))
+                throw new NotImplementedException(); //uintptr
+            else if (Munch(s, ref i, "u1S"))
+                return SystemString;
+            else if (Munch(s, ref i, "u1O"))
+                return SystemObject;
+            else if (Munch(s, ref i, "u1L"))
+                return SystemValueType;
+            else if(Munch(s, ref i, "N"))
+            {
+                module = MunchString(s, ref i);
+                nspace = MunchString(s, ref i);
+                name = MunchString(s, ref i);
+            }
+            else if(Munch(s, ref i, "U"))
+            {
+                nspace = MunchString(s, ref i);
+                name = MunchString(s, ref i);
+            }
+            else if(Munch(s, ref i, "V"))
+            {
+                name = MunchString(s, ref i);
+            }
+            else if(Munch(s, ref i, "W"))
+            {
+                module = "mscorlib";
+                nspace = MunchString(s, ref i);
+                name = MunchString(s, ref i);
+            }
+            else if(Munch(s, ref i, "X"))
+            {
+                module = "libsupcs";
+                nspace = "libsupcs";
+                name = MunchString(s, ref i);
+            }
+            else
+                throw new NotImplementedException();
+
+            if (Munch(s, ref i, "_G"))
+                throw new NotImplementedException();
+
+            ms.cur_module = module;
+            ms.cur_nspace = nspace;
+
+            var mod = al.GetAssembly(module);
+            return mod.GetTypeSpec(nspace, name);
+        }
+
+        private string MunchString(string s, ref int i)
+        {
+            int digit_count = 0;
+            while ((i + digit_count < s.Length) && (char.IsDigit(s[i + digit_count])))
+                digit_count++;
+
+            int digits = int.Parse(s.Substring(i, digit_count));
+            i += digit_count;
+
+            if (i + digits > s.Length)
+                throw new ArgumentException();
+
+            var ret = s.Substring(i, digits);
+            i += digits;
+            return DecodeString(ret);
+        }
+
+        private string DecodeString(string s)
+        {
+            if (!s.Contains("#"))
+                return s;
+
+            StringBuilder ret = new StringBuilder();
+
+            int i = 0;
+            while(i < s.Length)
+            {
+                if(s[i] == '#')
+                {
+                    i++;
+                    if (i + 2 > s.Length)
+                        throw new ArgumentException();
+
+                    var val = int.Parse(s.Substring(i, 2),
+                        System.Globalization.NumberStyles.HexNumber);
+                    ret.Append((char)val);
+                    i += 2;
+                }
+                else
+                {
+                    ret.Append(s[i]);
+                    i++;
+                }
+            }
+            return ret.ToString();
+        }
+
+        private bool Munch(string s, ref int i, string v)
+        {
+            if (v.Length + i > s.Length)
+                return false;
+            if(s.Substring(i, v.Length).Equals(v))
+            {
+                i += v.Length;
+                return true;
+            }
+            return false;
         }
 
         void MangleType(TypeSpec ts, StringBuilder sb,
