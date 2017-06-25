@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 18:46:08 on 19 June 2017
+ * It was generated at 19:04:09 on 24 June 2017
  * from D:\tysos\branches\tysila3\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -190,35 +190,50 @@ namespace libtysila5.target.x86
 		public const int x86_mov_rm64_imm32 = 121;
 		public const int x86_mov_r64_rm64 = 122;
 		public const int x86_mov_rm64_r64 = 123;
-		public const int x86_mov_r64_rm64disp = 124;
-		public const int x86_mov_r64_rm32disp = 125;
-		public const int x86_mov_r64_rm16disp = 126;
-		public const int x86_mov_r64_rm8disp = 127;
-		public const int x86_mov_rm64disp_r64 = 128;
-		public const int x86_movsxbq_r64_rm8disp = 129;
-		public const int x86_movzxbq_r64_rm8disp = 130;
-		public const int x86_movsxwq_r64_rm16disp = 131;
-		public const int x86_movzxwq_r64_rm16disp = 132;
-		public const int x86_cmp_rm64_r64 = 133;
-		public const int x86_cmp_r64_rm64 = 134;
-		public const int x86_cmp_rm64_imm32 = 135;
-		public const int x86_cmp_rm64_imm8 = 136;
-		public const int x86_movsxdq_r64_rm64 = 137;
-		public const int x86_xor_r64_rm64 = 138;
-		public const int x86_xor_rm64_r64 = 139;
-		public const int x86_and_r64_rm64 = 140;
-		public const int x86_and_rm64_r64 = 141;
-		public const int x86_or_r64_rm64 = 142;
-		public const int x86_or_rm64_r64 = 143;
-		public const int x86_neg_rm64 = 144;
-		public const int x86_not_rm64 = 145;
-		public const int x86_imul_r64_rm64 = 146;
-		public const int x86_idiv_rm64 = 147;
-		public const int x86_sal_rm64_cl = 148;
-		public const int x86_sar_rm64_cl = 149;
-		public const int x86_shr_rm64_cl = 150;
-		public const int x86_cvtsi2sd_xmm_rm64 = 151;
-		public const int x86_cvtsd2si_r64_xmmm64 = 152;
+		public const int x86_mov_rm64disp_imm32 = 124;
+		public const int x86_mov_r64_rm64disp = 125;
+		public const int x86_mov_r64_rm32disp = 126;
+		public const int x86_mov_r64_rm16disp = 127;
+		public const int x86_mov_r64_rm8disp = 128;
+		public const int x86_mov_rm64disp_r64 = 129;
+		public const int x86_movsxbq_r64_rm8disp = 130;
+		public const int x86_movzxbq_r64_rm8disp = 131;
+		public const int x86_movsxwq_r64_rm16disp = 132;
+		public const int x86_movzxwq_r64_rm16disp = 133;
+		public const int x86_cmp_rm64_r64 = 134;
+		public const int x86_cmp_r64_rm64 = 135;
+		public const int x86_cmp_rm64_imm32 = 136;
+		public const int x86_cmp_rm64_imm8 = 137;
+		public const int x86_movsxdq_r64_rm64 = 138;
+		public const int x86_xor_r64_rm64 = 139;
+		public const int x86_xor_rm64_r64 = 140;
+		public const int x86_and_r64_rm64 = 141;
+		public const int x86_and_rm64_r64 = 142;
+		public const int x86_or_r64_rm64 = 143;
+		public const int x86_or_rm64_r64 = 144;
+		public const int x86_neg_rm64 = 145;
+		public const int x86_not_rm64 = 146;
+		public const int x86_imul_r64_rm64 = 147;
+		public const int x86_idiv_rm64 = 148;
+		public const int x86_sal_rm64_cl = 149;
+		public const int x86_sar_rm64_cl = 150;
+		public const int x86_shr_rm64_cl = 151;
+		public const int x86_xchg_r64_rm64 = 152;
+		public const int x86_sub_rm64_imm8 = 153;
+		public const int x86_sub_rm64_imm32 = 154;
+		public const int x86_add_rm64_imm8 = 155;
+		public const int x86_add_rm64_imm32 = 156;
+		public const int x86_lea_r64 = 157;
+		public const int x86_add_r64_rm64 = 158;
+		public const int x86_add_rm64_r64 = 159;
+		public const int x86_sub_r64_rm64 = 160;
+		public const int x86_sub_rm64_r64 = 161;
+		public const int x86_adc_r64_rm64 = 162;
+		public const int x86_adc_rm64_r64 = 163;
+		public const int x86_sbb_r64_rm64 = 164;
+		public const int x86_sbb_rm64_r64 = 165;
+		public const int x86_cvtsi2sd_xmm_rm64 = 166;
+		public const int x86_cvtsd2si_r64_xmmm64 = 167;
 		
 		internal static void init_instrs()
 		{
@@ -324,35 +339,50 @@ namespace libtysila5.target.x86
 			insts[121] = "mov_rm64_imm32";
 			insts[122] = "mov_r64_rm64";
 			insts[123] = "mov_rm64_r64";
-			insts[124] = "mov_r64_rm64disp";
-			insts[125] = "mov_r64_rm32disp";
-			insts[126] = "mov_r64_rm16disp";
-			insts[127] = "mov_r64_rm8disp";
-			insts[128] = "mov_rm64disp_r64";
-			insts[129] = "movsxbq_r64_rm8disp";
-			insts[130] = "movzxbq_r64_rm8disp";
-			insts[131] = "movsxwq_r64_rm16disp";
-			insts[132] = "movzxwq_r64_rm16disp";
-			insts[133] = "cmp_rm64_r64";
-			insts[134] = "cmp_r64_rm64";
-			insts[135] = "cmp_rm64_imm32";
-			insts[136] = "cmp_rm64_imm8";
-			insts[137] = "movsxdq_r64_rm64";
-			insts[138] = "xor_r64_rm64";
-			insts[139] = "xor_rm64_r64";
-			insts[140] = "and_r64_rm64";
-			insts[141] = "and_rm64_r64";
-			insts[142] = "or_r64_rm64";
-			insts[143] = "or_rm64_r64";
-			insts[144] = "neg_rm64";
-			insts[145] = "not_rm64";
-			insts[146] = "imul_r64_rm64";
-			insts[147] = "idiv_rm64";
-			insts[148] = "sal_rm64_cl";
-			insts[149] = "sar_rm64_cl";
-			insts[150] = "shr_rm64_cl";
-			insts[151] = "cvtsi2sd_xmm_rm64";
-			insts[152] = "cvtsd2si_r64_xmmm64";
+			insts[124] = "mov_rm64disp_imm32";
+			insts[125] = "mov_r64_rm64disp";
+			insts[126] = "mov_r64_rm32disp";
+			insts[127] = "mov_r64_rm16disp";
+			insts[128] = "mov_r64_rm8disp";
+			insts[129] = "mov_rm64disp_r64";
+			insts[130] = "movsxbq_r64_rm8disp";
+			insts[131] = "movzxbq_r64_rm8disp";
+			insts[132] = "movsxwq_r64_rm16disp";
+			insts[133] = "movzxwq_r64_rm16disp";
+			insts[134] = "cmp_rm64_r64";
+			insts[135] = "cmp_r64_rm64";
+			insts[136] = "cmp_rm64_imm32";
+			insts[137] = "cmp_rm64_imm8";
+			insts[138] = "movsxdq_r64_rm64";
+			insts[139] = "xor_r64_rm64";
+			insts[140] = "xor_rm64_r64";
+			insts[141] = "and_r64_rm64";
+			insts[142] = "and_rm64_r64";
+			insts[143] = "or_r64_rm64";
+			insts[144] = "or_rm64_r64";
+			insts[145] = "neg_rm64";
+			insts[146] = "not_rm64";
+			insts[147] = "imul_r64_rm64";
+			insts[148] = "idiv_rm64";
+			insts[149] = "sal_rm64_cl";
+			insts[150] = "sar_rm64_cl";
+			insts[151] = "shr_rm64_cl";
+			insts[152] = "xchg_r64_rm64";
+			insts[153] = "sub_rm64_imm8";
+			insts[154] = "sub_rm64_imm32";
+			insts[155] = "add_rm64_imm8";
+			insts[156] = "add_rm64_imm32";
+			insts[157] = "lea_r64";
+			insts[158] = "add_r64_rm64";
+			insts[159] = "add_rm64_r64";
+			insts[160] = "sub_r64_rm64";
+			insts[161] = "sub_rm64_r64";
+			insts[162] = "adc_r64_rm64";
+			insts[163] = "adc_rm64_r64";
+			insts[164] = "sbb_r64_rm64";
+			insts[165] = "sbb_rm64_r64";
+			insts[166] = "cvtsi2sd_xmm_rm64";
+			insts[167] = "cvtsd2si_r64_xmmm64";
 		}
 	}
 }
@@ -470,13 +500,13 @@ namespace libtysila5.target.x86_64
 {
 	partial class x86_64_Assembler
 	{
-		public const int sysvc_MEMORY = 153;
-		public const int sysvc_INTEGER = 154;
-		public const int sysvc_SSE = 155;
-		public const int sysvc_SSEUP = 156;
-		public const int sysvc_X87 = 157;
-		public const int sysvc_X87UP = 158;
-		public const int sysvc_COMPLEX_X87 = 159;
+		public const int sysvc_MEMORY = 168;
+		public const int sysvc_INTEGER = 169;
+		public const int sysvc_SSE = 170;
+		public const int sysvc_SSEUP = 171;
+		public const int sysvc_X87 = 172;
+		public const int sysvc_X87UP = 173;
+		public const int sysvc_COMPLEX_X87 = 174;
 	}
 }
 
@@ -488,15 +518,15 @@ namespace libtysila5.target.x86_64
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_classmap_sysv[86] = 154;
-			cc_classmap_sysv[88] = 154;
-			cc_classmap_sysv[87] = 154;
-			cc_classmap_sysv[90] = 154;
-			cc_classmap_sysv[91] = 154;
-			cc_classmap_sysv[89] = 155;
-			cc_map_sysv[154] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
-			cc_map_sysv[155] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
-			cc_map_sysv[153] = new int[] { 25, };
+			cc_classmap_sysv[86] = 169;
+			cc_classmap_sysv[88] = 169;
+			cc_classmap_sysv[87] = 169;
+			cc_classmap_sysv[90] = 169;
+			cc_classmap_sysv[91] = 169;
+			cc_classmap_sysv[89] = 170;
+			cc_map_sysv[169] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
+			cc_map_sysv[170] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
+			cc_map_sysv[168] = new int[] { 25, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 1664;
@@ -794,18 +824,20 @@ namespace libtysila5.target.x86
 			0, 0, 1, 0, 15, 0, 0, 1, 0, 16, 0, 0, 1, 0, 17, 0, 0, 
 			1, 0, 18, 0, 0, 1, 0, 19, 0, 0, 1, 0, 20, 0, 0, 1, 0, 
 			21, 0, 0, 1, 0, 22, 0, 0, 1, 0, 23, 0, 0, 1, 0, 24, 0, 
-			0, 1, 0, 0, 1, 42, 1, 116, 0, 2, 21, 1, 121, 0, 3, 57, 1, 
-			126, 0, 4, 21, 1, 131, 0, 5, 40, 1, 136, 25, 0, 0, 1, 0, 26, 
-			6, 23, 28, 141, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 146, 27, 0, 0, 
-			1, 0, 28, 0, 0, 1, 0, 29, 0, 0, 1, 0, 30, 0, 0, 1, 0, 
-			31, 0, 0, 1, 0, 32, 0, 0, 1, 0, 33, 0, 0, 1, 0, 34, 0, 
-			0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 37, 0, 0, 1, 
-			0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 0, 1, 0, 41, 
-			0, 0, 1, 0, 0, 7, 21, 52, 1, 6, 11, 16, 21, 26, 31, 36, 41, 
-			46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 86, 91, 96, 0, 0, 0, 0, 
-			101, 0, 106, 111, 0, 0, 0, 0, 0, 0, 151, 183, 188, 193, 198, 203, 208, 
-			213, 218, 223, 228, 233, 238, 243, 248, 253, 
+			0, 1, 0, 25, 0, 0, 1, 0, 26, 1, 41, 2, 116, 121, 27, 0, 0, 
+			1, 0, 0, 1, 42, 1, 132, 0, 2, 21, 1, 137, 0, 3, 57, 1, 142, 
+			0, 4, 21, 1, 147, 0, 5, 40, 1, 152, 28, 0, 0, 1, 0, 29, 0, 
+			0, 1, 0, 0, 1, 41, 1, 167, 0, 2, 21, 1, 172, 30, 6, 21, 37, 
+			126, 0, 157, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 162, 0, 0, 0, 0, 
+			0, 0, 177, 31, 0, 0, 1, 0, 32, 0, 0, 1, 0, 33, 0, 0, 1, 
+			0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 37, 
+			0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 0, 
+			1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 0, 
+			44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 0, 7, 21, 52, 1, 6, 11, 
+			16, 21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 86, 
+			91, 96, 0, 0, 0, 0, 101, 0, 106, 111, 0, 0, 0, 0, 0, 0, 182, 
+			223, 228, 233, 238, 243, 248, 253, 258, 263, 268, 273, 278, 283, 288, 293, 
 		};
 		
 		InstructionHandler[] x86_instrs_vals = new InstructionHandler[] {
@@ -833,8 +865,12 @@ namespace libtysila5.target.x86
 			libtysila5.target.x86.x86_Assembler.handle_ldlabaddr,
 			libtysila5.target.x86.x86_Assembler.handle_ldloca,
 			libtysila5.target.x86.x86_Assembler.handle_zeromem,
+			libtysila5.target.x86.x86_Assembler.handle_ldc_add_stind,
+			libtysila5.target.x86.x86_Assembler.handle_ldc_add_ldind,
+			libtysila5.target.x86.x86_Assembler.handle_ldc_add,
 			libtysila5.target.x86.x86_Assembler.handle_getCharSeq,
 			libtysila5.target.x86.x86_Assembler.handle_ldc_zeromem,
+			libtysila5.target.x86.x86_Assembler.handle_ldc_ldc_add_stind,
 			libtysila5.target.x86.x86_Assembler.handle_ldc,
 			libtysila5.target.x86.x86_Assembler.handle_ldloc,
 			libtysila5.target.x86.x86_Assembler.handle_stloc,
@@ -853,7 +889,7 @@ namespace libtysila5.target.x86
 			libtysila5.target.x86.x86_Assembler.handle_portout,
 		};
 		
-		int x86_instrs_start = 258;
+		int x86_instrs_start = 298;
 	}
 }
 
@@ -930,18 +966,20 @@ namespace libtysila5.target.x86_64
 			0, 0, 1, 0, 15, 0, 0, 1, 0, 16, 0, 0, 1, 0, 17, 0, 0, 
 			1, 0, 18, 0, 0, 1, 0, 19, 0, 0, 1, 0, 20, 0, 0, 1, 0, 
 			21, 0, 0, 1, 0, 22, 0, 0, 1, 0, 23, 0, 0, 1, 0, 24, 0, 
-			0, 1, 0, 0, 1, 42, 1, 116, 0, 2, 21, 1, 121, 0, 3, 57, 1, 
-			126, 0, 4, 21, 1, 131, 0, 5, 40, 1, 136, 25, 0, 0, 1, 0, 26, 
-			6, 23, 28, 141, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 146, 27, 0, 0, 
-			1, 0, 28, 0, 0, 1, 0, 29, 0, 0, 1, 0, 30, 0, 0, 1, 0, 
-			31, 0, 0, 1, 0, 32, 0, 0, 1, 0, 33, 0, 0, 1, 0, 34, 0, 
-			0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 37, 0, 0, 1, 
-			0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 0, 1, 0, 41, 
-			0, 0, 1, 0, 0, 7, 21, 52, 1, 6, 11, 16, 21, 26, 31, 36, 41, 
-			46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 86, 91, 96, 0, 0, 0, 0, 
-			101, 0, 106, 111, 0, 0, 0, 0, 0, 0, 151, 183, 188, 193, 198, 203, 208, 
-			213, 218, 223, 228, 233, 238, 243, 248, 253, 
+			0, 1, 0, 25, 0, 0, 1, 0, 26, 1, 41, 2, 116, 121, 27, 0, 0, 
+			1, 0, 0, 1, 42, 1, 132, 0, 2, 21, 1, 137, 0, 3, 57, 1, 142, 
+			0, 4, 21, 1, 147, 0, 5, 40, 1, 152, 28, 0, 0, 1, 0, 29, 0, 
+			0, 1, 0, 0, 1, 41, 1, 167, 0, 2, 21, 1, 172, 30, 6, 21, 37, 
+			126, 0, 157, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 162, 0, 0, 0, 0, 
+			0, 0, 177, 31, 0, 0, 1, 0, 32, 0, 0, 1, 0, 33, 0, 0, 1, 
+			0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 37, 
+			0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 0, 
+			1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 0, 
+			44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 0, 7, 21, 52, 1, 6, 11, 
+			16, 21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 86, 
+			91, 96, 0, 0, 0, 0, 101, 0, 106, 111, 0, 0, 0, 0, 0, 0, 182, 
+			223, 228, 233, 238, 243, 248, 253, 258, 263, 268, 273, 278, 283, 288, 293, 
 		};
 		
 		InstructionHandler[] x86_64_instrs_vals = new InstructionHandler[] {
@@ -969,8 +1007,12 @@ namespace libtysila5.target.x86_64
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldlabaddr,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldloca,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_zeromem,
+			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_add_stind,
+			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_add_ldind,
+			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_add,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_getCharSeq,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_zeromem,
+			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_ldc_add_stind,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldloc,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_stloc,
@@ -989,7 +1031,7 @@ namespace libtysila5.target.x86_64
 			libtysila5.target.x86_64.x86_64_Assembler.handle_portout,
 		};
 		
-		int x86_64_instrs_start = 258;
+		int x86_64_instrs_start = 298;
 	}
 }
 

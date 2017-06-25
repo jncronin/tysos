@@ -11,19 +11,30 @@ namespace VType
 		public A a;
 		public uint c;
 
-		public void DoStuff()
+		// combine vtype member calling with vtype return
+		public B DoStuff()
 		{
-			c += c;
+			B ret = new B();
+			ret.a = a;
+			ret.c = c + c;
+			return ret;
 		}
 	}
 	
 	[libsupcs.NoBaseClass]
 	class Program
 	{
-		static void Main()
+		static A GetA(int v)
 		{
 			A a = new A();
-			a.a = 3;
+			a.a = v;
+			return a;
+		}
+			
+
+		static void Main()
+		{
+			A a = GetA(3);
 
 			B b = new B();
 			b.a.a = 2;

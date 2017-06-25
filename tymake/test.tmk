@@ -227,11 +227,11 @@ typroject(CORLIB_TY_SRCS);
 /* Rules for assembling CLR binaries */
 rulefor("%.obj", [ "%.exe" ], [ TYSILA, CORLIB_DLL, "test.tmk" ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 rulefor("%.obj", [ "%.dll" ], [ TYSILA, CORLIB_DLL, "test.tmk" ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 /*rulefor "%.to" inputs { "%.obj" } depends { TL, "test.tmk" } {
 	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
@@ -396,6 +396,9 @@ XORRISO = "xorriso";
 CDBOOT = "f:/cygwin64/usr/local/lib/grub/i386-pc/cdboot.img";
 GRUBPREFIX_CFG = OUTDIR + "/grub_prefix.cfg";
 ELTORITO = GRUBDIR + "/eltorito.img";
+
+// for quick kernel testing
+PROCESSES = [];
 
 if(defined(USE_GRUB))
 {

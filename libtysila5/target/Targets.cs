@@ -428,7 +428,8 @@ namespace libtysila5.target
             Dictionary<int, int> cc_classmap,
             string cc_name,
             out int[] la_sizes,
-            out metadata.TypeSpec[] la_types)
+            out metadata.TypeSpec[] la_types,
+            metadata.TypeSpec has_hidden = null)
         {
             var m = csite.m;
             var idx = (int)csite.v2;
@@ -444,9 +445,15 @@ namespace libtysila5.target
             Dictionary<int, int> cc_next = new Dictionary<int, int>(
                 new GenericEqualityComparer<int>());
 
-            var pcount = m.GetMethodDefSigParamCountIncludeThis(idx);
+            var act_pcount = m.GetMethodDefSigParamCount(idx);
+            var pcount = act_pcount;
             bool has_this = m.GetMethodDefSigHasNonExplicitThis(idx);
             idx = m.GetMethodDefSigRetTypeIndex(idx);
+
+            if (has_this)
+                pcount++;
+            if (has_hidden != null)
+                pcount++;
 
             // Skip rettype
             bool is_req;
@@ -458,25 +465,30 @@ namespace libtysila5.target
             Target.Reg[] ret = new Target.Reg[pcount];
             la_sizes = new int[pcount];
             la_types = new metadata.TypeSpec[pcount];
-            for (int i = 0; i < pcount; i++)
-            {
-                metadata.TypeSpec v;
 
-                if (i == 0 && has_this)
+            List<metadata.TypeSpec> la_locs = new List<metadata.TypeSpec>();
+            if (has_hidden != null)
+                la_locs.Add(has_hidden);
+            if(has_this)
+            {
+                // value type methods have mptr to type as their this pointer
+                if (csite.ms.type.IsValueType)
                 {
-                    // value type methods have mptr to type as their this pointer
-                    if (csite.ms.type.IsValueType)
-                    {
-                        v = csite.ms.type.ManagedPointer;
-                    }
-                    else
-                        v = csite.ms.type;
+                    la_locs.Add(csite.ms.type.ManagedPointer);
                 }
                 else
-                {
-                    while (m.GetRetTypeCustomMod(ref idx, out is_req, out token)) ;
-                    v = m.GetTypeSpec(ref idx, gtparams, gmparams);
-                }
+                    la_locs.Add(csite.ms.type);
+            }
+            for(int i = 0; i < act_pcount; i++)
+            {
+                while (m.GetRetTypeCustomMod(ref idx, out is_req, out token)) ;
+                la_locs.Add(m.GetTypeSpec(ref idx, gtparams, gmparams));
+            }
+
+
+            for (int i = 0; i < pcount; i++)
+            {
+                metadata.TypeSpec v = la_locs[i];
 
                 la_types[i] = v;
                 var size = GetSize(v);

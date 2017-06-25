@@ -73,6 +73,8 @@ namespace metadata
         public int[] md_custom_attrs;
         public int[] next_ca;
 
+        public string[] td_extends_override;
+
         public string AssemblyName { get { if (assemblyName == null) return "unnamed"; else return assemblyName; } }
         public string FullName { get { return AssemblyName + " " + AssemblyVersionString; } }
 
@@ -1686,11 +1688,12 @@ namespace metadata
         {
             td_custom_attrs = new int[table_rows[tid_TypeDef] + 1];
             md_custom_attrs = new int[table_rows[tid_MethodDef] + 1];
+            td_extends_override = new string[table_rows[tid_TypeDef] + 1];
             next_ca = new int[table_rows[tid_CustomAttribute] + 1];
 
             for(int i = 0; i <= table_rows[tid_CustomAttribute]; i++)
             {
-                int parent_tid, parent_row;
+                int parent_tid, parent_row, type_tid, type_row;
                 GetCodedIndexEntry(tid_CustomAttribute, i, 0,
                     HasCustomAttribute, out parent_tid,
                     out parent_row);
@@ -1700,6 +1703,30 @@ namespace metadata
                     case tid_TypeDef:
                         next_ca[i] = td_custom_attrs[parent_row];
                         td_custom_attrs[parent_row] = i;
+
+                        if (assemblyName != "mscorlib")
+                        {
+                            // Determine if this is a typedef extends override
+                            GetCodedIndexEntry(tid_CustomAttribute,
+                                i, 1, CustomAttributeType, out type_tid,
+                                out type_row);
+
+                            MethodSpec ca_ms;
+                            GetMethodDefRow(type_tid, type_row, out ca_ms);
+                            var ca_ms_name = ca_ms.MangleMethod();
+
+                            if (ca_ms_name == "_ZN14libsupcs#2Edll8libsupcs20NoBaseClassAttribute_7#2Ector_Rv_P1u1t")
+                            {
+                                td_extends_override[parent_row] = "";
+                            }
+                            else if (ca_ms_name == "_ZN14libsupcs#2Edll8libsupcs24ExtendsOverrideAttribute_7#2Ector_Rv_P2u1tu1S")
+                            {
+                                var sig_idx = GetCustomAttrSigIdx(i);
+                                var extends_name = ReadCustomAttrString(ref sig_idx);
+                                td_extends_override[parent_row] = extends_name;
+                            }
+                        }
+
                         break;
                     case tid_MethodDef:
                         next_ca[i] = md_custom_attrs[parent_row];

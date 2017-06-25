@@ -166,7 +166,7 @@ namespace libtysila5.target.x86
                             switch (n_ct)
                             {
                                 case ir.Opcode.ct_int32:
-                                    handle_add(srca, srcb, dest, r, n);
+                                    handle_add(this, srca, srcb, dest, r, n);
                                     return r;
 
                                 case ir.Opcode.ct_int64:
@@ -177,8 +177,8 @@ namespace libtysila5.target.x86
                                         var srcbb = srcb.SubReg(4, 4);
                                         var desta = dest.SubReg(0, 4);
                                         var destb = dest.SubReg(4, 4);
-                                        handle_add(srcaa, srcba, desta, r, n);
-                                        handle_add(srcab, srcbb, destb, r, n, true);
+                                        handle_add(this, srcaa, srcba, desta, r, n);
+                                        handle_add(this, srcab, srcbb, destb, r, n, true);
                                         return r;
                                     }
                             }
@@ -1313,31 +1313,31 @@ namespace libtysila5.target.x86
             }
         }
 
-        private static void handle_add(Reg srca, Reg srcb, Reg dest, List<MCInst> r, CilNode.IRNode n, bool with_carry = false)
+        private static void handle_add(Target t, Reg srca, Reg srcb, Reg dest, List<MCInst> r, CilNode.IRNode n, bool with_carry = false)
         {
             if (!(srca is ContentsReg) && srca.Equals(dest))
             {
                 if (with_carry)
-                    r.Add(inst(x86_adc_r32_rm32, srca, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_adc_r32_rm32 : x86_adc_r64_rm64, srca, srcb, n));
                 else
-                    r.Add(inst(x86_add_r32_rm32, srca, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_add_r32_rm32 : x86_add_r64_rm64, srca, srcb, n));
             }
             else if (!(srcb is ContentsReg) && srca.Equals(dest))
             {
                 if (with_carry)
-                    r.Add(inst(x86_adc_rm32_r32, srca, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_adc_rm32_r32 : x86_adc_rm64_r64, srca, srcb, n));
                 else
-                    r.Add(inst(x86_add_rm32_r32, srca, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_add_rm32_r32 : x86_add_rm64_r64, srca, srcb, n));
             }
             else
             {
                 // complex way, do calc in rax, then store
-                r.Add(inst(x86_mov_r32_rm32, r_eax, srca, n));
+                r.Add(inst(t.psize == 4 ? x86_mov_r32_rm32 : x86_mov_r64_rm64, r_eax, srca, n));
                 if (with_carry)
-                    r.Add(inst(x86_adc_r32_rm32, r_eax, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_adc_r32_rm32 : x86_adc_r64_rm64, r_eax, srcb, n));
                 else
-                    r.Add(inst(x86_add_r32_rm32, r_eax, srcb, n));
-                r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
+                    r.Add(inst(t.psize == 4 ? x86_add_r32_rm32 : x86_add_r64_rm64, r_eax, srcb, n));
+                r.Add(inst(t.psize == 4 ? x86_mov_rm32_r32 : x86_mov_rm64_r64, dest, r_eax, n));
             }
         }
 
@@ -1539,7 +1539,7 @@ namespace libtysila5.target.x86
 
                     case ir.Opcode.ct_vt:
                         // move address to save to to eax
-                        handle_move(r_eax, new ContentsReg { basereg = r_ebp, disp = -4, size = 4 },
+                        handle_move(r_eax, new ContentsReg { basereg = r_ebp, disp = -t.psize, size = t.psize },
                             r, n, c);
 
                         // move struct to [eax]
@@ -1569,7 +1569,7 @@ namespace libtysila5.target.x86
             for (int i = c.regs_saved.Count - 1; i >= 0; i--)
                 handle_pop(c.regs_saved[i], ref x, r, n, c);
 
-            r.Add(inst(x86_mov_r32_rm32, r_esp, r_ebp, n));
+            r.Add(inst(t.psize == 4 ? x86_mov_r32_rm32 : x86_mov_r64_rm64, r_esp, r_ebp, n));
             r.Add(inst(x86_pop_r32, r_ebp, n));
             r.Add(inst(x86_ret, n));
 
@@ -1726,6 +1726,7 @@ namespace libtysila5.target.x86
                 }
                 else
                 {
+                    throw new NotImplementedException();
                     var rsize = c.t.GetSize(rt);
                     rsize = util.util.align(rsize, 4);
                     vt_dest_adjust = true;
@@ -1752,49 +1753,196 @@ namespace libtysila5.target.x86
                     push_tss[i] = call_ms.m.GetTypeSpec(ref sig_idx, call_ms.gtparams, call_ms.gmparams);
             }
 
-            for (int i = 0; i < pcount; i++)
-            {
-                metadata.TypeSpec push_ts = push_tss[pcount - i - 1];
-                var push_ct = ir.Opcode.GetCTFromType(push_ts);
-
-                var stack_loc = i;
-                if (n.arg_list != null)
-                    stack_loc = n.arg_list[pcount - i - 1];
-
-                var to_pass = n.stack_before.Peek(stack_loc + calli_adjust).reg;
-
-                switch (push_ct)
-                {
-                    case ir.Opcode.ct_int32:
-                    case ir.Opcode.ct_object:
-                    case ir.Opcode.ct_ref:
-                    case ir.Opcode.ct_intptr:
-                    case ir.Opcode.ct_vt:
-                    case ir.Opcode.ct_int64:
-                    case ir.Opcode.ct_float:
-                        throw new Exception("Doesn't support calling conventions");
-                        handle_push(to_pass, ref push_length, r, n, c);
-                        break;
-
-                    default:
-                        throw new NotImplementedException();
-                }
-            }
-
             /* Push value type address if required */
+            metadata.TypeSpec hidden_loc_type = null;
             if (rct == ir.Opcode.ct_vt)
             {
+                var act_dest_cr = act_dest as ContentsReg;
+                if(act_dest_cr == null)
+                    throw new NotImplementedException();
+
                 if (vt_dest_adjust)
                 {
-                    var act_dest_cr = act_dest as ContentsReg;
+                    throw new NotImplementedException();
                     act_dest_cr.disp += push_length;
                 }
 
-                if (!(act_dest is ContentsReg))
-                    throw new NotImplementedException();
 
-                r.Add(inst(x86_lea_r32, r_eax, act_dest, n));
-                r.Add(inst(x86_push_r32, r_eax, n));
+                //r.Add(inst(x86_lea_r32, r_eax, act_dest, n));
+                //r.Add(inst(x86_push_r32, r_eax, n));
+                hidden_loc_type = call_ms.m.SystemIntPtr;
+            }
+
+            // Build list of source and destination registers for parameters
+            int cstack_loc = 0;
+            var cc = t.cc_map["sysv"];
+            var cc_class = t.cc_classmap["sysv"];
+            int[] la_sizes;
+            metadata.TypeSpec[] la_types;
+            var to_locs = t.GetRegLocs(new ir.Param
+            {
+                m = call_ms.m,
+                v2 = call_ms.msig,
+                ms = call_ms
+            },
+                ref cstack_loc, cc, cc_class, "sysv",
+                out la_sizes, out la_types,
+                hidden_loc_type
+            );
+
+            int hidden_adjust = hidden_loc_type == null ? 0 : 1;
+            Reg[] from_locs = new Reg[pcount + hidden_adjust];
+            for(int i = 0; i < pcount; i++)
+            {
+                var stack_loc = pcount - i - 1;
+                if (n.arg_list != null)
+                    stack_loc = n.arg_list[pcount - i - 1];
+                from_locs[i + hidden_adjust] = n.stack_before.Peek(stack_loc + calli_adjust).reg;
+            }
+
+            // Reserve any required stack space
+            if(cstack_loc != 0)
+            {
+                push_length += cstack_loc;
+                r.Add(inst(cstack_loc <= 127 ? x86_sub_rm32_imm8 : x86_sub_rm32_imm32,
+                    r_esp, cstack_loc, n));
+            }
+
+            // Move from the from list to the to list such that
+            //  we never overwrite a from loc that hasn't been
+            //  transfered yet
+            pcount += hidden_adjust;
+            var to_do = pcount;
+            bool[] done = new bool[pcount];
+
+            if(hidden_adjust != 0)
+            {
+                // load up the address of the return value
+
+                var ret_to = to_locs[0];
+                if(!(ret_to is ContentsReg))
+                    r.Add(inst(t.psize == 4 ? x86_lea_r32 : x86_lea_r64, ret_to, act_dest, n));
+                else
+                {
+                    r.Add(inst(t.psize == 4 ? x86_lea_r32 : x86_lea_r64, r_eax, act_dest, n));
+                    handle_move(ret_to, r_eax, r, n, c);
+
+                }
+
+                to_do--;
+                done[0] = true;
+            }
+
+            while (to_do > 0)
+            {
+                int done_this_iter = 0;
+
+                for(int to_i = 0; to_i < pcount; to_i++)
+                {
+                    if(!done[to_i])
+                    {
+                        var to_reg = to_locs[to_i];
+                        if(to_reg.type == rt_stack)
+                        {
+                            to_reg = new ContentsReg
+                            {
+                                basereg = r_esp,
+                                disp = to_reg.stack_loc,
+                                size = to_reg.size
+                            };
+                        }
+
+                        bool possible = true;
+
+                        // determine if this to register is the source of a from
+                        for(int from_i = 0; from_i < pcount; from_i++)
+                        {
+                            if (to_i == from_i)
+                                continue;
+                            if (!done[from_i] && from_locs[from_i].Equals(to_reg))
+                            {
+                                possible = false;
+                                break;
+                            }
+                        }
+
+                        if(possible)
+                        {
+                            var from_reg = from_locs[to_i];
+                            handle_move(to_reg, from_reg, r, n, c);
+                            to_do--;
+                            done_this_iter++;
+                            done[to_i] = true;
+                        }
+                    }
+                }
+
+                if (done_this_iter == 0)
+                {
+                    // find two gprs/xmms we can swap
+
+                    for (int i = 0; i < pcount; i++)
+                    {
+                        if (done[i])
+                            continue;
+
+                        var from_i = from_locs[i];
+                        var to_i = to_locs[i];
+
+                        if (from_i.type != rt_gpr &&
+                            from_i.type != rt_float)
+                            continue;
+                        if (to_i.type != rt_gpr &&
+                            to_i.type != rt_float)
+                            continue;
+
+                        for (int j = 0; j < pcount; j++)
+                        {
+                            if (j == i)
+                                continue;
+                            if (done[j])
+                                continue;
+
+                            var from_j = from_locs[j];
+                            var to_j = to_locs[j];
+
+                            if (from_i.Equals(to_j) &&
+                                from_j.Equals(to_i))
+                            {
+                                // we can swap these
+                                r.Add(inst(t.psize == 4 ? x86_xchg_r32_rm32 :
+                                    x86_xchg_r64_rm64, to_i, to_j, n));
+                                done_this_iter += 2;
+                                to_do -= 2;
+
+                                done[i] = true;
+                                done[j] = true;
+                                break;
+                            }
+
+                        }
+                    }
+                }
+                if (done_this_iter == 0)
+                {
+                    // find a gpr we can shift to rax
+                    bool shift_found = false;
+                    for(int i = 0; i < pcount; i++)
+                    {
+                        if(done[i] == false)
+                        {
+                            if(from_locs[i].type == rt_gpr)
+                            {
+                                handle_move(r_eax, from_locs[i], r, n, c);
+                                from_locs[i] = r_eax;
+                                shift_found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if(!shift_found)
+                        throw new NotImplementedException();
+                }
             }
 
             // Do the call
@@ -2073,7 +2221,7 @@ namespace libtysila5.target.x86
             switch (n_ct)
             {
                 case ir.Opcode.ct_int32:
-                    handle_add(srca, srcb, dest, r, n);
+                    handle_add(t, srca, srcb, dest, r, n);
                     return r;
 
                 case ir.Opcode.ct_int64:
@@ -2086,13 +2234,13 @@ namespace libtysila5.target.x86
                             var srcbb = srcb.SubReg(4, 4);
                             var desta = dest.SubReg(0, 4);
                             var destb = dest.SubReg(4, 4);
-                            handle_add(srcaa, srcba, desta, r, n);
-                            handle_add(srcab, srcbb, destb, r, n, true);
+                            handle_add(t, srcaa, srcba, desta, r, n);
+                            handle_add(t, srcab, srcbb, destb, r, n, true);
                             return r;
                         }
                         else
                         {
-                            handle_add(srca, srcb, dest, r, n);
+                            handle_add(t, srca, srcb, dest, r, n);
                             return r;
                         }
                     }
@@ -2942,23 +3090,25 @@ namespace libtysila5.target.x86
             List<MCInst> r = new List<MCInst>();
             var n = nodes[start];
 
-            var lv_size = c.lv_total_size;
+            var lv_size = c.lv_total_size + c.stack_total_size;
 
             if (ir.Opcode.GetCTFromType(c.ret_ts) == ir.Opcode.ct_vt)
             {
-                r.Add(inst(x86_pop_r32, r_eax, n));
-                r.Add(inst(x86_xchg_r32_rm32, r_eax, new ContentsReg { basereg = r_esp, disp = 0, size = 4 }, n));
-                lv_size += 4;
+                if (t.psize == 4)
+                {
+                    r.Add(inst(x86_pop_r32, r_eax, n));
+                    r.Add(inst(x86_xchg_r32_rm32, r_eax, new ContentsReg { basereg = r_esp, disp = 0, size = 4 }, n));
+                }
             }
 
             r.Add(inst(x86_push_r32, r_ebp, n));
-            r.Add(inst(x86_mov_r32_rm32, r_ebp, r_esp, n));
+            handle_move(r_ebp, r_esp, r, n, c);
             if (lv_size != 0)
             {
                 if (lv_size <= 127)
-                    r.Add(inst(x86_sub_rm32_imm8, r_esp, lv_size, n));
+                    r.Add(inst(t.psize == 4 ? x86_sub_rm32_imm8 : x86_sub_rm64_imm8, r_esp, lv_size, n));
                 else
-                    r.Add(inst(x86_sub_rm32_imm32, r_esp, lv_size, n));
+                    r.Add(inst(t.psize == 4 ? x86_sub_rm32_imm32 : x86_sub_rm64_imm32, r_esp, lv_size, n));
             }
 
             /* Move incoming arguments to the appropriate locations */
@@ -2987,7 +3137,10 @@ namespace libtysila5.target.x86
             }
 
             if (ir.Opcode.GetCTFromType(c.ret_ts) == ir.Opcode.ct_vt)
-                r.Add(inst(x86_mov_rm32_r32, new ContentsReg { basereg = r_ebp, disp = -4, size = 4 }, r_eax, n));
+            {
+                handle_move(new ContentsReg { basereg = r_ebp, disp = -t.psize, size = t.psize },
+                    t.psize == 4 ? r_eax : r_edi, r, n, c);
+            }
 
             return r;
         }
@@ -3600,7 +3753,204 @@ namespace libtysila5.target.x86
             }
 
             List<MCInst> r = new List<MCInst>();
-            handle_zeromem(dest, size, r, n, c);
+            handle_zeromem(t, dest, size, r, n, c);
+            return r;
+        }
+
+        internal static List<MCInst> handle_ldc_add(
+           Target t,
+           List<CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+            var n2 = nodes[start + 1];
+
+            var obj = n2.stack_before.Peek(n2.arg_a).reg;
+            if (n2.arg_b != 0)
+                return null;
+            var res = n2.stack_after.Peek(n2.res_a).reg;
+
+            var val = n.imm_l;
+            if (val < int.MinValue || val > int.MaxValue)
+                return null;
+
+            List<MCInst> r = new List<MCInst>();
+            handle_move(res, obj, r, n, c);
+            if(val != 0)
+            {
+                if (val <= 127 && val >= -128)
+                    r.Add(inst(t.psize == 4 ? x86_add_rm32_imm8 : x86_add_rm64_imm8, res, val, n));
+                else
+                    r.Add(inst(t.psize == 4 ? x86_add_rm32_imm32 : x86_add_rm64_imm32, res, val, n));
+            }
+            return r;
+        }
+
+        internal static List<MCInst> handle_ldc_add_ldind(
+           Target t,
+           List<CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+            var n2 = nodes[start + 1];
+            var n3 = nodes[start + 2];
+
+            var obj = n2.stack_before.Peek(n2.arg_a).reg;
+            if (n2.arg_b != 0)
+                return null;
+            var val = n3.stack_after.Peek(n3.res_a).reg;
+            if (n3.arg_a != 0)
+                return null;
+
+            var disp = n.imm_l;
+
+            if (disp < int.MinValue || disp > int.MaxValue)
+                return null;
+
+            if (obj is ContentsReg)
+                return null;
+            if (val is ContentsReg)
+                return null;
+
+            int size = n3.vt_size;
+            if (size > t.psize)
+                return null;
+
+            int oc = 0;
+            switch (size)
+            {
+                case 1:
+                    oc = x86_mov_r32_rm8disp;
+                    break;
+                case 2:
+                    oc = x86_mov_r32_rm16disp;
+                    break;
+                case 4:
+                    oc = x86_mov_r32_rm32disp;
+                    break;
+                case 8:
+                    oc = x86_mov_r64_rm64disp;
+                    break;
+                default:
+                    return null;
+            }
+
+            List<MCInst> r = new List<MCInst>();
+            r.Add(inst(oc, val, obj, disp, n));
+
+            return r;
+        }
+
+        internal static List<MCInst> handle_ldc_ldc_add_stind(
+           Target t,
+           List<CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+            var n2 = nodes[start + 1];
+            var n3 = nodes[start + 2];
+            var n4 = nodes[start + 3];
+
+            var obj = n3.stack_before.Peek(n3.arg_a).reg;
+            if (n2.arg_b != 0)
+                return null;
+            if (n4.arg_a != 0)
+                return null;
+            if (n4.arg_b != 1)
+                return null;
+            
+            var disp = n2.imm_l;
+            if (disp < int.MinValue || disp > int.MaxValue)
+                return null;
+
+            var val = n.imm_l;
+            if (val < int.MinValue || val > int.MaxValue)
+                return null;
+
+
+            if (obj is ContentsReg)
+                return null;
+
+            int size = n4.vt_size;
+            if (size > t.psize)
+                return null;
+
+            int oc = 0;
+            switch (size)
+            {
+                case 1:
+                    oc = x86_mov_rm8disp_imm32;
+                    break;
+                case 2:
+                    oc = x86_mov_rm16disp_imm32;
+                    break;
+                case 4:
+                    oc = x86_mov_rm32disp_imm32;
+                    break;
+                case 8:
+                    oc = x86_mov_rm64disp_imm32;
+                    break;
+                default:
+                    return null;
+            }
+
+            List<MCInst> r = new List<MCInst>();
+            r.Add(inst(oc, obj, disp, val, n));
+
+            return r;
+        }
+
+        internal static List<MCInst> handle_ldc_add_stind(
+           Target t,
+           List<CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+            var n2 = nodes[start + 1];
+            var n3 = nodes[start + 2];
+
+            var obj = n2.stack_before.Peek(n2.arg_a).reg;
+            if (n2.arg_b != 0)
+                return null;
+            var val = n3.stack_before.Peek(n3.arg_b).reg;
+            if (n3.arg_a != 0)
+                return null;
+            var disp = n.imm_l;
+
+            if (disp < int.MinValue || disp > int.MaxValue)
+                return null;
+
+            if (obj is ContentsReg)
+                return null;
+            if (val is ContentsReg)
+                return null;
+
+            int size = n3.vt_size;
+            if (size > t.psize)
+                return null;
+
+            int oc = 0;
+            switch(size)
+            {
+                case 1:
+                    oc = x86_mov_rm8disp_r8;
+                    break;
+                case 2:
+                    oc = x86_mov_rm16disp_r16;
+                    break;
+                case 4:
+                    oc = x86_mov_rm32disp_r32;
+                    break;
+                case 8:
+                    oc = x86_mov_rm64disp_r64;
+                    break;
+                default:
+                    return null;
+            }
+
+            List<MCInst> r = new List<MCInst>();
+            r.Add(inst(oc, obj, disp, val, n));
+
             return r;
         }
 
@@ -3619,14 +3969,14 @@ namespace libtysila5.target.x86
             var size = n.imm_l;
 
             List<MCInst> r = new List<MCInst>();
-            handle_zeromem(dest, (int)size, r, n2, c);
+            handle_zeromem(t, dest, (int)size, r, n2, c);
             return r;
         }
 
-        private static void handle_zeromem(Reg dest, int size,
+        private static void handle_zeromem(Target t, Reg dest, int size,
             List<MCInst> r, CilNode.IRNode n, Code c)
         {
-            if (size > 16)
+            if (size > t.psize * 4)
             {
                 // emit call to memset(void *s, int c, size_t n) here
                 r.AddRange(handle_call(n, c,
@@ -3647,13 +3997,13 @@ namespace libtysila5.target.x86
                 dest = r_edx;
             }
 
-            size = util.util.align(size, 4);
+            size = util.util.align(size, t.psize);
             var cr = new ContentsReg { basereg = dest, size = size };
 
-            for(int i = 0; i < size; i += 4)
+            for(int i = 0; i < size; i += t.psize)
             {
-                var d = cr.SubReg(i, 4);
-                r.Add(inst(x86_mov_rm32_imm32, d, 0, n));
+                var d = cr.SubReg(i, t.psize);
+                r.Add(inst(t.psize == 4 ? x86_mov_rm32_imm32 : x86_mov_rm64_imm32, d, 0, n));
             }
         }
 
@@ -3887,7 +4237,7 @@ namespace libtysila5.target.x86
             if (!(src is ContentsReg))
                 throw new NotImplementedException();
 
-            r.Add(inst(x86_lea_r32, dest, src, n));
+            r.Add(inst(t.psize == 4 ? x86_lea_r32 : x86_lea_r64, dest, src, n));
 
             handle_move(act_dest, dest, r, n, c);
 

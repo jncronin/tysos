@@ -49,18 +49,42 @@ namespace libtysila5.target
             int la_count2 = m.GetMethodDefSigParamCount(
                 c.ms.msig);
             int laidx = 0;
-            cur_loc = 0;
+            //cur_loc = 0;
 
             var cc = cc_map["sysv"];
             var cc_class_map = cc_classmap["sysv"];
+            bool has_hidden = ir.Opcode.GetCTFromType(c.ret_ts) == ir.Opcode.ct_vt;
             int stack_loc = 0;
+            metadata.TypeSpec hidden_ts = null;
+            if (has_hidden)
+                hidden_ts = m.SystemIntPtr;
             var la_phys_locs = GetRegLocs(new ir.Param
             {
                 m = m,
                 ms = c.ms,
             }, ref stack_loc, cc, cc_class_map,
             "sysv",
-            out c.la_sizes, out c.la_types);
+            out c.la_sizes, out c.la_types,
+            hidden_ts);
+
+            if(has_hidden)
+            {
+                // Strip hidden argument off the values we return
+                Reg[] la_phys_locs_new = new Reg[la_phys_locs.Length - 1];
+                for (int i = 0; i < la_phys_locs_new.Length; i++)
+                    la_phys_locs_new[i] = la_phys_locs[i + 1];
+                la_phys_locs = la_phys_locs_new;
+
+                int[] la_sizes = new int[la_phys_locs.Length];
+                for (int i = 0; i < la_phys_locs_new.Length; i++)
+                    la_sizes[i] = c.la_sizes[i + 1];
+                c.la_sizes = la_sizes;
+
+                metadata.TypeSpec[] la_types = new metadata.TypeSpec[la_phys_locs.Length];
+                for (int i = 0; i < la_phys_locs_new.Length; i++)
+                    la_types[i] = c.la_types[i + 1];
+                c.la_types = la_types;
+            }
             c.incoming_args = la_phys_locs;
 
             if (la_count != la_count2)
@@ -78,7 +102,7 @@ namespace libtysila5.target
                     c.la_types[laidx] = ms.type;
 
                 la_locs[laidx] = cur_loc;
-                cur_loc += this_size;
+                //cur_loc += this_size;
 
                 laidx++;
             }
@@ -112,6 +136,8 @@ namespace libtysila5.target
                 }
             }
 
+            if (has_hidden)
+                cur_loc += psize;
             c.lv_total_size = cur_loc;
         }
     }

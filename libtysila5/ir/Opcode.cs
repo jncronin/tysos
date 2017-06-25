@@ -265,6 +265,17 @@ namespace libtysila5.ir
                     break;
                 case Opcode.vl_str:
                     sb.Append(str);
+                    if (v > 0)
+                    {
+                        sb.Append("+");
+                        sb.Append(v.ToString());
+                    }
+                    else if (v < 0)
+                    {
+                        sb.Append("-");
+                        sb.Append(v.ToString());
+                    }
+
                     break;
                 case Opcode.vl_br_target:
                     sb.Append("IL" + v.ToString("X4"));

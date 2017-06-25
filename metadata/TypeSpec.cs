@@ -133,6 +133,15 @@ namespace metadata
                 case SpecialType.Boxed:
                     return m.SystemValueType;
             }
+
+            if(m.td_extends_override[tdrow] != null)
+            {
+                if (m.td_extends_override[tdrow] == "")
+                    return null;
+                else
+                    return m.DemangleType(m.td_extends_override[tdrow]);
+            }
+
             int table_id, etdrow;
             m.GetCodedIndexEntry(MetadataStream.tid_TypeDef,
                 tdrow, 3, m.TypeDefOrRef, out table_id,

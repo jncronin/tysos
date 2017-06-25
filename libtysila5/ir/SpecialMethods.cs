@@ -120,6 +120,27 @@ namespace libtysila5.ir
             sh_blob = new BlobStream(b);
 
             al = m.al;
+
+            SystemArray = m.SystemArray;
+            SystemByte = m.SystemByte;
+            SystemChar = m.SystemChar;
+            SystemDelegate = m.SystemDelegate;
+            SystemEnum = m.SystemEnum;
+            SystemInt16 = m.SystemInt16;
+            SystemInt32 = m.SystemInt32;
+            SystemInt64 = m.SystemInt64;
+            SystemInt8 = m.SystemInt8;
+            SystemIntPtr = m.SystemIntPtr;
+            SystemObject = m.SystemObject;
+            SystemRuntimeFieldHandle = m.SystemRuntimeFieldHandle;
+            SystemRuntimeMethodHandle = m.SystemRuntimeMethodHandle;
+            SystemRuntimeTypeHandle = m.SystemRuntimeTypeHandle;
+            SystemString = m.SystemString;
+            SystemUInt16 = m.SystemUInt16;
+            SystemUInt32 = m.SystemUInt32;
+            SystemUInt64 = m.SystemUInt64;
+            SystemValueType = m.SystemValueType;
+            SystemVoid = m.SystemVoid;
         }
 
         public MethodSpec GetMethodSpec(int msig)

@@ -41,6 +41,7 @@ namespace libtysila5
         public int[] lv_sizes;
         public int[] la_sizes;
         public int lv_total_size;
+        public int stack_total_size = 0;
         public metadata.TypeSpec[] lv_types;
         public metadata.TypeSpec[] la_types;
         public target.Target.Reg[] incoming_args;

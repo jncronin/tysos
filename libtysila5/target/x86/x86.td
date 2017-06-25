@@ -155,6 +155,7 @@ x86_instrs = [
 	"mov_rm64_imm32",
 	"mov_r64_rm64",
 	"mov_rm64_r64",
+	"mov_rm64disp_imm32",
 	"mov_r64_rm64disp",
 	"mov_r64_rm32disp",
 	"mov_r64_rm16disp",
@@ -182,6 +183,20 @@ x86_instrs = [
 	"sal_rm64_cl",
 	"sar_rm64_cl",
 	"shr_rm64_cl",
+	"xchg_r64_rm64",
+	"sub_rm64_imm8",
+	"sub_rm64_imm32",
+	"add_rm64_imm8",
+	"add_rm64_imm32",
+	"lea_r64",
+	"add_r64_rm64",
+	"add_rm64_r64",
+	"sub_r64_rm64",
+	"sub_rm64_r64",
+	"adc_r64_rm64",
+	"adc_rm64_r64",
+	"sbb_r64_rm64",
+	"sbb_rm64_r64",
 	"cvtsi2sd_xmm_rm64",
 	"cvtsd2si_r64_xmmm64",
 ];
@@ -205,6 +220,18 @@ instr(x86_64_def, [ oc_ldc, oc_mul, oc_conv, oc_add, oc_ldc, oc_add, oc_ldind ],
 // the following is produced by initobj
 instr(x86_def, [ oc_ldc, oc_zeromem ], "ldc_zeromem");
 instr(x86_64_def, [ oc_ldc, oc_zeromem ], "ldc_zeromem");
+
+// the following by ldfld/stfld
+instr(x86_def, [ oc_ldc, oc_add, oc_ldind ], "ldc_add_ldind");
+instr(x86_64_def, [ oc_ldc, oc_add, oc_ldind ], "ldc_add_ldind");
+instr(x86_def, [ oc_ldc, oc_add, oc_stind ], "ldc_add_stind");
+instr(x86_64_def, [ oc_ldc, oc_add, oc_stind ], "ldc_add_stind");
+instr(x86_def, [ oc_ldc, oc_ldc, oc_add, oc_stind ], "ldc_ldc_add_stind");
+instr(x86_64_def, [ oc_ldc, oc_ldc, oc_add, oc_stind ], "ldc_ldc_add_stind");
+
+instr(x86_def, [ oc_ldc, oc_add ], "ldc_add");
+instr(x86_64_def, [ oc_ldc, oc_add ], "ldc_add");
+
 
 // x86-specific instructions
 instr(x86_def, [ oc_x86_portin ], "portin");

@@ -205,7 +205,7 @@ namespace libtysila5.target.x86
         protected internal override Reg GetLVLocation(int lv_loc, int lv_size, Code c)
         {
             if (Opcode.GetCTFromType(c.ret_ts) == Opcode.ct_vt)
-                lv_loc += 4;
+                lv_loc += psize;
 
             int disp = 0;
             disp = -lv_size - lv_loc;
@@ -268,7 +268,10 @@ namespace libtysila5.target.x86
             size = util.util.align(size, psize);
             cur_stack -= size;
 
-            return new ContentsReg { basereg = r_ebp, disp = cur_stack, size = size };
+            if (-cur_stack > c.stack_total_size)
+                c.stack_total_size = -cur_stack;
+
+            return new ContentsReg { basereg = r_ebp, disp = cur_stack - c.lv_total_size, size = size };
         }
     }
 }

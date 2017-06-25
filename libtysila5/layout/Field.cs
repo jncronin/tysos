@@ -28,9 +28,65 @@ namespace libtysila5.layout
 {
     public partial class Layout
     {
+        public static int GetTypeAlignment(metadata.TypeSpec ts,
+            target.Target t, bool is_static)
+        {
+            if (ts.stype != TypeSpec.SpecialType.None)
+                return t.psize;
+
+            // types always align on their most strictly aligned type
+            int cur_align = 1;
+
+            if (ts.SimpleType != 0)
+                return GetTypeSize(ts, t, is_static);
+
+            // reference types will always have a pointer in them
+            if (is_static == false && !ts.IsValueType)
+            {
+                cur_align = t.psize;
+            }
+
+            /* Iterate through methods looking for requested
+                one */
+            var first_fdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
+                ts.tdrow, 4);
+            var last_fdef = ts.m.GetLastFieldDef(ts.tdrow);
+            for (uint fdef_row = first_fdef; fdef_row < last_fdef; fdef_row++)
+            {
+                // Ensure field is static if requested
+                var flags = ts.m.GetIntEntry(MetadataStream.tid_Field,
+                    (int)fdef_row, 0);
+                if (((flags & 0x10) == 0x10 && is_static == true) ||
+                    ((flags & 0x10) == 0 && is_static == false))
+                {
+                    // Get alignment of underlying type
+                    var fsig = (int)ts.m.GetIntEntry(MetadataStream.tid_Field,
+                        (int)fdef_row, 2);
+
+                    var ft = ts.m.GetFieldType(ref fsig, ts.gtparams, null);
+
+                    int ft_align;
+                    if (ft.IsValueType)
+                        ft_align = GetTypeAlignment(ft, t, false);
+                    else
+                        ft_align = t.psize;
+
+                    if (ft_align > cur_align)
+                        cur_align = ft_align;
+
+                }
+            }
+
+            return cur_align;
+        }
+
         public static int GetFieldOffset(metadata.TypeSpec ts,
             metadata.MethodSpec fs, target.Target t, bool is_static = false)
         {
+            int align = 1;
+            if(ts.SimpleType == 0)
+                align = GetTypeAlignment(ts, t, is_static);
+
             /* Iterate through methods looking for requested
                 one */
             var first_fdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
@@ -50,6 +106,11 @@ namespace libtysila5.layout
             {
                 // Add a vtable entry
                 cur_offset += t.GetCTSize(ir.Opcode.ct_object);
+                cur_offset = util.util.align(cur_offset, align);
+
+                // Add a mutex lock entry
+                cur_offset += t.GetCTSize(ir.Opcode.ct_intptr);
+                cur_offset = util.util.align(cur_offset, align);
             }
 
             for (uint fdef_row = first_fdef; fdef_row < last_fdef; fdef_row++)
@@ -80,6 +141,7 @@ namespace libtysila5.layout
                     var ft_size = t.GetSize(ft);
 
                     cur_offset += ft_size;
+                    cur_offset = util.util.align(cur_offset, align);
                 }
             }
 
@@ -95,8 +157,12 @@ namespace libtysila5.layout
             string fname, target.Target t, bool is_static = false,
             List<TypeSpec> field_types = null, List<string> field_names = null)
         {
+            int align = 1;
+            if (ts.SimpleType == 0)
+                align = GetTypeAlignment(ts, t, is_static);
+
             /* Iterate through methods looking for requested
-                one */
+                  one */
             var first_fdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
                 ts.tdrow, 4);
             var last_fdef = ts.m.GetLastFieldDef(ts.tdrow);
@@ -107,6 +173,7 @@ namespace libtysila5.layout
             {
                 // Add a vtable entry
                 cur_offset += t.GetCTSize(ir.Opcode.ct_object);
+                cur_offset = util.util.align(cur_offset, align);
 
                 if (field_types != null)
                     field_types.Add(ts.m.SystemIntPtr);
@@ -115,6 +182,7 @@ namespace libtysila5.layout
 
                 // Add a mutex lock entry
                 cur_offset += t.GetCTSize(ir.Opcode.ct_intptr);
+                cur_offset = util.util.align(cur_offset, align);
 
                 if (field_types != null)
                     field_types.Add(ts.m.SystemIntPtr);
@@ -158,6 +226,7 @@ namespace libtysila5.layout
                     }
 
                     cur_offset += ft_size;
+                    cur_offset = util.util.align(cur_offset, align);
                 }
             }
 
