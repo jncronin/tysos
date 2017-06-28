@@ -620,6 +620,18 @@ namespace metadata
                     other.AddSignature(sig, mods);
                     break;
 
+                case SpecialType.Array:
+                    sig.Add(0x14);
+                    other.AddSignature(sig, mods);
+                    sig.AddRange(MetadataStream.SigWriteUSCompressed((uint)arr_rank));
+                    sig.AddRange(MetadataStream.SigWriteUSCompressed((uint)arr_sizes.Length));
+                    foreach(var item in arr_sizes)
+                        sig.AddRange(MetadataStream.SigWriteUSCompressed((uint)item));
+                    sig.AddRange(MetadataStream.SigWriteUSCompressed((uint)arr_lobounds.Length));
+                    foreach (var item in arr_lobounds)
+                        sig.AddRange(MetadataStream.SigWriteUSCompressed((uint)item));
+                    break;
+
                 default:
                     throw new NotImplementedException();
             }

@@ -81,6 +81,9 @@ x86_instrs = [
 	"cmp_r32_rm32",
 	"cmp_rm32_imm32",
 	"cmp_rm32_imm8",
+	"cmp_rm8_imm8",
+	"lock_cmpxchg_rm8_r8",
+	"pause",
 	"set_rm32",
 	"movsxbd", 	"movsxwd", 	"movzxbd", 	"movzxwd",
 	"movsxbd_r32_rm8disp",
@@ -133,6 +136,7 @@ x86_instrs = [
 	"in_al_dx",
 	"in_ax_dx",
 	"in_eax_dx",
+	"int3",
 
 	"movsd_xmm_xmmm64",
 	"movsd_xmmm64_xmm",

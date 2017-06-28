@@ -13,7 +13,7 @@
 struct __array
 {
     INTPTR           __vtbl;
-    INTPTR           __mutex_lock;
+    int64_t          __mutex_lock;
     INTPTR           elemtype;
     INTPTR           lobounds;
     INTPTR           sizes;
@@ -49,19 +49,19 @@ void Init_Multiboot_Module(struct Multiboot_Module *obj);
 
 struct System_Object {
     INTPTR __vtbl;
-    INTPTR __mutex_lock;
+    int64_t __mutex_lock;
 };
 
 struct System_String {
     INTPTR __vtbl;
-    INTPTR __mutex_lock;
+    int64_t __mutex_lock;
     int32_t length;
     int16_t start_char;
 };
 
 struct Multiboot_Header {
     INTPTR __vtbl;
-    INTPTR __mutex_lock;
+    int64_t __mutex_lock;
     uint32_t magic;
     INTPTR mmap;
     INTPTR modules;
@@ -98,7 +98,7 @@ struct Multiboot_Header {
 
 struct Multiboot_MemoryMap {
     INTPTR __vtbl;
-    INTPTR __mutex_lock;
+    int64_t __mutex_lock;
     uint64_t base_addr;
     uint64_t virt_addr;
     uint64_t length;
@@ -107,7 +107,7 @@ struct Multiboot_MemoryMap {
 
 struct Multiboot_Module {
     INTPTR __vtbl;
-    INTPTR __mutex_lock;
+    int64_t __mutex_lock;
     uint64_t virt_base_addr;
     uint64_t base_addr;
     uint64_t length;

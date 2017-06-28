@@ -39,6 +39,8 @@ namespace libtysila5.cil
             public CilNode parent;
             public List<target.MCInst> mc;
 
+            public bool ignore_for_mcoffset = false;
+
             public int opcode;
             public int ct = ir.Opcode.ct_unknown;
             public int ct2 = ir.Opcode.ct_unknown;
@@ -99,6 +101,8 @@ namespace libtysila5.cil
 
         public bool is_meth_start = false;
         public bool is_eh_start = false;
+
+        public bool is_in_excpt_handler = false;
 
         public bool visited = false;
         public util.Stack<ir.StackItem> stack_after;

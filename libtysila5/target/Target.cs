@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 19:04:09 on 24 June 2017
+ * It was generated at 23:39:56 on 27 June 2017
  * from D:\tysos\branches\tysila3\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -116,124 +116,128 @@ namespace libtysila5.target.x86
 		public const int x86_cmp_r32_rm32 = 47;
 		public const int x86_cmp_rm32_imm32 = 48;
 		public const int x86_cmp_rm32_imm8 = 49;
-		public const int x86_set_rm32 = 50;
-		public const int x86_movsxbd = 51;
-		public const int x86_movsxwd = 52;
-		public const int x86_movzxbd = 53;
-		public const int x86_movzxwd = 54;
-		public const int x86_movsxbd_r32_rm8disp = 55;
-		public const int x86_movzxbd_r32_rm8disp = 56;
-		public const int x86_movsxwd_r32_rm16disp = 57;
-		public const int x86_movzxwd_r32_rm16disp = 58;
-		public const int x86_jmp_rel32 = 59;
-		public const int x86_jcc_rel32 = 60;
-		public const int x86_call_rel32 = 61;
-		public const int x86_call_rm32 = 62;
-		public const int x86_ret = 63;
-		public const int x86_pop_r32 = 64;
-		public const int x86_pop_rm32 = 65;
-		public const int x86_push_r32 = 66;
-		public const int x86_push_rm32 = 67;
-		public const int x86_push_imm32 = 68;
-		public const int x86_add_rm32_imm32 = 69;
-		public const int x86_add_rm32_imm8 = 70;
-		public const int x86_sub_rm32_imm32 = 71;
-		public const int x86_sub_rm32_imm8 = 72;
-		public const int x86_add_r32_rm32 = 73;
-		public const int x86_add_rm32_r32 = 74;
-		public const int x86_sub_r32_rm32 = 75;
-		public const int x86_sub_rm32_r32 = 76;
-		public const int x86_adc_r32_rm32 = 77;
-		public const int x86_adc_rm32_r32 = 78;
-		public const int x86_sbb_r32_rm32 = 79;
-		public const int x86_sbb_rm32_r32 = 80;
-		public const int x86_idiv_rm32 = 81;
-		public const int x86_imul_r32_rm32_imm32 = 82;
-		public const int x86_imul_r32_rm32 = 83;
-		public const int x86_lea_r32 = 84;
-		public const int x86_xor_r32_rm32 = 85;
-		public const int x86_xor_rm32_r32 = 86;
-		public const int x86_and_r32_rm32 = 87;
-		public const int x86_and_rm32_r32 = 88;
-		public const int x86_or_r32_rm32 = 89;
-		public const int x86_or_rm32_r32 = 90;
-		public const int x86_sar_rm32_imm8 = 91;
-		public const int x86_sal_rm32_cl = 92;
-		public const int x86_sar_rm32_cl = 93;
-		public const int x86_shr_rm32_cl = 94;
-		public const int x86_and_rm32_imm8 = 95;
-		public const int x86_and_rm32_imm32 = 96;
-		public const int x86_xchg_r32_rm32 = 97;
-		public const int x86_xchg_rm32_r32 = 98;
-		public const int x86_out_dx_al = 99;
-		public const int x86_out_dx_ax = 100;
-		public const int x86_out_dx_eax = 101;
-		public const int x86_in_al_dx = 102;
-		public const int x86_in_ax_dx = 103;
-		public const int x86_in_eax_dx = 104;
-		public const int x86_movsd_xmm_xmmm64 = 105;
-		public const int x86_movsd_xmmm64_xmm = 106;
-		public const int x86_movss_xmm_xmmm32 = 107;
-		public const int x86_movss_xmmm32_xmm = 108;
-		public const int x86_cvtsd2si_r32_xmmm64 = 109;
-		public const int x86_cvtsi2sd_xmm_rm32 = 110;
-		public const int x86_cvtsd2ss_xmm_xmmm64 = 111;
-		public const int x86_cvtss2sd_xmm_xmmm32 = 112;
-		public const int x86_addsd_xmm_xmmm64 = 113;
-		public const int x86_subsd_xmm_xmmm64 = 114;
-		public const int x86_mulsd_xmm_xmmm64 = 115;
-		public const int x86_divsd_xmm_xmmm64 = 116;
-		public const int x86_comisd_xmm_xmmm64 = 117;
-		public const int x86_ucomisd_xmm_xmmm64 = 118;
-		public const int x86_cmpsd_xmm_xmmm64_imm8 = 119;
-		public const int x86_mov_r64_imm64 = 120;
-		public const int x86_mov_rm64_imm32 = 121;
-		public const int x86_mov_r64_rm64 = 122;
-		public const int x86_mov_rm64_r64 = 123;
-		public const int x86_mov_rm64disp_imm32 = 124;
-		public const int x86_mov_r64_rm64disp = 125;
-		public const int x86_mov_r64_rm32disp = 126;
-		public const int x86_mov_r64_rm16disp = 127;
-		public const int x86_mov_r64_rm8disp = 128;
-		public const int x86_mov_rm64disp_r64 = 129;
-		public const int x86_movsxbq_r64_rm8disp = 130;
-		public const int x86_movzxbq_r64_rm8disp = 131;
-		public const int x86_movsxwq_r64_rm16disp = 132;
-		public const int x86_movzxwq_r64_rm16disp = 133;
-		public const int x86_cmp_rm64_r64 = 134;
-		public const int x86_cmp_r64_rm64 = 135;
-		public const int x86_cmp_rm64_imm32 = 136;
-		public const int x86_cmp_rm64_imm8 = 137;
-		public const int x86_movsxdq_r64_rm64 = 138;
-		public const int x86_xor_r64_rm64 = 139;
-		public const int x86_xor_rm64_r64 = 140;
-		public const int x86_and_r64_rm64 = 141;
-		public const int x86_and_rm64_r64 = 142;
-		public const int x86_or_r64_rm64 = 143;
-		public const int x86_or_rm64_r64 = 144;
-		public const int x86_neg_rm64 = 145;
-		public const int x86_not_rm64 = 146;
-		public const int x86_imul_r64_rm64 = 147;
-		public const int x86_idiv_rm64 = 148;
-		public const int x86_sal_rm64_cl = 149;
-		public const int x86_sar_rm64_cl = 150;
-		public const int x86_shr_rm64_cl = 151;
-		public const int x86_xchg_r64_rm64 = 152;
-		public const int x86_sub_rm64_imm8 = 153;
-		public const int x86_sub_rm64_imm32 = 154;
-		public const int x86_add_rm64_imm8 = 155;
-		public const int x86_add_rm64_imm32 = 156;
-		public const int x86_lea_r64 = 157;
-		public const int x86_add_r64_rm64 = 158;
-		public const int x86_add_rm64_r64 = 159;
-		public const int x86_sub_r64_rm64 = 160;
-		public const int x86_sub_rm64_r64 = 161;
-		public const int x86_adc_r64_rm64 = 162;
-		public const int x86_adc_rm64_r64 = 163;
-		public const int x86_sbb_r64_rm64 = 164;
-		public const int x86_sbb_rm64_r64 = 165;
-		public const int x86_cvtsi2sd_xmm_rm64 = 166;
-		public const int x86_cvtsd2si_r64_xmmm64 = 167;
+		public const int x86_cmp_rm8_imm8 = 50;
+		public const int x86_lock_cmpxchg_rm8_r8 = 51;
+		public const int x86_pause = 52;
+		public const int x86_set_rm32 = 53;
+		public const int x86_movsxbd = 54;
+		public const int x86_movsxwd = 55;
+		public const int x86_movzxbd = 56;
+		public const int x86_movzxwd = 57;
+		public const int x86_movsxbd_r32_rm8disp = 58;
+		public const int x86_movzxbd_r32_rm8disp = 59;
+		public const int x86_movsxwd_r32_rm16disp = 60;
+		public const int x86_movzxwd_r32_rm16disp = 61;
+		public const int x86_jmp_rel32 = 62;
+		public const int x86_jcc_rel32 = 63;
+		public const int x86_call_rel32 = 64;
+		public const int x86_call_rm32 = 65;
+		public const int x86_ret = 66;
+		public const int x86_pop_r32 = 67;
+		public const int x86_pop_rm32 = 68;
+		public const int x86_push_r32 = 69;
+		public const int x86_push_rm32 = 70;
+		public const int x86_push_imm32 = 71;
+		public const int x86_add_rm32_imm32 = 72;
+		public const int x86_add_rm32_imm8 = 73;
+		public const int x86_sub_rm32_imm32 = 74;
+		public const int x86_sub_rm32_imm8 = 75;
+		public const int x86_add_r32_rm32 = 76;
+		public const int x86_add_rm32_r32 = 77;
+		public const int x86_sub_r32_rm32 = 78;
+		public const int x86_sub_rm32_r32 = 79;
+		public const int x86_adc_r32_rm32 = 80;
+		public const int x86_adc_rm32_r32 = 81;
+		public const int x86_sbb_r32_rm32 = 82;
+		public const int x86_sbb_rm32_r32 = 83;
+		public const int x86_idiv_rm32 = 84;
+		public const int x86_imul_r32_rm32_imm32 = 85;
+		public const int x86_imul_r32_rm32 = 86;
+		public const int x86_lea_r32 = 87;
+		public const int x86_xor_r32_rm32 = 88;
+		public const int x86_xor_rm32_r32 = 89;
+		public const int x86_and_r32_rm32 = 90;
+		public const int x86_and_rm32_r32 = 91;
+		public const int x86_or_r32_rm32 = 92;
+		public const int x86_or_rm32_r32 = 93;
+		public const int x86_sar_rm32_imm8 = 94;
+		public const int x86_sal_rm32_cl = 95;
+		public const int x86_sar_rm32_cl = 96;
+		public const int x86_shr_rm32_cl = 97;
+		public const int x86_and_rm32_imm8 = 98;
+		public const int x86_and_rm32_imm32 = 99;
+		public const int x86_xchg_r32_rm32 = 100;
+		public const int x86_xchg_rm32_r32 = 101;
+		public const int x86_out_dx_al = 102;
+		public const int x86_out_dx_ax = 103;
+		public const int x86_out_dx_eax = 104;
+		public const int x86_in_al_dx = 105;
+		public const int x86_in_ax_dx = 106;
+		public const int x86_in_eax_dx = 107;
+		public const int x86_int3 = 108;
+		public const int x86_movsd_xmm_xmmm64 = 109;
+		public const int x86_movsd_xmmm64_xmm = 110;
+		public const int x86_movss_xmm_xmmm32 = 111;
+		public const int x86_movss_xmmm32_xmm = 112;
+		public const int x86_cvtsd2si_r32_xmmm64 = 113;
+		public const int x86_cvtsi2sd_xmm_rm32 = 114;
+		public const int x86_cvtsd2ss_xmm_xmmm64 = 115;
+		public const int x86_cvtss2sd_xmm_xmmm32 = 116;
+		public const int x86_addsd_xmm_xmmm64 = 117;
+		public const int x86_subsd_xmm_xmmm64 = 118;
+		public const int x86_mulsd_xmm_xmmm64 = 119;
+		public const int x86_divsd_xmm_xmmm64 = 120;
+		public const int x86_comisd_xmm_xmmm64 = 121;
+		public const int x86_ucomisd_xmm_xmmm64 = 122;
+		public const int x86_cmpsd_xmm_xmmm64_imm8 = 123;
+		public const int x86_mov_r64_imm64 = 124;
+		public const int x86_mov_rm64_imm32 = 125;
+		public const int x86_mov_r64_rm64 = 126;
+		public const int x86_mov_rm64_r64 = 127;
+		public const int x86_mov_rm64disp_imm32 = 128;
+		public const int x86_mov_r64_rm64disp = 129;
+		public const int x86_mov_r64_rm32disp = 130;
+		public const int x86_mov_r64_rm16disp = 131;
+		public const int x86_mov_r64_rm8disp = 132;
+		public const int x86_mov_rm64disp_r64 = 133;
+		public const int x86_movsxbq_r64_rm8disp = 134;
+		public const int x86_movzxbq_r64_rm8disp = 135;
+		public const int x86_movsxwq_r64_rm16disp = 136;
+		public const int x86_movzxwq_r64_rm16disp = 137;
+		public const int x86_cmp_rm64_r64 = 138;
+		public const int x86_cmp_r64_rm64 = 139;
+		public const int x86_cmp_rm64_imm32 = 140;
+		public const int x86_cmp_rm64_imm8 = 141;
+		public const int x86_movsxdq_r64_rm64 = 142;
+		public const int x86_xor_r64_rm64 = 143;
+		public const int x86_xor_rm64_r64 = 144;
+		public const int x86_and_r64_rm64 = 145;
+		public const int x86_and_rm64_r64 = 146;
+		public const int x86_or_r64_rm64 = 147;
+		public const int x86_or_rm64_r64 = 148;
+		public const int x86_neg_rm64 = 149;
+		public const int x86_not_rm64 = 150;
+		public const int x86_imul_r64_rm64 = 151;
+		public const int x86_idiv_rm64 = 152;
+		public const int x86_sal_rm64_cl = 153;
+		public const int x86_sar_rm64_cl = 154;
+		public const int x86_shr_rm64_cl = 155;
+		public const int x86_xchg_r64_rm64 = 156;
+		public const int x86_sub_rm64_imm8 = 157;
+		public const int x86_sub_rm64_imm32 = 158;
+		public const int x86_add_rm64_imm8 = 159;
+		public const int x86_add_rm64_imm32 = 160;
+		public const int x86_lea_r64 = 161;
+		public const int x86_add_r64_rm64 = 162;
+		public const int x86_add_rm64_r64 = 163;
+		public const int x86_sub_r64_rm64 = 164;
+		public const int x86_sub_rm64_r64 = 165;
+		public const int x86_adc_r64_rm64 = 166;
+		public const int x86_adc_rm64_r64 = 167;
+		public const int x86_sbb_r64_rm64 = 168;
+		public const int x86_sbb_rm64_r64 = 169;
+		public const int x86_cvtsi2sd_xmm_rm64 = 170;
+		public const int x86_cvtsd2si_r64_xmmm64 = 171;
 		
 		internal static void init_instrs()
 		{
@@ -265,124 +269,128 @@ namespace libtysila5.target.x86
 			insts[47] = "cmp_r32_rm32";
 			insts[48] = "cmp_rm32_imm32";
 			insts[49] = "cmp_rm32_imm8";
-			insts[50] = "set_rm32";
-			insts[51] = "movsxbd";
-			insts[52] = "movsxwd";
-			insts[53] = "movzxbd";
-			insts[54] = "movzxwd";
-			insts[55] = "movsxbd_r32_rm8disp";
-			insts[56] = "movzxbd_r32_rm8disp";
-			insts[57] = "movsxwd_r32_rm16disp";
-			insts[58] = "movzxwd_r32_rm16disp";
-			insts[59] = "jmp_rel32";
-			insts[60] = "jcc_rel32";
-			insts[61] = "call_rel32";
-			insts[62] = "call_rm32";
-			insts[63] = "ret";
-			insts[64] = "pop_r32";
-			insts[65] = "pop_rm32";
-			insts[66] = "push_r32";
-			insts[67] = "push_rm32";
-			insts[68] = "push_imm32";
-			insts[69] = "add_rm32_imm32";
-			insts[70] = "add_rm32_imm8";
-			insts[71] = "sub_rm32_imm32";
-			insts[72] = "sub_rm32_imm8";
-			insts[73] = "add_r32_rm32";
-			insts[74] = "add_rm32_r32";
-			insts[75] = "sub_r32_rm32";
-			insts[76] = "sub_rm32_r32";
-			insts[77] = "adc_r32_rm32";
-			insts[78] = "adc_rm32_r32";
-			insts[79] = "sbb_r32_rm32";
-			insts[80] = "sbb_rm32_r32";
-			insts[81] = "idiv_rm32";
-			insts[82] = "imul_r32_rm32_imm32";
-			insts[83] = "imul_r32_rm32";
-			insts[84] = "lea_r32";
-			insts[85] = "xor_r32_rm32";
-			insts[86] = "xor_rm32_r32";
-			insts[87] = "and_r32_rm32";
-			insts[88] = "and_rm32_r32";
-			insts[89] = "or_r32_rm32";
-			insts[90] = "or_rm32_r32";
-			insts[91] = "sar_rm32_imm8";
-			insts[92] = "sal_rm32_cl";
-			insts[93] = "sar_rm32_cl";
-			insts[94] = "shr_rm32_cl";
-			insts[95] = "and_rm32_imm8";
-			insts[96] = "and_rm32_imm32";
-			insts[97] = "xchg_r32_rm32";
-			insts[98] = "xchg_rm32_r32";
-			insts[99] = "out_dx_al";
-			insts[100] = "out_dx_ax";
-			insts[101] = "out_dx_eax";
-			insts[102] = "in_al_dx";
-			insts[103] = "in_ax_dx";
-			insts[104] = "in_eax_dx";
-			insts[105] = "movsd_xmm_xmmm64";
-			insts[106] = "movsd_xmmm64_xmm";
-			insts[107] = "movss_xmm_xmmm32";
-			insts[108] = "movss_xmmm32_xmm";
-			insts[109] = "cvtsd2si_r32_xmmm64";
-			insts[110] = "cvtsi2sd_xmm_rm32";
-			insts[111] = "cvtsd2ss_xmm_xmmm64";
-			insts[112] = "cvtss2sd_xmm_xmmm32";
-			insts[113] = "addsd_xmm_xmmm64";
-			insts[114] = "subsd_xmm_xmmm64";
-			insts[115] = "mulsd_xmm_xmmm64";
-			insts[116] = "divsd_xmm_xmmm64";
-			insts[117] = "comisd_xmm_xmmm64";
-			insts[118] = "ucomisd_xmm_xmmm64";
-			insts[119] = "cmpsd_xmm_xmmm64_imm8";
-			insts[120] = "mov_r64_imm64";
-			insts[121] = "mov_rm64_imm32";
-			insts[122] = "mov_r64_rm64";
-			insts[123] = "mov_rm64_r64";
-			insts[124] = "mov_rm64disp_imm32";
-			insts[125] = "mov_r64_rm64disp";
-			insts[126] = "mov_r64_rm32disp";
-			insts[127] = "mov_r64_rm16disp";
-			insts[128] = "mov_r64_rm8disp";
-			insts[129] = "mov_rm64disp_r64";
-			insts[130] = "movsxbq_r64_rm8disp";
-			insts[131] = "movzxbq_r64_rm8disp";
-			insts[132] = "movsxwq_r64_rm16disp";
-			insts[133] = "movzxwq_r64_rm16disp";
-			insts[134] = "cmp_rm64_r64";
-			insts[135] = "cmp_r64_rm64";
-			insts[136] = "cmp_rm64_imm32";
-			insts[137] = "cmp_rm64_imm8";
-			insts[138] = "movsxdq_r64_rm64";
-			insts[139] = "xor_r64_rm64";
-			insts[140] = "xor_rm64_r64";
-			insts[141] = "and_r64_rm64";
-			insts[142] = "and_rm64_r64";
-			insts[143] = "or_r64_rm64";
-			insts[144] = "or_rm64_r64";
-			insts[145] = "neg_rm64";
-			insts[146] = "not_rm64";
-			insts[147] = "imul_r64_rm64";
-			insts[148] = "idiv_rm64";
-			insts[149] = "sal_rm64_cl";
-			insts[150] = "sar_rm64_cl";
-			insts[151] = "shr_rm64_cl";
-			insts[152] = "xchg_r64_rm64";
-			insts[153] = "sub_rm64_imm8";
-			insts[154] = "sub_rm64_imm32";
-			insts[155] = "add_rm64_imm8";
-			insts[156] = "add_rm64_imm32";
-			insts[157] = "lea_r64";
-			insts[158] = "add_r64_rm64";
-			insts[159] = "add_rm64_r64";
-			insts[160] = "sub_r64_rm64";
-			insts[161] = "sub_rm64_r64";
-			insts[162] = "adc_r64_rm64";
-			insts[163] = "adc_rm64_r64";
-			insts[164] = "sbb_r64_rm64";
-			insts[165] = "sbb_rm64_r64";
-			insts[166] = "cvtsi2sd_xmm_rm64";
-			insts[167] = "cvtsd2si_r64_xmmm64";
+			insts[50] = "cmp_rm8_imm8";
+			insts[51] = "lock_cmpxchg_rm8_r8";
+			insts[52] = "pause";
+			insts[53] = "set_rm32";
+			insts[54] = "movsxbd";
+			insts[55] = "movsxwd";
+			insts[56] = "movzxbd";
+			insts[57] = "movzxwd";
+			insts[58] = "movsxbd_r32_rm8disp";
+			insts[59] = "movzxbd_r32_rm8disp";
+			insts[60] = "movsxwd_r32_rm16disp";
+			insts[61] = "movzxwd_r32_rm16disp";
+			insts[62] = "jmp_rel32";
+			insts[63] = "jcc_rel32";
+			insts[64] = "call_rel32";
+			insts[65] = "call_rm32";
+			insts[66] = "ret";
+			insts[67] = "pop_r32";
+			insts[68] = "pop_rm32";
+			insts[69] = "push_r32";
+			insts[70] = "push_rm32";
+			insts[71] = "push_imm32";
+			insts[72] = "add_rm32_imm32";
+			insts[73] = "add_rm32_imm8";
+			insts[74] = "sub_rm32_imm32";
+			insts[75] = "sub_rm32_imm8";
+			insts[76] = "add_r32_rm32";
+			insts[77] = "add_rm32_r32";
+			insts[78] = "sub_r32_rm32";
+			insts[79] = "sub_rm32_r32";
+			insts[80] = "adc_r32_rm32";
+			insts[81] = "adc_rm32_r32";
+			insts[82] = "sbb_r32_rm32";
+			insts[83] = "sbb_rm32_r32";
+			insts[84] = "idiv_rm32";
+			insts[85] = "imul_r32_rm32_imm32";
+			insts[86] = "imul_r32_rm32";
+			insts[87] = "lea_r32";
+			insts[88] = "xor_r32_rm32";
+			insts[89] = "xor_rm32_r32";
+			insts[90] = "and_r32_rm32";
+			insts[91] = "and_rm32_r32";
+			insts[92] = "or_r32_rm32";
+			insts[93] = "or_rm32_r32";
+			insts[94] = "sar_rm32_imm8";
+			insts[95] = "sal_rm32_cl";
+			insts[96] = "sar_rm32_cl";
+			insts[97] = "shr_rm32_cl";
+			insts[98] = "and_rm32_imm8";
+			insts[99] = "and_rm32_imm32";
+			insts[100] = "xchg_r32_rm32";
+			insts[101] = "xchg_rm32_r32";
+			insts[102] = "out_dx_al";
+			insts[103] = "out_dx_ax";
+			insts[104] = "out_dx_eax";
+			insts[105] = "in_al_dx";
+			insts[106] = "in_ax_dx";
+			insts[107] = "in_eax_dx";
+			insts[108] = "int3";
+			insts[109] = "movsd_xmm_xmmm64";
+			insts[110] = "movsd_xmmm64_xmm";
+			insts[111] = "movss_xmm_xmmm32";
+			insts[112] = "movss_xmmm32_xmm";
+			insts[113] = "cvtsd2si_r32_xmmm64";
+			insts[114] = "cvtsi2sd_xmm_rm32";
+			insts[115] = "cvtsd2ss_xmm_xmmm64";
+			insts[116] = "cvtss2sd_xmm_xmmm32";
+			insts[117] = "addsd_xmm_xmmm64";
+			insts[118] = "subsd_xmm_xmmm64";
+			insts[119] = "mulsd_xmm_xmmm64";
+			insts[120] = "divsd_xmm_xmmm64";
+			insts[121] = "comisd_xmm_xmmm64";
+			insts[122] = "ucomisd_xmm_xmmm64";
+			insts[123] = "cmpsd_xmm_xmmm64_imm8";
+			insts[124] = "mov_r64_imm64";
+			insts[125] = "mov_rm64_imm32";
+			insts[126] = "mov_r64_rm64";
+			insts[127] = "mov_rm64_r64";
+			insts[128] = "mov_rm64disp_imm32";
+			insts[129] = "mov_r64_rm64disp";
+			insts[130] = "mov_r64_rm32disp";
+			insts[131] = "mov_r64_rm16disp";
+			insts[132] = "mov_r64_rm8disp";
+			insts[133] = "mov_rm64disp_r64";
+			insts[134] = "movsxbq_r64_rm8disp";
+			insts[135] = "movzxbq_r64_rm8disp";
+			insts[136] = "movsxwq_r64_rm16disp";
+			insts[137] = "movzxwq_r64_rm16disp";
+			insts[138] = "cmp_rm64_r64";
+			insts[139] = "cmp_r64_rm64";
+			insts[140] = "cmp_rm64_imm32";
+			insts[141] = "cmp_rm64_imm8";
+			insts[142] = "movsxdq_r64_rm64";
+			insts[143] = "xor_r64_rm64";
+			insts[144] = "xor_rm64_r64";
+			insts[145] = "and_r64_rm64";
+			insts[146] = "and_rm64_r64";
+			insts[147] = "or_r64_rm64";
+			insts[148] = "or_rm64_r64";
+			insts[149] = "neg_rm64";
+			insts[150] = "not_rm64";
+			insts[151] = "imul_r64_rm64";
+			insts[152] = "idiv_rm64";
+			insts[153] = "sal_rm64_cl";
+			insts[154] = "sar_rm64_cl";
+			insts[155] = "shr_rm64_cl";
+			insts[156] = "xchg_r64_rm64";
+			insts[157] = "sub_rm64_imm8";
+			insts[158] = "sub_rm64_imm32";
+			insts[159] = "add_rm64_imm8";
+			insts[160] = "add_rm64_imm32";
+			insts[161] = "lea_r64";
+			insts[162] = "add_r64_rm64";
+			insts[163] = "add_rm64_r64";
+			insts[164] = "sub_r64_rm64";
+			insts[165] = "sub_rm64_r64";
+			insts[166] = "adc_r64_rm64";
+			insts[167] = "adc_rm64_r64";
+			insts[168] = "sbb_r64_rm64";
+			insts[169] = "sbb_rm64_r64";
+			insts[170] = "cvtsi2sd_xmm_rm64";
+			insts[171] = "cvtsd2si_r64_xmmm64";
 		}
 	}
 }
@@ -395,13 +403,13 @@ namespace libtysila5.target.x86
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_map_sysv[86] = new int[] { 25, };
-			cc_map_sysv[88] = new int[] { 25, };
-			cc_map_sysv[87] = new int[] { 25, };
-			cc_map_sysv[90] = new int[] { 25, };
-			cc_map_sysv[91] = new int[] { 25, };
-			cc_map_sysv[92] = new int[] { 25, };
 			cc_map_sysv[89] = new int[] { 25, };
+			cc_map_sysv[91] = new int[] { 25, };
+			cc_map_sysv[90] = new int[] { 25, };
+			cc_map_sysv[93] = new int[] { 25, };
+			cc_map_sysv[94] = new int[] { 25, };
+			cc_map_sysv[95] = new int[] { 25, };
+			cc_map_sysv[92] = new int[] { 25, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 1664;
@@ -417,12 +425,12 @@ namespace libtysila5.target.x86
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_ret_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_ret_sysv()
 		{
-			cc_map_ret_sysv[86] = new int[] { 7, };
-			cc_map_ret_sysv[88] = new int[] { 7, };
-			cc_map_ret_sysv[90] = new int[] { 7, };
+			cc_map_ret_sysv[89] = new int[] { 7, };
 			cc_map_ret_sysv[91] = new int[] { 7, };
-			cc_map_ret_sysv[87] = new int[] { 24, };
-			cc_map_ret_sysv[89] = new int[] { 15, };
+			cc_map_ret_sysv[93] = new int[] { 7, };
+			cc_map_ret_sysv[94] = new int[] { 7, };
+			cc_map_ret_sysv[90] = new int[] { 24, };
+			cc_map_ret_sysv[92] = new int[] { 15, };
 		}
 		
 		internal const ulong ret_sysv_caller_preserves = 0;
@@ -500,13 +508,13 @@ namespace libtysila5.target.x86_64
 {
 	partial class x86_64_Assembler
 	{
-		public const int sysvc_MEMORY = 168;
-		public const int sysvc_INTEGER = 169;
-		public const int sysvc_SSE = 170;
-		public const int sysvc_SSEUP = 171;
-		public const int sysvc_X87 = 172;
-		public const int sysvc_X87UP = 173;
-		public const int sysvc_COMPLEX_X87 = 174;
+		public const int sysvc_MEMORY = 172;
+		public const int sysvc_INTEGER = 173;
+		public const int sysvc_SSE = 174;
+		public const int sysvc_SSEUP = 175;
+		public const int sysvc_X87 = 176;
+		public const int sysvc_X87UP = 177;
+		public const int sysvc_COMPLEX_X87 = 178;
 	}
 }
 
@@ -518,15 +526,15 @@ namespace libtysila5.target.x86_64
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_classmap_sysv[86] = 169;
-			cc_classmap_sysv[88] = 169;
-			cc_classmap_sysv[87] = 169;
-			cc_classmap_sysv[90] = 169;
-			cc_classmap_sysv[91] = 169;
-			cc_classmap_sysv[89] = 170;
-			cc_map_sysv[169] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
-			cc_map_sysv[170] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
-			cc_map_sysv[168] = new int[] { 25, };
+			cc_classmap_sysv[89] = 173;
+			cc_classmap_sysv[91] = 173;
+			cc_classmap_sysv[90] = 173;
+			cc_classmap_sysv[93] = 173;
+			cc_classmap_sysv[94] = 173;
+			cc_classmap_sysv[92] = 174;
+			cc_map_sysv[173] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
+			cc_map_sysv[174] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
+			cc_map_sysv[172] = new int[] { 25, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 1664;
@@ -542,12 +550,12 @@ namespace libtysila5.target.x86_64
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_ret_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_ret_sysv()
 		{
-			cc_map_ret_sysv[86] = new int[] { 7, };
-			cc_map_ret_sysv[88] = new int[] { 7, };
-			cc_map_ret_sysv[90] = new int[] { 7, };
+			cc_map_ret_sysv[89] = new int[] { 7, };
 			cc_map_ret_sysv[91] = new int[] { 7, };
-			cc_map_ret_sysv[87] = new int[] { 7, };
-			cc_map_ret_sysv[89] = new int[] { 16, };
+			cc_map_ret_sysv[93] = new int[] { 7, };
+			cc_map_ret_sysv[94] = new int[] { 7, };
+			cc_map_ret_sysv[90] = new int[] { 7, };
+			cc_map_ret_sysv[92] = new int[] { 16, };
 		}
 		
 		internal const ulong ret_sysv_caller_preserves = 0;
@@ -804,12 +812,12 @@ namespace libtysila5.target.x86
 		internal x86_Assembler()
 		{
 			init_ccs();
-			ct_regs[86] = 6912;
-			ct_regs[87] = 0;
-			ct_regs[89] = 8323072;
-			ct_regs[88] = ct_regs[86];
-			ct_regs[90] = ct_regs[86];
-			ct_regs[91] = ct_regs[86];
+			ct_regs[89] = 6912;
+			ct_regs[90] = 0;
+			ct_regs[92] = 8323072;
+			ct_regs[91] = ct_regs[89];
+			ct_regs[93] = ct_regs[89];
+			ct_regs[94] = ct_regs[89];
 			instrs.trie = x86_instrs;
 			instrs.start = x86_instrs_start;
 			instrs.vals = x86_instrs_vals;
@@ -824,20 +832,21 @@ namespace libtysila5.target.x86
 			0, 0, 1, 0, 15, 0, 0, 1, 0, 16, 0, 0, 1, 0, 17, 0, 0, 
 			1, 0, 18, 0, 0, 1, 0, 19, 0, 0, 1, 0, 20, 0, 0, 1, 0, 
 			21, 0, 0, 1, 0, 22, 0, 0, 1, 0, 23, 0, 0, 1, 0, 24, 0, 
-			0, 1, 0, 25, 0, 0, 1, 0, 26, 1, 41, 2, 116, 121, 27, 0, 0, 
-			1, 0, 0, 1, 42, 1, 132, 0, 2, 21, 1, 137, 0, 3, 57, 1, 142, 
-			0, 4, 21, 1, 147, 0, 5, 40, 1, 152, 28, 0, 0, 1, 0, 29, 0, 
-			0, 1, 0, 0, 1, 41, 1, 167, 0, 2, 21, 1, 172, 30, 6, 21, 37, 
-			126, 0, 157, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 162, 0, 0, 0, 0, 
-			0, 0, 177, 31, 0, 0, 1, 0, 32, 0, 0, 1, 0, 33, 0, 0, 1, 
-			0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 37, 
-			0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 0, 
-			1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 0, 
-			44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 0, 7, 21, 52, 1, 6, 11, 
-			16, 21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 86, 
-			91, 96, 0, 0, 0, 0, 101, 0, 106, 111, 0, 0, 0, 0, 0, 0, 182, 
-			223, 228, 233, 238, 243, 248, 253, 258, 263, 268, 273, 278, 283, 288, 293, 
+			0, 1, 0, 25, 0, 0, 1, 0, 26, 0, 0, 1, 0, 27, 1, 41, 2, 
+			121, 126, 28, 0, 0, 1, 0, 0, 1, 42, 1, 137, 0, 2, 21, 1, 142, 
+			0, 3, 58, 1, 147, 0, 4, 21, 1, 152, 0, 5, 40, 1, 157, 29, 0, 
+			0, 1, 0, 30, 0, 0, 1, 0, 0, 1, 41, 1, 172, 0, 2, 21, 1, 
+			177, 31, 6, 21, 38, 131, 0, 162, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 167, 0, 0, 0, 0, 0, 0, 182, 32, 0, 0, 1, 0, 33, 0, 0, 
+			1, 0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 
+			37, 0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 
+			0, 1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 
+			0, 44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 46, 0, 0, 1, 0, 47, 
+			0, 0, 1, 0, 48, 0, 0, 1, 0, 0, 7, 21, 55, 1, 6, 11, 16, 
+			21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 86, 91, 
+			96, 0, 0, 0, 0, 101, 0, 106, 111, 116, 0, 0, 0, 0, 0, 0, 187, 
+			229, 234, 239, 244, 249, 254, 259, 264, 269, 274, 279, 284, 289, 294, 299, 304, 309, 
 		};
 		
 		InstructionHandler[] x86_instrs_vals = new InstructionHandler[] {
@@ -863,6 +872,7 @@ namespace libtysila5.target.x86
 			libtysila5.target.x86.x86_Assembler.handle_stind,
 			libtysila5.target.x86.x86_Assembler.handle_ldind,
 			libtysila5.target.x86.x86_Assembler.handle_ldlabaddr,
+			libtysila5.target.x86.x86_Assembler.handle_ldfp,
 			libtysila5.target.x86.x86_Assembler.handle_ldloca,
 			libtysila5.target.x86.x86_Assembler.handle_zeromem,
 			libtysila5.target.x86.x86_Assembler.handle_ldc_add_stind,
@@ -885,11 +895,13 @@ namespace libtysila5.target.x86
 			libtysila5.target.x86.x86_Assembler.handle_shift,
 			libtysila5.target.x86.x86_Assembler.handle_switch,
 			libtysila5.target.x86.x86_Assembler.handle_ldobja,
+			libtysila5.target.x86.x86_Assembler.handle_cctor_runonce,
+			libtysila5.target.x86.x86_Assembler.handle_break,
 			libtysila5.target.x86.x86_Assembler.handle_portin,
 			libtysila5.target.x86.x86_Assembler.handle_portout,
 		};
 		
-		int x86_instrs_start = 298;
+		int x86_instrs_start = 314;
 	}
 }
 
@@ -946,12 +958,12 @@ namespace libtysila5.target.x86_64
 		internal x86_64_Assembler()
 		{
 			init_ccs();
-			ct_regs[86] = 34225527552;
-			ct_regs[87] = 34225527552;
-			ct_regs[89] = 8761741606912;
-			ct_regs[88] = ct_regs[87];
-			ct_regs[90] = ct_regs[87];
-			ct_regs[91] = ct_regs[87];
+			ct_regs[89] = 34225527552;
+			ct_regs[90] = 34225527552;
+			ct_regs[92] = 8761741606912;
+			ct_regs[91] = ct_regs[90];
+			ct_regs[93] = ct_regs[90];
+			ct_regs[94] = ct_regs[90];
 			instrs.trie = x86_64_instrs;
 			instrs.start = x86_64_instrs_start;
 			instrs.vals = x86_64_instrs_vals;
@@ -966,20 +978,21 @@ namespace libtysila5.target.x86_64
 			0, 0, 1, 0, 15, 0, 0, 1, 0, 16, 0, 0, 1, 0, 17, 0, 0, 
 			1, 0, 18, 0, 0, 1, 0, 19, 0, 0, 1, 0, 20, 0, 0, 1, 0, 
 			21, 0, 0, 1, 0, 22, 0, 0, 1, 0, 23, 0, 0, 1, 0, 24, 0, 
-			0, 1, 0, 25, 0, 0, 1, 0, 26, 1, 41, 2, 116, 121, 27, 0, 0, 
-			1, 0, 0, 1, 42, 1, 132, 0, 2, 21, 1, 137, 0, 3, 57, 1, 142, 
-			0, 4, 21, 1, 147, 0, 5, 40, 1, 152, 28, 0, 0, 1, 0, 29, 0, 
-			0, 1, 0, 0, 1, 41, 1, 167, 0, 2, 21, 1, 172, 30, 6, 21, 37, 
-			126, 0, 157, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 162, 0, 0, 0, 0, 
-			0, 0, 177, 31, 0, 0, 1, 0, 32, 0, 0, 1, 0, 33, 0, 0, 1, 
-			0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 37, 
-			0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 0, 
-			1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 0, 
-			44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 0, 7, 21, 52, 1, 6, 11, 
-			16, 21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 86, 
-			91, 96, 0, 0, 0, 0, 101, 0, 106, 111, 0, 0, 0, 0, 0, 0, 182, 
-			223, 228, 233, 238, 243, 248, 253, 258, 263, 268, 273, 278, 283, 288, 293, 
+			0, 1, 0, 25, 0, 0, 1, 0, 26, 0, 0, 1, 0, 27, 1, 41, 2, 
+			121, 126, 28, 0, 0, 1, 0, 0, 1, 42, 1, 137, 0, 2, 21, 1, 142, 
+			0, 3, 58, 1, 147, 0, 4, 21, 1, 152, 0, 5, 40, 1, 157, 29, 0, 
+			0, 1, 0, 30, 0, 0, 1, 0, 0, 1, 41, 1, 172, 0, 2, 21, 1, 
+			177, 31, 6, 21, 38, 131, 0, 162, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 167, 0, 0, 0, 0, 0, 0, 182, 32, 0, 0, 1, 0, 33, 0, 0, 
+			1, 0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 
+			37, 0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 
+			0, 1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 
+			0, 44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 46, 0, 0, 1, 0, 47, 
+			0, 0, 1, 0, 48, 0, 0, 1, 0, 0, 7, 21, 55, 1, 6, 11, 16, 
+			21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 86, 91, 
+			96, 0, 0, 0, 0, 101, 0, 106, 111, 116, 0, 0, 0, 0, 0, 0, 187, 
+			229, 234, 239, 244, 249, 254, 259, 264, 269, 274, 279, 284, 289, 294, 299, 304, 309, 
 		};
 		
 		InstructionHandler[] x86_64_instrs_vals = new InstructionHandler[] {
@@ -1005,6 +1018,7 @@ namespace libtysila5.target.x86_64
 			libtysila5.target.x86_64.x86_64_Assembler.handle_stind,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldind,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldlabaddr,
+			libtysila5.target.x86_64.x86_64_Assembler.handle_ldfp,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldloca,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_zeromem,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_add_stind,
@@ -1027,11 +1041,13 @@ namespace libtysila5.target.x86_64
 			libtysila5.target.x86_64.x86_64_Assembler.handle_shift,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_switch,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldobja,
+			libtysila5.target.x86_64.x86_64_Assembler.handle_cctor_runonce,
+			libtysila5.target.x86_64.x86_64_Assembler.handle_break,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_portin,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_portout,
 		};
 		
-		int x86_64_instrs_start = 298;
+		int x86_64_instrs_start = 314;
 	}
 }
 

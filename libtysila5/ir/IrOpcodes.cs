@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\ir\IrOpcodes.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 19:04:09 on 24 June 2017
+ * It was generated at 23:39:56 on 27 June 2017
  * from D:\tysos\branches\tysila3\libtysila5\ir\IrOpcodes.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -90,30 +90,33 @@ namespace libtysila5.ir
 		public const int oc_ldlabcontents = 46;
 		public const int oc_ldlabaddr = 47;
 		public const int oc_stlabcontents = 48;
-		public const int oc_ldloca = 49;
-		public const int oc_zeromem = 50;
-		public const int oc_swap = 51;
-		public const int oc_pop = 52;
-		public const int oc_phi = 53;
-		public const int oc_castclass = 54;
-		public const int oc_isinst = 55;
-		public const int oc_endfinally = 56;
-		public const int oc_ldc = 57;
-		public const int oc_ldloc = 58;
-		public const int oc_stloc = 59;
-		public const int oc_rem = 60;
-		public const int oc_ldarg = 61;
-		public const int oc_starg = 62;
-		public const int oc_ldarga = 63;
-		public const int oc_stackcopy = 64;
-		public const int oc_localloc = 65;
-		public const int oc_shr = 66;
-		public const int oc_shl = 67;
-		public const int oc_shr_un = 68;
-		public const int oc_switch = 69;
-		public const int oc_ldobja = 70;
-		public const int oc_x86_portin = 71;
-		public const int oc_x86_portout = 72;
+		public const int oc_ldfp = 49;
+		public const int oc_ldloca = 50;
+		public const int oc_zeromem = 51;
+		public const int oc_swap = 52;
+		public const int oc_pop = 53;
+		public const int oc_phi = 54;
+		public const int oc_castclass = 55;
+		public const int oc_isinst = 56;
+		public const int oc_endfinally = 57;
+		public const int oc_ldc = 58;
+		public const int oc_ldloc = 59;
+		public const int oc_stloc = 60;
+		public const int oc_rem = 61;
+		public const int oc_ldarg = 62;
+		public const int oc_starg = 63;
+		public const int oc_ldarga = 64;
+		public const int oc_stackcopy = 65;
+		public const int oc_localloc = 66;
+		public const int oc_shr = 67;
+		public const int oc_shl = 68;
+		public const int oc_shr_un = 69;
+		public const int oc_switch = 70;
+		public const int oc_ldobja = 71;
+		public const int oc_cctor_runonce = 72;
+		public const int oc_break = 73;
+		public const int oc_x86_portin = 74;
+		public const int oc_x86_portout = 75;
 		
 		internal static void init_oc()
 		{
@@ -147,30 +150,33 @@ namespace libtysila5.ir
 			oc_names[46] = "ldlabcontents";
 			oc_names[47] = "ldlabaddr";
 			oc_names[48] = "stlabcontents";
-			oc_names[49] = "ldloca";
-			oc_names[50] = "zeromem";
-			oc_names[51] = "swap";
-			oc_names[52] = "pop";
-			oc_names[53] = "phi";
-			oc_names[54] = "castclass";
-			oc_names[55] = "isinst";
-			oc_names[56] = "endfinally";
-			oc_names[57] = "ldc";
-			oc_names[58] = "ldloc";
-			oc_names[59] = "stloc";
-			oc_names[60] = "rem";
-			oc_names[61] = "ldarg";
-			oc_names[62] = "starg";
-			oc_names[63] = "ldarga";
-			oc_names[64] = "stackcopy";
-			oc_names[65] = "localloc";
-			oc_names[66] = "shr";
-			oc_names[67] = "shl";
-			oc_names[68] = "shr_un";
-			oc_names[69] = "switch";
-			oc_names[70] = "ldobja";
-			oc_names[71] = "x86_portin";
-			oc_names[72] = "x86_portout";
+			oc_names[49] = "ldfp";
+			oc_names[50] = "ldloca";
+			oc_names[51] = "zeromem";
+			oc_names[52] = "swap";
+			oc_names[53] = "pop";
+			oc_names[54] = "phi";
+			oc_names[55] = "castclass";
+			oc_names[56] = "isinst";
+			oc_names[57] = "endfinally";
+			oc_names[58] = "ldc";
+			oc_names[59] = "ldloc";
+			oc_names[60] = "stloc";
+			oc_names[61] = "rem";
+			oc_names[62] = "ldarg";
+			oc_names[63] = "starg";
+			oc_names[64] = "ldarga";
+			oc_names[65] = "stackcopy";
+			oc_names[66] = "localloc";
+			oc_names[67] = "shr";
+			oc_names[68] = "shl";
+			oc_names[69] = "shr_un";
+			oc_names[70] = "switch";
+			oc_names[71] = "ldobja";
+			oc_names[72] = "cctor_runonce";
+			oc_names[73] = "break";
+			oc_names[74] = "x86_portin";
+			oc_names[75] = "x86_portout";
 		}
 	}
 }
@@ -179,33 +185,33 @@ namespace libtysila5.ir
 {
 	partial class Opcode
 	{
-		public const int cc_always = 73;
-		public const int cc_never = 74;
-		public const int cc_eq = 75;
-		public const int cc_ne = 76;
-		public const int cc_gt = 77;
-		public const int cc_ge = 78;
-		public const int cc_lt = 79;
-		public const int cc_le = 80;
-		public const int cc_a = 81;
-		public const int cc_ae = 82;
-		public const int cc_b = 83;
-		public const int cc_be = 84;
+		public const int cc_always = 76;
+		public const int cc_never = 77;
+		public const int cc_eq = 78;
+		public const int cc_ne = 79;
+		public const int cc_gt = 80;
+		public const int cc_ge = 81;
+		public const int cc_lt = 82;
+		public const int cc_le = 83;
+		public const int cc_a = 84;
+		public const int cc_ae = 85;
+		public const int cc_b = 86;
+		public const int cc_be = 87;
 		
 		internal static void init_cc()
 		{
-			cc_names[73] = "always";
-			cc_names[74] = "never";
-			cc_names[75] = "eq";
-			cc_names[76] = "ne";
-			cc_names[77] = "gt";
-			cc_names[78] = "ge";
-			cc_names[79] = "lt";
-			cc_names[80] = "le";
-			cc_names[81] = "a";
-			cc_names[82] = "ae";
-			cc_names[83] = "b";
-			cc_names[84] = "be";
+			cc_names[76] = "always";
+			cc_names[77] = "never";
+			cc_names[78] = "eq";
+			cc_names[79] = "ne";
+			cc_names[80] = "gt";
+			cc_names[81] = "ge";
+			cc_names[82] = "lt";
+			cc_names[83] = "le";
+			cc_names[84] = "a";
+			cc_names[85] = "ae";
+			cc_names[86] = "b";
+			cc_names[87] = "be";
 		}
 	}
 }
@@ -236,25 +242,25 @@ namespace libtysila5.ir
 {
 	partial class Opcode
 	{
-		public const int ct_unknown = 85;
-		public const int ct_int32 = 86;
-		public const int ct_int64 = 87;
-		public const int ct_intptr = 88;
-		public const int ct_float = 89;
-		public const int ct_object = 90;
-		public const int ct_ref = 91;
-		public const int ct_vt = 92;
+		public const int ct_unknown = 88;
+		public const int ct_int32 = 89;
+		public const int ct_int64 = 90;
+		public const int ct_intptr = 91;
+		public const int ct_float = 92;
+		public const int ct_object = 93;
+		public const int ct_ref = 94;
+		public const int ct_vt = 95;
 		
 		internal static void init_ct()
 		{
-			ct_names[85] = "unknown";
-			ct_names[86] = "int32";
-			ct_names[87] = "int64";
-			ct_names[88] = "intptr";
-			ct_names[89] = "float";
-			ct_names[90] = "object";
-			ct_names[91] = "ref";
-			ct_names[92] = "vt";
+			ct_names[88] = "unknown";
+			ct_names[89] = "int32";
+			ct_names[90] = "int64";
+			ct_names[91] = "intptr";
+			ct_names[92] = "float";
+			ct_names[93] = "object";
+			ct_names[94] = "ref";
+			ct_names[95] = "vt";
 		}
 	}
 }

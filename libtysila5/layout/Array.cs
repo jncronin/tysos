@@ -70,7 +70,7 @@ namespace libtysila5.layout
                 case ArrayField.VtblPointer:
                     return 0;
                 case ArrayField.MutexLock:
-                    return 1;
+                    return 1 * t.GetPointerSize();
                 case ArrayField.ElemTypeVtblPointer:
                     return 2 * t.GetPointerSize();
                 case ArrayField.LoboundsPointer:

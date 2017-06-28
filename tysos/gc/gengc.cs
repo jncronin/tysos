@@ -130,15 +130,17 @@ namespace tysos.gc
 
         internal static gengc heap = null;
 
-        static int[] sm_sizes = new int[] { 8, 16, 24, 32, 48, 64, 80, 96, 128, 192, 256, 384, 512,
-            1024, 2048 };
-
-        /* sm_total_counts must be a multiple of 8 */
-        static int[] sm_total_counts = new int[] { 512, 256, 160, 128, 80, 64, 48, 40, 32, 16, 8, 8, 8,
-            8, 8 };
+        static int[] sm_sizes; 
+        static int[] sm_total_counts; 
         
         public void Init(void *start, void *end)
         {
+            sm_sizes = new int[] { 8, 16, 24, 32, 48, 64, 80, 96, 128, 192, 256, 384, 512,
+            1024, 2048 };
+            /* sm_total_counts must be a multiple of 8 */
+            sm_total_counts = new int[] { 512, 256, 160, 128, 80, 64, 48, 40, 32, 16, 8, 8, 8,
+            8, 8 };
+
             /* Check we have enough space for our structures */
             if (((byte*)end - (byte*)start) < 0x100000)
                 throw new Exception("Not enough heap space provided");

@@ -47,6 +47,10 @@ namespace libtysila5
         public target.Target.Reg[] incoming_args;
         public bool[] la_needs_assign;
 
+        internal int cctor_ret_tag = -1;
+        public bool is_cctor = false;
+        public util.Set<TypeSpec> static_types_referenced = new util.Set<TypeSpec>();
+
         public metadata.TypeSpec ret_ts = null;
 
         public ulong regs_used = 0;

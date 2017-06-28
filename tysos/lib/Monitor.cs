@@ -30,6 +30,34 @@ namespace tysos.lib
     {
         [libsupcs.AlwaysCompile]
         [libsupcs.Uninterruptible]
+        [libsupcs.MethodAlias("_ZW18System#2EThreading7Monitor_17Monitor_try_enter_Rb_P2u1Oi")]
+        static unsafe bool Monitor_try_enter(object obj, int ms)
+        {
+            byte* mla = (byte*)libsupcs.CastOperations.ReinterpretAsPointer(obj);
+            mla = mla + libsupcs.ClassOperations.GetMutexLockOffset();
+
+            if (ms == System.Threading.Timeout.Infinite)
+            {
+                while (try_acquire(mla, Program.GetCurThreadId()) != 1) ;
+                return true;
+            }
+            else            
+                return try_acquire(mla, Program.GetCurThreadId()) == 1;
+        }
+
+        [libsupcs.AlwaysCompile]
+        [libsupcs.Uninterruptible]
+        [libsupcs.MethodAlias("_ZW18System#2EThreading7Monitor_12Monitor_exit_Rv_P1u1O")]
+        static unsafe void Monitor_exit(object obj)
+        {
+            byte* mla = (byte*)libsupcs.CastOperations.ReinterpretAsPointer(obj);
+            mla = mla + libsupcs.ClassOperations.GetMutexLockOffset();
+
+            release(mla, Program.GetCurThreadId());
+        }
+
+        [libsupcs.AlwaysCompile]
+        [libsupcs.Uninterruptible]
         [libsupcs.MethodAlias("__try_acquire")]
         static unsafe int try_acquire(byte* mutex_lock_address, int cur_thread_id)
         {
@@ -85,6 +113,7 @@ namespace tysos.lib
                 }
                 else
                 {
+                    System.Diagnostics.Debugger.Break();
                     libsupcs.OtherOperations.Spinunlock(mutex_lock_address);
                     Formatter.WriteLine("tysos.lib.Monitor.release(): attempt to release lock not owned by thread - lock id: " + ((ulong)mutex_lock_address).ToString("X16"), Program.arch.DebugOutput);
                     Formatter.WriteLine("tysos.lib.Monitor.release(): attempt by thread id: " + cur_thread_id.ToString() + " whilst lock held by thread id: " + (*thread_id).ToString(), Program.arch.DebugOutput);

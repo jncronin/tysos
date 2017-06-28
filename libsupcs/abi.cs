@@ -240,6 +240,10 @@ namespace libsupcs
         [MethodReferenceAlias("gcmalloc")]
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern object GcMalloc(System.IntPtr size);
+
+        [MethodReferenceAlias("gcmalloc")]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static unsafe extern void* GcMalloc(int size);
     }
 
     public class IoOperations
@@ -322,6 +326,9 @@ namespace libsupcs
     public class ClassOperations
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern int GetMutexLockOffset();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern int GetVtblFieldOffset();
 
         //[MethodImpl(MethodImplOptions.InternalCall)]
@@ -373,6 +380,12 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void CallI(System.UIntPtr address);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe extern static void CallI(void *address);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe extern static void CallI(void* address, void* obj);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [IgnoreImplementation]

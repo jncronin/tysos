@@ -688,7 +688,7 @@ namespace tysos
 
         [libsupcs.MethodAlias("__get_cur_thread_id")]
         [libsupcs.AlwaysCompile]
-        static int GetCurThreadId()
+        static internal int GetCurThreadId()
         {
             if (arch.CurrentCpu == null)
                 return 1;

@@ -40,11 +40,15 @@ namespace libtysila5.layout
             if (ts.SimpleType != 0)
                 return GetTypeSize(ts, t, is_static);
 
-            // reference types will always have a pointer in them
+            // reference types will always have a pointer and int64 in them
             if (is_static == false && !ts.IsValueType)
             {
                 cur_align = t.psize;
+                cur_align = util.util.align(cur_align, t.GetCTSize(ir.Opcode.ct_int64));
             }
+            // and static will always have an 'is_initialized'
+            else if (is_static)
+                cur_align = t.psize;
 
             /* Iterate through methods looking for requested
                 one */
@@ -104,11 +108,25 @@ namespace libtysila5.layout
 
             if (is_static == false && !ts.IsValueType)
             {
-                // Add a vtable entry
-                cur_offset += t.GetCTSize(ir.Opcode.ct_object);
-                cur_offset = util.util.align(cur_offset, align);
+                if (ts.GetExtends() == null)
+                {
+                    // Add a vtable entry
+                    cur_offset += t.GetCTSize(ir.Opcode.ct_object);
+                    cur_offset = util.util.align(cur_offset, align);
 
-                // Add a mutex lock entry
+                    // Add a mutex lock entry
+                    cur_offset += t.GetCTSize(ir.Opcode.ct_int64);
+                    cur_offset = util.util.align(cur_offset, align);
+                }
+                else
+                {
+                    cur_offset = GetFieldOffset(ts.GetExtends(), (string)null, t);
+                    cur_offset = util.util.align(cur_offset, align);
+                }
+            }
+            else if(is_static)
+            {
+                // Add an is_initalized field
                 cur_offset += t.GetCTSize(ir.Opcode.ct_intptr);
                 cur_offset = util.util.align(cur_offset, align);
             }
@@ -171,23 +189,38 @@ namespace libtysila5.layout
 
             if (is_static == false && !ts.IsValueType)
             {
-                // Add a vtable entry
-                cur_offset += t.GetCTSize(ir.Opcode.ct_object);
-                cur_offset = util.util.align(cur_offset, align);
+                if (ts.GetExtends() == null)
+                {
+                    // Add a vtable entry
+                    cur_offset += t.GetCTSize(ir.Opcode.ct_object);
+                    cur_offset = util.util.align(cur_offset, align);
 
-                if (field_types != null)
-                    field_types.Add(ts.m.SystemIntPtr);
-                if (field_names != null)
-                    field_names.Add("__vtbl");
+                    if (field_types != null)
+                        field_types.Add(ts.m.SystemIntPtr);
+                    if (field_names != null)
+                        field_names.Add("__vtbl");
 
-                // Add a mutex lock entry
+                    // Add a mutex lock entry
+                    cur_offset += t.GetCTSize(ir.Opcode.ct_int64);
+                    cur_offset = util.util.align(cur_offset, align);
+
+                    if (field_types != null)
+                        field_types.Add(ts.m.SystemInt64);
+                    if (field_names != null)
+                        field_names.Add("__mutex_lock");
+                }
+                else
+                {
+                    cur_offset = GetFieldOffset(ts.GetExtends(), (string)null, t,
+                        is_static, field_types, field_names);
+                    cur_offset = util.util.align(cur_offset, align);
+                }
+            }
+            else if (is_static)
+            {
+                // Add an is_initalized field
                 cur_offset += t.GetCTSize(ir.Opcode.ct_intptr);
                 cur_offset = util.util.align(cur_offset, align);
-
-                if (field_types != null)
-                    field_types.Add(ts.m.SystemIntPtr);
-                if (field_names != null)
-                    field_names.Add("__mutex_lock");
             }
 
             for (uint fdef_row = first_fdef; fdef_row < last_fdef; fdef_row++)
@@ -251,7 +284,7 @@ namespace libtysila5.layout
                     {
                         return is_static ? 0 : (t.GetPointerSize());
                     }
-                    if (ts.m.classlayouts[ts.tdrow] != 0)
+                    if (ts.m.classlayouts[ts.tdrow] != 0 && ts.IsGeneric == false && ts.IsGenericTemplate == false)
                     {
                         var size = ts.m.GetIntEntry(metadata.MetadataStream.tid_ClassLayout,
                             ts.m.classlayouts[ts.tdrow],
@@ -260,6 +293,7 @@ namespace libtysila5.layout
                     }
                     return GetFieldOffset(ts, (string)null, t, is_static);
                 case TypeSpec.SpecialType.SzArray:
+                case TypeSpec.SpecialType.Array:
                     if (is_static)
                         return 0;
                     return GetArrayObjectSize(t);
@@ -281,12 +315,21 @@ namespace libtysila5.layout
             if (!t.IsTypeValid(ts))
                 return;
 
+            int align = 1;
+            if (ts.SimpleType == 0)
+                align = GetTypeAlignment(ts, t, true);
+
             var os = of.GetDataSection();
-            os.Align(t.GetCTSize(ir.Opcode.ct_object));
+            os.Align(align);
 
             ulong offset = (ulong)os.Data.Count;
 
             int cur_offset = 0;
+
+            /* is_initialized */
+            for (int i = 0; i < t.psize; i++)
+                os.Data.Add(0);
+            cur_offset += t.psize;
 
             /* Iterate through methods looking for requested
                 one */
@@ -307,6 +350,8 @@ namespace libtysila5.layout
 
                     var ft = ts.m.GetFieldType(ref fsig, ts.gtparams, null);
                     var ft_size = t.GetSize(ft);
+
+                    ft_size = util.util.align(ft_size, align);
 
                     /* See if there is any data defined as an rva */
                     var rva = ts.m.fieldrvas[(int)fdef_row];

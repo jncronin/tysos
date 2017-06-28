@@ -32,6 +32,131 @@ namespace libtysila5.ir
 {
     public partial class ConvertToIR
     {
+        internal static Code CreateArrayCtor1(MethodSpec ms,
+            Target t)
+        {
+            Code c = new Code { t = t, ms = ms };
+            t.AllocateLocalVarsArgs(c);
+            cil.CilNode n = new cil.CilNode(ms, 0);
+
+            List<cil.CilNode.IRNode> ret = new List<cil.CilNode.IRNode>();
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+
+            // Enter
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_enter, stack_before = stack_before, stack_after = stack_before });
+
+            // Set elem type vtbl pointer
+            stack_before = ldarg(n, c, stack_before, 0);
+            stack_before = ldc(n, c, stack_before, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.ElemTypeVtblPointer, t), 0x18);
+            stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_before = ldlab(n, c, stack_before, ms.type.other.MangleType());
+            t.r.VTableRequestor.Request(ms.type.other.Box);
+            stack_before = stind(n, c, stack_before, t.GetPointerSize());
+
+            // Set lobounds array and pointer
+            stack_before = ldarg(n, c, stack_before, 0);
+            stack_before = ldc(n, c, stack_before, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.LoboundsPointer, t), 0x18);
+            stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_before = ldc(n, c, stack_before, t.GetSize(ms.m.SystemInt32) * ms.type.arr_rank);
+            stack_before = call(n, c, stack_before, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
+            for(int i = 0; i < ms.type.arr_rank; i++)
+            {
+                stack_before = copy_to_front(n, c, stack_before);
+                if(i != 0)
+                {
+                    stack_before = ldc(n, c, stack_before, t.GetSize(ms.m.SystemInt32) * i, 0x18);
+                    stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+                }
+                stack_before = ldc(n, c, stack_before, 0); // lobounds implied to be 0
+                stack_before = stind(n, c, stack_before, t.GetSize(ms.m.SystemInt32));
+            }
+            stack_before = stind(n, c, stack_before, t.GetPointerSize());
+
+            // Set sizes array and pointer
+            stack_before = ldarg(n, c, stack_before, 0);
+            stack_before = ldc(n, c, stack_before, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.SizesPointer, t), 0x18);
+            stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_before = ldc(n, c, stack_before, t.GetSize(ms.m.SystemInt32) * ms.type.arr_rank);
+            stack_before = call(n, c, stack_before, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
+            for (int i = 0; i < ms.type.arr_rank; i++)
+            {
+                stack_before = copy_to_front(n, c, stack_before);
+                if (i != 0)
+                {
+                    stack_before = ldc(n, c, stack_before, t.GetSize(ms.m.SystemInt32) * i, 0x18);
+                    stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+                }
+                stack_before = ldarg(n, c, stack_before, 1 + i);
+                stack_before = stind(n, c, stack_before, t.GetSize(ms.m.SystemInt32));
+            }
+            stack_before = stind(n, c, stack_before, t.GetPointerSize());
+
+            // Set data array pointer
+            stack_before = ldarg(n, c, stack_before, 0);
+            stack_before = ldc(n, c, stack_before, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.DataArrayPointer, t), 0x18);
+            stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            if (ms.type.arr_rank == 0)
+                stack_before = ldc(n, c, stack_before, 0);
+            else
+                stack_before = ldarg(n, c, stack_before, 1);    // don't need to subtract lobounds for ctor1
+            for(int i = 1; i < ms.type.arr_rank; i++)
+            {
+                stack_before = ldarg(n, c, stack_before, 1 + i);    // load size
+                // don't need to subtract lobounds here
+                stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.mul);
+            }
+            var et_size = t.GetSize(ms.type.other);
+            if(et_size > 1)
+            {
+                stack_before = ldc(n, c, stack_before, et_size);
+                stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.mul);
+            }
+            stack_before = call(n, c, stack_before, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
+            stack_before = stind(n, c, stack_before, t.GetPointerSize());
+
+            // Set Rank
+            stack_before = ldarg(n, c, stack_before, 0);
+            stack_before = ldc(n, c, stack_before, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.Rank, t), 0x18);
+            stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_before = ldc(n, c, stack_before, ms.type.arr_rank);
+            stack_before = stind(n, c, stack_before, t.GetSize(ms.m.SystemInt32));
+
+            // Set Elem Size
+            stack_before = ldarg(n, c, stack_before, 0);
+            stack_before = ldc(n, c, stack_before, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.ElemTypeSize, t), 0x18);
+            stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_before = ldc(n, c, stack_before, et_size);
+            stack_before = stind(n, c, stack_before, t.GetSize(ms.m.SystemInt32));
+
+            // Ret
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, ct = ir.Opcode.ct_unknown, stack_before = stack_before, stack_after = stack_before });
+
+            c.cil = new List<cil.CilNode> { n };
+            c.ir = n.irnodes;
+
+            c.starts = new List<cil.CilNode> { n };
+
+            return c;
+        }
+
+        internal static Code CreateArrayCtor2(MethodSpec ms,
+           Target t)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal static Code CreateArrayAddress(MethodSpec ms,
+           Target t)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal static Code CreateArraySet(MethodSpec ms,
+           Target t)
+        {
+            throw new NotImplementedException();
+        }
+
         internal static Code CreateArrayGet(MethodSpec ms,
             Target t)
         {

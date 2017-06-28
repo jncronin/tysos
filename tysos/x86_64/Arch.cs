@@ -169,6 +169,7 @@ namespace tysos.x86_64
             cr0 |= (1 << 16);   // set cr0.WP
             libsupcs.x86_64.Cpu.Cr0 = cr0;
 
+
             /* Set-up the MXCSR register
              * 
              * We want to unmask all exceptions except the precision exception which is thrown if the

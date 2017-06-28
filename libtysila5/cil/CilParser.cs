@@ -69,6 +69,11 @@ namespace libtysila5.cil
                         {
                             n.handler_starts.Add(ehdr);
                         }
+                        if(offset >= ehdr.HandlerILOffset &&
+                            offset < ehdr.HandlerILOffset + ehdr.HandlerLength)
+                        {
+                            n.is_in_excpt_handler = true;
+                        }
                     }
                 }
 

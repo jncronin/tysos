@@ -1219,7 +1219,7 @@ namespace metadata
             return last_fdef;
         }
 
-        public MethodSpec GetMethodSpec(TypeSpec ts, string name, int sig, MetadataStream sig_m)
+        public MethodSpec GetMethodSpec(TypeSpec ts, string name, int sig, MetadataStream sig_m, bool throw_on_error = true)
         {
             var first_mdef = ts.m.GetIntEntry(tid_TypeDef, ts.tdrow, 5);
             var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
@@ -1252,11 +1252,16 @@ namespace metadata
                 }
             }
 
-            throw new NotImplementedException("cannot find " +
-                sig_m.MangleMethod(ts, name, sig));
+            if (throw_on_error)
+            {
+                throw new NotImplementedException("cannot find " +
+                    sig_m.MangleMethod(ts, name, sig));
+            }
+            else
+                return null;
         }
 
-        public int GetMethodDefRow(TypeSpec ts, string name, int sig, MetadataStream sig_m)
+        public int GetMethodDefRow(TypeSpec ts, string name, int sig, MetadataStream sig_m, bool throw_on_error = true)
         {
             var first_mdef = ts.m.GetIntEntry(tid_TypeDef, ts.tdrow, 5);
             var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
@@ -1278,8 +1283,13 @@ namespace metadata
                 }
             }
 
-            throw new NotImplementedException("cannot find " +
-                sig_m.MangleMethod(ts, name, sig));
+            if (throw_on_error)
+            {
+                throw new NotImplementedException("cannot find " +
+                    sig_m.MangleMethod(ts, name, sig));
+            }
+            else
+                return -1;
         }
 
         /*private int GetMethodDefRow(int tdrow, string name, int sig, MetadataStream sig_m)

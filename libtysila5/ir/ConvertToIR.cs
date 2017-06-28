@@ -165,9 +165,58 @@ namespace libtysila5.ir
                 }
             } while (unconverted != 0);
 
+            // Determine if this method is a static constructor
+            if(MetadataStream.CompareSignature(c.ms.m, c.ms.msig, c.ms.gtparams, c.ms.gmparams,
+                c.special_meths, c.special_meths.static_Rv_P0, null, null))
+            {
+                var meth_name = c.ms.name_override;
+                if(meth_name == null)
+                {
+                    meth_name = c.ms.m.GetStringEntry(MetadataStream.tid_MethodDef,
+                        c.ms.mdrow, 3);
+                }
+                if(meth_name != null && meth_name == ".cctor")
+                    c.is_cctor = true;
+            }
+
+            // Insert special code 
+            if (c.static_types_referenced.Count > 0 || c.is_cctor)
+            {
+                foreach (var n in c.cil)
+                {
+                    if (n.is_meth_start)
+                    {
+                        // If this is not a static constructor, call others we may have referenced
+                        if (c.is_cctor == false)
+                        {
+                            foreach (var static_type in c.static_types_referenced)
+                            {
+                                var cctor = static_type.m.GetMethodSpec(static_type, ".cctor", c.special_meths.static_Rv_P0, c.special_meths, false);
+
+                                if (cctor != null)
+                                {
+                                    n.irnodes.Insert(1,
+                                        new CilNode.IRNode { parent = n, opcode = Opcode.oc_call, imm_ms = cctor, stack_before = n.irnodes[0].stack_after, stack_after = n.irnodes[0].stack_after, ignore_for_mcoffset = true });
+                                    c.t.r.MethodRequestor.Request(cctor);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // This is a static constructor, so we need to put some special code to
+                            //  ensure it is only run once
+                            n.irnodes.Insert(1,
+                                new CilNode.IRNode { parent = n, opcode = Opcode.oc_cctor_runonce, imm_ts = c.ms.type, stack_before = n.irnodes[0].stack_after, stack_after = n.irnodes[0].stack_after, ignore_for_mcoffset = true });
+
+                        }
+                    }
+                }
+            }
+
             c.ir = new System.Collections.Generic.List<CilNode.IRNode>();
             foreach (var n in c.cil)
                 c.ir.AddRange(n.irnodes);
+
         }
 
         private static void DoConversion(CilNode n, Code c, Stack<StackItem> stack_before)
@@ -814,6 +863,10 @@ namespace libtysila5.ir
                                 si = new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0x18) };
                                 stack_after.Push(si);
 
+                                // don't allow localloc in exception handlers
+                                if (n.is_in_excpt_handler)
+                                    throw new NotSupportedException("localloc in exception handler");
+
                                 n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_localloc, stack_before = stack_before, stack_after = stack_after });
 
                                 // TODO: if localsinit set then initialize to zero
@@ -992,13 +1045,19 @@ namespace libtysila5.ir
         private static Stack<StackItem> ehdr_trycatch_start(CilNode n, Code c, Stack<StackItem> stack_before, int ehdrIdx,
             bool is_catch = false)
         {
-            var stack_after = ldlab(n, c, stack_before, c.ms.m.MangleMethod(c.ms) + "EH",
-                ehdrIdx * layout.Layout.GetEhdrSize(c.t));
-            c.t.r.EHRequestor.Request(c);
 
             if (is_catch)
             {
                 n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_enter_handler, imm_l = ehdrIdx, stack_after = stack_before, stack_before = stack_before });
+            }
+
+            var stack_after = ldlab(n, c, stack_before, c.ms.m.MangleMethod(c.ms) + "EH",
+                ehdrIdx * layout.Layout.GetEhdrSize(c.t));
+            stack_after = ldfp(n, c, stack_after);
+            c.t.r.EHRequestor.Request(c);
+
+            if(is_catch)
+            {
                 stack_after = call(n, c, stack_after, false, "enter_catch",
                     c.special_meths, c.special_meths.catch_enter);
             }
@@ -1007,6 +1066,16 @@ namespace libtysila5.ir
                 stack_after = call(n, c, stack_after, false, "enter_try",
                     c.special_meths, c.special_meths.try_enter);
             }
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> ldfp(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var stack_after = new Stack<StackItem>(stack_before);
+
+            stack_after.Push(new StackItem { ts = c.ms.m.SystemIntPtr });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldfp, stack_before = stack_before, stack_after = stack_after });
 
             return stack_after;
         }
@@ -1859,7 +1928,10 @@ namespace libtysila5.ir
                 fs = n.GetTokenAsMethodSpec(c);
             ts = fs.type;
             //if (!c.ms.m.GetFieldDefRow(table_id, row, out ts, out fs))
-                //throw new Exception("Field not found");
+            //throw new Exception("Field not found");
+
+            if (is_static)
+                c.static_types_referenced.Add(ts);
 
             fld_ts = c.ms.m.GetFieldType(fs, ts.gtparams, c.ms.gmparams);
 
@@ -1924,7 +1996,7 @@ namespace libtysila5.ir
             var ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
             var ts = ms.type;
 
-            var l = layout.Layout.GetVTableOffset(ms);
+            var l = layout.Layout.GetVTableOffset(ms) * c.t.psize;
 
             Stack<StackItem> stack_after = stack_before;
 
@@ -1935,6 +2007,7 @@ namespace libtysila5.ir
             stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
             stack_after = ldc(n, c, stack_after, l, 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
 
             stack_after.Peek().ms = ms;
 

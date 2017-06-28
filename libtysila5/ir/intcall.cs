@@ -44,6 +44,8 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_3Add_Ru1U_P2u1Uu1U"] = uintptr_Add;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_3Mul_Ru1U_P2u1Uu1U"] = uintptr_Mul;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_3Sub_Ru1U_P2u1Uu1U"] = uintptr_Sub;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_5CallI_Rv_P1Pv"] = calli;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_5CallI_Rv_P2PvPv"] = calli_pvpv;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_18GetFunctionAddress_Ru1I_P1u1S"] = get_func_address;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_22GetStaticObjectAddress_Ru1I_P1u1S"] = get_static_obj_address;
@@ -63,6 +65,7 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_22GetBoxedTypeDataOffset_Ri_P0"] = class_getBoxedTypeDataOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_18GetVtblFieldOffset_Ri_P0"] = class_getVtblFieldOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_21GetVtblTypeSizeOffset_Ri_P0"] = class_getVtblTypeSizeOffset;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_18GetMutexLockOffset_Ri_P0"] = class_getMutexLockOffset;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU1_Rh_P1u1U"] = peek_Byte;
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU2_Rt_P1u1U"] = peek_Ushort;
@@ -73,6 +76,24 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_4Poke_Rv_P2u1Ut"] = poke_Ushort;
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_4Poke_Rv_P2u1Uj"] = poke_Uint;
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_4Poke_Rv_P2u1Uy"] = poke_Ulong;
+
+            intcalls["_ZW20System#2EDiagnostics8Debugger_5Break_Rv_P0"] = debugger_Break;
+        }
+
+        private static Stack<StackItem> debugger_Break(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_break, stack_before = stack_before, stack_after = stack_before });
+            return stack_before;
+        }
+
+        private static Stack<StackItem> calli(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            return call(n, c, stack_before, true, "calli_target", c.special_meths, c.special_meths.static_Rv_P0);
+        }
+
+        private static Stack<StackItem> calli_pvpv(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            return call(n, c, stack_before, true, "calli_target", c.special_meths, c.special_meths.static_Rv_P1Pv);
         }
 
         private static Stack<StackItem> poke_Ulong(CilNode n, Code c, Stack<StackItem> stack_before)
@@ -146,6 +167,11 @@ namespace libtysila5.ir
         private static Stack<StackItem> class_getVtblTypeSizeOffset(CilNode n, Code c, Stack<StackItem> stack_before)
         {
             return ldc(n, c, stack_before, 3 * c.t.GetPointerSize());
+        }
+
+        private static Stack<StackItem> class_getMutexLockOffset(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            return ldc(n, c, stack_before, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.MutexLock, c.t));
         }
 
         private static Stack<StackItem> array_getLoboundsOffset(CilNode n, Code c, Stack<StackItem> stack_before)

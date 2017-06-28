@@ -55,6 +55,7 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"ldlabcontents",
 	"ldlabaddr",
 	"stlabcontents",
+	"ldfp",
 	"ldloca",
 	"zeromem",
 	"swap",
@@ -75,6 +76,8 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"shr", "shl", "shr_un",
 	"switch",
 	"ldobja",
+	"cctor_runonce",
+	"break",
 
 	"x86_portin",
 	"x86_portout",

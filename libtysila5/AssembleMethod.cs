@@ -61,6 +61,22 @@ namespace libtysila5
                 {
                     code_override = ir.ConvertToIR.CreateArrayGet(ms, t);
                 }
+                else if (ms.name_override == ".ctor")
+                {
+                    // there are two constructors, choose the correct one
+                    var pcount = ms.m.GetMethodDefSigParamCount(ms.msig);
+
+                    if (pcount == ms.type.arr_rank)
+                        code_override = ir.ConvertToIR.CreateArrayCtor1(ms, t);
+                    else if (pcount == 2 * ms.type.arr_rank)
+                        code_override = ir.ConvertToIR.CreateArrayCtor2(ms, t);
+                    else
+                        throw new NotSupportedException("Invalid number of parameters to " + ms.MangleMethod() + " for array of rank " + ms.type.arr_rank.ToString());
+                }
+                else if (ms.name_override == "Set")
+                    code_override = ir.ConvertToIR.CreateArraySet(ms, t);
+                else if (ms.name_override == "Address")
+                    code_override = ir.ConvertToIR.CreateArrayAddress(ms, t);
                 else
                     throw new NotImplementedException(ms.name_override);
 

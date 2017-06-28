@@ -81,6 +81,9 @@ export function target_init(string name, int ptr_size, int is_msb)
 	instr(tdef, "rem");
 	instr(tdef, "switch");
 	instr(tdef, "zeromem");
+	instr(tdef, "cctor_runonce");
+	instr(tdef, "ldfp");
+	instr(tdef, "break");
 
 	target_defs.add(tdef);
 

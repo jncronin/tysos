@@ -68,7 +68,8 @@ namespace libtysila5.target.x86
                      * 
                      * where we want the jmp to be to the br irnode, rather than the enter irnode */
                     if (ir.opcode != libtysila5.ir.Opcode.oc_enter &&
-                        ir.opcode != libtysila5.ir.Opcode.oc_enter_handler)
+                        ir.opcode != libtysila5.ir.Opcode.oc_enter_handler &&
+                        ir.ignore_for_mcoffset == false)
                     {
                         il_starts[cil.il_offset] = mc_offset;
                         cil.mc_offset = mc_offset;
@@ -350,10 +351,32 @@ namespace libtysila5.target.x86
                         }
                         AddImm32(Code, I.p[2].v);
                         break;
+                    case x86_cmp_rm8_imm8:
+                        if (I.p[1].mreg == r_eax)
+                            Code.Add(0x3c);
+                        else
+                        {
+                            AddRex(Code, Rex(0, null, I.p[1].mreg));
+                            Code.Add(0x80);
+                            Code.AddRange(ModRMSIB(7, I.p[1].mreg));
+                        }
+                        AddImm8(Code, I.p[2].v);
+                        break;
                     case x86_cmp_rm32_imm8:
                         Code.Add(0x83);
                         Code.AddRange(ModRMSIB(7, I.p[1].mreg));
                         AddImm8(Code, I.p[2].v);
+                        break;
+                    case x86_lock_cmpxchg_rm8_r8:
+                        Code.Add(0xf0); // lock before rex
+                        AddRex(Code, Rex(I.p[0].v, I.p[2].mreg, I.p[1].mreg));
+                        Code.Add(0x0f);
+                        Code.Add(0xb0);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                        break;
+                    case x86_pause:
+                        Code.Add(0xf3);
+                        Code.Add(0x90);
                         break;
                     case x86_set_rm32:
                         if (I.p[1].v != ir.Opcode.cc_never)
@@ -610,7 +633,7 @@ namespace libtysila5.target.x86
                         AddImm32(Code, I.p[3].v);
                         break;
                     case x86_mov_rm16disp_imm32:
-                        Code.Add(0x67); // CHECK
+                        Code.Add(0x66);
                         Code.Add(0xc7);
                         Code.AddRange(ModRMSIB(0, GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                         AddImm16(Code, I.p[3].v);
@@ -627,7 +650,7 @@ namespace libtysila5.target.x86
                         Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                         break;
                     case x86_mov_rm16disp_r16:
-                        Code.Add(0x67); // CHECK
+                        Code.Add(0x66);
                         AddRex(Code, Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg));
                         Code.Add(0x89);
                         Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
@@ -769,6 +792,10 @@ namespace libtysila5.target.x86
                         break;
                     case x86_in_eax_dx:
                         Code.Add(0xed);
+                        break;
+
+                    case x86_int3:
+                        Code.Add(0xcc);
                         break;
 
                     case x86_movsd_xmmm64_xmm:

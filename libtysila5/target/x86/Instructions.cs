@@ -1513,6 +1513,15 @@ namespace libtysila5.target.x86
         {
             List<MCInst> r = new List<MCInst>();
 
+            /* Put a local label here so we can jmp here at will */
+            int ret_lab = c.cctor_ret_tag;
+            if(ret_lab == -1)
+            {
+                ret_lab = c.next_mclabel--;
+                c.cctor_ret_tag = ret_lab;
+            }
+            r.Add(inst(Generic.g_mclabel, new ir.Param { t = ir.Opcode.vl_br_target, v = ret_lab }, n));
+
             if (n.stack_before.Count == 1)
             {
                 var reg = n.stack_before.Peek().reg;
@@ -1569,8 +1578,39 @@ namespace libtysila5.target.x86
             for (int i = c.regs_saved.Count - 1; i >= 0; i--)
                 handle_pop(c.regs_saved[i], ref x, r, n, c);
 
-            r.Add(inst(t.psize == 4 ? x86_mov_r32_rm32 : x86_mov_r64_rm64, r_esp, r_ebp, n));
+            if(!n.parent.is_in_excpt_handler)
+                r.Add(inst(t.psize == 4 ? x86_mov_r32_rm32 : x86_mov_r64_rm64, r_esp, r_ebp, n));
             r.Add(inst(x86_pop_r32, r_ebp, n));
+
+            // Insert a code sequence here if this is a static constructor
+            if(c.is_cctor)
+            {
+                /* Sequence is:
+                 * 
+                 * Load static field pointer
+                 *      mov rcx, lab_addr
+                 * 
+                 * Set done flag
+                 *      mov_rm8_imm8 [rcx], 2
+                 *      
+                 * Get return eip
+                 *      mov_r32_rm32/64 rcx, [rsp]
+                 *      
+                 * Overwrite the preceeding 5 bytes with nops
+                 *      mov_rm32_imm32 [rcx - 5], 0x00401f0f ; 4 byte nop
+                 *      mov_rm8_imm8 [rcx - 1], 0x90 ; 1 byte nop
+                 */
+                r.Add(inst(x86_mov_rm32_imm32, r_ecx, new ir.Param { t = ir.Opcode.vl_str, str = c.ms.type.MangleType() + "S" }, n));
+                r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, 0, 2, n));
+                r.Add(inst(t.psize == 4 ? x86_mov_r32_rm32 : x86_mov_r64_rm64, r_ecx, new ContentsReg { basereg = r_esp }, n));
+                //r.Add(inst(x86_mov_rm32disp_imm32, r_ecx, -5, 0x00401f0f, n));
+                r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -1, 0x90, n));
+                r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -2, 0x90, n));
+                r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -3, 0x90, n));
+                r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -4, 0x90, n));
+                r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -5, 0x90, n));
+            }
+
             r.Add(inst(x86_ret, n));
 
             return r;
@@ -1709,9 +1749,9 @@ namespace libtysila5.target.x86
             var push_list = get_push_list(n, c, call_ms,
                 out rt, out dest, out rct);
 
-            int x = 0;
-            foreach (var push_reg in push_list)
-                handle_push(push_reg, ref x, r, n, c);
+            // Store the current index, we will insert instructions
+            //  to save clobbered registers here
+            int push_list_index = r.Count;
 
             /* Push arguments */
             int push_length = 0;
@@ -1796,12 +1836,30 @@ namespace libtysila5.target.x86
             {
                 var stack_loc = pcount - i - 1;
                 if (n.arg_list != null)
-                    stack_loc = n.arg_list[pcount - i - 1];
+                    stack_loc = n.arg_list[i];
                 from_locs[i + hidden_adjust] = n.stack_before.Peek(stack_loc + calli_adjust).reg;
             }
 
+            // Append the register arguments to the push list
+            foreach(var arg in to_locs)
+            {
+                if(arg.type == rt_gpr || arg.type == rt_float)
+                {
+                    if (!push_list.Contains(arg))
+                        push_list.Add(arg);
+                }
+            }
+            List<MCInst> r2 = new List<MCInst>();
+
+            // Insert the push instructions at the start of the stream
+            int x = 0;
+            foreach (var push_reg in push_list)
+                handle_push(push_reg, ref x, r2, n, c);
+            foreach (var r2inst in r2)
+                r.Insert(push_list_index++, r2inst);
+
             // Reserve any required stack space
-            if(cstack_loc != 0)
+            if (cstack_loc != 0)
             {
                 push_length += cstack_loc;
                 r.Add(inst(cstack_loc <= 127 ? x86_sub_rm32_imm8 : x86_sub_rm32_imm32,
@@ -2678,6 +2736,84 @@ namespace libtysila5.target.x86
             throw new NotImplementedException();
         }
 
+        internal static List<MCInst> handle_cctor_runonce(
+           Target t,
+           List<CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            /* We emit a complex instruction sequence:
+
+            First, load address of static object
+                mov rdx, [lab_addr]
+
+            Now, execute a loop testing for [rdx] being either:
+                0 - cctor has not been run and is not running,
+                    therefore try and acquire the lock and run
+                    it
+                1 - cctor is running in another thread
+                2 - cctor has finished
+
+                .t1:
+                cmp_rm8_imm8 [rdx], 2
+                je .ret
+
+                cmp_rm8_imm8 [rdx], 1
+                jne .t2
+
+                pause
+                jmp .t1
+
+            Attempt to acquire the lock here.  AL is the value
+            to test, CL is the value to set if we acquire it,
+            ZF reports success.
+                .t2:
+                xor_rm32_r32 rax, rax
+                mov_r32_imm32 rcx, 1
+                lock_cmpxchg_rm8_r8 [rdx], cl
+
+                jnz .t1
+
+            */
+
+            // Assign local labels
+            var t1 = c.next_mclabel--;
+            var t2 = c.next_mclabel--;
+
+            int ret = c.cctor_ret_tag;
+            if (ret == -1)
+            {
+                ret = c.next_mclabel--;
+                c.cctor_ret_tag = ret;
+            }
+
+            List<MCInst> r = new List<MCInst>();
+
+            r.Add(inst(x86_mov_rm32_imm32, r_edx, new ir.Param { t = ir.Opcode.vl_str, str = n.imm_ts.MangleType() + "S" }, n));
+
+            // t1
+            r.Add(inst(Generic.g_mclabel, new ir.Param { t = ir.Opcode.vl_br_target, v = t1 }, n));
+
+            r.Add(inst(x86_cmp_rm8_imm8, new ContentsReg { basereg = r_edx }, 2, n));
+            r.Add(inst_jmp(x86_jcc_rel32, ret, ir.Opcode.cc_eq, n));
+
+            r.Add(inst(x86_cmp_rm8_imm8, new ContentsReg { basereg = r_edx }, 1, n));
+            r.Add(inst_jmp(x86_jcc_rel32, t2, ir.Opcode.cc_ne, n));
+
+            r.Add(inst(x86_pause, n));
+            r.Add(inst_jmp(x86_jmp_rel32, t1, n));
+
+            // t2
+            r.Add(inst(Generic.g_mclabel, new ir.Param { t = ir.Opcode.vl_br_target, v = t2 }, n));
+            r.Add(inst(x86_xor_r32_rm32, r_eax, r_eax, n));
+            r.Add(inst(x86_mov_rm32_imm32, r_ecx, 1, n));
+            r.Add(inst(x86_lock_cmpxchg_rm8_r8, new ContentsReg { basereg = r_edx }, r_ecx, n));
+            r.Add(inst_jmp(x86_jcc_rel32, t1, ir.Opcode.cc_ne, n));
+
+            return r;
+        }
+
         internal static List<MCInst> handle_call(
            Target t,
            List<CilNode.IRNode> nodes,
@@ -3145,6 +3281,19 @@ namespace libtysila5.target.x86
             return r;
         }
 
+        internal static List<MCInst> handle_break(
+           Target t,
+           List<CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            List<MCInst> r = new List<MCInst>();
+            r.Add(inst(x86_int3, n));
+
+            return r;
+        }
+
         internal static List<MCInst> handle_enter_handler(
            Target t,
            List<CilNode.IRNode> nodes,
@@ -3153,6 +3302,27 @@ namespace libtysila5.target.x86
             var n = nodes[start];
             var r = new List<MCInst>();
             r.Add(inst(Generic.g_label, c.ms.MangleMethod() + "EH" + n.imm_l.ToString(), n));
+
+            // store current frame pointer (we need to restore it at the
+            //  end in order to return properly to the exception handling
+            //  mechanism)
+            r.Add(inst(x86_push_r32, r_ebp, n));
+
+            // extract our frame pointer from the passed argument
+            if (t.psize == 8)
+            {
+                r.Add(inst(x86_mov_r64_rm64, r_ebp, r_edi, n));
+            }
+            else
+            {
+                r.Add(inst(x86_mov_r32_rm32, r_ebp, new ContentsReg { basereg = r_esp, disp = 4, size = 4 }, n));
+            }
+
+            // store registers used by function
+            int y = 0;
+            foreach (var reg in c.regs_saved)
+                handle_push(reg, ref y, r, n, c);
+
             return r;
         }
 
@@ -3712,6 +3882,20 @@ namespace libtysila5.target.x86
             return null;
         }
 
+        internal static List<MCInst> handle_ldfp(
+           Target t,
+           List<CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+            var dest = n.stack_after.Peek(n.res_a).reg;
+
+            List<MCInst> r = new List<MCInst>();
+            r.Add(inst(t.psize == 4 ? x86_mov_rm32_r32 : x86_mov_rm64_r64, dest, r_ebp, n));
+
+            return r;
+        }
+
         internal static List<MCInst> handle_ldlabaddr(
            Target t,
            List<CilNode.IRNode> nodes,
@@ -3820,15 +4004,23 @@ namespace libtysila5.target.x86
             switch (size)
             {
                 case 1:
-                    oc = x86_mov_r32_rm8disp;
+                    if(n3.imm_l == 1)
+                        oc = t.psize == 4 ? x86_movsxbd_r32_rm8disp : x86_movsxbq_r64_rm8disp;
+                    else
+                        oc = t.psize == 4 ? x86_movzxbd_r32_rm8disp : x86_movzxbq_r64_rm8disp;
                     break;
                 case 2:
-                    oc = x86_mov_r32_rm16disp;
+                    if (n3.imm_l == 1)
+                        oc = t.psize == 4 ? x86_movsxwd_r32_rm16disp : x86_movsxwq_r64_rm16disp;
+                    else
+                        oc = t.psize == 4 ? x86_movzxwd_r32_rm16disp : x86_movzxwq_r64_rm16disp;
                     break;
                 case 4:
                     oc = x86_mov_r32_rm32disp;
                     break;
                 case 8:
+                    if (t.psize != 8)
+                        return null;
                     oc = x86_mov_r64_rm64disp;
                     break;
                 default:

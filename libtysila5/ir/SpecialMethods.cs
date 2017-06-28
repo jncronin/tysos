@@ -39,6 +39,8 @@ namespace libtysila5.ir
         public int strlen;
         public int wcslen;
         public int inst_Rv_s;
+        public int static_Rv_P0;
+        public int static_Rv_P1Pv;
         public int memcpy;
         public int memset;
 
@@ -73,6 +75,7 @@ namespace libtysila5.ir
             var c = corlib.GetSimpleTypeSpec(0x03);
             var Pc = c.Pointer;
             var Zc = c.SzArray;
+            var Pv = m.SystemVoid.Type.Pointer;
 
             gcmalloc = CreateMethodSignature(b, I,
                 new metadata.TypeSpec[] { i });
@@ -81,9 +84,9 @@ namespace libtysila5.ir
             throw_ = CreateMethodSignature(b, null,
                 new TypeSpec[] { o });
             try_enter = CreateMethodSignature(b, null,
-                new TypeSpec[] { I });
+                new TypeSpec[] { I, I });
             catch_enter = CreateMethodSignature(b, null,
-                new TypeSpec[] { I });
+                new TypeSpec[] { I, I });
             leave = CreateMethodSignature(b, null,
                 new TypeSpec[] { I });
             rethrow = CreateMethodSignature(b, null,
@@ -99,6 +102,10 @@ namespace libtysila5.ir
 
             inst_Rv_s = CreateMethodSignature(b, null,
                 new TypeSpec[] { s }, true);
+            static_Rv_P0 = CreateMethodSignature(b, null,
+                new TypeSpec[] { }, false);
+            static_Rv_P1Pv = CreateMethodSignature(b, null,
+                new TypeSpec[] { Pv }, false);
 
             string_ci = CreateMethodSignature(null,
                 new TypeSpec[] { c, i }, true);
