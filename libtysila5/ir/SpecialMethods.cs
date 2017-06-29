@@ -64,7 +64,6 @@ namespace libtysila5.ir
 
         public SpecialMethods(metadata.MetadataStream m)
         {
-
             corlib = m.al.GetAssembly("mscorlib");
             var i = corlib.GetTypeSpec("System", "Int32");
             var I = corlib.GetTypeSpec("System", "IntPtr");

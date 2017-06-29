@@ -328,6 +328,27 @@ namespace libtysila5.target
             throw new NotSupportedException("Architecture does not support ct: " + Opcode.ct_names[ct]);
         }
 
+        internal static List<MCInst> handle_mclabel(
+           Target t,
+           List<cil.CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            List<MCInst> r = new List<MCInst>();
+            r.Add(new MCInst
+            {
+                parent = n,
+                p = new Param[]
+            {
+                new Param { t = ir.Opcode.vl_str, v = Generic.g_mclabel, str = "mclabel" },
+                new Param { t = ir.Opcode.vl_br_target, v = n.imm_l }
+            }
+            });
+
+            return r;
+        }
+
         internal int GetSize(metadata.TypeSpec ts)
         {
             switch (ts.stype)

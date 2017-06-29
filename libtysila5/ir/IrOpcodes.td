@@ -78,6 +78,7 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"ldobja",
 	"cctor_runonce",
 	"break",
+	"mclabel",
 
 	"x86_portin",
 	"x86_portout",

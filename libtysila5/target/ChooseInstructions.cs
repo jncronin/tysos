@@ -79,7 +79,6 @@ namespace libtysila5.target
 
     public partial class Target
     {
-        public abstract List<MCInst> ChooseInstruction(List<cil.CilNode.IRNode> node, int start, int count, Code c);
 
         internal List<MCInst> handle_external(Target t,
             List<cil.CilNode.IRNode> nodes,

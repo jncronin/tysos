@@ -35,6 +35,7 @@ namespace metadata
         public abstract bool IsInstantiatedGenericType { get; }
         public abstract bool IsInstantiatedGenericMethod { get; }
         public abstract bool IsArray { get; }
+        public abstract string Name { get; }
 
         public class FullySpecSignature
         {
@@ -874,6 +875,15 @@ namespace metadata
             }
 
             yield break;
+        }
+
+        public override string Name
+        {
+            get
+            {
+                return m.GetStringEntry(MetadataStream.tid_TypeDef,
+                    tdrow, 1);
+            }
         }
     }
 }

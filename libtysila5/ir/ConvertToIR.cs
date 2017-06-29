@@ -788,8 +788,7 @@ namespace libtysila5.ir
                     break;
 
                 case cil.Opcode.SingleOpcodes.pop:
-                    stack_after = new Stack<StackItem>(stack_before);
-                    stack_after.Pop();
+                    stack_after = pop(n, c, stack_before);
                     break;
 
                 case cil.Opcode.SingleOpcodes.newarr:
@@ -911,6 +910,13 @@ namespace libtysila5.ir
 
             //foreach (var after in n.il_offsets_after)
             //    DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static Stack<StackItem> pop(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var stack_after = new Stack<StackItem>(stack_before);
+            stack_after.Pop();
+            return stack_after;
         }
 
         /* Gets the address of a stack entry that is a value type.
@@ -1089,11 +1095,11 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> br(CilNode n, Code c, Stack<StackItem> stack_before, int il_target = -1)
+        private static Stack<StackItem> br(CilNode n, Code c, Stack<StackItem> stack_before, int il_target = int.MaxValue)
         {
             var stack_after = stack_before;
 
-            if (il_target == -1)
+            if (il_target == int.MaxValue)
                 il_target = n.il_offsets_after[0];
 
             n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_br, imm_l = il_target, stack_after = stack_after, stack_before = stack_before });
@@ -2000,11 +2006,69 @@ namespace libtysila5.ir
 
             Stack<StackItem> stack_after = stack_before;
 
-            if (arg_a != -2)
+            if (arg_a != -2) // used for ldvirtftn where -2 actually means 0 ie top of stack
                 stack_after = copy_to_front(n, c, stack_before, arg_a);
 
+            // load vtable
             stack_after = conv(n, c, stack_after, 0x18);
             stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
+
+            if (ms.type.IsInterface)
+            {
+                c.t.r.VTableRequestor.Request(ms.type);
+
+                // load interface map
+                stack_after = ldc(n, c, stack_after, c.t.psize, 0x18);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, ir.Opcode.ct_intptr);
+                stack_after = ldind(n, c, stack_after, ms.m.SystemIntPtr);
+
+                // iterate through interface map looking for requested interface
+                var t1 = c.next_mclabel--;
+                var t2 = c.next_mclabel--;
+                var t3 = c.next_mclabel--;
+
+                stack_after = mclabel(n, c, stack_after, t1);
+                stack_after = copy_to_front(n, c, stack_after);
+                // dereference ifacemap pointer
+                stack_after = ldind(n, c, stack_after, ms.m.SystemIntPtr);
+                // first check if it is null
+                stack_after = copy_to_front(n, c, stack_after);
+                stack_after = ldc(n, c, stack_after, 0, 0x18);
+                stack_after = brif(n, c, stack_after, Opcode.cc_ne, t2);
+                var t2_stack_in = new Stack<StackItem>(stack_after);
+                // if it is, throw missing method exception
+                // break point first
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_break, stack_before = stack_after, stack_after = stack_after });
+                stack_after = pop(n, c, stack_after);
+                stack_after = pop(n, c, stack_after);
+
+                var corlib = ms.m.al.GetAssembly("mscorlib");
+
+                stack_after = ldstr(n, c, stack_before, ms.MangleMethod());
+                stack_after = newobj(n, c, stack_after,
+                    corlib.GetMethodSpec(corlib.GetTypeSpec("System", "MissingMethodException"), ".ctor",
+                    c.special_meths.inst_Rv_s, c.special_meths));
+                stack_after = throw_(n, c, stack_after);
+
+                // it is not null at this point, check against the search string
+                stack_after = mclabel(n, c, t2_stack_in, t2);
+                stack_after = ldlab(n, c, stack_after, ms.type.MangleType());
+                stack_after = brif(n, c, stack_after, Opcode.cc_eq, t3);
+                var t3_stack_in = new Stack<StackItem>(stack_after);
+
+                // it is not the correct interface at this point, so increment ifacemapptr by 2
+                stack_after = ldc(n, c, stack_after, c.t.psize * 2, 0x18);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+                stack_after = br(n, c, stack_after, t1);
+
+                // it is the correct interface, get the implementation of it (at offset +1)
+                stack_after = mclabel(n, c, t3_stack_in, t3);
+                stack_after = ldc(n, c, stack_after, c.t.psize, 0x18);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+                stack_after = ldind(n, c, stack_after, ms.m.SystemIntPtr);
+            }
+
+            // get the correct method within the current vtable/interface implementation
             stack_after = ldc(n, c, stack_after, l, 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
@@ -2012,6 +2076,12 @@ namespace libtysila5.ir
             stack_after.Peek().ms = ms;
 
             return stack_after;
+        }
+
+        private static Stack<StackItem> mclabel(CilNode n, Code c, Stack<StackItem> stack_before, int v)
+        {
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_mclabel, imm_l = v, stack_after = stack_before, stack_before = stack_before });
+            return stack_before;
         }
 
         private static Stack<StackItem> copy_this_to_front(CilNode n, Code c, Stack<StackItem> stack_before)
@@ -2348,9 +2418,12 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        private static Stack<StackItem> brif(CilNode n, Code c, Stack<StackItem> stack_before, int cc)
+        private static Stack<StackItem> brif(CilNode n, Code c, Stack<StackItem> stack_before, int cc, int target = int.MaxValue)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
+
+            if (target == int.MaxValue)
+                target = n.il_offsets_after[1];
 
             var si_b = stack_after.Pop();
             var si_a = stack_after.Pop();
@@ -2361,7 +2434,7 @@ namespace libtysila5.ir
             if (!bin_comp_valid(ct_a, ct_b, cc, false))
                 throw new Exception("Invalid comparison between " + Opcode.ct_names[ct_a] + " and " + Opcode.ct_names[ct_b]);
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_brif, imm_l = n.il_offsets_after[1], imm_ul = (uint)cc, ct = ct_a, ct2 = ct_b, stack_after = stack_after, stack_before = stack_before, arg_a = 1, arg_b = 0 });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_brif, imm_l = target, imm_ul = (uint)cc, ct = ct_a, ct2 = ct_b, stack_after = stack_after, stack_before = stack_before, arg_a = 1, arg_b = 0 });
 
             return stack_after;
         }

@@ -66,7 +66,6 @@ namespace tysos
                 for (int i = 0; i < str.Length; i++)
                 {
                     var c = str[i];
-                    System.Diagnostics.Debugger.Break();
                     s.Write(c);
                 }
                 s.Flush();

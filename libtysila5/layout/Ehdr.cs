@@ -183,6 +183,14 @@ namespace libtysila5.layout
             {
                 return new MethodSpecWithEhdr { ms = ms, c = null };
             }
+
+            public override string Name
+            {
+                get
+                {
+                    return ms.Name;
+                }
+            }
         }
     }
 }

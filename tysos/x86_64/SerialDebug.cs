@@ -61,7 +61,6 @@ namespace tysos.x86_64
         [libsupcs.Profile(false)]
         public static void write(char ch)
         {
-            System.Diagnostics.Debugger.Break();
             _setup();
             while (is_transmit_empty() == 0x00) ;
 

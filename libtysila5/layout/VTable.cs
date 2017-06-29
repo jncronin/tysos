@@ -91,7 +91,7 @@ namespace libtysila5.layout
 
             /* IFacePtr */
             IRelocation if_reloc = null;
-            if (!ts.IsGenericTemplate)
+            if (!ts.IsGenericTemplate && !ts.IsInterface)
             {
                 if_reloc = of.CreateRelocation();
                 if_reloc.DefinedIn = os;
@@ -127,29 +127,29 @@ namespace libtysila5.layout
                 d.Add(0);
 
             /* Type size */
-            var tsize = t.IntPtrArray(BitConverter.GetBytes(GetTypeSize(ts, t)));
-            foreach (var b in tsize)
-                d.Add(b);
+            if (!ts.IsInterface)
+            {
+                var tsize = t.IntPtrArray(BitConverter.GetBytes(GetTypeSize(ts, t)));
+                foreach (var b in tsize)
+                {
+                    d.Add(b);
+                    offset++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ptr_size; i++, offset++)
+                    d.Add(0);
+
+                // Terminate interface vtable here
+                return;
+            }
 
             if (!ts.IsGenericTemplate)
             {
                 /* Virtual methods */
-
-                // first build a list of base classes which we reverse to add the methods
-                List<TypeSpec> all_classes = new List<TypeSpec>();
-                var cur_ts = ts;
-                while (cur_ts != null)
-                {
-                    all_classes.Add(cur_ts);
-                    cur_ts = cur_ts.GetExtends();
-                }
-
-                // then implement all virtual methods
-                for (int i = all_classes.Count - 1; i >= 0; i--)
-                {
-                    OutputVirtualMethods(ts, all_classes[i],
-                        of, os, d, ref offset, t);
-                }
+                OutputVirtualMethods(ts, of, os,
+                    d, ref offset, t);
 
                 /* Interface implementations */
 
@@ -161,14 +161,14 @@ namespace libtysila5.layout
 
                 for (int i = 0; i < ii.Count; i++)
                 {
-                    ii_offsets.Add(offset);
+                    ii_offsets.Add(offset - sym.Offset);
                     OutputInterface(ts, ii[i],
                         of, os, d, ref offset, t);
                     t.r.VTableRequestor.Request(ii[i]);
                 }
 
                 // point iface ptr here
-                if_reloc.Addend = (long)offset;
+                if_reloc.Addend = (long)offset - (long)sym.Offset;
                 for (int i = 0; i < ii.Count; i++)
                 {
                     // list is pointer to interface declaration, then implementation
@@ -279,47 +279,219 @@ namespace libtysila5.layout
             }
         }
 
-        private static void OutputVirtualMethods(TypeSpec impl_ts,
-            TypeSpec decl_ts, IBinaryFile of, ISection os,
+        private static void OutputVirtualMethods(TypeSpec decl_ts,
+            IBinaryFile of, ISection os,
             IList<byte> d, ref ulong offset, target.Target t)
         {
+            var vmeths = GetVirtualMethodDeclarations(decl_ts);
+            ImplementVirtualMethods(decl_ts, vmeths);
+
+            foreach(var vmeth in vmeths)
+            {
+                var impl_ms = vmeth.impl_meth;
+                string impl_target = (impl_ms == null) ? "__cxa_pure_virtual" : impl_ms.MangleMethod();
+
+                var impl_sym = of.CreateSymbol();
+                impl_sym.DefinedIn = null;
+                impl_sym.Name = impl_target;
+                impl_sym.ObjectType = SymbolObjectType.Function;
+
+                var impl_reloc = of.CreateRelocation();
+                impl_reloc.Addend = 0;
+                impl_reloc.DefinedIn = os;
+                impl_reloc.Offset = offset;
+                impl_reloc.References = impl_sym;
+                impl_reloc.Type = t.GetDataToCodeReloc();
+                of.AddRelocation(impl_reloc);
+
+                for (int i = 0; i < t.GetPointerSize(); i++, offset++)
+                    d.Add(0);
+
+                if (impl_ms != null)
+                    t.r.MethodRequestor.Request(impl_ms);
+            }
+        }
+
+
+        class VTableItem
+        {
+            internal MethodSpec unimpl_meth;     // the declaration site of the method
+            internal TypeSpec max_implementor;   // the most derived class the method can possibly be implemented in
+            internal MethodSpec impl_meth;       // the implementation of the method
+
+            public override string ToString()
+            {
+                if (unimpl_meth == null)
+                    return "{null}";
+                else if (impl_meth == null)
+                    return unimpl_meth.ToString();
+                else
+                    return unimpl_meth.ToString() + " (" + impl_meth.ToString() + ")";
+            }
+
+            internal VTableItem Clone()
+            {
+                return new VTableItem
+                {
+                    unimpl_meth = unimpl_meth,
+                    max_implementor = max_implementor,
+                    impl_meth = impl_meth
+                };
+            }
+        }
+
+        static Dictionary<TypeSpec, List<VTableItem>> vmeth_list_cache =
+            new Dictionary<TypeSpec, List<VTableItem>>(
+                new GenericEqualityComparer<TypeSpec>());
+
+        static List<VTableItem> GetVirtualMethodDeclarations(TypeSpec ts)
+        {
+            List<VTableItem> ret;
+            if (vmeth_list_cache.TryGetValue(ts, out ret))
+                return ret;
+            var extends = ts.GetExtends();
+            ret = new List<VTableItem>();
+            if (extends != null)
+            {
+                var base_list = GetVirtualMethodDeclarations(extends);
+                foreach(var base_item in base_list)
+                {
+                    ret.Add(base_item.Clone());
+                }
+            }
+
             /* Iterate through methods looking for virtual ones */
-            var first_mdef = decl_ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
-                decl_ts.tdrow, 5);
-            var last_mdef = decl_ts.m.GetLastMethodDef(decl_ts.tdrow);
+            var first_mdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
+                ts.tdrow, 5);
+            var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
 
             for (uint mdef_row = first_mdef; mdef_row < last_mdef; mdef_row++)
             {
-                var flags = decl_ts.m.GetIntEntry(MetadataStream.tid_MethodDef,
+                var flags = ts.m.GetIntEntry(MetadataStream.tid_MethodDef,
                     (int)mdef_row, 2);
 
-                if ((flags & 0x40) == 0x40)
+                if((flags & 0x40) == 0x40)
                 {
+                    // This is a virtual method
                     MethodSpec decl_ms;
-                    decl_ts.m.GetMethodDefRow(MetadataStream.tid_MethodDef,
-                        (int)mdef_row, out decl_ms, decl_ts.gtparams, null);
+                    ts.m.GetMethodDefRow(MetadataStream.tid_MethodDef,
+                        (int)mdef_row, out decl_ms, ts.gtparams, null);
+                    decl_ms.type = ts;
 
-                    var impl_ms = GetVirtualMethod(impl_ts, decl_ms, t);
+                    int cur_tab_idx = GetVTableIndex(decl_ms, ret);
 
-                    string impl_target = (impl_ms == null) ? "__cxa_pure_virtual" : impl_ms.MangleMethod();
-
-                    var impl_sym = of.CreateSymbol();
-                    impl_sym.DefinedIn = null;
-                    impl_sym.Name = impl_target;
-                    impl_sym.ObjectType = SymbolObjectType.Function;
-
-                    var impl_reloc = of.CreateRelocation();
-                    impl_reloc.Addend = 0;
-                    impl_reloc.DefinedIn = os;
-                    impl_reloc.Offset = offset;
-                    impl_reloc.References = impl_sym;
-                    impl_reloc.Type = t.GetDataToCodeReloc();
-                    of.AddRelocation(impl_reloc);
-
-                    for (int i = 0; i < t.GetPointerSize(); i++, offset++)
-                        d.Add(0);
+                    if(cur_tab_idx == -1)
+                    {
+                        // This is not overriding anything, so give it a new slot (newslot is ignored)
+                        ret.Add(new VTableItem { unimpl_meth = decl_ms, max_implementor = null });
+                    }
+                    else
+                    {
+                        // This is overriding something.  We only assign a new slot if newslot is set
+                        if((flags & 0x100) == 0x100)
+                        {
+                            // If newslot, then the old item is left untouched, and particularly it is
+                            //  only implemented by a method up to that point in the inheritance chain
+                            ret.Add(new VTableItem { unimpl_meth = decl_ms, max_implementor = null });
+                            ret[cur_tab_idx].max_implementor = extends;
+                        }
+                        else
+                        {
+                            // if not, then override the original slot
+                            ret[cur_tab_idx].unimpl_meth = decl_ms;
+                        }
+                    }
                 }
             }
+
+            vmeth_list_cache[ts] = ret;
+            return ret;
+        }
+
+        private static void ImplementVirtualMethods(TypeSpec ts, List<VTableItem> list)
+        {
+            // We implement those methods in the most derived class first and work back
+            foreach (var i in list)
+            {
+                // skip if already done
+                if (i.impl_meth != null)
+                    continue;
+
+                // if we've gone back far enough to the max_implementor class
+                //  we can start looking for implementations from here
+                if (i.max_implementor != null && i.max_implementor.Equals(ts))
+                    i.max_implementor = null;
+
+                // if we haven't, skip this method for this class (it will be
+                //  implemented in a base class)
+                if (i.max_implementor != null)
+                    continue;
+
+                // Now, search for a matching method in this particular class
+                /* Iterate through methods looking for virtual ones */
+                var first_mdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
+                    ts.tdrow, 5);
+                var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
+                var search_meth_name = i.unimpl_meth.m.GetIntEntry(MetadataStream.tid_MethodDef,
+                    i.unimpl_meth.mdrow, 3);
+
+                for (uint mdef_row = first_mdef; mdef_row < last_mdef; mdef_row++)
+                {
+                    var flags = ts.m.GetIntEntry(MetadataStream.tid_MethodDef,
+                        (int)mdef_row, 2);
+
+                    if ((flags & 0x40) == 0x40)
+                    {
+                        // its a virtual method
+                        MethodSpec impl_ms;
+                        ts.m.GetMethodDefRow(MetadataStream.tid_MethodDef,
+                            (int)mdef_row, out impl_ms, ts.gtparams, null);
+                        impl_ms.type = ts;
+
+                        // compare on name
+                        if (MetadataStream.CompareString(i.unimpl_meth.m, search_meth_name,
+                            ts.m, ts.m.GetIntEntry(MetadataStream.tid_MethodDef, (int)mdef_row, 3)))
+                        {
+                            // and on signature
+                            if (MetadataStream.CompareSignature(i.unimpl_meth, impl_ms))
+                            {
+                                // If its marked abstract, we dont implement it
+                                if ((flags & 0x400) == 0x400)
+                                {
+                                    i.impl_meth = null;
+                                }
+                                else
+                                {
+                                    // we have found a valid implementing method
+                                    i.impl_meth = impl_ms;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // now implement on base classes
+            var extends = ts.GetExtends();
+            if (extends != null)
+                ImplementVirtualMethods(extends, list);
+        }
+
+        private static int GetVTableIndex(MethodSpec ms, List<VTableItem> list)
+        {
+            for(int idx = 0; idx < list.Count; idx++)
+            {
+                var i = list[idx];
+                if (MetadataStream.CompareString(ms.m, ms.m.GetIntEntry(MetadataStream.tid_MethodDef, ms.mdrow, 3),
+                    i.unimpl_meth.m, i.unimpl_meth.m.GetIntEntry(MetadataStream.tid_MethodDef, i.unimpl_meth.mdrow, 3)))
+                {
+                    if(MetadataStream.CompareSignature(ms, i.unimpl_meth))
+                    {
+                        return idx;
+                    }
+                }
+            }
+            return -1;
         }
 
         private static MethodSpec GetVirtualMethod(TypeSpec impl_ts, MethodSpec decl_ms,
@@ -377,70 +549,49 @@ namespace libtysila5.layout
         public static int GetVTableOffset(metadata.TypeSpec ts,
             metadata.MethodSpec ms)
         {
-            var extends = ts.GetExtends();
-            var vtbl_length = GetVTableMethLength(extends);
+            var vtbl = GetVirtualMethodDeclarations(ts);
             var search_meth_name = ms.m.GetIntEntry(MetadataStream.tid_MethodDef,
                 ms.mdrow, 3);
 
-            /* Iterate through methods looking for requested
-                one */
-            var first_mdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
-                ts.tdrow, 5);
-            var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
-
-            for (uint mdef_row = first_mdef; mdef_row < last_mdef; mdef_row++)
+            // find the requested method, match on name, signature and declaring type
+            for(int i = 0; i < vtbl.Count; i++)
             {
-                var flags = ts.m.GetIntEntry(MetadataStream.tid_MethodDef,
-                    (int)mdef_row, 2);
-
-                // Check on name
-                var mname = ts.m.GetIntEntry(MetadataStream.tid_MethodDef,
-                    (int)mdef_row, 3);
-                if (MetadataStream.CompareString(ts.m, mname,
-                    ms.m, search_meth_name))
+                var test = vtbl[i];
+                var mdecl = test.unimpl_meth;
+                if(mdecl.type.Equals(ts))
                 {
-                    // TODO: check signature
-                    var msig = ts.m.GetIntEntry(MetadataStream.tid_MethodDef,
-                        (int)mdef_row, 4);
-                    if (MetadataStream.CompareSignature(ms.m, ms.msig, 
-                        ms.gtparams, ms.gmparams,
-                        ts.m, (int)msig, 
-                        ts.gtparams, ms.gmparams))
+                    // Check on name
+                    var mname = mdecl.m.GetIntEntry(MetadataStream.tid_MethodDef,
+                        mdecl.mdrow, 3);
+                    if (MetadataStream.CompareString(mdecl.m, mname,
+                        ms.m, search_meth_name))
                     {
-
-                        if ((flags & 0x40) == 0x40)
+                        // Check on signature
+                        if (MetadataStream.CompareSignature(mdecl.m, mdecl.msig,
+                            mdecl.gtparams, mdecl.gmparams,
+                            ms.m, ms.msig, ms.gtparams, ms.gmparams))
                         {
-                            // Virtual
-                            return vtbl_length;
-                        }
-                        else
-                        {
-                            // Instance
-                            return -1;
+                            if (ts.IsInterface == false)
+                                i += 4;
+                            return i;
                         }
                     }
-                }
-                else
-                {
-                    // This is not the method we are looking for
-                    // Virtual & NewSlot
-                    if ((flags & 0x140) == 0x140)
-                        vtbl_length++;
+
                 }
             }
 
-            return 0;   // fail
-        }
-
-        public static int GetVTableTIOffset(TypeSpec ts)
-        {
-            return GetVTableMethLength(ts);
+            throw new Exception("Requested virtual method slot not found");
         }
 
         private static int GetVTableMethLength(TypeSpec ts)
         {
             if (ts == null)
-                return 4; // tiptr, ifaceptr, extends, type_size
+                return 4;
+            var vtbl = GetVirtualMethodDeclarations(ts);
+            return vtbl.Count + 4;  // tiptr, ifaceptr, extends, type_size
+
+            if (ts == null)
+                return 4; 
 
             var extends = ts.GetExtends();
             var vtbl_length = GetVTableMethLength(extends);

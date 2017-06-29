@@ -157,6 +157,17 @@ namespace metadata
             return m.MangleMethod(this);
         }
 
+        public override string Name
+        {
+            get
+            {
+                if (name_override != null)
+                    return name_override;
+                return m.GetStringEntry(MetadataStream.tid_MethodDef,
+                    mdrow, 3);
+            }
+        }
+
         public FullySpecSignature FieldSignature
         {
             get
