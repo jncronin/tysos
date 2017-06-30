@@ -254,31 +254,31 @@ namespace libtysila5.target.x86
             }
         }
 
-        private static void handle_sub(Reg srca, Reg srcb, Reg dest, List<MCInst> r, CilNode.IRNode n, bool with_borrow = false)
+        private static void handle_sub(Target t, Reg srca, Reg srcb, Reg dest, List<MCInst> r, CilNode.IRNode n, bool with_borrow = false)
         {
             if (!(srca is ContentsReg) && srca.Equals(dest))
             {
                 if (with_borrow)
-                    r.Add(inst(x86_sbb_r32_rm32, srca, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_sbb_r32_rm32 : x86_sbb_r64_rm64, srca, srcb, n));
                 else
-                    r.Add(inst(x86_sub_r32_rm32, srca, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_sub_r32_rm32 : x86_sub_r64_rm64, srca, srcb, n));
             }
             else if (!(srcb is ContentsReg) && srca.Equals(dest))
             {
                 if (with_borrow)
-                    r.Add(inst(x86_sbb_rm32_r32, srca, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_sbb_rm32_r32 : x86_sbb_rm64_r64, srca, srcb, n));
                 else
-                    r.Add(inst(x86_sub_rm32_r32, srca, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_sub_rm32_r32 : x86_sub_rm64_r64, srca, srcb, n));
             }
             else
             {
                 // complex way, do calc in rax, then store
-                r.Add(inst(x86_mov_r32_rm32, r_eax, srca, n));
+                r.Add(inst(t.psize == 4 ? x86_mov_r32_rm32 : x86_mov_r64_rm64, r_eax, srca, n));
                 if (with_borrow)
-                    r.Add(inst(x86_sbb_r32_rm32, r_eax, srcb, n));
+                    r.Add(inst(t.psize == 4 ? x86_sbb_r32_rm32 : x86_sbb_r64_rm64, r_eax, srcb, n));
                 else
-                    r.Add(inst(x86_sub_r32_rm32, r_eax, srcb, n));
-                r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
+                    r.Add(inst(t.psize == 4 ? x86_sub_r32_rm32 : x86_sub_r64_rm64, r_eax, srcb, n));
+                r.Add(inst(t.psize == 4 ? x86_mov_rm32_r32 : x86_mov_rm64_r64, dest, r_eax, n));
             }
         }
 
@@ -1373,13 +1373,13 @@ namespace libtysila5.target.x86
             switch (n_ct)
             {
                 case ir.Opcode.ct_int32:
-                    handle_sub(srca, srcb, dest, r, n);
+                    handle_sub(t, srca, srcb, dest, r, n);
                     return r;
 
                 case ir.Opcode.ct_int64:
                     if(t.psize == 8)
                     {
-                        handle_sub(srca, srcb, dest, r, n);
+                        handle_sub(t, srca, srcb, dest, r, n);
                         return r;
                     }
                     else
@@ -1387,8 +1387,8 @@ namespace libtysila5.target.x86
                         var dra = srca as DoubleReg;
                         var drb = srcb as DoubleReg;
                         var drd = dest as DoubleReg;
-                        handle_sub(dra.a, drb.a, drd.a, r, n);
-                        handle_sub(dra.b, drb.b, drd.b, r, n, true);
+                        handle_sub(t, dra.a, drb.a, drd.a, r, n);
+                        handle_sub(t, dra.b, drb.b, drd.b, r, n, true);
                         return r;
                     }
 
@@ -3545,8 +3545,9 @@ namespace libtysila5.target.x86
                 act_dest = r_edx;
 
             List<MCInst> r = new List<MCInst>();
-            handle_sub(r_esp, size, r_esp, r, n);
-            r.Add(inst(x86_and_rm32_imm8, r_esp, 0xfc, n));
+            handle_sub(t, r_esp, size, r_esp, r, n);
+            r.Add(inst(t.psize == 4 ? x86_and_rm32_imm8 :
+                x86_and_rm64_imm8, r_esp, 0xfc, n));
             r.Add(inst(x86_lea_r32, act_dest,
                 new ContentsReg { basereg = r_esp }, n));
             handle_move(addr, act_dest, r, n, c);
@@ -3592,7 +3593,8 @@ namespace libtysila5.target.x86
             if (n_ct == ir.Opcode.ct_int32 ||
                 (n_ct == ir.Opcode.ct_int64 && t.psize == 8))
             {
-                handle_shift(srca, srcb, dest, r, n, c);
+                handle_shift(srca, srcb, dest, r, n, c,
+                    n_ct == ir.Opcode.ct_int32 ? 4 : 8);
 
                 return r;
             }
@@ -3634,16 +3636,19 @@ namespace libtysila5.target.x86
 
         private static void handle_shift(Reg srca, Reg srcb,
             Reg dest, List<MCInst> r, CilNode.IRNode n, Code c,
+            int size,
             bool use_cf = false)
         {
             bool cl_in_use_before = false;
             bool cl_in_use_after = false;
 
+            var orig_srca = srca;
+
             if (!srca.Equals(dest) || srca.Equals(r_ecx))
             {
                 // if either of the above is true, we need to move
                 //  the source to eax
-                if (srca.size == 4)
+                if (size == 4)
                 {
                     handle_move(r_eax, srca, r, n, c);
                     srca = r_eax;
@@ -3666,11 +3671,15 @@ namespace libtysila5.target.x86
                     defined |= si.reg.mask;
                 if ((defined & r_ecx.mask) != 0)
                     cl_in_use_before = true;
+                if (orig_srca.Equals(r_ecx))
+                    cl_in_use_before = false; // we have moved srca out of cl
                 defined = 0;
                 foreach (var si in n.stack_after)
                     defined |= si.reg.mask;
                 if ((defined & r_ecx.mask) != 0)
                     cl_in_use_after = true;
+                if (dest.Equals(r_ecx))
+                    cl_in_use_after = false; // we don't need to save rcx here as we are assigning to it
             }
 
             bool cl_pushed = false;
@@ -3684,7 +3693,7 @@ namespace libtysila5.target.x86
             }
 
             int oc = 0;
-            if (srca.size == 4)
+            if (size == 4)
             {
                 switch (n.opcode)
                 {
@@ -3715,7 +3724,7 @@ namespace libtysila5.target.x86
                 }
             }
 
-            r.Add(inst(oc, srca, srcb, n));
+            r.Add(inst(oc, srcb, n));
 
             if (!srca.Equals(dest))
                 handle_move(dest, srca, r, n, c);

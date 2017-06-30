@@ -230,6 +230,8 @@ namespace libtysila5.target.x86
                             throw new Exception();
                         break;
                     case x86_sub_r32_rm32:
+                    case x86_sub_r64_rm64:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x2b);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         if (I.p.Length == 4)
@@ -284,6 +286,8 @@ namespace libtysila5.target.x86
                             throw new Exception();
                         break;
                     case x86_sbb_r32_rm32:
+                    case x86_sbb_r64_rm64:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x1b);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         if (I.p.Length == 4)
@@ -421,11 +425,13 @@ namespace libtysila5.target.x86
                         }
                         break;
                     case x86_movsxbd:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, null, true));
                         Code.Add(0x0f);
                         Code.Add(0xbe);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
                     case x86_movsxwd:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x0f);
                         Code.Add(0xbf);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
@@ -436,18 +442,20 @@ namespace libtysila5.target.x86
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
                     case x86_movzxbd:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, null, true));
                         Code.Add(0x0f);
                         Code.Add(0xb6);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
                     case x86_movzxwd:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x0f);
                         Code.Add(0xb7);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         break;
                     case x86_movsxbd_r32_rm8disp:
                     case x86_movsxbq_r64_rm8disp:
-                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, null, true));
                         Code.Add(0x0f);
                         Code.Add(0xbe);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
@@ -461,7 +469,7 @@ namespace libtysila5.target.x86
                         break;
                     case x86_movzxbd_r32_rm8disp:
                     case x86_movzxbq_r64_rm8disp:
-                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, null, true));
                         Code.Add(0x0f);
                         Code.Add(0xb6);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
@@ -719,6 +727,8 @@ namespace libtysila5.target.x86
                         break;
 
                     case x86_and_rm32_imm8:
+                    case x86_and_rm64_imm8:
+                        AddRex(Code, Rex(I.p[0].v, null, I.p[1].mreg));
                         Code.Add(0x83);
                         Code.AddRange(ModRMSIB(4, I.p[1].mreg));
                         AddImm8(Code, I.p[2].v);
@@ -931,7 +941,7 @@ namespace libtysila5.target.x86
                 code.Add(v);
         }
 
-        private byte Rex(long oc, Reg r, Reg rm_ocreg, Reg sib_index = null)
+        private byte Rex(long oc, Reg r, Reg rm_ocreg, Reg sib_index = null, bool is_rm8 = false)
         {
             int rex = 0;
             if (oc >= x86_mov_r64_imm64)
@@ -942,6 +952,16 @@ namespace libtysila5.target.x86
                 rex |= 0x1;
             if(sib_index != null && sib_index.id >= x86_64.x86_64_Assembler.r_r8.id)
                 rex |= 0x2;
+            if (is_rm8 && rm_ocreg != null && !(rm_ocreg is ContentsReg))
+            {
+                if (rm_ocreg.Equals(r_esp) ||
+                    rm_ocreg.Equals(r_ebp) ||
+                    rm_ocreg.Equals(r_edi) ||
+                    rm_ocreg.Equals(r_esi))
+                {
+                    rex |= 0x40;
+                }
+            }
             if (rex != 0)
                 return (byte)(0x40 | rex);
             return 0;
@@ -986,7 +1006,7 @@ namespace libtysila5.target.x86
             c.Add((byte)(v & 0xff));
         }
 
-        private IEnumerable<byte> ModRMSIB(Reg r, Reg rm)
+        private IEnumerable<byte> ModRMSIB(Reg r, Reg rm, bool is_rm8 = false)
         {
             int r_val = GetR(r);
             int rm_val, mod_val, disp_len, disp_val;

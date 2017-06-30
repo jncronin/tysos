@@ -41,9 +41,11 @@ namespace tysos.lib
              * set the mutex lock field
              */
 
+            throw new NotImplementedException();
             unsafe
             {
-                IntPtr vtable_object = type.VTable;
+                //IntPtr vtable_object = type.VTable;
+                IntPtr vtable_object = (IntPtr)0;
                 IntPtr actual_type_info_ptr = *(IntPtr*)vtable_object;
                 libsupcs.TysosType actual_type_info = libsupcs.TysosType.ReinterpretAsType(actual_type_info_ptr);
 
@@ -62,7 +64,9 @@ namespace tysos.lib
         {
             unsafe
             {
-                IntPtr vtable_object = type.VTable;
+                throw new NotImplementedException();
+                //IntPtr vtable_object = type.VTable;
+                IntPtr vtable_object = (IntPtr)0;
                 IntPtr actual_type_info_ptr = *(IntPtr*)vtable_object;
                 libsupcs.TysosType actual_type_info = libsupcs.TysosType.ReinterpretAsType(actual_type_info_ptr);
 

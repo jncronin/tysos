@@ -45,6 +45,8 @@ namespace libsupcs.x86_64
             ulong *idt_ptr = stackalloc ulong[2];
             idt_ptr[1] = (addr >> 48) & 0xffffUL;
             idt_ptr[0] = (addr << 16) | ((ulong)limit & 0xffffUL);
+
+            System.Diagnostics.Debugger.Break();
             Lidt(idt_ptr);
         }
 

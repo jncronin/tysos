@@ -43,12 +43,6 @@
     <Compile Include="FileSystemFileLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\libtysila\libtysila.csproj">
-      <Project>{2c921410-704f-4dae-bd17-81a336c8b663}</Project>
-      <Name>libtysila</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

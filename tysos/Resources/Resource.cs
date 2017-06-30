@@ -295,7 +295,8 @@ namespace tysos
         {
             if (l > (uint)Int32.MaxValue)
                 throw new Exception("region is too big for byte array");
-            return libsupcs.TysosArrayType.CreateByteArray((byte*)a, (int)l);
+            throw new NotImplementedException();
+            //return libsupcs.TysosArrayType.CreateByteArray((byte*)a, (int)l);
         }
 
         public override string ToString()
@@ -386,7 +387,8 @@ namespace tysos
         {
             if (l > (ulong)Int32.MaxValue)
                 throw new Exception("region is too big for byte array");
-            return libsupcs.TysosArrayType.CreateByteArray((byte*)a, (int)l);
+            throw new NotImplementedException();
+            //return libsupcs.TysosArrayType.CreateByteArray((byte*)a, (int)l);
         }
 
         public void Map(PhysicalMemoryResource64 pmem)

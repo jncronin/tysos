@@ -48,7 +48,7 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_5CallI_Rv_P2PvPv"] = calli_pvpv;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_18GetFunctionAddress_Ru1I_P1u1S"] = get_func_address;
-            intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_22GetStaticObjectAddress_Ru1I_P1u1S"] = get_static_obj_address;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_22GetStaticObjectAddress_RPv_P1u1S"] = get_static_obj_address;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_14GetPointerSize_Ri_P0"] = get_pointer_size;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ArrayOperations_17GetArrayClassSize_Ri_P0"] = array_getArrayClassSize;
@@ -66,6 +66,7 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_18GetVtblFieldOffset_Ri_P0"] = class_getVtblFieldOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_21GetVtblTypeSizeOffset_Ri_P0"] = class_getVtblTypeSizeOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_18GetMutexLockOffset_Ri_P0"] = class_getMutexLockOffset;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_23GetSystemTypeImplOffset_Ri_P0"] = class_getSystemTypeImplOffset;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU1_Rh_P1u1U"] = peek_Byte;
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU2_Rt_P1u1U"] = peek_Ushort;
@@ -78,6 +79,27 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_4Poke_Rv_P2u1Uy"] = poke_Ulong;
 
             intcalls["_ZW20System#2EDiagnostics8Debugger_5Break_Rv_P0"] = debugger_Break;
+
+            intcalls["_ZW34System#2ERuntime#2EInteropServices7Marshal_37GetFunctionPointerForDelegateInternal_Ru1I_P1U6System8Delegate"] = getFunctionPointerForDelegate;
+        }
+
+        private static Stack<StackItem> getFunctionPointerForDelegate(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var dgate = c.ms.m.SystemDelegate.Type;
+            var method_ptr = dgate.m.GetFieldDefRow("method_ptr", dgate);
+            TypeSpec fld_ts;
+            var stack_after = ldflda(n, c, stack_before, false, out fld_ts, 0, method_ptr);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
+            return stack_after;
+        }
+
+        private static Stack<StackItem> class_getSystemTypeImplOffset(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var systype = c.ms.m.al.GetAssembly("mscorlib").GetTypeSpec("System", "Type");
+            var v = layout.Layout.GetFieldOffset(systype, "_impl", c.t);
+
+            return ldc(n, c, stack_before, v);
         }
 
         private static Stack<StackItem> debugger_Break(CilNode n, Code c, Stack<StackItem> stack_before)

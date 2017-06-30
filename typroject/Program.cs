@@ -221,6 +221,12 @@ namespace typroject
 
         public static string csc(string tools_ver)
         {
+            bool is_v4plus;
+            return csc(tools_ver, out is_v4plus);
+        }
+
+        public static string csc(string tools_ver, out bool is_v4plus)
+        {
             if (tools_ver_override != null)
                 tools_ver = tools_ver_override;
 
@@ -230,6 +236,7 @@ namespace typroject
             if (platform == 0)
             {
                 // assume mono for unix
+                is_v4plus = false;
                 if ((tools_ver == "2.0") || (tools_ver == "3.0") || (tools_ver == "3.5") || (tools_ver == "4.0"))
                     return "gmcs";
                 else
@@ -242,16 +249,44 @@ namespace typroject
                 string windir = Environment.GetEnvironmentVariable("windir");
                 string framework_dir = windir + "\\Microsoft.NET\\Framework";
                 DirectoryInfo fdi = new DirectoryInfo(framework_dir);
+
+                // if there is a version 4+ csc, we can use it and then use the
+                //  multi-framework targetting feature to specify the actual
+                //  framework
+                DirectoryInfo[] all_matches = fdi.GetDirectories("v*");
+                List<string> all_matches_dirs = new List<string>();
+                foreach(var match in all_matches)
+                {
+                    FileInfo[] file_matches = match.GetFiles("csc.exe");
+                    if (file_matches.Length == 1)
+                    {
+                        all_matches_dirs.Add(file_matches[0].FullName);
+                    }
+                }
+                all_matches_dirs.Sort();
+                var last_all_match = all_matches_dirs[all_matches_dirs.Count - 1];
+                if (last_all_match[1] >= '4')
+                {
+                    is_v4plus = true;
+                    return last_all_match;
+                }
+
+                // there is no v4+ framework installed, therefore fall
+                //  back to searching for a specific compiler
                 DirectoryInfo[] matches = fdi.GetDirectories("v" + tools_ver + "*");
 
                 foreach (DirectoryInfo match in matches)
                 {
                     FileInfo[] file_matches = match.GetFiles("csc.exe");
                     if (file_matches.Length == 1)
+                    {
+                        is_v4plus = file_matches[0].FullName[1] >= '4';
                         return file_matches[0].FullName;
+                    }
                 }
 
                 // fallback
+                is_v4plus = false;
                 return "csc.exe";
             }
         }
@@ -588,7 +623,8 @@ namespace typroject
             string tv = tools_ver;
             if (tools_ver_override != null)
                 tv = tools_ver_override;
-            string csc_cmd = Program.csc(tv);
+            bool is_v4plus;
+            string csc_cmd = Program.csc(tv, out is_v4plus);
             StringBuilder sb = new StringBuilder();
 
             sb.Append("/out:\"");
@@ -640,6 +676,14 @@ namespace typroject
                 tvd = tvd.Substring(0, tvd.Length - 1);
             sb.Append(tvd);
             sb.Append("\" ");
+
+            /* Directly reference mscorlib in the appropriate tools dir.
+             * This helps v4+ compilers target the correct framework */
+            if (is_v4plus)
+            {
+                sb.Append("/nostdlib ");
+                sb.Append("/r:" + add_dir_split(tvd) + "mscorlib.dll ");
+            }
 
             foreach (string lib in extra_libs)
             {

@@ -348,6 +348,9 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern int GetBoxedTypeDataOffset();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern int GetSystemTypeImplOffset();
     }
 
     public class JitOperations
@@ -393,11 +396,11 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [IgnoreImplementation]
-        public extern static System.IntPtr GetStaticObjectAddress(string name);
+        public unsafe extern static void* GetStaticObjectAddress(string name);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [IgnoreImplementation]
-        public extern static System.IntPtr GetFunctionAddress(string name);
+        public unsafe extern static void* GetFunctionAddress(string name);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static int GetPointerSize();

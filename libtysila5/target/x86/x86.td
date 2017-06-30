@@ -203,6 +203,7 @@ x86_instrs = [
 	"sbb_rm64_r64",
 	"cvtsi2sd_xmm_rm64",
 	"cvtsd2si_r64_xmmm64",
+	"and_rm64_imm8",
 ];
 
 intmap(nspace, assembler, name, "insts", "init_instrs", x86_instrs);

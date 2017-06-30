@@ -347,6 +347,8 @@ namespace metadata
         {
             get
             {
+                if (stype == SpecialType.Boxed)
+                    return other.IsGeneric;
                 if (m.gtparams == null)
                     return false;
                 return m.gtparams[tdrow] != 0;
@@ -370,6 +372,8 @@ namespace metadata
             {
                 if (!IsGeneric)
                     return false;
+                if (stype == SpecialType.Boxed)
+                    return other.IsGenericTemplate;
                 return gtparams == null;
             }
         }

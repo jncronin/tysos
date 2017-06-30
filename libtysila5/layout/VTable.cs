@@ -126,27 +126,23 @@ namespace libtysila5.layout
             for (int i = 0; i < ptr_size; i++, offset++)
                 d.Add(0);
 
-            /* Type size */
-            if (!ts.IsInterface)
+            if (ts.IsInterface || ts.IsGenericTemplate)
             {
+                /* Type size is zero for somethinh we cannot
+                 * instantiate */
+                for (int i = 0; i < ptr_size; i++, offset++)
+                    d.Add(0);
+            }
+            else
+            { 
+                /* Type size */
                 var tsize = t.IntPtrArray(BitConverter.GetBytes(GetTypeSize(ts, t)));
                 foreach (var b in tsize)
                 {
                     d.Add(b);
                     offset++;
                 }
-            }
-            else
-            {
-                for (int i = 0; i < ptr_size; i++, offset++)
-                    d.Add(0);
 
-                // Terminate interface vtable here
-                return;
-            }
-
-            if (!ts.IsGenericTemplate)
-            {
                 /* Virtual methods */
                 OutputVirtualMethods(ts, of, os,
                     d, ref offset, t);

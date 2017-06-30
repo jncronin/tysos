@@ -262,7 +262,6 @@ namespace tysos
         [libsupcs.Profile(false)]
         private static void _Write(ulong v, int Base, IDebugOutput s, bool uppercase, int min_digits)
         {
-            //byte[] digits = new byte[64];
             int cur_digit = 0;
 
             while (v != 0)

@@ -66,12 +66,6 @@
     <Compile Include="TyDbFile.cs" />
     <Compile Include="Writer.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\libtysila\libtysila.csproj">
-      <Project>{2C921410-704F-4DAE-BD17-81A336C8B663}</Project>
-      <Name>libtysila</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

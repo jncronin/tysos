@@ -1154,11 +1154,17 @@ namespace libtysila5.ir
 
             TypeSpec push_ts = null;
             TypeSpec.FullySpecSignature sig_val = null;
+            Stack<StackItem> stack_after;
 
             if (ts != null)
             {
                 push_ts = ts.m.SystemRuntimeTypeHandle;
                 sig_val = ts.Signature;
+                c.t.r.VTableRequestor.Request(ts.Box);
+
+                // Runtime type handles point to the vtable, rather than the typeinfo
+                // build the object
+                stack_after = ldlab(n, c, stack_before, ts.MangleType());
             }
             else if (ms != null)
             {
@@ -1168,13 +1174,14 @@ namespace libtysila5.ir
                 else
                     push_ts = ms.m.SystemRuntimeMethodHandle;
                 sig_val = ms.Signature;
+
+                int sig_offset = c.t.st.GetSignatureAddress(sig_val, c.t);
+
+                // build the object
+                stack_after = ldlab(n, c, stack_before, c.t.st.GetStringTableName(), sig_offset);
             }
             else throw new Exception("Bad token");
 
-            int sig_offset = c.t.st.GetSignatureAddress(sig_val, c.t);
-
-            // build the object
-            var stack_after = ldlab(n, c, stack_before, c.t.st.GetStringTableName(), sig_offset);
             stack_after[stack_after.Count - 1] = new StackItem
             {
                 ts = push_ts,

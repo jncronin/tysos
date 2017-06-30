@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 15:53:50 on 28 June 2017
+ * It was generated at 22:39:31 on 29 June 2017
  * from D:\tysos\branches\tysila3\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -238,6 +238,7 @@ namespace libtysila5.target.x86
 		public const int x86_sbb_rm64_r64 = 169;
 		public const int x86_cvtsi2sd_xmm_rm64 = 170;
 		public const int x86_cvtsd2si_r64_xmmm64 = 171;
+		public const int x86_and_rm64_imm8 = 172;
 		
 		internal static void init_instrs()
 		{
@@ -391,6 +392,7 @@ namespace libtysila5.target.x86
 			insts[169] = "sbb_rm64_r64";
 			insts[170] = "cvtsi2sd_xmm_rm64";
 			insts[171] = "cvtsd2si_r64_xmmm64";
+			insts[172] = "and_rm64_imm8";
 		}
 	}
 }
@@ -508,13 +510,13 @@ namespace libtysila5.target.x86_64
 {
 	partial class x86_64_Assembler
 	{
-		public const int sysvc_MEMORY = 172;
-		public const int sysvc_INTEGER = 173;
-		public const int sysvc_SSE = 174;
-		public const int sysvc_SSEUP = 175;
-		public const int sysvc_X87 = 176;
-		public const int sysvc_X87UP = 177;
-		public const int sysvc_COMPLEX_X87 = 178;
+		public const int sysvc_MEMORY = 173;
+		public const int sysvc_INTEGER = 174;
+		public const int sysvc_SSE = 175;
+		public const int sysvc_SSEUP = 176;
+		public const int sysvc_X87 = 177;
+		public const int sysvc_X87UP = 178;
+		public const int sysvc_COMPLEX_X87 = 179;
 	}
 }
 
@@ -526,15 +528,15 @@ namespace libtysila5.target.x86_64
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_classmap_sysv[90] = 173;
-			cc_classmap_sysv[92] = 173;
-			cc_classmap_sysv[91] = 173;
-			cc_classmap_sysv[94] = 173;
-			cc_classmap_sysv[95] = 173;
-			cc_classmap_sysv[93] = 174;
-			cc_map_sysv[173] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
-			cc_map_sysv[174] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
-			cc_map_sysv[172] = new int[] { 25, };
+			cc_classmap_sysv[90] = 174;
+			cc_classmap_sysv[92] = 174;
+			cc_classmap_sysv[91] = 174;
+			cc_classmap_sysv[94] = 174;
+			cc_classmap_sysv[95] = 174;
+			cc_classmap_sysv[93] = 175;
+			cc_map_sysv[174] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
+			cc_map_sysv[175] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
+			cc_map_sysv[173] = new int[] { 25, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 1664;

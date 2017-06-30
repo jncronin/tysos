@@ -304,6 +304,15 @@ namespace tysila4
                 for (int i = 0; i < len; i++)
                     rdata.Data.Add(m.file.ReadByte(i));
 
+                var mdsymend = bf.CreateSymbol();
+                mdsymend.DefinedIn = rdata;
+                mdsymend.Name = m.AssemblyName + "_end";
+                mdsymend.ObjectType = binary_library.SymbolObjectType.Object;
+                mdsymend.Offset = (ulong)rdata.Data.Count;
+                mdsymend.Type = binary_library.SymbolType.Global;
+                mdsymend.Size = 0;
+                rdata.AddSymbol(mdsymend);
+
                 /* Write output file */
                 bf.Filename = output_file;
                 bf.Write();

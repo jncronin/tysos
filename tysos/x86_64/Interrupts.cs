@@ -45,7 +45,7 @@ namespace tysos
             for (int i = 0; i < 256; i++)
                 UninstallHandler(i);
 
-            libsupcs.x86_64.Cpu.Lidt(idt_start, 256 * 16);
+            libsupcs.x86_64.Cpu.Lidt(idt_start, 256 * 16 - 1);
         }
 
         public void InstallHandler(int interrupt_no, Delegate handler) { InstallHandler(interrupt_no, handler, 0); }

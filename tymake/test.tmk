@@ -138,6 +138,9 @@ MSCORLIBDIR = dir(MSCORLIB);
 TYSOSDIR = dir(TYSOS);
 LIBSUPCSDIR = dir(LIBSUPCS);
 TINYGCOBJ = ROOT + "/tinygc/gc.o";
+METADATA = typroject(ROOT + "/metadata/metadata.csproj", "Release", "3.5", 1);
+METADATAOBJ = objfromexe(METADATA);
+
 
 LIBSUPCS_COMPILER_RT = [
 	ROOT + "/libsupcs/compiler_rt/ashldi3.o",
@@ -243,7 +246,7 @@ rulefor("%.to", [ "%.obj" ], [ "test.tmk" ], function() {
 /* Rule for linking the kernel */
 rulefor(KERNEL, [ TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ,
 	tycobj("undefined.o"),
-	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA ], [],
+	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA, METADATAOBJ ], [],
 	function()
 {
 	shellcmd("$XCC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");

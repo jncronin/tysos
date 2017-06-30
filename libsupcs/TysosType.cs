@@ -35,73 +35,6 @@ namespace libsupcs
     [SpecialType]
     public class TysosType : System.Type
     {
-        internal TysosType Extends;
-        internal string TypeName;
-        internal string TypeNamespace;
-        [NullTerminatedListOf(typeof(TysosType))]
-        internal IntPtr Interfaces;
-        [NullTerminatedListOf(typeof(TysosField))]
-        internal IntPtr Fields;
-        [NullTerminatedListOf(typeof(TysosMethod))]
-        internal IntPtr Methods;
-        internal IntPtr Events;
-        internal IntPtr Properties;
-        [NullTerminatedListOf(typeof(TysosType))]
-        internal IntPtr NestedTypes;
-        internal System.Reflection.Assembly _Assembly;
-        internal System.Reflection.Module _Module;
-        internal IntPtr Signature;
-        internal IntPtr Sig_references;
-        internal IntPtr UnboxedType;
-        public IntPtr VTable;
-        internal Int32 Flags;
-        internal UInt32 ImplFlags;
-        protected Int32 ClassSize;
-        protected Int32 StaticClassSize;
-        internal IntPtr VTableLength;
-
-        /* The following five are mutually exclusive for a single type info
-         * 
-         * To specify an array of enums, for example, there would be a type info for
-         * the array which points to the type info for the enum */
-        public const uint IF_PTR = 0x1;
-        public const uint IF_MPTR = 0x2;
-        public const uint IF_ZBA = 0x3;
-        public const uint IF_BOXED = 0x4;
-        public const uint IF_ENUM = 0x5;
-
-        /* A mask to get the above entries out of the ImplFlags */
-        public const uint IF_TYPE_MASK = 0x7;
-
-        /* Is the type created dynamically at runtime? (has implications for CastClassEx) */
-        public const uint IF_DYNAMIC = 0x8;
-
-        /* Is this a generic type definition? (i.e. requires instantiating) */
-        public const uint IF_GTD = 0x10;
-
-        /* Is this a concrete instantiation of a generic type? */
-        public const uint IF_GT = 0x20;
-
-        /* Is this a value type? */
-        public const uint IF_VTYPE = 0x40;
-
-        /* Is this an uninstantiated generic type parameter? */
-        public const uint IF_UGTP = 0x80;
-
-        /* Is this an uninstantiated generic method parameter? */
-        public const uint IF_UGMP = 0x100;
-
-        /* Mask for the uninstantiated generic type parameter number */
-        public const uint IF_UGTP_MASK = 0x000f0000;
-        public const int IF_UGTP_SHIFT = 16;
-
-        /* Mask for the uninstantiated generic method parameter number */
-        public const uint IF_UGMP_MASK = 0x00f00000;
-        public const int IF_UGMP_SHIFT = 20;
-
-        /* Is this a simple built-in type?  If so, this mask contains the simple type element type */
-        public const uint IF_SIMPLE_ET = 0xff000000;
-        public const int IF_SIMPLE_ET_SHIFT = 24;
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [ReinterpretAsMethod]
@@ -141,11 +74,11 @@ namespace libsupcs
         [ReinterpretAsMethod]
         public static unsafe extern TysosMethod ReinterpretAsMethodInfo(void* obj);
 
-        public virtual int GetClassSize() { return ClassSize; }
-        
+        public virtual int GetClassSize() { throw new NotImplementedException(); }
+
         public override System.Reflection.Assembly Assembly
         {
-            get { return _Assembly; }
+            get { throw new NotImplementedException(); }
         }
 
         public override string AssemblyQualifiedName
@@ -158,12 +91,12 @@ namespace libsupcs
 
         public override Type BaseType
         {
-            get { return Extends; }
+            get { throw new NotImplementedException(); }
         }
 
         public override string FullName
         {
-            get { return TypeNamespace + "." + TypeName; }
+            get { return Namespace + "." + Name; }
         }
 
         public override Guid GUID
@@ -173,7 +106,7 @@ namespace libsupcs
 
         protected override System.Reflection.TypeAttributes GetAttributeFlagsImpl()
         {
-            return (System.Reflection.TypeAttributes)Flags;
+            throw new NotImplementedException();
         }
 
         protected override System.Reflection.ConstructorInfo GetConstructorImpl(System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder binder, System.Reflection.CallingConventions callConvention, Type[] types, System.Reflection.ParameterModifier[] modifiers)
@@ -210,7 +143,7 @@ namespace libsupcs
                     if (((bindingAttr & System.Reflection.BindingFlags.Instance) == System.Reflection.BindingFlags.Instance) && !mi.IsStatic)
                         add = true;
 
-                    if(add)
+                    if (add)
                         ret[i++] = new ConstructorInfo(mi as TysosMethod, this);
                 }
             }
@@ -245,53 +178,7 @@ namespace libsupcs
 
         public override System.Reflection.FieldInfo[] GetFields(System.Reflection.BindingFlags bindingAttr)
         {
-            if (IsBoxed || IsManagedPointer || IsUnmanagedPointer)
-                return GetUnboxedType().GetFields(bindingAttr);
-
-            unsafe
-            {
-                IntPtr* cur_field = (IntPtr *)Fields;
-
-                if (cur_field != null)
-                {
-                    int count = 0;
-
-                    while (*cur_field != new IntPtr(0))
-                    {
-                        System.Reflection.FieldInfo fi = ReinterpretAsFieldInfo(*cur_field);
-                        bool add = false;
-                        if (((bindingAttr & System.Reflection.BindingFlags.Instance) == System.Reflection.BindingFlags.Instance) && !fi.IsStatic)
-                            add = true;
-                        if (((bindingAttr & System.Reflection.BindingFlags.Static) == System.Reflection.BindingFlags.Static) && fi.IsStatic)
-                            add = true;
-
-                        if (add)
-                            count++;
-                        cur_field++;
-                    }
-
-                    System.Reflection.FieldInfo[] ret = new System.Reflection.FieldInfo[count];
-                    int i = 0;
-                    cur_field = (IntPtr*)Fields;
-                    while (*cur_field != new IntPtr(0))
-                    {
-                        System.Reflection.FieldInfo fi = ReinterpretAsFieldInfo(*cur_field);
-                        bool add = false;
-                        if (((bindingAttr & System.Reflection.BindingFlags.Instance) == System.Reflection.BindingFlags.Instance) && !fi.IsStatic)
-                            add = true;
-                        if (((bindingAttr & System.Reflection.BindingFlags.Static) == System.Reflection.BindingFlags.Static) && fi.IsStatic)
-                            add = true;
-
-                        if (add)
-                            ret[i++] = fi;
-                        cur_field++;
-                    }
-
-                    return ret;
-                }
-            }
-
-            return new System.Reflection.FieldInfo[] { };
+            throw new NotImplementedException();
         }
 
         public override Type GetInterface(string name, bool ignoreCase)
@@ -301,35 +188,7 @@ namespace libsupcs
 
         public override Type[] GetInterfaces()
         {
-            unsafe
-            {
-                IntPtr* cur_iface = (IntPtr*)Interfaces;
-                int count = 0;
-
-                if (cur_iface != null)
-                {
-                    while (*cur_iface != new IntPtr(0))
-                    {
-                        count++;
-                        cur_iface += 2;
-                    }
-
-                    Type[] ret = new Type[count];
-                    cur_iface = (IntPtr*)Interfaces;
-                    int i = 0;
-
-                    while (*cur_iface != new IntPtr(0))
-                    {
-                        Type iface = ReinterpretAsType(*cur_iface);
-                        ret[i++] = iface;
-                        cur_iface += 2;
-                    }
-
-                    return ret;
-                }
-            }
-
-            return new Type[] { };
+            throw new NotImplementedException();
         }
 
         public override System.Reflection.MemberInfo[] GetMembers(System.Reflection.BindingFlags bindingAttr)
@@ -339,58 +198,7 @@ namespace libsupcs
 
         protected override System.Reflection.MethodInfo GetMethodImpl(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder binder, System.Reflection.CallingConventions callConvention, Type[] types, System.Reflection.ParameterModifier[] modifiers)
         {
-            if (Methods == (IntPtr)0)
-                return null;
-
-            unsafe
-            {
-                IntPtr *cur_meth = (IntPtr *)Methods;
-                while(*cur_meth != (IntPtr)0)
-                {
-                    TysosMethod mi = ReinterpretAsMethodInfo(*cur_meth);
-                    if(MatchBindingFlags(mi, bindingAttr))
-                    {
-                        if (mi.Name == name)
-                        {
-                            // Match _Params
-                            if (mi._Params == (IntPtr)0)
-                            {
-                                if (types == null)
-                                    return mi;
-                                if (types.Length == 0)
-                                    return mi;
-                            }
-                            else if (types != null)
-                            {
-                                bool param_match = true;
-                                int cur_p = 0;
-
-                                IntPtr* cur_param = (IntPtr*)mi._Params;
-                                while (*cur_param != (IntPtr)0)
-                                {
-                                    TysosType p = ReinterpretAsType(*cur_param);
-                                    if (cur_p >= types.Length)
-                                        param_match = false;
-                                    else if (p != types[cur_p])
-                                        param_match = false;
-
-                                    cur_p++;
-                                    cur_param++;
-                                }
-
-                                if (cur_p != types.Length)
-                                    param_match = false;
-
-                                if (param_match)
-                                    return mi;
-                            }
-                        }
-                    }
-                    cur_meth++;
-                }
-            }
-
-            return null;
+            throw new NotImplementedException();
         }
 
         private bool MatchBindingFlags(System.Reflection.MethodInfo mi, System.Reflection.BindingFlags bindingAttr)
@@ -406,41 +214,7 @@ namespace libsupcs
 
         public override System.Reflection.MethodInfo[] GetMethods(System.Reflection.BindingFlags bindingAttr)
         {
-            System.Reflection.MethodInfo[] ret;
-
-            unsafe
-            {
-                IntPtr* cur_meth = (IntPtr*)Methods;
-                int count = 0;
-                if (cur_meth != null)
-                {
-                    while (*cur_meth != new IntPtr(0))
-                    {
-                        System.Reflection.MethodInfo mi = ReinterpretAsMethodInfo(*cur_meth);
-
-                        if (MatchBindingFlags(mi, bindingAttr))
-                            count++;
-
-                        cur_meth++;
-                    }
-
-                    cur_meth = (IntPtr*)Methods;
-                    int i = 0;
-                    ret = new System.Reflection.MethodInfo[count];
-                    while (*cur_meth != new IntPtr(0))
-                    {
-                        System.Reflection.MethodInfo mi = ReinterpretAsMethodInfo(*cur_meth);
-
-                        if (MatchBindingFlags(mi, bindingAttr))
-                            ret[i++] = mi;
-
-                        cur_meth++;
-                    }
-                    return ret;
-                }
-            }
-
-            return new System.Reflection.MethodInfo[] { };
+            throw new NotImplementedException();
         }
 
         public override Type GetNestedType(string name, System.Reflection.BindingFlags bindingAttr)
@@ -524,12 +298,16 @@ namespace libsupcs
 
         public override System.Reflection.Module Module
         {
-            get { return _Module; }
+            get { throw new NotImplementedException(); }
         }
 
         public override string Namespace
         {
-            get { return TypeNamespace; }
+            get {
+                var corlib = Metadata.MSCorlib;
+                System.Diagnostics.Debugger.Break();
+                throw new NotImplementedException();
+            }
         }
 
         public override Type UnderlyingSystemType
@@ -554,38 +332,19 @@ namespace libsupcs
 
         public override string Name
         {
-            get { return TypeName; }
+            get { throw new NotImplementedException(); }
         }
 
-        public override bool IsGenericType { get { return (ImplFlags & IF_GT) == IF_GT; } }
-        public override bool IsGenericTypeDefinition { get { return (ImplFlags & IF_GTD) == IF_GTD; } }
+        public virtual TysosType UnboxedType { get { throw new NotImplementedException(); } }
+
+        public override bool IsGenericType { get { throw new NotImplementedException(); } }
+        public override bool IsGenericTypeDefinition { get { throw new NotImplementedException(); } }
 
         [MethodAlias("_ZW6System4Type_18type_is_subtype_of_Rb_P3V4TypeV4Typeb")]
         [AlwaysCompile]
         static bool IsSubtypeOf(TysosType subclass, TysosType superclass, bool check_interfaces)
         {
-            if (subclass == superclass)
-                return false;
-
-            if (check_interfaces)
-            {
-                /* Is superclass an interface of subclass? */
-
-                Type[] ifaces = subclass.GetInterfaces();
-                foreach (Type iface in ifaces)
-                    if (superclass == iface)
-                        return true;
-            }
-
-            TysosType base_class = subclass.Extends;
-            while (base_class != null)
-            {
-                if (base_class == superclass)
-                    return true;
-                base_class = base_class.Extends;
-            }
-
-            return false;
+            throw new NotImplementedException();
         }
 
         [MethodAlias("_ZW6System4Type_23type_is_assignable_from_Rb_P2V4TypeV4Type")]
@@ -612,63 +371,57 @@ namespace libsupcs
             throw new InvalidOperationException();
         }
 
-        public bool IsBoxed { get { return (ImplFlags & IF_TYPE_MASK) == IF_BOXED; } }
-        public bool IsUnmanagedPointer { get { return (ImplFlags & IF_TYPE_MASK) == IF_PTR; } }
-        public bool IsZeroBasedArray { get { return (ImplFlags & IF_TYPE_MASK) == IF_ZBA; } }
-        public bool IsManagedPointer { get { return (ImplFlags & IF_TYPE_MASK) == IF_MPTR; } }
-        public bool IsDynamic { get { return (ImplFlags & IF_DYNAMIC) == IF_DYNAMIC; } }
-        public uint TypeFlags { get { return ImplFlags & IF_TYPE_MASK; } }
-        public bool IsSimpleType { get { return (ImplFlags & IF_SIMPLE_ET) != 0; } }
-        public uint SimpleTypeElementType { get { return (ImplFlags & IF_SIMPLE_ET) >> IF_SIMPLE_ET_SHIFT; } }
+        public bool IsBoxed { get { throw new NotImplementedException(); } }
+        public bool IsUnmanagedPointer { get { throw new NotImplementedException(); } }
+        public bool IsZeroBasedArray { get { throw new NotImplementedException(); } }
+        public bool IsManagedPointer { get { throw new NotImplementedException(); } }
+        public bool IsDynamic { get { throw new NotImplementedException(); } }
+        public uint TypeFlags { get { throw new NotImplementedException(); } }
+        public bool IsSimpleType { get { throw new NotImplementedException(); } }
+        public uint SimpleTypeElementType { get { throw new NotImplementedException(); } }
         public TysosType GetUnboxedType() { return ReinterpretAsType(UnboxedType); }
 
-        public bool IsUninstantiatedGenericTypeParameter { get { return (ImplFlags & IF_UGTP) == IF_UGTP; } }
-        public bool IsUninstantiatedGenericMethodParameter { get { return (ImplFlags & IF_UGMP) == IF_UGMP; } }
-        public int UgtpIdx { get { return (int)((ImplFlags & IF_UGTP_MASK) >> IF_UGTP_SHIFT); } }
-        public int UgmpIdx { get { return (int)((ImplFlags & IF_UGMP_MASK) >> IF_UGMP_SHIFT); } }
+        public bool IsUninstantiatedGenericTypeParameter { get { throw new NotImplementedException(); } }
+        public bool IsUninstantiatedGenericMethodParameter { get { throw new NotImplementedException(); } }
+        public int UgtpIdx { get { throw new NotImplementedException(); } }
+        public int UgmpIdx { get { throw new NotImplementedException(); } }
 
         protected override bool IsValueTypeImpl()
         {
-            return (ImplFlags & IF_VTYPE) == IF_VTYPE;
+            throw new NotImplementedException();
         }
 
         [MethodAlias("_ZW6System4Type_15make_array_type_RV4Type_P2u1ti")]
         [AlwaysCompile]
         static TysosType make_array_type(TysosType cur_type, int rank)
         {
-            if (rank != 1)
-                throw new Exception("Rank can only be 1 in make_array_type");
-
-            return TysosArrayType.make_zba(cur_type);
+            throw new NotImplementedException();
         }
 
-        internal object Create()
+        internal unsafe object Create()
         {
-            object ret = MemoryOperations.GcMalloc(new IntPtr(this.ClassSize));
+            byte* ret = (byte *)MemoryOperations.GcMalloc(GetClassSize());
+            void* vtbl = *(void**)((byte*)CastOperations.ReinterpretAsPointer(this) + ClassOperations.GetSystemTypeImplOffset());
 
-            unsafe
-            {
-                void* addr = CastOperations.ReinterpretAsPointer(ret);
-                *(IntPtr*)((byte*)addr + libsupcs.ClassOperations.GetVtblFieldOffset()) = this.VTable;
-            }
+            *(void**)(ret + ClassOperations.GetVtblFieldOffset()) = vtbl;
+            *(ulong*)(ret + ClassOperations.GetMutexLockOffset()) = 0;
 
-            return ret;
+            return CastOperations.ReinterpretAsObject(ret);
         }
 
         static internal int obj_id = 0;
 
         [MethodAlias("_Zu1O_7GetType_RW6System4Type_P1u1t")]
         [AlwaysCompile]
-        static unsafe TysosType Object_GetType(void ***obj)
+        static unsafe TysosType Object_GetType(void **obj)
         {
-            void** vtbl = *obj;
-            void* ti = *vtbl;
+            void* vtbl = *obj;
 
-            TysosType ret = ReinterpretAsType(ti);
-            if (ret.IsBoxed)
-                return ret.GetUnboxedType();
-            else
-                return ret;
+            var ret = new TysosType();
+            byte* retp = (byte*)CastOperations.ReinterpretAsPointer(ret);
+            *(void**)(retp + ClassOperations.GetSystemTypeImplOffset()) = vtbl;
+
+            return ret;
         }
 
         [MethodAlias("_ZW6System4Type_14EqualsInternal_Rb_P2u1tV4Type")]
