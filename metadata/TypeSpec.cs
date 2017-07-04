@@ -270,7 +270,8 @@ namespace metadata
         }
 
         List<TypeSpec> ii = null;
-        /**<summary>Return a list of all implemented interfaces</summary> */
+        /**<summary>Return a list of all implemented interfaces in this class
+         * and base classes</summary> */
         public List<TypeSpec> ImplementedInterfaces
         {
             get
@@ -293,6 +294,10 @@ namespace metadata
                         ii.Add(iface);
                     }
                 }
+
+                var extends = GetExtends();
+                if (extends != null)
+                    ii.AddRange(extends.ImplementedInterfaces);
 
                 return ii;
             }

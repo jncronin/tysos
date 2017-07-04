@@ -85,6 +85,7 @@ export function target_init(string name, int ptr_size, int is_msb)
 	instr(tdef, "ldfp");
 	instr(tdef, "break");
 	instr(tdef, "mclabel");
+	instr(tdef, "memcpy");
 
 	target_defs.add(tdef);
 

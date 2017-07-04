@@ -589,6 +589,13 @@ namespace metadata
             return null;
         }
 
+        public TypeSpec GetTypeSpec(uint token, TypeSpec[] gtparams = null, TypeSpec[] gmparams = null)
+        {
+            int table_id, row;
+            InterpretToken(token, out table_id, out row);
+            return GetTypeSpec(table_id, row, gtparams, gmparams);
+        }
+
         public bool GetTypeDefRow(int table_id, int row, out TypeSpec ts)
         {
             throw new NotImplementedException();
@@ -1379,7 +1386,8 @@ namespace metadata
             MemberForwarded, Implementation, CustomAttributeType,
             ResolutionScope, TypeOrMethodDef;
 
-        public Dictionary<TableId, int> TableIDs = new Dictionary<TableId, int>();
+        public Dictionary<TableId, int> TableIDs = new Dictionary<TableId, int>(
+            new GenericEqualityComparerEnum<TableId>());
 
         public MetadataStream()
         {

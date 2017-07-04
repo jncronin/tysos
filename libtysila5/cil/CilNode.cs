@@ -126,6 +126,7 @@ namespace libtysila5.cil
 
         // prefixes
         public bool constrained;
+        public uint constrained_tok;
         public bool no_typecheck;
         public bool no_rangecheck;
         public bool no_nullcheck;

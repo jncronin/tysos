@@ -381,6 +381,7 @@ namespace libtysila5.ir
                     stack_after = ldvtaddr(n, c, stack_before);
                     stack_after = ldflda(n, c, stack_after, false, out ts);
                     stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+                    stack_after.Peek().ts = ts.ManagedPointer;
                     break;
 
                 case cil.Opcode.SingleOpcodes.stfld:
@@ -562,24 +563,70 @@ namespace libtysila5.ir
                         var call_ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
                         var call_ms_flags = call_ms.m.GetIntEntry(MetadataStream.tid_MethodDef,
                             call_ms.mdrow, 2);
+                        uint sig_idx = call_ms.m.GetIntEntry(MetadataStream.tid_MethodDef, call_ms.mdrow,
+                            4);
+
+                        var pc = call_ms.m.GetMethodDefSigParamCountIncludeThis((int)sig_idx);
+
+                        stack_after = stack_before;
+
+                        if(n.constrained)
+                        {
+                            var cts = c.ms.m.GetTypeSpec(n.constrained_tok, c.ms.gtparams, c.ms.gmparams);
+
+                            if (!cts.ManagedPointer.Equals(stack_before.Peek(pc - 1).ts))
+                                throw new Exception("Invalid constrained prefix: " +
+                                    cts.ManagedPointer.MangleType() + " vs " + 
+                                    stack_before.Peek(pc - 1).ts);
+
+                            if (cts.IsValueType == false)
+                            {
+                                // dereference ptr
+                                stack_after = ldind(n, c, stack_before, cts, pc - 1);
+                                // copy value at box entry in stack to ptr entry and remove boxed type from stack
+                                stack_after = stackcopy(n, c, stack_after, 0, pc);
+                                stack_after = new Stack<StackItem>(stack_after);
+                                stack_after.Pop();
+                            }
+                            else if (!call_ms.type.Equals(cts))
+                            {
+                                // dereference ptr then box it
+
+                                // create a new top of stack object that is the new boxed object
+                                stack_after = newobj(n, c, stack_after, null, cts.Box);
+
+                                // get the address of its data member
+                                stack_after = copy_to_front(n, c, stack_after);
+                                stack_after = ldc(n, c, stack_after, layout.Layout.GetTypeSize(cts.m.SystemObject, c.t), 0x18);
+                                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+
+                                // copy from the managed pointer address to the boxed type address
+                                stack_after = ldc(n, c, stack_after, c.t.GetSize(cts));
+                                stack_after = memcpy(n, c, stack_after, 1, pc + 2, 0);
+
+                                // remove count and data member ptr entries
+                                stack_after = new Stack<StackItem>(stack_after);
+                                stack_after.Pop();
+                                stack_after.Pop();
+
+                                // copy value at box entry in stack to ptr entry and remove boxed type from stack
+                                stack_after = stackcopy(n, c, stack_after, 0, pc);
+                                stack_after = new Stack<StackItem>(stack_after);
+                                stack_after.Pop();
+                            }
+                            // else do nothing if this is a value type which implements call_ms
+                        }                       
 
                         if((call_ms_flags & 0x40) == 0x40)
                         {
                             // Calling a virtual function
-                            var ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
-
-                            uint sig_idx = ms.m.GetIntEntry(MetadataStream.tid_MethodDef, ms.mdrow,
-                                4);
-
-                            var pc = ms.m.GetMethodDefSigParamCountIncludeThis((int)sig_idx);
-
-                            stack_after = get_virt_ftn_ptr(n, c, stack_before, pc - 1);
+                            stack_after = get_virt_ftn_ptr(n, c, stack_after, pc - 1);
                             stack_after = call(n, c, stack_after, true);
                         }
                         else
                         {
                             // Calling an instance function
-                            stack_after = call(n, c, stack_before);
+                            stack_after = call(n, c, stack_after);
                         }
                     }                    
                     break;
@@ -910,6 +957,15 @@ namespace libtysila5.ir
 
             //foreach (var after in n.il_offsets_after)
             //    DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static Stack<StackItem> memcpy(CilNode n, Code c, Stack<StackItem> stack_before, int dest = 2, int src = 1, int count = 0)
+        {
+            var stack_after = new Stack<StackItem>(stack_before);
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_memcpy, stack_before = stack_before, stack_after = stack_after, arg_a = dest, arg_b = src, arg_c = count });
+
+            return stack_after;
         }
 
         private static Stack<StackItem> pop(CilNode n, Code c, Stack<StackItem> stack_before)
@@ -1463,13 +1519,15 @@ namespace libtysila5.ir
         }
 
         internal static Stack<StackItem> newobj(CilNode n, Code c, Stack<StackItem> stack_before,
-            MethodSpec ctor = null)
+            MethodSpec ctor = null, TypeSpec objtype = null)
         {
-            if(ctor == null)
+            if(ctor == null && objtype == null)
                 ctor = n.GetTokenAsMethodSpec(c);
-            var objtype = ctor.type;
+            if(objtype == null) 
+                objtype = ctor.type;
             c.t.r.VTableRequestor.Request(objtype.Box);
-            c.t.r.MethodRequestor.Request(ctor);
+            if(ctor != null)
+                c.t.r.MethodRequestor.Request(ctor);
             var stack_after = new Stack<StackItem>(stack_before);
 
             int vt_adjust = 0;
@@ -1514,26 +1572,34 @@ namespace libtysila5.ir
                 stack_after = stind(n, c, stack_after, intptrsize);
             }
 
-            /* call constructor.  Arguments are 0 for object, then
-             * for the other pcount - 1 arguments, they are at
-             * pcount - 1, pcount - 2, pcount - 3 etc */
-            System.Collections.Generic.List<int> p = new System.Collections.Generic.List<int>();
-            var pcount = ctor.m.GetMethodDefSigParamCountIncludeThis(ctor.msig);
-            p.Add(0);
-            for (int i = 0; i < (pcount - 1); i++)
-                p.Add(pcount - 1 - i + vt_adjust);
+            if (ctor != null)
+            {
+                /* call constructor.  Arguments are 0 for object, then
+                 * for the other pcount - 1 arguments, they are at
+                 * pcount - 1, pcount - 2, pcount - 3 etc */
+                System.Collections.Generic.List<int> p = new System.Collections.Generic.List<int>();
+                var pcount = ctor.m.GetMethodDefSigParamCountIncludeThis(ctor.msig);
+                p.Add(0);
+                for (int i = 0; i < (pcount - 1); i++)
+                    p.Add(pcount - 1 - i + vt_adjust);
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_call, imm_ms = ctor, arg_list = p, stack_before = stack_after, stack_after = stack_after });
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_call, imm_ms = ctor, arg_list = p, stack_before = stack_after, stack_after = stack_after });
 
-            /* pop all arguments and leave object on the stack */
-            var stack_after2 = new Stack<StackItem>(stack_after);
-            for (int i = 0; i < (pcount + vt_adjust); i++)
-                stack_after2.Pop();
+                /* pop all arguments and leave object on the stack */
+                var stack_after2 = new Stack<StackItem>(stack_after);
+                for (int i = 0; i < (pcount + vt_adjust); i++)
+                    stack_after2.Pop();
 
-            stack_after2.Push(new StackItem { ts = objtype });
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_stackcopy, arg_a = vt_adjust, res_a = 0, stack_before = stack_after, stack_after = stack_after2 });
+                stack_after2.Push(new StackItem { ts = objtype });
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_stackcopy, arg_a = vt_adjust, res_a = 0, stack_before = stack_after, stack_after = stack_after2 });
+                stack_after = stack_after2;
+            }
+            else
+            {
+                stack_after.Peek(0).ts = objtype;
+            }
 
-            return stack_after2;
+            return stack_after;
         }
 
         private static Stack<StackItem> newstr(CilNode n, Code c, Stack<StackItem> stack_before,
@@ -1909,11 +1975,15 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        internal static Stack<StackItem> ldind(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts)
+        internal static Stack<StackItem> ldind(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts, int src = -1)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
-            var st_src = stack_after.Pop();
+            StackItem st_src;
+            if (src == -1)
+                st_src = stack_after.Pop();
+            else
+                st_src = stack_after.Peek(src);
 
             stack_after.Push(new StackItem { ts = ts });
 
@@ -2101,6 +2171,19 @@ namespace libtysila5.ir
             var pc = ms.m.GetMethodDefSigParamCountIncludeThis((int)sig_idx);
 
             var stack_after = copy_to_front(n, c, stack_before, pc - 1);
+            return stack_after;
+        }
+
+        static Stack<StackItem> stackcopy(CilNode n, Code c, Stack<StackItem> stack_before, int src, int dest)
+        {
+            Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
+
+            var si = stack_before.Peek(src);
+
+            stack_after[stack_after.Count - 1 - dest] = si.Clone();
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stackcopy, ct = Opcode.GetCTFromType(si.ts), vt_size = c.t.GetSize(si.ts), arg_a = src, res_a = dest, stack_before = stack_before, stack_after = stack_after });
+
             return stack_after;
         }
 

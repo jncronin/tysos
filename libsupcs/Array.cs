@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2014-2016 by John Cronin
+﻿/* Copyright (C) 2011 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,40 +21,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Runtime.CompilerServices;
 
-namespace metadata
+namespace libsupcs
 {
-    /* The following class is taken from Mono.  mono/corlib/System.Collections.Generic/EqualityComparer.cs
-     * Authors: Ben Maurer (bmaurer@ximian.com), Copyright (C) 2004 Novell, Inc under the same license as this file
-     * 
-     * We need to use our own version of this as EqualityComparer<T> has a static constructor which instantiates
-     * a generic type, and if the jit is not functioning this cannot yet be done */
-    public class GenericEqualityComparer<T> : EqualityComparer<T> where T : System.IEquatable<T>
+    class Array
     {
-        public override int GetHashCode(T obj)
+        [MethodAlias("_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_15InitializeArray_Rv_P2U6System5Arrayu1I")]
+        [WeakLinkage]
+        [AlwaysCompile]
+        static unsafe void InitializeArray(void* arr, void* fld_handle)
         {
-            return obj.GetHashCode();
-        }
-
-        public override bool Equals(T x, T y)
-        {
-            if (x == null)
-                return y == null;
-
-            return x.Equals(y);
-        }
-    }
-
-    public class GenericEqualityComparerEnum<T> : EqualityComparer<T> where T : struct, IConvertible
-    {
-        public override bool Equals(T x, T y)
-        {
-            return x.Equals(y);
-        }
-
-        public override int GetHashCode(T obj)
-        {
-            return obj.GetHashCode();
+            System.Diagnostics.Debugger.Break();
         }
     }
 }

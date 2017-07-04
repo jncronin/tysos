@@ -1789,23 +1789,25 @@ namespace libtysila5.target.x86
                 0 - cctor has not been run and is not running,
                     therefore try and acquire the lock and run
                     it
-                1 - cctor is running in another thread
+                1 - cctor is running in this or another thread
                 2 - cctor has finished
+
+            CIL II 10.5.3.3 allows the cctor to return if the
+            cctor is already running in the current thread or
+            any thread that is blocking on the current.
+            TODO: we don't support the second part yet, but
+            return if [rdx] == 1 too.
 
                 .t1:
                 cmp_rm8_imm8 [rdx], 2
                 je .ret
 
-                cmp_rm8_imm8 [rdx], 1
-                jne .t2
-
-                pause
-                jmp .t1
+                cmp_rm8_imm8 [rdx], 1   // TODO: should check thread id here
+                je .ret
 
             Attempt to acquire the lock here.  AL is the value
             to test, CL is the value to set if we acquire it,
             ZF reports success.
-                .t2:
                 xor_rm32_r32 rax, rax
                 mov_r32_imm32 rcx, 1
                 lock_cmpxchg_rm8_r8 [rdx], cl
@@ -1816,7 +1818,6 @@ namespace libtysila5.target.x86
 
             // Assign local labels
             var t1 = c.next_mclabel--;
-            var t2 = c.next_mclabel--;
 
             int ret = c.cctor_ret_tag;
             if (ret == -1)
@@ -1836,17 +1837,50 @@ namespace libtysila5.target.x86
             r.Add(inst_jmp(x86_jcc_rel32, ret, ir.Opcode.cc_eq, n));
 
             r.Add(inst(x86_cmp_rm8_imm8, new ContentsReg { basereg = r_edx }, 1, n));
-            r.Add(inst_jmp(x86_jcc_rel32, t2, ir.Opcode.cc_ne, n));
+            r.Add(inst_jmp(x86_jcc_rel32, ret, ir.Opcode.cc_eq, n));
 
-            r.Add(inst(x86_pause, n));
-            r.Add(inst_jmp(x86_jmp_rel32, t1, n));
-
-            // t2
-            r.Add(inst(Generic.g_mclabel, new ir.Param { t = ir.Opcode.vl_br_target, v = t2 }, n));
             r.Add(inst(x86_xor_r32_rm32, r_eax, r_eax, n));
             r.Add(inst(x86_mov_rm32_imm32, r_ecx, 1, n));
             r.Add(inst(x86_lock_cmpxchg_rm8_r8, new ContentsReg { basereg = r_edx }, r_ecx, n));
             r.Add(inst_jmp(x86_jcc_rel32, t1, ir.Opcode.cc_ne, n));
+
+            return r;
+        }
+
+        internal static List<MCInst> handle_memcpy(
+           Target t,
+           List<CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            var dr = n.stack_before.Peek(n.arg_a).reg;
+            var sr = n.stack_before.Peek(n.arg_b).reg;
+            var cv = n.stack_before.Peek(n.arg_c);
+            var cr = cv.reg;
+
+            List<MCInst> r = new List<MCInst>();
+
+            if(cv.min_l == cv.max_l && cv.min_l <= t.psize * 4 &&
+                dr.type == rt_gpr && sr.type == rt_gpr)
+            {
+                // can optimise call away
+                sr = new ContentsReg { basereg = sr, size = (int)cv.min_l };
+                dr = new ContentsReg { basereg = dr, size = (int)cv.min_l };
+                handle_move(dr, sr, r, n, c);
+                return r;
+            }
+
+            // emit call to memcpy(dest, src, n)
+            r.AddRange(handle_call(n, c,
+                c.special_meths.GetMethodSpec(c.special_meths.memcpy),
+                new ir.Param[]
+                {
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = dr },
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = sr },
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = cr },
+                },
+                null, "memcpy"));
 
             return r;
         }

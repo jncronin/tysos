@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 22:39:31 on 29 June 2017
+ * It was generated at 22:23:28 on 04 July 2017
  * from D:\tysos\branches\tysila3\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -405,13 +405,13 @@ namespace libtysila5.target.x86
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_map_sysv[90] = new int[] { 25, };
-			cc_map_sysv[92] = new int[] { 25, };
 			cc_map_sysv[91] = new int[] { 25, };
-			cc_map_sysv[94] = new int[] { 25, };
+			cc_map_sysv[93] = new int[] { 25, };
+			cc_map_sysv[92] = new int[] { 25, };
 			cc_map_sysv[95] = new int[] { 25, };
 			cc_map_sysv[96] = new int[] { 25, };
-			cc_map_sysv[93] = new int[] { 25, };
+			cc_map_sysv[97] = new int[] { 25, };
+			cc_map_sysv[94] = new int[] { 25, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 1664;
@@ -427,12 +427,12 @@ namespace libtysila5.target.x86
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_ret_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_ret_sysv()
 		{
-			cc_map_ret_sysv[90] = new int[] { 7, };
-			cc_map_ret_sysv[92] = new int[] { 7, };
-			cc_map_ret_sysv[94] = new int[] { 7, };
+			cc_map_ret_sysv[91] = new int[] { 7, };
+			cc_map_ret_sysv[93] = new int[] { 7, };
 			cc_map_ret_sysv[95] = new int[] { 7, };
-			cc_map_ret_sysv[91] = new int[] { 24, };
-			cc_map_ret_sysv[93] = new int[] { 15, };
+			cc_map_ret_sysv[96] = new int[] { 7, };
+			cc_map_ret_sysv[92] = new int[] { 24, };
+			cc_map_ret_sysv[94] = new int[] { 15, };
 		}
 		
 		internal const ulong ret_sysv_caller_preserves = 0;
@@ -528,12 +528,12 @@ namespace libtysila5.target.x86_64
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_classmap_sysv[90] = 174;
-			cc_classmap_sysv[92] = 174;
 			cc_classmap_sysv[91] = 174;
-			cc_classmap_sysv[94] = 174;
+			cc_classmap_sysv[93] = 174;
+			cc_classmap_sysv[92] = 174;
 			cc_classmap_sysv[95] = 174;
-			cc_classmap_sysv[93] = 175;
+			cc_classmap_sysv[96] = 174;
+			cc_classmap_sysv[94] = 175;
 			cc_map_sysv[174] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
 			cc_map_sysv[175] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
 			cc_map_sysv[173] = new int[] { 25, };
@@ -552,12 +552,12 @@ namespace libtysila5.target.x86_64
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_ret_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_ret_sysv()
 		{
-			cc_map_ret_sysv[90] = new int[] { 7, };
-			cc_map_ret_sysv[92] = new int[] { 7, };
-			cc_map_ret_sysv[94] = new int[] { 7, };
-			cc_map_ret_sysv[95] = new int[] { 7, };
 			cc_map_ret_sysv[91] = new int[] { 7, };
-			cc_map_ret_sysv[93] = new int[] { 16, };
+			cc_map_ret_sysv[93] = new int[] { 7, };
+			cc_map_ret_sysv[95] = new int[] { 7, };
+			cc_map_ret_sysv[96] = new int[] { 7, };
+			cc_map_ret_sysv[92] = new int[] { 7, };
+			cc_map_ret_sysv[94] = new int[] { 16, };
 		}
 		
 		internal const ulong ret_sysv_caller_preserves = 0;
@@ -814,12 +814,12 @@ namespace libtysila5.target.x86
 		internal x86_Assembler()
 		{
 			init_ccs();
-			ct_regs[90] = 6912;
-			ct_regs[91] = 0;
-			ct_regs[93] = 8323072;
-			ct_regs[92] = ct_regs[90];
-			ct_regs[94] = ct_regs[90];
-			ct_regs[95] = ct_regs[90];
+			ct_regs[91] = 6912;
+			ct_regs[92] = 0;
+			ct_regs[94] = 8323072;
+			ct_regs[93] = ct_regs[91];
+			ct_regs[95] = ct_regs[91];
+			ct_regs[96] = ct_regs[91];
 			instrs.trie = x86_instrs;
 			instrs.start = x86_instrs_start;
 			instrs.vals = x86_instrs_vals;
@@ -845,11 +845,11 @@ namespace libtysila5.target.x86
 			37, 0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 
 			0, 1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 
 			0, 44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 46, 0, 0, 1, 0, 47, 
-			0, 0, 1, 0, 48, 0, 0, 1, 0, 49, 0, 0, 1, 0, 0, 7, 21, 
-			56, 1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 
-			71, 76, 81, 86, 91, 96, 0, 0, 0, 0, 101, 0, 106, 111, 116, 0, 0, 
-			0, 0, 0, 0, 187, 229, 234, 239, 244, 249, 254, 259, 264, 269, 274, 279, 284, 
-			289, 294, 299, 304, 309, 314, 
+			0, 0, 1, 0, 48, 0, 0, 1, 0, 49, 0, 0, 1, 0, 50, 0, 0, 
+			1, 0, 0, 7, 21, 57, 1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 0, 
+			51, 0, 56, 61, 66, 71, 76, 81, 86, 91, 96, 0, 0, 0, 0, 101, 0, 
+			106, 111, 116, 0, 0, 0, 0, 0, 0, 187, 229, 234, 239, 244, 249, 254, 259, 
+			264, 269, 274, 279, 284, 289, 294, 299, 304, 309, 314, 319, 
 		};
 		
 		InstructionHandler[] x86_instrs_vals = new InstructionHandler[] {
@@ -901,11 +901,12 @@ namespace libtysila5.target.x86
 			libtysila5.target.x86.x86_Assembler.handle_cctor_runonce,
 			libtysila5.target.x86.x86_Assembler.handle_break,
 			libtysila5.target.x86.x86_Assembler.handle_mclabel,
+			libtysila5.target.x86.x86_Assembler.handle_memcpy,
 			libtysila5.target.x86.x86_Assembler.handle_portin,
 			libtysila5.target.x86.x86_Assembler.handle_portout,
 		};
 		
-		int x86_instrs_start = 319;
+		int x86_instrs_start = 324;
 	}
 }
 
@@ -962,12 +963,12 @@ namespace libtysila5.target.x86_64
 		internal x86_64_Assembler()
 		{
 			init_ccs();
-			ct_regs[90] = 34225527552;
 			ct_regs[91] = 34225527552;
-			ct_regs[93] = 8761741606912;
-			ct_regs[92] = ct_regs[91];
-			ct_regs[94] = ct_regs[91];
-			ct_regs[95] = ct_regs[91];
+			ct_regs[92] = 34225527552;
+			ct_regs[94] = 8761741606912;
+			ct_regs[93] = ct_regs[92];
+			ct_regs[95] = ct_regs[92];
+			ct_regs[96] = ct_regs[92];
 			instrs.trie = x86_64_instrs;
 			instrs.start = x86_64_instrs_start;
 			instrs.vals = x86_64_instrs_vals;
@@ -993,11 +994,11 @@ namespace libtysila5.target.x86_64
 			37, 0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 
 			0, 1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 
 			0, 44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 46, 0, 0, 1, 0, 47, 
-			0, 0, 1, 0, 48, 0, 0, 1, 0, 49, 0, 0, 1, 0, 0, 7, 21, 
-			56, 1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 
-			71, 76, 81, 86, 91, 96, 0, 0, 0, 0, 101, 0, 106, 111, 116, 0, 0, 
-			0, 0, 0, 0, 187, 229, 234, 239, 244, 249, 254, 259, 264, 269, 274, 279, 284, 
-			289, 294, 299, 304, 309, 314, 
+			0, 0, 1, 0, 48, 0, 0, 1, 0, 49, 0, 0, 1, 0, 50, 0, 0, 
+			1, 0, 0, 7, 21, 57, 1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 0, 
+			51, 0, 56, 61, 66, 71, 76, 81, 86, 91, 96, 0, 0, 0, 0, 101, 0, 
+			106, 111, 116, 0, 0, 0, 0, 0, 0, 187, 229, 234, 239, 244, 249, 254, 259, 
+			264, 269, 274, 279, 284, 289, 294, 299, 304, 309, 314, 319, 
 		};
 		
 		InstructionHandler[] x86_64_instrs_vals = new InstructionHandler[] {
@@ -1049,11 +1050,12 @@ namespace libtysila5.target.x86_64
 			libtysila5.target.x86_64.x86_64_Assembler.handle_cctor_runonce,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_break,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_mclabel,
+			libtysila5.target.x86_64.x86_64_Assembler.handle_memcpy,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_portin,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_portout,
 		};
 		
-		int x86_64_instrs_start = 319;
+		int x86_64_instrs_start = 324;
 	}
 }
 

@@ -88,7 +88,7 @@ namespace libtysila5.cil
                             case 0x16:
                                 n.constrained = true;
                                 offset += 2;
-                                //line.Prefixes.constrained_tok = new Token(LSB_Assembler.FromByteArrayU4S(code, offset), m);
+                                n.constrained_tok = di.ReadUInt(offset + boffset);
                                 offset += 4;
                                 break;
                             case 0x19:

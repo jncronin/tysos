@@ -130,8 +130,6 @@ MSCORLIBOBJ = objfromexe(MSCORLIB);
 LIBSUPCS = typroject(ROOT + "/libsupcs/libsupcs.csproj", "Release", "3.5", 1);
 LIBSUPCSOBJ = objfromexe(LIBSUPCS);
 LIBSUPCSA = dir(LIBSUPCS) + "/" + basefname(LIBSUPCS) + ".a";
-LIBSTDCS = typroject(ROOT + "/libstdcs/libstdcs.csproj", "Release", "3.5", 1);
-LIBSTDCSOBJ = objfromexe(LIBSTDCS);
 LIBASMOBJ = objfromexe(typroject(ROOT + "/libasm/libasm.csproj", "Release", "3.5", 1));
 LIBTYSILAOBJ = objfromexe(typroject(ROOT + "/libtysila/libtysila.csproj", "Release", "3.5", 1));
 MSCORLIBDIR = dir(MSCORLIB);
@@ -244,7 +242,7 @@ rulefor("%.to", [ "%.obj" ], [ "test.tmk" ], function() {
 });
 
 /* Rule for linking the kernel */
-rulefor(KERNEL, [ TYSOSOBJ, LIBSTDCSOBJ, MSCORLIBOBJ,
+rulefor(KERNEL, [ TYSOSOBJ, MSCORLIBOBJ,
 	tycobj("undefined.o"),
 	TYSOS_CPU_OBJ, TINYGCOBJ, LIBSUPCSA, METADATAOBJ ], [],
 	function()
