@@ -165,14 +165,20 @@ namespace tysos.Collections
             get
             {
                 if (i >= length)
+                {
+                    System.Diagnostics.Debugger.Break();
                     throw new System.IndexOutOfRangeException();
+                }
                 return *(ulong*)(base_addr + i * 8);
             }
 
             set
             {
                 if (i >= length)
+                {
+                    System.Diagnostics.Debugger.Break();
                     throw new System.IndexOutOfRangeException();
+                }
                 *(ulong*)(base_addr + i * 8) = value;
             }
         }
@@ -182,14 +188,20 @@ namespace tysos.Collections
             get
             {
                 if ((ulong)i >= length)
+                {
+                    System.Diagnostics.Debugger.Break();
                     throw new System.IndexOutOfRangeException();
+                }
                 return *(ulong*)(base_addr + (ulong)i * 8);
             }
 
             set
             {
                 if ((ulong)i >= length)
+                {
+                    System.Diagnostics.Debugger.Break();
                     throw new System.IndexOutOfRangeException();
+                }
                 *(ulong*)(base_addr + (ulong)i * 8) = value;
             }
         }

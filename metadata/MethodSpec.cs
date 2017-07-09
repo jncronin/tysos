@@ -194,7 +194,8 @@ namespace metadata
                 {
                     Modules = mods,
                     Signature = sig,
-                    OriginalSpec = this
+                    OriginalSpec = this,
+                    Type = FullySpecSignature.FSSType.Field
                 };
             }
         }

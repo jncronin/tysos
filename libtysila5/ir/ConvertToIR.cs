@@ -1884,6 +1884,13 @@ namespace libtysila5.ir
             stack_after = ldc(n, c, stack_after, et_size);
             stack_after = stind(n, c, stack_after, int32_size);
 
+            /* Store rank */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.Rank, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add);
+            stack_after = ldc(n, c, stack_after, 1);
+            stack_after = stind(n, c, stack_after, int32_size);
+
             /* Convert to an object on the stack of the appropriate size */
             var stack_after2 = new Stack<StackItem>(stack_after);
             stack_after2.Pop();

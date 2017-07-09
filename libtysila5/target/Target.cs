@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 22:23:28 on 04 July 2017
+ * It was generated at 12:08:12 on 09 July 2017
  * from D:\tysos\branches\tysila3\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -239,6 +239,12 @@ namespace libtysila5.target.x86
 		public const int x86_cvtsi2sd_xmm_rm64 = 170;
 		public const int x86_cvtsd2si_r64_xmmm64 = 171;
 		public const int x86_and_rm64_imm8 = 172;
+		public const int x86_movzxbq_r64_rm8sibscaledisp = 173;
+		public const int x86_movzxwq_r64_rm16sibscaledisp = 174;
+		public const int x86_movsxbq_r64_rm8sibscaledisp = 175;
+		public const int x86_movsxwq_r64_rm16sibscaledisp = 176;
+		public const int x86_movsxdq_r64_rm32sibscaledisp = 177;
+		public const int x86_mov_r64_rm64sibscaledisp = 178;
 		
 		internal static void init_instrs()
 		{
@@ -393,6 +399,12 @@ namespace libtysila5.target.x86
 			insts[170] = "cvtsi2sd_xmm_rm64";
 			insts[171] = "cvtsd2si_r64_xmmm64";
 			insts[172] = "and_rm64_imm8";
+			insts[173] = "movzxbq_r64_rm8sibscaledisp";
+			insts[174] = "movzxwq_r64_rm16sibscaledisp";
+			insts[175] = "movsxbq_r64_rm8sibscaledisp";
+			insts[176] = "movsxwq_r64_rm16sibscaledisp";
+			insts[177] = "movsxdq_r64_rm32sibscaledisp";
+			insts[178] = "mov_r64_rm64sibscaledisp";
 		}
 	}
 }
@@ -510,13 +522,13 @@ namespace libtysila5.target.x86_64
 {
 	partial class x86_64_Assembler
 	{
-		public const int sysvc_MEMORY = 173;
-		public const int sysvc_INTEGER = 174;
-		public const int sysvc_SSE = 175;
-		public const int sysvc_SSEUP = 176;
-		public const int sysvc_X87 = 177;
-		public const int sysvc_X87UP = 178;
-		public const int sysvc_COMPLEX_X87 = 179;
+		public const int sysvc_MEMORY = 179;
+		public const int sysvc_INTEGER = 180;
+		public const int sysvc_SSE = 181;
+		public const int sysvc_SSEUP = 182;
+		public const int sysvc_X87 = 183;
+		public const int sysvc_X87UP = 184;
+		public const int sysvc_COMPLEX_X87 = 185;
 	}
 }
 
@@ -528,15 +540,15 @@ namespace libtysila5.target.x86_64
 		public static System.Collections.Generic.Dictionary<int, int> cc_classmap_sysv = new System.Collections.Generic.Dictionary<int, int>(new libtysila5.GenericEqualityComparer<int>());
 		internal static void init_sysv()
 		{
-			cc_classmap_sysv[91] = 174;
-			cc_classmap_sysv[93] = 174;
-			cc_classmap_sysv[92] = 174;
-			cc_classmap_sysv[95] = 174;
-			cc_classmap_sysv[96] = 174;
-			cc_classmap_sysv[94] = 175;
-			cc_map_sysv[174] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
-			cc_map_sysv[175] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
-			cc_map_sysv[173] = new int[] { 25, };
+			cc_classmap_sysv[91] = 180;
+			cc_classmap_sysv[93] = 180;
+			cc_classmap_sysv[92] = 180;
+			cc_classmap_sysv[95] = 180;
+			cc_classmap_sysv[96] = 180;
+			cc_classmap_sysv[94] = 181;
+			cc_map_sysv[180] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
+			cc_map_sysv[181] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
+			cc_map_sysv[179] = new int[] { 25, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 1664;
@@ -836,20 +848,24 @@ namespace libtysila5.target.x86
 			21, 0, 0, 1, 0, 22, 0, 0, 1, 0, 23, 0, 0, 1, 0, 24, 0, 
 			0, 1, 0, 25, 0, 0, 1, 0, 26, 0, 0, 1, 0, 27, 1, 41, 2, 
 			121, 126, 28, 0, 0, 1, 0, 0, 1, 42, 1, 137, 0, 2, 21, 1, 142, 
-			0, 3, 58, 1, 147, 0, 4, 21, 1, 152, 0, 5, 40, 1, 157, 29, 0, 
-			0, 1, 0, 30, 0, 0, 1, 0, 0, 1, 41, 1, 172, 0, 2, 21, 1, 
-			177, 31, 6, 21, 38, 131, 0, 162, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 3, 58, 1, 147, 0, 4, 21, 1, 152, 29, 0, 0, 1, 0, 0, 1, 
+			65, 1, 162, 0, 2, 42, 1, 167, 0, 3, 21, 1, 172, 0, 4, 42, 1, 
+			177, 0, 5, 21, 1, 182, 0, 6, 58, 1, 187, 0, 7, 40, 26, 157, 0, 
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-			0, 167, 0, 0, 0, 0, 0, 0, 182, 32, 0, 0, 1, 0, 33, 0, 0, 
-			1, 0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 
-			37, 0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 
-			0, 1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 
-			0, 44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 46, 0, 0, 1, 0, 47, 
-			0, 0, 1, 0, 48, 0, 0, 1, 0, 49, 0, 0, 1, 0, 50, 0, 0, 
-			1, 0, 0, 7, 21, 57, 1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 0, 
-			51, 0, 56, 61, 66, 71, 76, 81, 86, 91, 96, 0, 0, 0, 0, 101, 0, 
-			106, 111, 116, 0, 0, 0, 0, 0, 0, 187, 229, 234, 239, 244, 249, 254, 259, 
-			264, 269, 274, 279, 284, 289, 294, 299, 304, 309, 314, 319, 
+			0, 0, 0, 0, 0, 0, 192, 30, 0, 0, 1, 0, 31, 0, 0, 1, 0, 
+			0, 1, 41, 1, 232, 0, 2, 21, 1, 237, 32, 8, 21, 38, 131, 0, 197, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 227, 0, 0, 0, 0, 0, 0, 
+			242, 33, 0, 0, 1, 0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 
+			0, 0, 1, 0, 37, 0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 
+			1, 0, 40, 0, 0, 1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 
+			43, 0, 0, 1, 0, 44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 46, 0, 
+			0, 1, 0, 47, 0, 0, 1, 0, 48, 0, 0, 1, 0, 49, 0, 0, 1, 
+			0, 50, 0, 0, 1, 0, 51, 0, 0, 1, 0, 0, 9, 21, 57, 1, 6, 
+			11, 16, 21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 
+			86, 91, 96, 0, 0, 0, 0, 101, 0, 106, 111, 116, 0, 0, 0, 0, 0, 
+			0, 247, 289, 294, 299, 304, 309, 314, 319, 324, 329, 334, 339, 344, 349, 354, 359, 
+			364, 369, 374, 379, 
 		};
 		
 		InstructionHandler[] x86_instrs_vals = new InstructionHandler[] {
@@ -882,6 +898,7 @@ namespace libtysila5.target.x86
 			libtysila5.target.x86.x86_Assembler.handle_ldc_add_ldind,
 			libtysila5.target.x86.x86_Assembler.handle_ldc_add,
 			libtysila5.target.x86.x86_Assembler.handle_getCharSeq,
+			libtysila5.target.x86.x86_Assembler.handle_ldelem,
 			libtysila5.target.x86.x86_Assembler.handle_ldc_zeromem,
 			libtysila5.target.x86.x86_Assembler.handle_ldc_ldc_add_stind,
 			libtysila5.target.x86.x86_Assembler.handle_ldc,
@@ -906,7 +923,7 @@ namespace libtysila5.target.x86
 			libtysila5.target.x86.x86_Assembler.handle_portout,
 		};
 		
-		int x86_instrs_start = 324;
+		int x86_instrs_start = 384;
 	}
 }
 
@@ -985,20 +1002,24 @@ namespace libtysila5.target.x86_64
 			21, 0, 0, 1, 0, 22, 0, 0, 1, 0, 23, 0, 0, 1, 0, 24, 0, 
 			0, 1, 0, 25, 0, 0, 1, 0, 26, 0, 0, 1, 0, 27, 1, 41, 2, 
 			121, 126, 28, 0, 0, 1, 0, 0, 1, 42, 1, 137, 0, 2, 21, 1, 142, 
-			0, 3, 58, 1, 147, 0, 4, 21, 1, 152, 0, 5, 40, 1, 157, 29, 0, 
-			0, 1, 0, 30, 0, 0, 1, 0, 0, 1, 41, 1, 172, 0, 2, 21, 1, 
-			177, 31, 6, 21, 38, 131, 0, 162, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 3, 58, 1, 147, 0, 4, 21, 1, 152, 29, 0, 0, 1, 0, 0, 1, 
+			65, 1, 162, 0, 2, 42, 1, 167, 0, 3, 21, 1, 172, 0, 4, 42, 1, 
+			177, 0, 5, 21, 1, 182, 0, 6, 58, 1, 187, 0, 7, 40, 26, 157, 0, 
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-			0, 167, 0, 0, 0, 0, 0, 0, 182, 32, 0, 0, 1, 0, 33, 0, 0, 
-			1, 0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 0, 0, 1, 0, 
-			37, 0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 1, 0, 40, 0, 
-			0, 1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 43, 0, 0, 1, 
-			0, 44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 46, 0, 0, 1, 0, 47, 
-			0, 0, 1, 0, 48, 0, 0, 1, 0, 49, 0, 0, 1, 0, 50, 0, 0, 
-			1, 0, 0, 7, 21, 57, 1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 0, 
-			51, 0, 56, 61, 66, 71, 76, 81, 86, 91, 96, 0, 0, 0, 0, 101, 0, 
-			106, 111, 116, 0, 0, 0, 0, 0, 0, 187, 229, 234, 239, 244, 249, 254, 259, 
-			264, 269, 274, 279, 284, 289, 294, 299, 304, 309, 314, 319, 
+			0, 0, 0, 0, 0, 0, 192, 30, 0, 0, 1, 0, 31, 0, 0, 1, 0, 
+			0, 1, 41, 1, 232, 0, 2, 21, 1, 237, 32, 8, 21, 38, 131, 0, 197, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 227, 0, 0, 0, 0, 0, 0, 
+			242, 33, 0, 0, 1, 0, 34, 0, 0, 1, 0, 35, 0, 0, 1, 0, 36, 
+			0, 0, 1, 0, 37, 0, 0, 1, 0, 38, 0, 0, 1, 0, 39, 0, 0, 
+			1, 0, 40, 0, 0, 1, 0, 41, 0, 0, 1, 0, 42, 0, 0, 1, 0, 
+			43, 0, 0, 1, 0, 44, 0, 0, 1, 0, 45, 0, 0, 1, 0, 46, 0, 
+			0, 1, 0, 47, 0, 0, 1, 0, 48, 0, 0, 1, 0, 49, 0, 0, 1, 
+			0, 50, 0, 0, 1, 0, 51, 0, 0, 1, 0, 0, 9, 21, 57, 1, 6, 
+			11, 16, 21, 26, 31, 36, 41, 46, 0, 51, 0, 56, 61, 66, 71, 76, 81, 
+			86, 91, 96, 0, 0, 0, 0, 101, 0, 106, 111, 116, 0, 0, 0, 0, 0, 
+			0, 247, 289, 294, 299, 304, 309, 314, 319, 324, 329, 334, 339, 344, 349, 354, 359, 
+			364, 369, 374, 379, 
 		};
 		
 		InstructionHandler[] x86_64_instrs_vals = new InstructionHandler[] {
@@ -1031,6 +1052,7 @@ namespace libtysila5.target.x86_64
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_add_ldind,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_add,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_getCharSeq,
+			libtysila5.target.x86_64.x86_64_Assembler.handle_ldelem,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_zeromem,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc_ldc_add_stind,
 			libtysila5.target.x86_64.x86_64_Assembler.handle_ldc,
@@ -1055,7 +1077,7 @@ namespace libtysila5.target.x86_64
 			libtysila5.target.x86_64.x86_64_Assembler.handle_portout,
 		};
 		
-		int x86_64_instrs_start = 324;
+		int x86_64_instrs_start = 384;
 	}
 }
 

@@ -587,7 +587,7 @@ namespace libtysila5.target.x86
 
         static List<Reg> get_push_list(CilNode.IRNode n, Code c,
             metadata.MethodSpec call_ms, out metadata.TypeSpec rt,
-            out Reg dest, out int rct, bool want_return = true)
+            ref Reg dest, out int rct, bool want_return = true)
         {
             /* Determine which registers we need to save */
             var caller_preserves = c.t.cc_caller_preserves_map["sysv"];
@@ -597,13 +597,14 @@ namespace libtysila5.target.x86
 
             var rt_idx = call_ms.m.GetMethodDefSigRetTypeIndex(call_ms.msig);
             rt = call_ms.m.GetTypeSpec(ref rt_idx, call_ms.gtparams, call_ms.gmparams);
-            dest = null;
+            rct = ir.Opcode.ct_unknown;
             if (rt != null && want_return)
             {
                 defined &= ~n.stack_after.Peek().reg.mask;
-                dest = n.stack_after.Peek().reg;
+                if(dest == null)
+                    dest = n.stack_after.Peek().reg;
+                rct = ir.Opcode.GetCTFromType(rt);
             }
-            rct = ir.Opcode.GetCTFromType(rt);
 
             var to_push = new util.Set();
             to_push.Union(defined);
@@ -622,11 +623,15 @@ namespace libtysila5.target.x86
         private static List<MCInst> handle_call(CilNode.IRNode n,
             Code c, metadata.MethodSpec call_ms, ir.Param[] p,
             Reg dest, string target = null, Reg temp_reg = null)
+            
         {
             /* used for handling calls to utility functions
              *  (e.g. memcpy/memset etc) whilst ensuring that
              *  all required registers are saved around the
              *  call */
+
+            return handle_call(n, c, false, c.t, target, call_ms, p, dest, dest != null);
+
 
             if (target == null)
                 target = call_ms.MangleMethod();
@@ -637,7 +642,7 @@ namespace libtysila5.target.x86
             metadata.TypeSpec rt;
             int rct;
             var push_list = get_push_list(n, c, call_ms,
-                out rt, out act_dest, out rct, dest != null);
+                out rt, ref act_dest, out rct, dest != null);
 
             List<MCInst> r = new List<MCInst>();
 
@@ -705,18 +710,21 @@ namespace libtysila5.target.x86
             return r;
         }
 
-        private static List<MCInst> handle_call(CilNode.IRNode n, Code c, bool is_calli, Target t)
+        private static List<MCInst> handle_call(CilNode.IRNode n, Code c, bool is_calli, Target t,
+            string target = null, metadata.MethodSpec call_ms = null,
+            ir.Param[] p = null, Reg dest = null, bool want_return = true)
         {
             List<MCInst> r = new List<MCInst>();
-            var call_ms = n.imm_ms;
-            var target = call_ms.m.MangleMethod(call_ms);
+            if(call_ms == null)
+                call_ms = n.imm_ms;
+            if(target == null && is_calli == false)
+                target = call_ms.m.MangleMethod(call_ms);
 
             Reg act_dest = null;
-            Reg dest;
             metadata.TypeSpec rt;
             int rct;
             var push_list = get_push_list(n, c, call_ms,
-                out rt, out dest, out rct);
+                out rt, ref dest, out rct, want_return);
 
             // Store the current index, we will insert instructions
             //  to save clobbered registers here
@@ -816,17 +824,23 @@ namespace libtysila5.target.x86
                 to_locs = new_to_locs;
             }
 
+            ir.Param[] from_locs;
             int hidden_adjust = hidden_loc_type == null ? 0 : 1;
-            Reg[] from_locs = new Reg[pcount + hidden_adjust + calli_adjust];
-            for(int i = 0; i < pcount; i++)
+            if (p == null)
             {
-                var stack_loc = pcount - i - 1;
-                if (n.arg_list != null)
-                    stack_loc = n.arg_list[i];
-                from_locs[i + hidden_adjust] = n.stack_before.Peek(stack_loc + calli_adjust).reg;
+                from_locs = new ir.Param[pcount + hidden_adjust + calli_adjust];
+                for (int i = 0; i < pcount; i++)
+                {
+                    var stack_loc = pcount - i - 1;
+                    if (n.arg_list != null)
+                        stack_loc = n.arg_list[i];
+                    from_locs[i + hidden_adjust] = n.stack_before.Peek(stack_loc + calli_adjust).reg;
+                }
+                if (is_calli)
+                    from_locs[pcount + hidden_adjust] = n.stack_before.Peek(0).reg;
             }
-            if (is_calli)
-                from_locs[pcount + hidden_adjust] = n.stack_before.Peek(0).reg;
+            else
+                from_locs = p;
 
             // Append the register arguments to the push list
             foreach(var arg in to_locs)
@@ -906,7 +920,8 @@ namespace libtysila5.target.x86
                         {
                             if (to_i == from_i)
                                 continue;
-                            if (!done[from_i] && from_locs[from_i].Equals(to_reg))
+                            if (!done[from_i] && from_locs[from_i].mreg != null &&
+                                from_locs[from_i].mreg.Equals(to_reg))
                             {
                                 possible = false;
                                 break;
@@ -916,7 +931,28 @@ namespace libtysila5.target.x86
                         if(possible)
                         {
                             var from_reg = from_locs[to_i];
-                            handle_move(to_reg, from_reg, r, n, c);
+                            switch(from_reg.t)
+                            {
+                                case ir.Opcode.vl_mreg:
+                                    handle_move(to_reg, from_reg.mreg, r, n, c);
+                                    break;
+                                case ir.Opcode.vl_c:
+                                case ir.Opcode.vl_c32:
+                                case ir.Opcode.vl_c64:
+                                    if (from_reg.v > int.MaxValue ||
+                                        from_reg.v < int.MinValue)
+                                    {
+                                        throw new NotImplementedException();
+                                    }
+                                    else
+                                    {
+                                        r.Add(inst(to_reg.size == 8 ? x86_mov_rm64_imm32 : x86_mov_rm32_imm32,
+                                            to_reg, from_reg, n));
+                                    }
+                                    break;
+                                default:
+                                    throw new NotSupportedException();
+                            }
                             to_do--;
                             done_this_iter++;
                             done[to_i] = true;
@@ -934,8 +970,11 @@ namespace libtysila5.target.x86
                         if (done[i])
                             continue;
 
-                        var from_i = from_locs[i];
+                        var from_i = from_locs[i].mreg;
                         var to_i = to_locs[i];
+
+                        if (from_i == null)
+                            continue;
 
                         if (from_i.type != rt_gpr &&
                             from_i.type != rt_float)
@@ -951,7 +990,11 @@ namespace libtysila5.target.x86
                             if (done[j])
                                 continue;
 
-                            var from_j = from_locs[j];
+                            var from_j = from_locs[j].mreg;
+
+                            if (from_j == null)
+                                continue;
+
                             var to_j = to_locs[j];
 
                             if (from_i.Equals(to_j) &&
@@ -991,7 +1034,8 @@ namespace libtysila5.target.x86
                     int b = -1;
                     for (int i = 0; i < pcount; i++)
                     {
-                        if (done[i] == false && from_locs[i].type == rt_gpr)
+                        if (done[i] == false && from_locs[i].mreg != null &&
+                            from_locs[i].mreg.type == rt_gpr)
                         {
                             if (a == -1)
                                 a = i;
@@ -1006,7 +1050,7 @@ namespace libtysila5.target.x86
                     if(shift_found)
                     {
                         r.Add(inst(t.psize == 4 ? x86_xchg_r32_rm32 :
-                            x86_xchg_r64_rm64, from_locs[a], from_locs[b], n));
+                            x86_xchg_r64_rm64, from_locs[a].mreg, from_locs[b].mreg, n));
 
                         var tmp = from_locs[a];
                         from_locs[a] = from_locs[b];
@@ -1018,7 +1062,8 @@ namespace libtysila5.target.x86
                         b = -1;
                         for (int i = 0; i < pcount; i++)
                         {
-                            if (done[i] == false && from_locs[i].type == rt_float)
+                            if (done[i] == false && from_locs[i].mreg != null &&
+                                from_locs[i].mreg.type == rt_float)
                             {
                                 if (a == -1)
                                     a = i;
@@ -1032,9 +1077,9 @@ namespace libtysila5.target.x86
 
                         if(shift_found)
                         {
-                            handle_move(r_xmm7, from_locs[a], r, n, c);
-                            handle_move(from_locs[a], from_locs[b], r, n, c);
-                            handle_move(from_locs[b], r_xmm7, r, n, c);
+                            handle_move(r_xmm7, from_locs[a].mreg, r, n, c);
+                            handle_move(from_locs[a].mreg, from_locs[b].mreg, r, n, c);
+                            handle_move(from_locs[b].mreg, r_xmm7, r, n, c);
 
                             var tmp = from_locs[a];
                             from_locs[a] = from_locs[b];
@@ -1074,7 +1119,7 @@ namespace libtysila5.target.x86
                 handle_pop(push_list[i], ref x, r, n, c);
 
             // Get other return value
-            if (rt != null && rct != ir.Opcode.ct_vt)
+            if (rt != null && rct != ir.Opcode.ct_vt && rct != ir.Opcode.ct_unknown)
             {
                 var rt_size = c.t.GetSize(rt);
                 if (rct == ir.Opcode.ct_float)
@@ -2360,6 +2405,12 @@ namespace libtysila5.target.x86
             var n = nodes[start];
 
             List<MCInst> r = new List<MCInst>();
+
+            var br_target = c.next_mclabel--;
+
+            r.Add(inst(Generic.g_mclabel, new ir.Param { t = ir.Opcode.vl_br_target, v = br_target }, n));
+            r.Add(inst_jmp(x86_jmp_rel32, br_target, n));
+
             r.Add(inst(x86_int3, n));
 
             return r;
@@ -3009,6 +3060,110 @@ namespace libtysila5.target.x86
 
             List<MCInst> r = new List<MCInst>();
             handle_zeromem(t, dest, size, r, n, c);
+            return r;
+        }
+
+        internal static List<MCInst> handle_ldelem(
+            Target t,
+            List<CilNode.IRNode> nodes,
+            int start, int count, Code c)
+        {
+            var n = nodes[start];
+            var n1 = nodes[start + 1];
+            var n2 = nodes[start + 2];
+            var n3 = nodes[start + 3];
+            var n4 = nodes[start + 4];
+            var n5 = nodes[start + 5];
+            var n6 = nodes[start + 6];
+            var n7 = nodes[start + 7];
+            var n8 = nodes[start + 8];
+
+            // sanity checks
+            if (n.res_a != 0)
+                return null;
+            if (n1.arg_a != 1 || n1.arg_b != 0 || n1.res_a != 0)
+                return null;
+            if (n2.arg_a != 1 || n2.res_a != 0)
+                return null;
+            if (n3.res_a != 0)
+                return null;
+            if (n4.arg_a != 1 || n4.arg_b != 0 || n4.res_a != 0)
+                return null;
+            if (n5.arg_a != 0 || n5.res_a != 0)
+                return null;
+            if (n6.arg_a != 1 || n6.arg_b != 0 || n6.res_a != 0)
+                return null;
+            if (n7.arg_a != 0 || n7.res_a != 0)
+                return null;
+            if (n8.arg_a != 0 || n8.res_a != 0)
+                return null;
+
+            // extract values
+            var arr = n.stack_before.Peek(1).reg;
+            var index = n.stack_before.Peek(0).reg;
+            var tsize = n.imm_l;
+            var dataoffset = n3.imm_l;
+            var dest = n8.stack_after.Peek(0).reg;
+
+            // ensure this is possible
+            if (arr is ContentsReg)
+                return null;
+            if (index is ContentsReg)
+                return null;
+            if (tsize > t.psize)
+                return null;
+            if (tsize != 1 && tsize != 2 && tsize != 4 && tsize != 8)
+                return null;
+            if (dest is ContentsReg)
+                return null;
+            if (dataoffset > int.MaxValue)
+                return null;
+            if (dest.Equals(index))
+                return null;
+
+            /* handle as:
+             * 
+             * mov dest, [arr + dataoffset]
+             * mov(szbwx) dest, [dest + index * tsize]
+             */
+
+            List<MCInst> r = new List<MCInst>();
+            r.Add(inst(t.psize == 4 ? x86_mov_r32_rm32disp : x86_mov_r64_rm64disp,
+                dest, arr, dataoffset, n));
+
+            // get correct ld opcode
+            int oc = 0;
+            switch (tsize)
+            {
+                case 1:
+                    if (n7.imm_l == 1)
+                        oc = t.psize == 4 ? x86_movsxbd_r32_rm8sibscaledisp : x86_movsxbq_r64_rm8sibscaledisp;
+                    else
+                        oc = t.psize == 4 ? x86_movzxbd_r32_rm8sibscaledisp : x86_movzxbq_r64_rm8sibscaledisp;
+                    break;
+                case 2:
+                    if (n7.imm_l == 1)
+                        oc = t.psize == 4 ? x86_movsxwd_r32_rm16sibscaledisp : x86_movsxwq_r64_rm16sibscaledisp;
+                    else
+                        oc = t.psize == 4 ? x86_movzxwd_r32_rm16sibscaledisp : x86_movzxwq_r64_rm16sibscaledisp;
+                    break;
+                case 4:
+                    if (n7.imm_l == 1)
+                        oc = t.psize == 4 ? x86_mov_r32_rm32sibscaledisp : x86_movsxdq_r64_rm32sibscaledisp;
+                    else
+                        oc = x86_mov_r32_rm32sibscaledisp;
+                    break;
+                case 8:
+                    if (t.psize != 8)
+                        return null;
+                    oc = x86_mov_r64_rm64sibscaledisp;
+                    break;
+                default:
+                    return null;
+            }
+
+            r.Add(inst(oc, dest, dest, index, tsize, 0, n));
+
             return r;
         }
 
@@ -3690,8 +3845,7 @@ namespace libtysila5.target.x86
                 else
                 {
                     handle_move(x86_64.x86_64_Assembler.r_rax, srca, r, n, c);
-                    srca = x86_64.x86_64_Assembler.r_eax;
-
+                    srca = x86_64.x86_64_Assembler.r_rax;
                 }
             }
 
@@ -3721,9 +3875,13 @@ namespace libtysila5.target.x86
             if (cl_in_use_before && cl_in_use_after)
             {
                 r.Add(inst(x86_push_r32, r_ecx, n));
+                cl_pushed = true;
+            }
+
+            if(!srcb.Equals(r_ecx))
+            {
                 handle_move(r_ecx, srcb, r, n, c);
                 srcb = r_ecx;
-                cl_pushed = true;
             }
 
             int oc = 0;
@@ -3758,7 +3916,7 @@ namespace libtysila5.target.x86
                 }
             }
 
-            r.Add(inst(oc, srcb, n));
+            r.Add(inst(oc, srca, n));
 
             if (!srca.Equals(dest))
                 handle_move(dest, srca, r, n, c);

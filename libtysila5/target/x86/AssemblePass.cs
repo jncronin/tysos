@@ -671,31 +671,47 @@ namespace libtysila5.target.x86
                         break;
 
                     case x86_mov_r32_rm32sibscaledisp:
+                    case x86_mov_r64_rm64sibscaledisp:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, I.p[3].mreg));
                         Code.Add(0x8b);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
                         break;
 
                     case x86_movzxbd_r32_rm8sibscaledisp:
+                    case x86_movzxbq_r64_rm8sibscaledisp:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, I.p[3].mreg, true));
                         Code.Add(0x0f);
                         Code.Add(0xb6);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
                         break;
 
                     case x86_movzxwd_r32_rm16sibscaledisp:
+                    case x86_movzxwq_r64_rm16sibscaledisp:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, I.p[3].mreg));
                         Code.Add(0x0f);
                         Code.Add(0xb7);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
                         break;
 
                     case x86_movsxbd_r32_rm8sibscaledisp:
+                    case x86_movsxbq_r64_rm8sibscaledisp:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, I.p[3].mreg, true));
                         Code.Add(0x0f);
                         Code.Add(0xbe);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
                         break;
 
                     case x86_movsxwd_r32_rm16sibscaledisp:
+                    case x86_movsxwq_r64_rm16sibscaledisp:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, I.p[3].mreg));
                         Code.Add(0x0f);
                         Code.Add(0xbf);
+                        Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
+                        break;
+
+                    case x86_movsxdq_r64_rm32sibscaledisp:
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg, I.p[3].mreg));
+                        Code.Add(0x63);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, GetRM(I.p[3].mreg), -1, (int)I.p[5].v, false, (int)I.p[4].v));
                         break;
 
@@ -1322,7 +1338,7 @@ namespace libtysila5.target.x86
                             ss = 2;
                             break;
                         case 8:
-                            ss = 4;
+                            ss = 3;
                             break;
                         default:
                             throw new NotSupportedException("Invalid SIB scale: " + scale.ToString());

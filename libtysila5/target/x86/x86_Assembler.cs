@@ -221,12 +221,12 @@ namespace libtysila5.target.x86
         protected internal override Reg GetLALocation(int la_loc, int la_size, Code c)
         {
             if (Opcode.GetCTFromType(c.ret_ts) == Opcode.ct_vt)
-                la_loc += 4;
+                la_loc += psize;
 
             return new ContentsReg
             {
                 basereg = r_ebp,
-                disp = la_loc + 8,
+                disp = la_loc + 2 * psize,
                 size = la_size
             };
         }

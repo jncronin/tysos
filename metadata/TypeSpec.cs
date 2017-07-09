@@ -37,11 +37,16 @@ namespace metadata
         public abstract bool IsArray { get; }
         public abstract string Name { get; }
 
+        /**<summary>Defines a run-time signature where all module references
+         * are referenced by memory address</summary> */
         public class FullySpecSignature
         {
             public List<byte> Signature;
             public List<MetadataStream> Modules;
             public Spec OriginalSpec;
+
+            public enum FSSType { Type, Method, Field };
+            public FSSType Type;
         }
 
         public abstract IEnumerable<int> CustomAttributes(string ctor = null);
@@ -394,7 +399,8 @@ namespace metadata
                 {
                     Modules = mods,
                     Signature = sig,
-                    OriginalSpec = this
+                    OriginalSpec = this,
+                    Type = FullySpecSignature.FSSType.Type
                 };
             }
         }

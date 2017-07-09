@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using metadata;
 
 namespace libtysila5
 {
@@ -77,8 +78,21 @@ namespace libtysila5
 
             int ret = str_tab.Count;
 
-            // first is encoded length of module references
-            str_tab.AddRange(metadata.MetadataStream.SigWriteUSCompressed((uint)sig.Modules.Count));
+            // first is type of signature
+            str_tab.AddRange(t.IntPtrArray(BitConverter.GetBytes((int)sig.Type)));
+
+            // then any extra data if necessary
+            switch(sig.Type)
+            {
+                case metadata.Spec.FullySpecSignature.FSSType.Field:
+                    // For fields with static data we insert it here
+                    AddFieldSpecFields(sig.OriginalSpec as MethodSpec, str_tab, t);
+
+                    break;
+            }
+
+            // then is length of module references
+            str_tab.AddRange(t.IntPtrArray(BitConverter.GetBytes(sig.Modules.Count)));
 
             // then module references
             foreach(var mod in sig.Modules)
@@ -92,6 +106,49 @@ namespace libtysila5
             str_tab.AddRange(sig.Signature);
 
             return ret;
+        }
+
+        private void AddFieldSpecFields(MethodSpec fs, List<byte> str_tab, target.Target t)
+        {
+            /* Field specs have two special fields:
+             * 
+             * IntPtr field_size
+             * IntPtr field_data
+             * 
+             * where field_data may be null if no .data member is specified for the field
+             */
+
+            // read field signature to get the type of the field
+            var sig_idx = fs.msig;
+            sig_idx = fs.m.GetFieldSigTypeIndex(sig_idx);
+            var ts = fs.m.GetTypeSpec(ref sig_idx, fs.gtparams, null);
+            var fsize = t.GetSize(ts);
+
+            str_tab.AddRange(t.IntPtrArray(BitConverter.GetBytes(fsize)));
+
+            // now determine if the field has an rva associated with it
+            int rva_id = 0;
+            for(int i = 1; i <= fs.m.table_rows[MetadataStream.tid_FieldRVA]; i++)
+            {
+                var field_idx = fs.m.GetIntEntry(MetadataStream.tid_FieldRVA, i, 1);
+                if(field_idx == fs.mdrow)
+                {
+                    rva_id = i;
+                    break;
+                }
+            }
+
+            // rva id
+            if(rva_id != 0)
+            {
+                // TODO checks in CIL II 22.18
+                var rva = fs.m.GetIntEntry(MetadataStream.tid_FieldRVA, rva_id, 0);
+                var offset = fs.m.ResolveRVA(rva);
+                sig_metadata_addrs[str_tab.Count] = fs.m.AssemblyName;
+                sig_metadata_addends[str_tab.Count] = offset;
+            }
+            for (int i = 0; i < t.psize; i++)
+                str_tab.Add(0);
         }
 
         public int GetStringAddress(string s, target.Target t)
@@ -134,6 +191,9 @@ namespace libtysila5
 
         Dictionary<int, string> sig_metadata_addrs =
             new Dictionary<int, string>(
+                new GenericEqualityComparer<int>());
+        Dictionary<int, long> sig_metadata_addends =
+            new Dictionary<int, long>(
                 new GenericEqualityComparer<int>());
 
         Dictionary<string, int> str_addrs =
@@ -200,6 +260,9 @@ namespace libtysila5
                 reloc.DefinedIn = rd;
                 reloc.Type = t.GetDataToDataReloc();
                 reloc.Addend = 0;
+
+                if (sig_metadata_addends.ContainsKey(kvp.Key))
+                    reloc.Addend = sig_metadata_addends[kvp.Key];
 
                 var md_lab = of.CreateSymbol();
                 md_lab.DefinedIn = null;

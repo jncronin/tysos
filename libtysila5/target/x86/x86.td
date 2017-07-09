@@ -204,6 +204,12 @@ x86_instrs = [
 	"cvtsi2sd_xmm_rm64",
 	"cvtsd2si_r64_xmmm64",
 	"and_rm64_imm8",
+	"movzxbq_r64_rm8sibscaledisp",
+	"movzxwq_r64_rm16sibscaledisp",
+	"movsxbq_r64_rm8sibscaledisp",
+	"movsxwq_r64_rm16sibscaledisp",
+	"movsxdq_r64_rm32sibscaledisp",
+	"mov_r64_rm64sibscaledisp",
 ];
 
 intmap(nspace, assembler, name, "insts", "init_instrs", x86_instrs);
@@ -233,6 +239,11 @@ instr(x86_def, [ oc_ldc, oc_add, oc_stind ], "ldc_add_stind");
 instr(x86_64_def, [ oc_ldc, oc_add, oc_stind ], "ldc_add_stind");
 instr(x86_def, [ oc_ldc, oc_ldc, oc_add, oc_stind ], "ldc_ldc_add_stind");
 instr(x86_64_def, [ oc_ldc, oc_ldc, oc_add, oc_stind ], "ldc_ldc_add_stind");
+
+// ldelem
+instr(x86_def, [ oc_ldc, oc_mul, oc_stackcopy, oc_ldc, oc_add, oc_ldind, oc_add, oc_ldind, oc_stackcopy ], "ldelem");
+instr(x86_64_def, [ oc_ldc, oc_mul, oc_stackcopy, oc_ldc, oc_add, oc_ldind, oc_add, oc_ldind, oc_stackcopy ], "ldelem");
+
 
 instr(x86_def, [ oc_ldc, oc_add ], "ldc_add");
 instr(x86_64_def, [ oc_ldc, oc_add ], "ldc_add");

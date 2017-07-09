@@ -81,6 +81,44 @@ namespace libtysila5.ir
             intcalls["_ZW20System#2EDiagnostics8Debugger_5Break_Rv_P0"] = debugger_Break;
 
             intcalls["_ZW34System#2ERuntime#2EInteropServices7Marshal_37GetFunctionPointerForDelegateInternal_Ru1I_P1U6System8Delegate"] = getFunctionPointerForDelegate;
+
+            intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_15InitializeArray_Rv_P2U6System5Arrayu1I"] = runtimeHelpers_initializeArray;
+        }
+
+        private static Stack<StackItem> runtimeHelpers_initializeArray(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            // load dest pointer onto stack
+            var stack_after = copy_to_front(n, c, stack_before, 1);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.DataArrayPointer, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
+
+            // load src pointer onto stack
+            stack_after = copy_to_front(n, c, stack_after, 1);
+            stack_after = ldc(n, c, stack_after, 2 * c.t.psize, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
+
+            // load byte count onto stack
+            stack_after = copy_to_front(n, c, stack_after, 2);
+            stack_after = ldc(n, c, stack_after, c.t.psize, 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.SystemInt32);
+
+            // call memcpy
+            stack_after = memcpy(n, c, stack_after);
+
+            // remove memcpy arguments
+            stack_after = new Stack<StackItem>(stack_after);
+            stack_after.Pop();
+            stack_after.Pop();
+            stack_after.Pop();
+
+            // remove function arguments
+            stack_after.Pop();
+            stack_after.Pop();
+
+            return stack_after;
         }
 
         private static Stack<StackItem> getFunctionPointerForDelegate(CilNode n, Code c, Stack<StackItem> stack_before)
