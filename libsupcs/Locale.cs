@@ -23,22 +23,28 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace tysos.lib
+namespace libsupcs
 {
     class Locale
     {
+        [AlwaysCompile]
+        [WeakLinkage]
         [libsupcs.MethodAlias("_ZW22System#2EGlobalization11CompareInfo_21construct_compareinfo_Rv_P2u1tu1S")]
         static void CompareInfo_construct_compareinfo(System.Globalization.CompareInfo ci, string locale)
         {
             /* Mono's implementation of this (mono/metadata/locales.c) does nothing, so we do the same */
         }
 
+        [AlwaysCompile]
+        [WeakLinkage]
         [libsupcs.MethodAlias("_ZW22System#2EGlobalization11CompareInfo_22free_internal_collator_Rv_P1u1t")]
         static void CompareInfo_free_internal_collator(System.Globalization.CompareInfo ci)
         {
             /* Mono's implementation of this (mono/metadata/locales.c) does nothing, so we do the same */
         }
 
+        [AlwaysCompile]
+        [WeakLinkage]
         [libsupcs.MethodAlias("_ZW22System#2EGlobalization11CompareInfo_16internal_compare_Ri_P8u1tu1Siiu1SiiV14CompareOptions")]
         static int CompareInfo_internal_compare(System.Globalization.CompareInfo ci, string str1, int offset1,
             int length1, string str2, int offset2, int length2, System.Globalization.CompareOptions options)

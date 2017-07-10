@@ -63,7 +63,7 @@ namespace libsupcs
         {
             var str = AssemblyLoader.LoadAssembly("mscorlib");
             metadata.PEFile pef = new metadata.PEFile();
-            var m = pef.Parse(str, AssemblyLoader);
+            var m = pef.Parse(new metadata.StreamInterface(str), AssemblyLoader);
 
             name_cache["mscorlib"] = m;
             ptr_cache[(ulong)OtherOperations.GetStaticObjectAddress("mscorlib")] = m;

@@ -149,6 +149,7 @@ namespace libtysila5.ir
         public int ssa_idx = -1;
 
         public bool stack_abs = false;
+        public bool want_address = false;
 
         public enum UseDefType { Unknown, Use, Def };
         public UseDefType ud = UseDefType.Unknown;

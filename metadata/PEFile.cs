@@ -113,7 +113,10 @@ namespace metadata
                 throw new Exception("PE optional header too small");
             pefh.Chars = file.ReadUShort((int)pefh_start + 18);
             if ((pefh.Chars & 0x3) != 0x2)
+            {
+                System.Diagnostics.Debugger.Break();
                 throw new Exception("Invalid PE file header characteristics");
+            }
             pefh.CliHeader = new DataDir();
             pefh.CliHeader.RVA = file.ReadUInt((int)pefh_start + 228);
             pefh.CliHeader.Size = file.ReadUInt((int)pefh_start + 232);
@@ -151,6 +154,8 @@ namespace metadata
 
             m.entry_point_token = clih.EntryPointToken;
 
+            System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: CLI header parsed");
+
             // First, read the metadata root
             long mroot_offset = ResolveRVA(clih.Metadata.RVA);
             uint sig = file.ReadUInt((int)mroot_offset);
@@ -185,6 +190,8 @@ namespace metadata
 
                 sh.Name = sb.ToString();
 
+                System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: stream name: " + sh.Name);
+
                 sh.di = file.Clone((int)sh.FileOffset);
 
                 if (sh.Name == "#Strings")
@@ -207,7 +214,8 @@ namespace metadata
                 var di = m.sh_tables.di;
                 var maj = di.ReadByte(4);
                 var min = di.ReadByte(5);
-                System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: metadata table schema v" + maj.ToString() + "." + min.ToString() + Environment.NewLine);
+                System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: parsing tables");
+                System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: metadata table schema v" + maj.ToString() + "." + min.ToString());
 
                 // Determine size of indices into the heaps
                 var heapsizes = di.ReadByte(6);

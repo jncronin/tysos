@@ -633,5 +633,22 @@ namespace libsupcs
                 return (int)h;
             }
         }
+
+        [AlwaysCompile]
+        [WeakLinkage]
+        [MethodAlias("_Zu1O_15MemberwiseClone_Ru1O_P1u1t")]
+        static unsafe void* MemberwiseClone(void *obj)
+        {
+            void* vtbl = *((void**)obj);
+            int class_size = *((byte*)vtbl + ClassOperations.GetVtblTypeSizeOffset());
+
+            void* ret = MemoryOperations.GcMalloc(class_size);
+            MemoryOperations.MemCpy(ret, obj, class_size);
+
+            // Set the mutex lock on the new object to 0
+            *(void**)((byte*)ret + ClassOperations.GetMutexLockOffset()) = null;
+
+            return ret;
+        }
     }
 }

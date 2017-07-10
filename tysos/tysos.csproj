@@ -131,7 +131,6 @@
     <Compile Include="lib\ErrorFile.cs" />
     <Compile Include="lib\File.cs" />
     <Compile Include="lib\GC.cs" />
-    <Compile Include="lib\Locale.cs" />
     <Compile Include="lib\Monitor.cs" />
     <Compile Include="lib\MonoFileType.cs" />
     <Compile Include="lib\MonoIO.cs" />

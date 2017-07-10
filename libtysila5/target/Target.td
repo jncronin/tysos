@@ -37,11 +37,17 @@ function dump_target(object target_def)
 
 	foreach(cc in target_def.cc)
 	{
-		print("\t\t\t" + ns + "." + n + "_Assembler.init_" + cc[0] + "();\n");
+		if(cc[0] != "default")
+		{
+			print("\t\t\t" + ns + "." + n + "_Assembler.init_" + cc[0] + "();\n");
+		}
 	}
 	foreach(cc in target_def.retcc)
 	{
-		print("\t\t\t" + ns + "." + n + "_Assembler.init_" + cc[0] + "();\n");
+		if(cc[0] != "ret_default")
+		{
+			print("\t\t\t" + ns + "." + n + "_Assembler.init_" + cc[0] + "();\n");
+		}
 	}
 	print("\t\t\tvar " + n + " = new " + ns + "." +
 		n + "_Assembler();\n");

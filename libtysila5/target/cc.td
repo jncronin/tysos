@@ -66,6 +66,8 @@ export function cc_map(string namespace, string class, array entries)
 		caller.add([ c[0], c[0] + "_caller_preserves" ]);
 		callee.add([ c[0], c[0] + "_callee_preserves" ]);
 	}
+	caller.add([ "default", entries[0][0] + "_caller_preserves" ]);
+	callee.add([ "default", entries[0][0] + "_callee_preserves" ]);
 	simple_map(namespace, class, "cc_caller_preserves_map",
 		"init_cc_caller_preserves_map", caller,
 		1, "");
@@ -78,11 +80,13 @@ export function cc_map(string namespace, string class, array entries)
 	{
 		cc_arr.add([ e[0], e[1][0] ]);
 	}
+	cc_arr.add([ "default", entries[0][1][0] ]);
 	cc_classmap_arr = [];
 	foreach(e in entries)
 	{
 		cc_classmap_arr.add([ e[0], e[1][1] ]);
 	}
+	cc_classmap_arr.add([ "default", entries[0][1][1] ]);
 	simple_map(namespace, class, "cc_classmap", "init_cc_classmap", cc_classmap_arr,
 		1, "");
 	return simple_map(namespace, class, "cc_map", "init_cc_map", cc_arr,
@@ -96,11 +100,13 @@ export function retcc_map(string namespace, string class, array entries)
 	{
 		cc_arr.add([ e[0], e[1][0] ]);
 	}
+	cc_arr.add([ "ret_default", entries[0][1][0] ]);
 	cc_classmap_arr = [];
 	foreach(e in entries)
 	{
 		cc_classmap_arr.add([ e[0], e[1][1] ]);
 	}
+	cc_classmap_arr.add([ "ret_default", entries[0][1][1] ]);
 	simple_map(namespace, class, "retcc_classmap", "init_retcc_classmap", cc_classmap_arr,
 		1, "");
 	return simple_map(namespace, class, "retcc_map", "init_retcc_map", cc_arr,

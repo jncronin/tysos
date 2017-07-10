@@ -252,7 +252,7 @@ namespace binary_library
             }
             set
             {
-                if (value > data.Count)
+                if (value < data.Count)
                     data.RemoveRange((int)value, data.Count - (int)value);
                 while (data.Count < value)
                     data.Add(0);

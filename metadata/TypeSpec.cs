@@ -284,6 +284,9 @@ namespace metadata
                 if (ii != null)
                     return ii;
 
+                if (stype == SpecialType.Boxed)
+                    return other.ImplementedInterfaces;
+
                 ii = new List<TypeSpec>();
                 
                 for(int i = 1; i <= m.table_rows[MetadataStream.tid_InterfaceImpl]; i++)
@@ -298,6 +301,33 @@ namespace metadata
                         var iface = m.GetTypeSpec(ref_id, ref_row, gtparams);
                         ii.Add(iface);
                     }
+                }
+
+                if(stype == SpecialType.SzArray)
+                {
+                    /* vectors also implement:
+                     *      System.Collections.Generic.IList<T>
+                     *      System.Collections.Generic.ICollection<T>
+                     *      System.Collections.Generic.IEnumerable<T>
+                     *      System.Collections.IEnumerable
+                     */
+
+                    var corlib = m.al.GetAssembly("mscorlib");
+
+                    var vts = corlib.GetTypeSpec("System.Collections.Generic", "IList`1");
+                    vts.gtparams = new TypeSpec[] { other };
+                    ii.Add(vts);
+
+                    vts = corlib.GetTypeSpec("System.Collections.Generic", "ICollection`1");
+                    vts.gtparams = new TypeSpec[] { other };
+                    ii.Add(vts);
+
+                    vts = corlib.GetTypeSpec("System.Collections.Generic", "IEnumerable`1");
+                    vts.gtparams = new TypeSpec[] { other };
+                    ii.Add(vts);
+
+                    vts = corlib.GetTypeSpec("System.Collections", "IEnumerable");
+                    ii.Add(vts);
                 }
 
                 var extends = GetExtends();

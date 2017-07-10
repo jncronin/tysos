@@ -156,16 +156,10 @@ namespace tysos
 
         [libsupcs.MethodAlias("throw")]
         [libsupcs.AlwaysCompile]
-        static void Throw(System.Exception exception, libsupcs.TysosMethod methinfo)
+        static void Throw(System.Exception exception)
         {
             Formatter.WriteLine("Exception thrown!", Program.arch.BootInfoOutput);
-            Formatter.WriteLine(exception.ToString(), Program.arch.BootInfoOutput);
-            if(methinfo != null)
-                Formatter.WriteLine(" in method " + methinfo.DeclaringType.FullName + "." + methinfo.Name, Program.arch.BootInfoOutput);
-            Formatter.WriteLine("Exception thrown!", Program.arch.DebugOutput);
-            Formatter.WriteLine(exception.ToString(), Program.arch.DebugOutput);
-            if(methinfo != null)
-                Formatter.WriteLine(" in method " + methinfo.DeclaringType.FullName + "." + methinfo.Name, Program.arch.DebugOutput);
+            //Formatter.WriteLine(exception.ToString(), Program.arch.BootInfoOutput);
 
             /* Unwind the stack */
             PageFault.unwinding = true;

@@ -64,7 +64,10 @@ namespace metadata
             if (s == null)
                 return null;
             PEFile p = new metadata.PEFile();
-            ms = p.Parse(s, this);
+            if (s is System.IO.FileStream)
+                ms = p.Parse(s, this);
+            else
+                ms = p.Parse(new StreamInterface(s), this);
 
             cache[simple_name] = ms;
             return ms;

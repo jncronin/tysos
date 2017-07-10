@@ -35,49 +35,24 @@ namespace libsupcs
      * it directly outside of corlib therefore we need to use the following attribute */
     [ExtendsOverride("_ZW19System#2EReflection8Assembly")]
     [VTableAlias("__tysos_assembly_vt")]
-    public class TysosAssembly
+    public unsafe class TysosAssembly
     {
-        [NullTerminatedListOf(typeof(TysosType))]
-        IntPtr _Types;
+        void* metadata;
 
         [MethodAlias("_ZW19System#2EReflection8Assembly_8GetTypes_Ru1ZU6System4Type_P2u1tb")]
         System.Type[] GetTypes(bool exportedOnly)
         {
-            unsafe
-            {
-                IntPtr* cur_type = (IntPtr*)_Types;
-                int count = 0;
+            throw new NotImplementedException();
+        }
 
-                if (cur_type != null)
-                {
-                    while (*cur_type != (IntPtr)0)
-                    {
-                        TysosType t = TysosType.ReinterpretAsType(*cur_type);
-
-                        if (!exportedOnly || t.IsPublic)
-                            count++;
-
-                        cur_type++;
-                    }
-
-                    Type[] ret = new Type[count];
-                    cur_type = (IntPtr *)_Types;
-                    int i = 0;
-                    while(*cur_type != (IntPtr)0)
-                    {
-                        TysosType t = TysosType.ReinterpretAsType(*cur_type);
-
-                        if (!exportedOnly || t.IsPublic)
-                            ret[i++] = t;
-
-                        cur_type++;
-                    }
-
-                    return ret;
-                }
-            }
-
-            return new Type[] { };
+        [AlwaysCompile]
+        [MethodAlias("_ZW19System#2EReflection8Assembly_27GetManifestResourceInternal_Ru1I_P4u1tu1SRiRV6Module")]
+        static void* GetManifestResource(void *ass, string name, out int size, out System.Reflection.Module mod)
+        {
+            // this always fails for now
+            size = 0;
+            mod = null;
+            return null;
         }
     }
 

@@ -652,6 +652,7 @@ namespace tysos
         [libsupcs.AlwaysCompile]
         static void CxaPureVirtual()
         {
+            System.Diagnostics.Debugger.Break();
             Formatter.WriteLine("Pure virtual function called!", arch.BootInfoOutput);
             libsupcs.OtherOperations.Halt();
         }
@@ -666,7 +667,6 @@ namespace tysos
 
         [libsupcs.MethodAlias("exit")]
         [libsupcs.AlwaysCompile]
-        [libsupcs.CallingConvention("gnu")]
         static void GC_Exit(int retno)
         {
             Formatter.Write("exit(", arch.BootInfoOutput);
@@ -678,7 +678,6 @@ namespace tysos
         /* The following may be overwritten in native code somewhere */
         [libsupcs.MethodAlias("putchar_debug")]
         [libsupcs.AlwaysCompile]
-        [libsupcs.CallingConvention("gnu")]
         [libsupcs.WeakLinkage]
         static byte putchar(byte c)
         {

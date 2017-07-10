@@ -826,6 +826,7 @@ namespace libtysila5.target.x86
 
                     case x86_movsd_xmmm64_xmm:
                         Code.Add(0xf2);
+                        AddRex(Code, Rex(I.p[0].v, I.p[2].mreg, I.p[1].mreg));
                         Code.Add(0x0f);
                         Code.Add(0x11);
                         Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
@@ -833,6 +834,7 @@ namespace libtysila5.target.x86
 
                     case x86_movsd_xmm_xmmm64:
                         Code.Add(0xf2);
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x0f);
                         Code.Add(0x10);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
@@ -840,6 +842,7 @@ namespace libtysila5.target.x86
 
                     case x86_movss_xmmm32_xmm:
                         Code.Add(0xf3);
+                        AddRex(Code, Rex(I.p[0].v, I.p[2].mreg, I.p[1].mreg));
                         Code.Add(0x0f);
                         Code.Add(0x11);
                         Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
@@ -847,6 +850,7 @@ namespace libtysila5.target.x86
 
                     case x86_movss_xmm_xmmm32:
                         Code.Add(0xf3);
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x0f);
                         Code.Add(0x10);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
@@ -932,6 +936,12 @@ namespace libtysila5.target.x86
                         Code.Add(0xc2);
                         Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
                         AddImm8(Code, I.p[3].v);
+                        break;
+
+                    case x86_iret:
+                    case x86_iretq:
+                        AddRex(Code, Rex(I.p[0].v, null, null));
+                        Code.Add(0xcf);
                         break;
 
                     default:
@@ -1096,6 +1106,22 @@ namespace libtysila5.target.x86
                 return 6;
             else if (r.Equals(x86_64.x86_64_Assembler.r_r15))
                 return 7;
+            else if (r.Equals(x86_64.x86_64_Assembler.r_xmm8))
+                return 0;
+            else if (r.Equals(x86_64.x86_64_Assembler.r_xmm9))
+                return 1;
+            else if (r.Equals(x86_64.x86_64_Assembler.r_xmm10))
+                return 2;
+            else if (r.Equals(x86_64.x86_64_Assembler.r_xmm11))
+                return 3;
+            else if (r.Equals(x86_64.x86_64_Assembler.r_xmm12))
+                return 4;
+            else if (r.Equals(x86_64.x86_64_Assembler.r_xmm13))
+                return 5;
+            else if (r.Equals(x86_64.x86_64_Assembler.r_xmm14))
+                return 6;
+            else if (r.Equals(x86_64.x86_64_Assembler.r_xmm15))
+                return 7;
 
             throw new NotSupportedException();
         }
@@ -1249,6 +1275,22 @@ namespace libtysila5.target.x86
             else if (rm.Equals(x86_64.x86_64_Assembler.r_r14))
                 return 6;
             else if (rm.Equals(x86_64.x86_64_Assembler.r_r15))
+                return 7;
+            else if (rm.Equals(x86_64.x86_64_Assembler.r_xmm8))
+                return 0;
+            else if (rm.Equals(x86_64.x86_64_Assembler.r_xmm9))
+                return 1;
+            else if (rm.Equals(x86_64.x86_64_Assembler.r_xmm10))
+                return 2;
+            else if (rm.Equals(x86_64.x86_64_Assembler.r_xmm11))
+                return 3;
+            else if (rm.Equals(x86_64.x86_64_Assembler.r_xmm12))
+                return 4;
+            else if (rm.Equals(x86_64.x86_64_Assembler.r_xmm13))
+                return 5;
+            else if (rm.Equals(x86_64.x86_64_Assembler.r_xmm14))
+                return 6;
+            else if (rm.Equals(x86_64.x86_64_Assembler.r_xmm15))
                 return 7;
 
             throw new NotSupportedException();

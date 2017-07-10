@@ -282,7 +282,7 @@ namespace libtysila5.target.x86_64
     {
         public override int GetCCClassFromCT(int ct, int size, TypeSpec ts, string cc)
         {
-            if (cc == "sysv")
+            if (cc == "sysv" | cc == "default")
             {
                 switch (ct)
                 {
@@ -292,8 +292,81 @@ namespace libtysila5.target.x86_64
                         return sysvc_MEMORY;
                 }
             }
+            else
+            {
+                throw new NotImplementedException();
+            }
 
             return base.GetCCClassFromCT(ct, size, ts, cc);
+        }
+
+        protected override Reg GetRegLoc(Param csite, ref int stack_loc, int cc_next, int ct, TypeSpec ts, string cc)
+        {
+            if(cc == "isr")
+            {
+                /* ISR with error codes have stack as:
+                 * 
+                 * cur_rax          - pushed at start of isr so we have a scratch reg [rbp-8]
+                 *      this is exchanged with the regs pointer as part of the init phase
+                 * old_rbp          - pushed at start as part of push ebp; mov ebp, esp sequence [rbp]
+                 * ret_rip          - [rbp + 8]
+                 * ret_cs           - [rbp + 16]
+                 * rflags           - [rbp + 24]
+                 * ret_rsp          - [rbp + 32]
+                 * ret_ss           - [rbp + 40]
+                 */
+
+                switch (cc_next)
+                {
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                        return new ContentsReg { basereg = r_ebp, disp = 8 + 8 * cc_next, size = 8 };
+                    case 5:
+                        return new ContentsReg { basereg = r_ebp, disp = -8, size = 8 };
+                }
+            }
+            else if(cc == "isrec")
+            {
+                /* ISR with error codes have stack as:
+                 * 
+                 * cur_rax          - pushed at start of isr so we have a scratch reg [rbp-8]
+                 *      this is exchanged with the regs pointer as part of the init phase
+                 * old_rbp          - pushed at start as part of push ebp; mov ebp, esp sequence [rbp]
+                 * error_code       - [rbp + 8]
+                 * ret_rip          - [rbp + 16]
+                 * ret_cs           - [rbp + 24]
+                 * rflags           - [rbp + 32]
+                 * ret_rsp          - [rbp + 40]
+                 * ret_ss           - [rbp + 48]
+                 */
+                
+                switch(cc_next)
+                {
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                        return new ContentsReg { basereg = r_ebp, disp = 8 + 8 * cc_next, size = 8 };
+                    case 6:
+                        return new ContentsReg { basereg = r_ebp, disp = -8, size = 8 };
+                }
+            }
+
+            return base.GetRegLoc(csite, ref stack_loc, cc_next, ct, ts, cc);
+        }
+
+        internal override int GetCCStackReserve(string cc)
+        {
+            // isrs use stack space for the address of the regs array
+            if (cc == "isr" || cc == "isrec")
+                return psize;
+            else
+                return base.GetCCStackReserve(cc);
         }
     }
 }

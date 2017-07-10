@@ -64,7 +64,8 @@ namespace tysos.x86_64
             return true;
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
+        [libsupcs.AlwaysCompile]
         private static unsafe void GDB_DB_handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regsa)
         {
@@ -78,7 +79,8 @@ namespace tysos.x86_64
             gdb_loop(regsa, ret_rbp, ret_rip, ret_rflags, ret_rsp, 5);      // signal 5 is SIGTRAP
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
+        [libsupcs.AlwaysCompile]
         private static unsafe void GDB_BP_handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regsa)
         {

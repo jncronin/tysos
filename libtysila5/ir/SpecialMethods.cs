@@ -39,10 +39,12 @@ namespace libtysila5.ir
         public int strlen;
         public int wcslen;
         public int inst_Rv_s;
+        public int inst_Rv_P0;
         public int static_Rv_P0;
         public int static_Rv_P1Pv;
         public int memcpy;
         public int memset;
+        public int debugger_Log;
 
         public int string_ci;
         public int string_Zc;
@@ -101,6 +103,8 @@ namespace libtysila5.ir
 
             inst_Rv_s = CreateMethodSignature(b, null,
                 new TypeSpec[] { s }, true);
+            inst_Rv_P0 = CreateMethodSignature(b, null,
+                new TypeSpec[] { }, true);
             static_Rv_P0 = CreateMethodSignature(b, null,
                 new TypeSpec[] { }, false);
             static_Rv_P1Pv = CreateMethodSignature(b, null,
@@ -122,6 +126,9 @@ namespace libtysila5.ir
                 new TypeSpec[] { Pa, i, i, corlib.GetTypeSpec("System.Text", "Encoding") }, true);
             string_Paii = CreateMethodSignature(null,
                 new TypeSpec[] { Pa, i, i }, true);
+
+            debugger_Log = CreateMethodSignature(null,
+                new TypeSpec[] { i, s, s });
 
             sh_blob = new BlobStream(b);
 

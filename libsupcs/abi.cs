@@ -143,10 +143,6 @@ namespace libsupcs
     public sealed class UninterruptibleAttribute : System.Attribute
     { }
 
-    [global::System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-    public sealed class ISRAttribute : System.Attribute
-    { }
-
     [global::System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Enum | System.AttributeTargets.Field, Inherited = false, AllowMultiple = true)]
     public sealed class OutputCHeaderAttribute : System.Attribute
     { }

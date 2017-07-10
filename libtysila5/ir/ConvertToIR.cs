@@ -1144,7 +1144,7 @@ namespace libtysila5.ir
 
         private static Stack<StackItem> endfinally(CilNode n, Code c, Stack<StackItem> stack_before)
         {
-            var stack_after = new Stack<StackItem>();
+            var stack_after = new Stack<StackItem>(stack_before);
 
             n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, stack_before = stack_after, stack_after = stack_after });
 
@@ -1553,11 +1553,44 @@ namespace libtysila5.ir
                 var intptrsize = c.t.GetPointerSize();
 
                 /* create object */
+                bool is_string = false;
                 if (objtype.Equals(c.ms.m.GetSimpleTypeSpec(0x0e)))
+                {
                     stack_after = newstr(n, c, stack_after, ctor);
+
+                    // create a copy of the character length, multiply 2 and add string object length
+                    stack_after = copy_to_front(n, c, stack_after);
+                    stack_after = ldc(n, c, stack_after, 2);
+                    stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
+                    stack_after = ldc(n, c, stack_after, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c));
+                    stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_int32);
+
+                    is_string = true;
+                }
                 else
                     stack_after = ldc(n, c, stack_after, objsize, 0x18);
+
                 stack_after = call(n, c, stack_after, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
+
+                if(is_string)
+                {
+                    /* now stack is ..., ctor_args, length, obj
+                     * 
+                     * we need to store length to the appropriate part then
+                     * adject the stack so length is no longer present
+                     */
+                    stack_after = copy_to_front(n, c, stack_after);
+                    stack_after = ldc(n, c, stack_after, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Length, c), 0x18);
+                    stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+                    stack_after = stind(n, c, stack_after, 4, 2, 0);
+
+                    var stack_after2 = new Stack<StackItem>(stack_after);
+                    stack_after2.Pop();
+                    stack_after2.Pop();
+                    stack_after2.Push(new StackItem { ts = c.ms.m.SystemIntPtr });
+                    n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stackcopy, stack_before = stack_after, stack_after = stack_after2, arg_a = 0, res_a = 0 });
+                    stack_after = new Stack<StackItem>(stack_after2);
+                }
 
                 /* store vtbl pointer */
                 stack_after = copy_to_front(n, c, stack_after);
@@ -1618,8 +1651,6 @@ namespace libtysila5.ir
             {
                 // string(char c, int32 count)
                 stack_after = copy_to_front(n, c, stack_before);
-                stack_after = ldc(n, c, stack_after, 2);
-                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
@@ -1631,8 +1662,6 @@ namespace libtysila5.ir
                 stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
                 stack_after = ldind(n, c, stack_after, c.ms.m.GetSimpleTypeSpec(0x18));
                 stack_after = ldind(n, c, stack_after, c.ms.m.GetSimpleTypeSpec(0x08));
-                stack_after = ldc(n, c, stack_after, 2);
-                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
@@ -1640,8 +1669,6 @@ namespace libtysila5.ir
             {
                 // string(char* value, int32 startIndex, int32 length)
                 stack_after = copy_to_front(n, c, stack_before);
-                stack_after = ldc(n, c, stack_after, 2);
-                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
@@ -1658,8 +1685,6 @@ namespace libtysila5.ir
             {
                 // string(char[] value, int32 startIndex, int32 length)
                 stack_after = copy_to_front(n, c, stack_before);
-                stack_after = ldc(n, c, stack_after, 2);
-                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
@@ -1676,8 +1701,6 @@ namespace libtysila5.ir
             {
                 // string(int8* value, int32 startIndex, int32 length, Encoding)
                 stack_after = copy_to_front(n, c, stack_before, 1);
-                stack_after = ldc(n, c, stack_after, 2);
-                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else if (MetadataStream.CompareSignature(ctor,
                 c.special_meths,
@@ -1685,14 +1708,10 @@ namespace libtysila5.ir
             {
                 // string(int8* value, int32 startIndex, int32 length)
                 stack_after = copy_to_front(n, c, stack_before, 1);
-                stack_after = ldc(n, c, stack_after, 2);
-                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
             }
             else
                 throw new NotSupportedException();
 
-            stack_after = ldc(n, c, stack_after, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c));
-            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_int32);
             return stack_after;
         }
 
@@ -2115,6 +2134,7 @@ namespace libtysila5.ir
                 stack_after = copy_to_front(n, c, stack_after);
                 // dereference ifacemap pointer
                 stack_after = ldind(n, c, stack_after, ms.m.SystemIntPtr);
+
                 // first check if it is null
                 stack_after = copy_to_front(n, c, stack_after);
                 stack_after = ldc(n, c, stack_after, 0, 0x18);

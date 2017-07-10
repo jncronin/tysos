@@ -106,6 +106,33 @@ namespace metadata
         }
     }
 
+    public class StreamInterface : DataInterface
+    {
+        System.IO.Stream s;
+        int o = 0;
+
+        public StreamInterface(System.IO.Stream str)
+        {
+            s = str;
+        }
+        public StreamInterface(System.IO.Stream str, int offset)
+        {
+            s = str;
+            o = offset;
+        }
+
+        public override byte ReadByte(int offset)
+        {
+            s.Seek(offset + o, System.IO.SeekOrigin.Begin);
+            return (byte)s.ReadByte();
+        }
+
+        public override DataInterface Clone(int offset)
+        {
+            return new StreamInterface(s, o + offset);
+        }
+    }
+
     public class ArrayInterface : DataInterface
     {
         IList<byte> _arr;

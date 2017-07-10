@@ -33,11 +33,9 @@ namespace tysos.gc
     class boehm
     {
         [MethodReferenceAlias("GC_init")]
-        [CallingConvention("gnu")]
         internal extern static void GC_init();
 
         [MethodReferenceAlias("GC_malloc")]
-        [CallingConvention("gnu")]
         internal extern static ulong Alloc(ulong size);
 
         [MethodReferenceAlias("GC_schedule_collection")]
@@ -51,7 +49,6 @@ namespace tysos.gc
         static ulong max_brk = 0;
 
         [MethodReferenceAlias("initheap")]
-        [CallingConvention("gnu")]
         internal extern static void InitSbrk(ulong start, ulong end);
 
         internal static void InitHeap(ulong start, ulong end)
@@ -131,7 +128,6 @@ namespace tysos.gc
         }
 
         [MethodAlias("abort")]
-        [CallingConvention("gnu")]
         static void Abort()
         {
             Formatter.WriteLine("abort() called", Program.arch.DebugOutput);

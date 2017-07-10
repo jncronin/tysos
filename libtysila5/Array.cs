@@ -59,10 +59,10 @@ namespace libtysila5.ir
             stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_before = ldc(n, c, stack_before, t.GetSize(ms.m.SystemInt32) * ms.type.arr_rank);
             stack_before = call(n, c, stack_before, false, "gcmalloc", c.special_meths, c.special_meths.gcmalloc);
-            for(int i = 0; i < ms.type.arr_rank; i++)
+            for (int i = 0; i < ms.type.arr_rank; i++)
             {
                 stack_before = copy_to_front(n, c, stack_before);
-                if(i != 0)
+                if (i != 0)
                 {
                     stack_before = ldc(n, c, stack_before, t.GetSize(ms.m.SystemInt32) * i, 0x18);
                     stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
@@ -99,14 +99,14 @@ namespace libtysila5.ir
                 stack_before = ldc(n, c, stack_before, 0);
             else
                 stack_before = ldarg(n, c, stack_before, 1);    // don't need to subtract lobounds for ctor1
-            for(int i = 1; i < ms.type.arr_rank; i++)
+            for (int i = 1; i < ms.type.arr_rank; i++)
             {
                 stack_before = ldarg(n, c, stack_before, 1 + i);    // load size
                 // don't need to subtract lobounds here
                 stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.mul);
             }
             var et_size = t.GetSize(ms.type.other);
-            if(et_size > 1)
+            if (et_size > 1)
             {
                 stack_before = ldc(n, c, stack_before, et_size);
                 stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.mul);
@@ -164,7 +164,6 @@ namespace libtysila5.ir
             t.AllocateLocalVarsArgs(c);
             cil.CilNode n = new cil.CilNode(ms, 0);
 
-            List<cil.CilNode.IRNode> ret = new List<cil.CilNode.IRNode>();
             util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
 
             // Get return type
@@ -172,7 +171,7 @@ namespace libtysila5.ir
             var ret_ts = ms.m.GetTypeSpec(ref sig_idx, ms.gtparams, ms.gmparams);
             c.ret_ts = ret_ts;
 
-            if(!ret_ts.Equals(ms.type.other))
+            if (!ret_ts.Equals(ms.type.other))
             {
                 throw new Exception("Array Get return type not the same as element type");
             }
@@ -258,14 +257,14 @@ namespace libtysila5.ir
             // sub r1lb
             bool lbzero, szone;    // optimize away situation where lobounds is zero
             stack_after = ArrayGetLobounds(n, c, stack_after, ms, 1, out lbzero);
-            if(!lbzero)
+            if (!lbzero)
                 stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.sub, ir.Opcode.ct_int32);
 
-            for(int rank = 2; rank <= ms.type.arr_rank; rank++)
+            for (int rank = 2; rank <= ms.type.arr_rank; rank++)
             {
                 // mul rnlen
                 stack_after = ArrayGetSize(n, c, stack_after, ms, rank, out szone);
-                if(!szone)
+                if (!szone)
                     stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
 
                 // add rn
@@ -274,7 +273,7 @@ namespace libtysila5.ir
 
                 // sub rnlb
                 stack_after = ArrayGetLobounds(n, c, stack_after, ms, rank, out lbzero);
-                if(!lbzero)
+                if (!lbzero)
                     stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.sub, ir.Opcode.ct_int32);
             }
 
@@ -289,7 +288,7 @@ namespace libtysila5.ir
             var t = c.t;
 
             // if we have the lobounds in the signature we can use that, else do a run-time lookup
-            if(ms.type.arr_lobounds != null &&
+            if (ms.type.arr_lobounds != null &&
                 ms.type.arr_lobounds.Length >= rank)
             {
                 var lb = ms.type.arr_lobounds[rank - 1];
@@ -356,5 +355,190 @@ namespace libtysila5.ir
 
             return stack_after;
         }
+
+        internal static Code CreateVectorIndexOf(MethodSpec ms,
+            Target t)
+        {
+            Code c = new Code { t = t, ms = ms };
+            t.AllocateLocalVarsArgs(c);
+            cil.CilNode n = new cil.CilNode(ms, 0);
+
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+
+            // Get return type
+            var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
+            var ret_ts = ms.m.GetTypeSpec(ref sig_idx, ms.gtparams, ms.gmparams);
+            c.ret_ts = ret_ts;
+
+            // enter
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_enter, stack_before = stack_before, stack_after = stack_before });
+
+            // break
+            var stack_after = debugger_Break(n, c, stack_before);
+
+            // load 0
+            stack_after = ldc(n, c, stack_after, 0);
+
+            // ret
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, ct = ir.Opcode.ct_unknown, stack_before = stack_before, stack_after = stack_before });
+
+            c.cil = new List<cil.CilNode> { n };
+            c.ir = n.irnodes;
+
+            c.starts = new List<cil.CilNode> { n };
+
+            return c;
+        }
+        internal static Code CreateVectorInsert(MethodSpec ms,
+           Target t)
+        {
+            Code c = new Code { t = t, ms = ms };
+            t.AllocateLocalVarsArgs(c);
+            cil.CilNode n = new cil.CilNode(ms, 0);
+
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+
+            // Get return type
+            var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
+            var ret_ts = ms.m.GetTypeSpec(ref sig_idx, ms.gtparams, ms.gmparams);
+            c.ret_ts = ret_ts;
+
+            // enter
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_enter, stack_before = stack_before, stack_after = stack_before });
+
+            // break
+            var stack_after = debugger_Break(n, c, stack_before);
+
+            // ret
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, ct = ir.Opcode.ct_unknown, stack_before = stack_before, stack_after = stack_before });
+
+            c.cil = new List<cil.CilNode> { n };
+            c.ir = n.irnodes;
+
+            c.starts = new List<cil.CilNode> { n };
+
+            return c;
+        }
+        internal static Code CreateVectorRemoveAt(MethodSpec ms,
+            Target t)
+        {
+            Code c = new Code { t = t, ms = ms };
+            t.AllocateLocalVarsArgs(c);
+            cil.CilNode n = new cil.CilNode(ms, 0);
+
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+
+            // Get return type
+            var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
+            var ret_ts = ms.m.GetTypeSpec(ref sig_idx, ms.gtparams, ms.gmparams);
+            c.ret_ts = ret_ts;
+
+            // enter
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_enter, stack_before = stack_before, stack_after = stack_before });
+
+            // break
+            var stack_after = debugger_Break(n, c, stack_before);
+
+            // ret
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, ct = ir.Opcode.ct_unknown, stack_before = stack_before, stack_after = stack_before });
+
+            c.cil = new List<cil.CilNode> { n };
+            c.ir = n.irnodes;
+
+            c.starts = new List<cil.CilNode> { n };
+
+            return c;
+        }
+        internal static Code CreateVectorget_Item(MethodSpec ms,
+            Target t)
+        {
+            Code c = new Code { t = t, ms = ms };
+            t.AllocateLocalVarsArgs(c);
+            cil.CilNode n = new cil.CilNode(ms, 0);
+
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+
+            // enter
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_enter, stack_before = stack_before, stack_after = stack_before });
+
+            // Get return type
+            var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
+            var ret_ts = ms.m.GetTypeSpec(ref sig_idx, ms.gtparams, ms.gmparams);
+            c.ret_ts = ret_ts;
+
+            // implement with ldelem
+            var stack_after = ldarg(n, c, stack_before, 0);
+            stack_after = ldarg(n, c, stack_after, 1);
+            stack_after = ldelem(n, c, stack_after, ms.type.other);
+
+            // ret
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, ct = ir.Opcode.ct_unknown, stack_before = stack_before, stack_after = stack_before });
+
+            c.cil = new List<cil.CilNode> { n };
+            c.ir = n.irnodes;
+
+            c.starts = new List<cil.CilNode> { n };
+
+            return c;
+        }
+        internal static Code CreateVectorset_Item(MethodSpec ms,
+            Target t)
+        {
+            Code c = new Code { t = t, ms = ms };
+            t.AllocateLocalVarsArgs(c);
+            cil.CilNode n = new cil.CilNode(ms, 0);
+
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+
+            // Get return type
+            var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
+            var ret_ts = ms.m.GetTypeSpec(ref sig_idx, ms.gtparams, ms.gmparams);
+            c.ret_ts = ret_ts;
+
+            // enter
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_enter, stack_before = stack_before, stack_after = stack_before });
+
+            // break
+            var stack_after = debugger_Break(n, c, stack_before);
+
+            // ret
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, ct = ir.Opcode.ct_unknown, stack_before = stack_before, stack_after = stack_before });
+
+            c.cil = new List<cil.CilNode> { n };
+            c.ir = n.irnodes;
+
+            c.starts = new List<cil.CilNode> { n };
+
+            return c;
+        }
+
+        internal static Code CreateVectorUnimplemented(MethodSpec ms,
+            Target t)
+        {
+            Code c = new Code { t = t, ms = ms };
+            t.AllocateLocalVarsArgs(c);
+            cil.CilNode n = new cil.CilNode(ms, 0);
+
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+
+            // Get return type
+            var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
+            var ret_ts = ms.m.GetTypeSpec(ref sig_idx, ms.gtparams, ms.gmparams);
+            c.ret_ts = ret_ts;
+
+            // enter
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_enter, stack_before = stack_before, stack_after = stack_before });
+
+            // break
+            var stack_after = debugger_Break(n, c, stack_before);
+
+            c.cil = new List<cil.CilNode> { n };
+            c.ir = n.irnodes;
+
+            c.starts = new List<cil.CilNode> { n };
+
+            return c;
+        }
+
     }
 }

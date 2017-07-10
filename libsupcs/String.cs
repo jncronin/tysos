@@ -75,5 +75,16 @@ namespace libsupcs
 
             return true;
         }
+
+        [MethodAlias("_Zu1S_7#2Ector_Rv_P2u1tu1Zc")]
+        [AlwaysCompile]
+        static unsafe void StringCtor(byte *str, char[] srcArr)
+        {
+            void* src = MemoryOperations.GetInternalArray(srcArr);
+            int len = srcArr.Length * sizeof(char);
+            void* dst = str + StringOperations.GetDataOffset();
+
+            MemoryOperations.MemCpy(dst, src, len);
+        }
     }
 }

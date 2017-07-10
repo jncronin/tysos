@@ -94,6 +94,18 @@ export function Rcontents()
 	return ret;
 }
 
+export function Rcontents(string orig, int offset, int size, string new)
+{
+	orig_val = varget("orig");
+	ret = [ name = new, id = next_reg_id, type = rt_contents, size = size, offset = offset, mask = 0 ];
+	next_reg_id = next_reg_id + 1;
+	export next_reg_id;
+	vargen(ret.name, ret);
+	vargen(ret.name + "reg", reg.mask);
+
+	return ret;
+}
+
 export function Ralias(string orig, string new)
 {
 	orig_val = varget("orig");

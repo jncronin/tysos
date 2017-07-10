@@ -37,8 +37,7 @@ namespace tysos
 
         internal static libsupcs.Unwinder pf_unwinder;
 
-        [libsupcs.ISR]
-        [libsupcs.x86_64.Cpu.ISRErrorCode]
+        [libsupcs.CallingConvention("isrec")]
         [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("__pfault")]
         public unsafe static void PFHandler(ulong error_code, ulong return_rip, ulong return_cs,

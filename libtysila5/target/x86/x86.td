@@ -136,6 +136,7 @@ x86_instrs = [
 	"in_al_dx",
 	"in_ax_dx",
 	"in_eax_dx",
+	"iret",
 	"int3",
 
 	"movsd_xmm_xmmm64",
@@ -210,6 +211,7 @@ x86_instrs = [
 	"movsxwq_r64_rm16sibscaledisp",
 	"movsxdq_r64_rm32sibscaledisp",
 	"mov_r64_rm64sibscaledisp",
+	"iretq",
 ];
 
 intmap(nspace, assembler, name, "insts", "init_instrs", x86_instrs);
@@ -309,23 +311,29 @@ intlist(nspace_64, assembler_64, "sysvc", [
 //  We ignore ct_vt because we handle this specially in code
 // Then, define the actual calling convention in terms of classes and
 //  the registers they use
-cc_sysv_64 = cc(nspace_64, assembler_64, "sysv",
-[
+x64_cmap = [
 	[ ct_int32, sysvc_INTEGER ],
 	[ ct_intptr, sysvc_INTEGER ],
 	[ ct_int64, sysvc_INTEGER ],
 	[ ct_object, sysvc_INTEGER ],
 	[ ct_ref, sysvc_INTEGER ],
 	[ ct_float, sysvc_SSE ],
-]
-,
+];
+cc_sysv_64 = cc(nspace_64, assembler_64, "sysv",
+	x64_cmap,
 [
 	[ sysvc_INTEGER, x64_sysv_int ],
 	[ sysvc_SSE, x64_sysv_sse ],
-	[ sysvc_MEMORY, [ stack  ] ],
+	[ sysvc_MEMORY, [ stack ] ],
 ],
-raxreg | rcxreg | rdxreg,			// caller preserves
-rbxreg | rsireg | rdireg			// callee preserves
+	// caller preserves
+	raxreg | rcxreg | rdxreg | rsireg | rdireg | r8reg | r9reg | r10reg | r11reg |
+	xmm0reg | xmm1reg | xmm2reg | xmm3reg | xmm4reg | xmm5reg | xmm6reg | xmm7reg |
+	xmm8reg | xmm9reg | xmm10reg | xmm11reg | xmm12reg | xmm13reg | xmm14reg | xmm15reg
+	,
+
+	// callee preserves
+	rbxreg | r12reg | r13reg | r14reg | r15reg
 );
 
 cc_ret_sysv_64 = cc(nspace_64, assembler_64, "ret_sysv",
@@ -340,10 +348,40 @@ cc_ret_sysv_64 = cc(nspace_64, assembler_64, "ret_sysv",
 	[ ct_float, [ xmm0 ] ],
 ]);
 
+// ISR calling convention
+cc_isr_64 = cc(nspace_64, assembler_64, "isr",
+	x64_cmap,
+	[],
+	0,
+	raxreg | rbxreg | rcxreg | rdxreg | rsireg | rdireg | rbpreg | rspreg |
+	r8reg | r9reg | r10reg | r11reg | r12reg | r13reg | r14reg | r15reg |
+	xmm0reg | xmm1reg | xmm2reg | xmm3reg | xmm4reg | xmm5reg | xmm6reg | xmm7reg |
+	xmm8reg | xmm9reg | xmm10reg | xmm11reg | xmm12reg | xmm13reg | xmm14reg | xmm15reg
+);
+cc_ret_isr_64 = cc(nspace_64, assembler_64, "ret_isr", []);
+
+cc_isrec_64 = cc(nspace_64, assembler_64, "isrec",
+	x64_cmap,
+	[],
+	0,
+	raxreg | rbxreg | rcxreg | rdxreg | rsireg | rdireg | rbpreg | rspreg |
+	r8reg | r9reg | r10reg | r11reg | r12reg | r13reg | r14reg | r15reg |
+	xmm0reg | xmm1reg | xmm2reg | xmm3reg | xmm4reg | xmm5reg | xmm6reg | xmm7reg |
+	xmm8reg | xmm9reg | xmm10reg | xmm11reg | xmm12reg | xmm13reg | xmm14reg | xmm15reg
+);
+cc_ret_isrec_64 = cc(nspace_64, assembler_64, "ret_isrec", []);
+
+
+
+// put all ccs in a map
 x86_64_def.cc = cc_map(nspace_64, assembler_64, [
-	[ "sysv", cc_sysv ]
+	[ "sysv", cc_sysv ],
+	[ "isr", cc_isr_64 ],
+	[ "isrec", cc_isrec_64 ]
 ]);
 
 x86_64_def.retcc = retcc_map(nspace_64, assembler_64, [
-	[ "ret_sysv", cc_ret_sysv ]
+	[ "ret_sysv", cc_ret_sysv ],
+	[ "ret_isr", cc_ret_isr_64 ],
+	[ "ret_isrec", cc_ret_isrec_64 ]
 ]);

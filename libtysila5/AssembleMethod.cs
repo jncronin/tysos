@@ -83,6 +83,40 @@ namespace libtysila5
                 sym_st = binary_library.SymbolType.Weak;
             }
 
+            /* Is this a vector method? */
+            if (rva == 0 &&
+                ms.type.stype == TypeSpec.SpecialType.SzArray &&
+                code_override == null)
+            {
+                if (ms.Name == "IndexOf")
+                    code_override = ir.ConvertToIR.CreateVectorIndexOf(ms, t);
+                else if (ms.Name == "Insert")
+                    code_override = ir.ConvertToIR.CreateVectorInsert(ms, t);
+                else if (ms.Name == "RemoveAt")
+                    code_override = ir.ConvertToIR.CreateVectorRemoveAt(ms, t);
+                else if (ms.Name == "get_Item")
+                    code_override = ir.ConvertToIR.CreateVectorget_Item(ms, t);
+                else if (ms.Name == "set_Item")
+                    code_override = ir.ConvertToIR.CreateVectorset_Item(ms, t);
+                else if (ms.Name == "GetEnumerator" ||
+                    ms.Name == "Add" ||
+                    ms.Name == "Clear" ||
+                    ms.Name == "Contains" ||
+                    ms.Name == "CopyTo" ||
+                    ms.Name == "Remove" ||
+                    ms.Name == "get_Count" ||
+                    ms.Name == "get_IsReadOnly" ||
+                    ms.Name == "get_IsSynchronized" ||
+                    ms.Name == "get_SyncRoot" ||
+                    ms.Name == "get_IsFixedSize" ||
+                    ms.Name == "Clone")
+                    code_override = ir.ConvertToIR.CreateVectorUnimplemented(ms, t);
+                else
+                    return false;
+
+                sym_st = binary_library.SymbolType.Weak;
+            }
+
             if (rva == 0 && code_override == null)
                 return false;
 

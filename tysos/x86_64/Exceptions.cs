@@ -27,8 +27,8 @@ namespace tysos.x86_64
 {
     class Exceptions
     {
-        [libsupcs.ISR]
         [libsupcs.AlwaysCompile]
+        [libsupcs.CallingConvention("isr")]
         public static unsafe void DivideError_0_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
@@ -37,7 +37,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         [libsupcs.AlwaysCompile]
         public static unsafe void DebugError_1_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -46,7 +46,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         [libsupcs.AlwaysCompile]
         public static unsafe void NMIError_2_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regsa)
@@ -61,7 +61,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         [libsupcs.AlwaysCompile]
         public static unsafe void BreakPoint_3_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -71,7 +71,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         [libsupcs.AlwaysCompile]
         public static unsafe void OverflowError_4_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -80,7 +80,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         [libsupcs.AlwaysCompile]
         public static unsafe void BoundCheckError_5_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -89,7 +89,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         [libsupcs.AlwaysCompile]
         public static unsafe void InvalidOpcode_6_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -108,7 +108,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         [libsupcs.AlwaysCompile]
         public static unsafe void DeviceNotPresentError_7_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -117,8 +117,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
-        [libsupcs.x86_64.Cpu.ISRErrorCode]
+        [libsupcs.CallingConvention("isrec")]
         [libsupcs.AlwaysCompile]
         public static unsafe void DoubleFault_8_Handler(ulong ec, ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -137,8 +136,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
-        [libsupcs.x86_64.Cpu.ISRErrorCode]
+        [libsupcs.CallingConvention("isrec")]
         [libsupcs.AlwaysCompile]
         public static unsafe void TSSError_10_Handler(ulong ec, ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -147,8 +145,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
-        [libsupcs.x86_64.Cpu.ISRErrorCode]
+        [libsupcs.CallingConvention("isrec")]
         [libsupcs.AlwaysCompile]
         public static unsafe void SegmentNotPresentError_11_Handler(ulong ec, ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -157,8 +154,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
-        [libsupcs.x86_64.Cpu.ISRErrorCode]
+        [libsupcs.CallingConvention("isrec")]
         [libsupcs.AlwaysCompile]
         public static unsafe void StackeFaultError_12_Handler(ulong ec, ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -167,8 +163,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
-        [libsupcs.x86_64.Cpu.ISRErrorCode]
+        [libsupcs.CallingConvention("isrec")]
         [libsupcs.AlwaysCompile]
         public static unsafe void GeneralProtection_13_Handler(ulong ec, ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -211,8 +206,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
-        [libsupcs.AlwaysCompile]
+        [libsupcs.CallingConvention("isrec")]
         public static unsafe void FPUError_16_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
@@ -220,8 +214,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
-        [libsupcs.x86_64.Cpu.ISRErrorCode]
+        [libsupcs.CallingConvention("isrec")]
         [libsupcs.AlwaysCompile]
         public static unsafe void AlignmentCheck_17_Handler(ulong ec, ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -230,7 +223,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         [libsupcs.AlwaysCompile]
         public static unsafe void MachineCheckError_18_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -239,7 +232,7 @@ namespace tysos.x86_64
             libsupcs.OtherOperations.Halt();
         }
 
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         [libsupcs.AlwaysCompile]
         public static unsafe void SIMD_19_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
@@ -272,6 +265,11 @@ namespace tysos.x86_64
             DumpRegister("RSP   ", return_rsp);
             DumpRegister("RBP   ", return_rbp);
             DumpRegister("SS    ", return_ss);
+            DumpRegister("REGS  ", (ulong)regs);
+
+            if (regs < (void*)0x1000)
+                System.Diagnostics.Debugger.Break();
+
             DumpRegister("RAX   ", regs->rax);
             DumpRegister("RBX   ", regs->rbx);
             DumpRegister("RCX   ", regs->rcx);

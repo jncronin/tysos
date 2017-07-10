@@ -164,8 +164,8 @@ namespace libtysila5.target.x86
                         c.special_meths.GetMethodSpec(c.special_meths.memcpy),
                         new ir.Param[]
                         {
-                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = dest },
-                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = src },
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = dest, want_address = true },
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = src, want_address = true },
                             vt_size
                         },
                         null, "memcpy", temp_reg));
@@ -580,7 +580,20 @@ namespace libtysila5.target.x86
                 r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -5, 0x90, n));
             }
 
-            r.Add(inst(x86_ret, n));
+            if(c.ms.CallingConvention == "isrec")
+            {
+                // pop error code from stack
+                r.Add(inst(t.psize == 4 ? x86_add_rm32_imm8 : x86_add_rm64_imm8,
+                    r_esp, 8, n));
+            }
+            if (c.ms.CallingConvention == "isr" || c.ms.CallingConvention == "isrec")
+            {
+                r.Add(inst(t.psize == 4 ? x86_iret : x86_iretq, n));
+            }
+            else
+            {
+                r.Add(inst(x86_ret, n));
+            }
 
             return r;
         }
@@ -590,7 +603,7 @@ namespace libtysila5.target.x86
             ref Reg dest, out int rct, bool want_return = true)
         {
             /* Determine which registers we need to save */
-            var caller_preserves = c.t.cc_caller_preserves_map["sysv"];
+            var caller_preserves = c.t.cc_caller_preserves_map[call_ms.CallingConvention];
             ulong defined = 0;
             foreach (var si in n.stack_after)
                 defined |= si.reg.mask;
@@ -792,8 +805,8 @@ namespace libtysila5.target.x86
 
             // Build list of source and destination registers for parameters
             int cstack_loc = 0;
-            var cc = t.cc_map["sysv"];
-            var cc_class = t.cc_classmap["sysv"];
+            var cc = t.cc_map[call_ms.CallingConvention];
+            var cc_class = t.cc_classmap[call_ms.CallingConvention];
             int[] la_sizes;
             metadata.TypeSpec[] la_types;
             var to_locs = t.GetRegLocs(new ir.Param
@@ -802,7 +815,7 @@ namespace libtysila5.target.x86
                 v2 = call_ms.msig,
                 ms = call_ms
             },
-                ref cstack_loc, cc, cc_class, "sysv",
+                ref cstack_loc, cc, cc_class, call_ms.CallingConvention,
                 out la_sizes, out la_types,
                 hidden_loc_type
             );
@@ -824,6 +837,26 @@ namespace libtysila5.target.x86
                 to_locs = new_to_locs;
             }
 
+            // Append the register arguments to the push list
+            foreach (var arg in to_locs)
+            {
+                if (arg.type == rt_gpr || arg.type == rt_float)
+                {
+                    if (!push_list.Contains(arg))
+                        push_list.Add(arg);
+                }
+            }
+            List<MCInst> r2 = new List<MCInst>();
+
+            // Insert the push instructions at the start of the stream
+            int x = 0;
+            foreach (var push_reg in push_list)
+                handle_push(push_reg, ref x, r2, n, c);
+            foreach (var r2inst in r2)
+                r.Insert(push_list_index++, r2inst);
+
+            // Get from locs
+
             ir.Param[] from_locs;
             int hidden_adjust = hidden_loc_type == null ? 0 : 1;
             if (p == null)
@@ -840,25 +873,25 @@ namespace libtysila5.target.x86
                     from_locs[pcount + hidden_adjust] = n.stack_before.Peek(0).reg;
             }
             else
+            {
                 from_locs = p;
 
-            // Append the register arguments to the push list
-            foreach(var arg in to_locs)
-            {
-                if(arg.type == rt_gpr || arg.type == rt_float)
+                // adjust any rsp relative registers dependent on how many registers we have saved
+                foreach (var l in from_locs)
                 {
-                    if (!push_list.Contains(arg))
-                        push_list.Add(arg);
+                    if (l != null &&
+                        l.t == ir.Opcode.vl_mreg &&
+                        l.mreg is ContentsReg)
+                    {
+                        var l2 = l.mreg as ContentsReg;
+                        if (l2.basereg.Equals(r_esp))
+                        {
+                            l2.disp += x;
+                        }
+                    }
+
                 }
             }
-            List<MCInst> r2 = new List<MCInst>();
-
-            // Insert the push instructions at the start of the stream
-            int x = 0;
-            foreach (var push_reg in push_list)
-                handle_push(push_reg, ref x, r2, n, c);
-            foreach (var r2inst in r2)
-                r.Insert(push_list_index++, r2inst);
 
             // Reserve any required stack space
             if (cstack_loc != 0)
@@ -934,7 +967,17 @@ namespace libtysila5.target.x86
                             switch(from_reg.t)
                             {
                                 case ir.Opcode.vl_mreg:
-                                    handle_move(to_reg, from_reg.mreg, r, n, c);
+                                    if (from_reg.want_address)
+                                    {
+                                        Reg lea_to = to_reg;
+                                        if (to_reg is ContentsReg)
+                                            lea_to = r_eax;
+                                        r.Add(inst(t.psize == 4 ? x86_lea_r32 : x86_lea_r64,
+                                            lea_to, from_reg.mreg, n));
+                                        handle_move(to_reg, lea_to, r, n, c);
+                                    }
+                                    else
+                                        handle_move(to_reg, from_reg.mreg, r, n, c);
                                     break;
                                 case ir.Opcode.vl_c:
                                 case ir.Opcode.vl_c32:
@@ -1165,6 +1208,8 @@ namespace libtysila5.target.x86
                     throw new NotImplementedException();
                 else if (cr.size == 4)
                     r.Add(inst(x86_push_rm32, reg, n));
+                else if (cr.size == 8 && c.t.psize == 8)
+                    r.Add(inst(x86_push_rm32, reg, n));
                 else
                 {
                     var psize = util.util.align(cr.size, 4);
@@ -1175,7 +1220,7 @@ namespace libtysila5.target.x86
                     handle_move(new ContentsReg { basereg = r_esp, size = cr.size },
                         cr, r, n, c);
                 }
-                push_length += 4;
+                push_length += util.util.align(cr.size, c.t.psize);
             }
             else if (reg is DoubleReg)
             {
@@ -1188,7 +1233,7 @@ namespace libtysila5.target.x86
                 if (reg.type == rt_gpr)
                 {
                     r.Add(inst(x86_push_r32, reg, n));
-                    push_length += 4;
+                    push_length += c.t.psize;
                 }
                 else if (reg.type == rt_float)
                 {
@@ -2375,7 +2420,12 @@ namespace libtysila5.target.x86
                 }
             }
 
-            var regs_to_save = c.regs_used | c.t.cc_callee_preserves_map["sysv"];
+            var regs_to_save = c.regs_used | c.t.cc_callee_preserves_map[c.ms.CallingConvention];
+            
+            // all registers are saved in isrs
+            if (c.ms.CallingConvention == "isr" || c.ms.CallingConvention == "isrec")
+                regs_to_save = c.t.cc_callee_preserves_map[c.ms.CallingConvention];
+
             var regs_set = new util.Set();
             regs_set.Union(regs_to_save);
             int y = 0;
@@ -2383,7 +2433,7 @@ namespace libtysila5.target.x86
             {
                 var reg = regs_set.get_first_set();
                 regs_set.unset(reg);
-                var cur_reg = registers[reg];
+                var cur_reg = t.regs[reg];
                 handle_push(cur_reg, ref y, r, n, c);
                 c.regs_saved.Add(cur_reg);
             }
@@ -2392,6 +2442,12 @@ namespace libtysila5.target.x86
             {
                 handle_move(new ContentsReg { basereg = r_ebp, disp = -t.psize, size = t.psize },
                     t.psize == 4 ? r_eax : r_edi, r, n, c);
+            }
+
+            if(c.ms.CallingConvention == "isr" || c.ms.CallingConvention == "isrec")
+            {
+                // store the current stack pointer as the 'regs' parameter
+                handle_move(c.la_locs[c.la_locs.Length - 1], r_esp, r, n, c);
             }
 
             return r;

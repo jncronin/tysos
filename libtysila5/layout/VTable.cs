@@ -208,6 +208,26 @@ namespace libtysila5.layout
             TypeSpec iface_ts, IBinaryFile of, ISection os,
             IList<byte> d, ref ulong offset, Target t)
         {
+            bool is_boxed = false;
+            if(impl_ts.IsBoxed)
+            {
+                impl_ts = impl_ts.Unbox;
+                is_boxed = true;
+                throw new NotImplementedException();
+
+                /* TODO: need 'boxed' versions of each method to use here.
+                 * These should unbox the first parameter to a managed pointer
+                 * then call the acutal method
+                 * 
+                 * We should probably use a separate mangling scheme and
+                 * requestor.
+                 * 
+                 * Mangling change is done (append M)
+                 * 
+                 * This can be done during the loop below when requesting the
+                 * method.
+                 */
+            }
             /* Iterate through methods */
             var first_mdef = iface_ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
                 iface_ts.tdrow, 5);
@@ -216,13 +236,13 @@ namespace libtysila5.layout
             for (uint mdef_row = first_mdef; mdef_row < last_mdef; mdef_row++)
             {
                 MethodSpec iface_ms;
+                MethodSpec impl_ms = null;
                 iface_ts.m.GetMethodDefRow(MetadataStream.tid_MethodDef,
                         (int)mdef_row, out iface_ms, iface_ts.gtparams, null);
                 iface_ms.type = iface_ts;
 
                 // First determine if there is a relevant MethodImpl entry
-                MethodSpec impl_ms = null;
-                for(int i = 1; i <= impl_ts.m.table_rows[MetadataStream.tid_MethodImpl]; i++)
+                for (int i = 1; i <= impl_ts.m.table_rows[MetadataStream.tid_MethodImpl]; i++)
                 {
                     var Class = impl_ts.m.GetIntEntry(MetadataStream.tid_MethodImpl, i, 0);
 
@@ -234,7 +254,7 @@ namespace libtysila5.layout
                         MethodSpec mdecl_ms;
                         impl_ts.m.GetMethodDefRow(mdecl_id, mdecl_row, out mdecl_ms, impl_ts.gtparams);
 
-                        if(MetadataStream.CompareString(mdecl_ms.m,
+                        if (MetadataStream.CompareString(mdecl_ms.m,
                             mdecl_ms.m.GetIntEntry(MetadataStream.tid_MethodDef, mdecl_ms.mdrow, 3),
                             iface_ms.m,
                             iface_ms.m.GetIntEntry(MetadataStream.tid_MethodDef, iface_ms.mdrow, 3)) &&
@@ -253,6 +273,25 @@ namespace libtysila5.layout
                 // Then iterate through all base classes looking for an implementation
                 if (impl_ms == null)
                     impl_ms = GetVirtualMethod(impl_ts, iface_ms, t, true);
+
+                // Vectors implement methods which we need to provide
+                if (impl_ms == null && impl_ts.stype == TypeSpec.SpecialType.SzArray)
+                {
+                    // Build a new method that is based in the vector class
+                    impl_ms = iface_ms;
+                    impl_ms.type = new TypeSpec
+                    {
+                        m = impl_ts.m,
+                        tdrow = impl_ts.tdrow,
+                        stype = impl_ts.stype,
+                        other = impl_ts.other,
+                        gtparams = iface_ms.type.gtparams
+                    };
+                    t.r.MethodRequestor.Request(iface_ms);
+                }
+
+                if (is_boxed)
+                    impl_ms.is_boxed = true;
 
                 // Output reference
                 string impl_target = (impl_ms == null) ? "__cxa_pure_virtual" : impl_ms.MangleMethod();

@@ -323,7 +323,8 @@ namespace libtysila5.target
             ref int stack_loc,
             int cc_next,
             int ct,
-            metadata.TypeSpec ts)
+            metadata.TypeSpec ts,
+            string cc)
         {
             throw new NotSupportedException("Architecture does not support ct: " + Opcode.ct_names[ct]);
         }
@@ -559,7 +560,7 @@ namespace libtysila5.target
                 else
                 {
                     r = GetRegLoc(csite, ref stack_loc,
-                        cur_cc_next, ct, v);
+                        cur_cc_next, ct, v, cc_name);
 
                 }
                 cc_next[ct] = cur_cc_next + 1;

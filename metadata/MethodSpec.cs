@@ -33,6 +33,7 @@ namespace metadata
         public int mdrow;
         public int msig;
         public bool is_field;
+        public bool is_boxed;   // is it a virtual method on a boxed type?
 
         public TypeSpec[] gmparams;
         public TypeSpec type;
@@ -227,7 +228,9 @@ namespace metadata
         }
 
         public int GetCustomAttribute(string ctor)
-        { 
+        {
+            if (m.md_custom_attrs == null)
+                return -1;
             int cur_ca = m.md_custom_attrs[mdrow];
 
             while (cur_ca != 0)
@@ -252,6 +255,8 @@ namespace metadata
 
         public override IEnumerable<int> CustomAttributes(string ctor = null)
         {
+            if (m.md_custom_attrs == null)
+                yield break;
             int cur_ca = m.md_custom_attrs[mdrow];
 
             while (cur_ca != 0)
@@ -277,6 +282,42 @@ namespace metadata
             }
 
             yield break;
+        }
+
+        string cc = null;
+        public string CallingConvention
+        {
+            get
+            {
+                if (cc != null)
+                    return cc;
+                cc = "default";
+
+                var cc_ca = GetCustomAttribute("_ZN14libsupcs#2Edll8libsupcs26CallingConventionAttribute_7#2Ector_Rv_P2u1tu1S");
+                if (cc_ca != -1)
+                {
+                    // This is a call to a method that has a different name
+                    int val_idx = (int)m.GetIntEntry(MetadataStream.tid_CustomAttribute,
+                        cc_ca, 2);
+
+                    m.SigReadUSCompressed(ref val_idx);
+                    var prolog = m.sh_blob.di.ReadUShort(val_idx);
+                    if (prolog == 0x0001)
+                    {
+                        val_idx += 2;
+
+                        var str_len = m.SigReadUSCompressed(ref val_idx);
+                        StringBuilder sb = new StringBuilder();
+                        for (uint i = 0; i < str_len; i++)
+                        {
+                            sb.Append((char)m.sh_blob.di.ReadByte(val_idx++));
+                        }
+                        cc = sb.ToString();
+                    }
+                }
+
+                return cc;
+            }
         }
 
         public IEnumerable<string> MethodAliases

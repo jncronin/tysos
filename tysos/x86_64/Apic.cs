@@ -467,7 +467,7 @@ namespace tysos.x86_64
         }
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         public static unsafe void SpuriousApicInterrupt(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
@@ -477,7 +477,7 @@ namespace tysos.x86_64
         }
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.ISR]
+        [libsupcs.CallingConvention("isr")]
         internal static unsafe void TimerInterrupt(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {

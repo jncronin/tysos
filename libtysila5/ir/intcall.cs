@@ -38,6 +38,8 @@ namespace libtysila5.ir
         {
             intcalls["_Zu1S_9get_Chars_Rc_P2u1ti"] = string_getChars;
             intcalls["_Zu1S_10get_Length_Ri_P1u1t"] = string_getLength;
+            intcalls["_Zu1S_19InternalAllocateStr_Ru1S_P1i"] = string_InternalAllocate;
+
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_3Add_Ru1I_P2u1Iu1I"] = intptr_Add;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_3Mul_Ru1I_P2u1Iu1I"] = intptr_Mul;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_3Sub_Ru1I_P2u1Iu1I"] = intptr_Sub;
@@ -59,6 +61,8 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ArrayOperations_14GetSizesOffset_Ri_P0"] = array_getSizesOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ArrayOperations_17GetLoboundsOffset_Ri_P0"] = array_getLoboundsOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_16GetInternalArray_RPv_P1W6System5Array"] = array_getInternalArray;
+
+            intcalls["_ZN14libsupcs#2Edll8libsupcs16StringOperations_13GetDataOffset_Ri_P0"] = string_getDataOffset;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_26GetVtblInterfacesPtrOffset_Ri_P0"] = class_getVtblInterfacesPtrOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_27GetVtblExtendsVtblPtrOffset_Ri_P0"] = class_getVtblExtendsPtrOffset;
@@ -83,6 +87,106 @@ namespace libtysila5.ir
             intcalls["_ZW34System#2ERuntime#2EInteropServices7Marshal_37GetFunctionPointerForDelegateInternal_Ru1I_P1U6System8Delegate"] = getFunctionPointerForDelegate;
 
             intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_15InitializeArray_Rv_P2U6System5Arrayu1I"] = runtimeHelpers_initializeArray;
+            intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_22get_OffsetToStringData_Ri_P0"] = runtimeHelpers_getOffsetToStringData;
+
+            intcalls["_ZW20System#2EDiagnostics8Debugger_3Log_Rv_P3iu1Su1S"] = debugger_Log;
+
+            intcalls["_ZW19System#2EReflection8Assembly_20GetExecutingAssembly_RV8Assembly_P0"] = assembly_GetExecutingAssembly;
+        }
+
+        private static Stack<StackItem> runtimeHelpers_getOffsetToStringData(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var stack_after = ldc(n, c, stack_before, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c));
+            return stack_after;
+        }
+
+        private static Stack<StackItem> string_InternalAllocate(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            // save string length
+            var stack_after = copy_to_front(n, c, stack_before);
+
+            // Multiply number of characters by two, then add size of the string object
+            stack_after = ldc(n, c, stack_after, 2);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_intptr);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+
+            // Create object
+            stack_after = call(n, c, stack_after, false, "gcmalloc", c.special_meths,
+                c.special_meths.gcmalloc);
+
+            // vtbl
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldlab(n, c, stack_after, c.ms.m.SystemString.Type.MangleType());
+            stack_after = stind(n, c, stack_after, c.t.psize);
+
+            // mutex lock
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetArrayFieldOffset(layout.Layout.ArrayField.MutexLock, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldc(n, c, stack_after, 0, 0x18);
+            stack_after = stind(n, c, stack_after, c.t.psize);
+
+            /* now the stack is ..., length, object.
+             * 
+             * First save the length then move object up the stack */
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Length, c), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = copy_to_front(n, c, stack_after, 2);
+            stack_after = stind(n, c, stack_after, c.t.GetSize(c.ms.m.SystemIntPtr));
+
+            var stack_after2 = new Stack<StackItem>(stack_after);
+            stack_after2.Pop();
+            stack_after2.Pop();
+            stack_after2.Push(new StackItem { ts = c.ms.m.SystemString });
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stackcopy, arg_a = 0, res_a = 0, stack_before = stack_after, stack_after = stack_after2 });
+
+            return stack_after2;
+        }
+
+        private static Stack<StackItem> assembly_GetExecutingAssembly(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            // Create a TysosAssembly and populate it
+            var libsupcs = c.ms.m.al.GetAssembly("libsupcs");
+            var mscorlib = c.ms.m.al.GetAssembly("mscorlib");
+            var tysosAssembly = libsupcs.GetTypeSpec("libsupcs", "TysosAssembly");
+            var systemAssembly = mscorlib.GetTypeSpec("System.Reflection", "Assembly");
+
+            var systemAssemblyctor = mscorlib.GetMethodSpec(systemAssembly, ".ctor", c.special_meths.inst_Rv_P0,
+                c.special_meths);
+
+            var stack_after = newobj(n, c, stack_before, systemAssemblyctor, tysosAssembly);
+
+            // metadata entry
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(tysosAssembly, "metadata", c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldlab(n, c, stack_after, c.ms.m.AssemblyName);
+            stack_after = stind(n, c, stack_after, c.t.psize);
+
+            // assemblyName entry
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(systemAssembly, "assemblyName", c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldstr(n, c, stack_after, c.ms.m.AssemblyName);
+            stack_after = stind(n, c, stack_after, c.t.psize);
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> debugger_Log(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var stack_after = call(n, c, stack_before, false, "__log", c.special_meths,
+                c.special_meths.debugger_Log);
+            return stack_after;
+        }
+
+        private static Stack<StackItem> string_getDataOffset(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var stack_after = ldc(n, c, stack_before, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c));
+            return stack_after;
         }
 
         private static Stack<StackItem> runtimeHelpers_initializeArray(CilNode n, Code c, Stack<StackItem> stack_before)

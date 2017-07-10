@@ -38,6 +38,10 @@ namespace libsupcs
         static extern void* PopEhdr();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        [MethodReferenceAlias("peek_ehdr")]
+        static extern void* PeekEhdr();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
         [MethodReferenceAlias("pop_fp")]
         static extern void* PopFramePointer();
         
@@ -55,7 +59,10 @@ namespace libsupcs
             }
 
             if ((cur + 1) >= end)
+            {
+                System.Diagnostics.Debugger.Break();
                 throw new OutOfMemoryException("exception header stack overflowed");
+            }
 
             *cur = eh;
             cur++;
@@ -69,10 +76,26 @@ namespace libsupcs
         static void* pop_ehdr()
         {
             if (start == null || cur <= start)
+            {
+                System.Diagnostics.Debugger.Break();
                 throw new OutOfMemoryException("exception header stack underflowed");
+            }
 
             cur--;
             return *cur;
+        }
+
+        [AlwaysCompile]
+        [WeakLinkage]
+        [MethodAlias("peek_ehdr")]
+        static void* peek_ehdr()
+        {
+            if (start == null || cur <= start)
+            {
+                return null;
+            }
+
+            return *(cur - 2);
         }
 
         [AlwaysCompile]
@@ -81,7 +104,10 @@ namespace libsupcs
         static void* pop_fp()
         {
             if (start == null || cur <= start)
+            {
+                System.Diagnostics.Debugger.Break();
                 throw new OutOfMemoryException("exception header stack underflowed");
+            }
 
             cur--;
             return *cur;
@@ -92,6 +118,8 @@ namespace libsupcs
         [MethodAlias("enter_try")]
         internal static void enter_try(void *eh, void *fp)
         {
+            if (eh == PeekEhdr())
+                System.Diagnostics.Debugger.Break();
             PushEhdr(eh, fp);
         }
 
@@ -121,6 +149,8 @@ namespace libsupcs
                 // handle finally clause
                 void* handler = *(ehdr + 1);
                 OtherOperations.CallI(fp, handler);
+                PopFramePointer();
+                PopEhdr();
             }
         }
 

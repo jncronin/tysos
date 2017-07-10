@@ -18,7 +18,7 @@ namespace libtysila5.target
             c.lv_locs = new Reg[lv_count];
             c.lv_sizes = new int[lv_count];
             c.lv_types = new metadata.TypeSpec[lv_count];
-            int cur_loc = 0;
+            int cur_loc = GetCCStackReserve(c.ms.CallingConvention);
             for (int i = 0; i < lv_count; i++)
             {
                 var type = m.GetTypeSpec(ref idx, c.ms.gtparams,
@@ -51,8 +51,8 @@ namespace libtysila5.target
             int laidx = 0;
             //cur_loc = 0;
 
-            var cc = cc_map["sysv"];
-            var cc_class_map = cc_classmap["sysv"];
+            var cc = cc_map[c.ms.CallingConvention];
+            var cc_class_map = cc_classmap[c.ms.CallingConvention];
             bool has_hidden = ir.Opcode.GetCTFromType(c.ret_ts) == ir.Opcode.ct_vt;
             int stack_loc = 0;
             metadata.TypeSpec hidden_ts = null;
@@ -63,7 +63,7 @@ namespace libtysila5.target
                 m = m,
                 ms = c.ms,
             }, ref stack_loc, cc, cc_class_map,
-            "sysv",
+            c.ms.CallingConvention,
             out c.la_sizes, out c.la_types,
             hidden_ts);
 
@@ -124,6 +124,11 @@ namespace libtysila5.target
                     c.la_locs[i] = la_phys_locs[i];
                     c.la_needs_assign[i] = false;
                 }
+                else if(mreg.type == rt_contents)
+                {
+                    c.la_locs[i] = la_phys_locs[i];
+                    c.la_needs_assign[i] = false;
+                }
                 else
                 {
                     c.la_needs_assign[i] = true;
@@ -139,6 +144,11 @@ namespace libtysila5.target
             if (has_hidden)
                 cur_loc += psize;
             c.lv_total_size = cur_loc;
+        }
+
+        internal virtual int GetCCStackReserve(string cc)
+        {
+            return 0;
         }
     }
 }
