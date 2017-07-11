@@ -89,6 +89,9 @@ namespace libtysila5.ir
                 }
                 else
                     DoAllocation(c, si, t, ref alloced, ref stack_loc);
+
+                if (si.reg != null)
+                    c.regs_used |= si.reg.mask;
             }
         }
     }

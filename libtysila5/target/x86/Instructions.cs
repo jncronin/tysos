@@ -2420,7 +2420,7 @@ namespace libtysila5.target.x86
                 }
             }
 
-            var regs_to_save = c.regs_used | c.t.cc_callee_preserves_map[c.ms.CallingConvention];
+            var regs_to_save = c.regs_used & c.t.cc_callee_preserves_map[c.ms.CallingConvention];
             
             // all registers are saved in isrs
             if (c.ms.CallingConvention == "isr" || c.ms.CallingConvention == "isrec")
