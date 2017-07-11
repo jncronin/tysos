@@ -213,19 +213,10 @@ namespace libtysila5.layout
             {
                 impl_ts = impl_ts.Unbox;
                 is_boxed = true;
-                throw new NotImplementedException();
 
-                /* TODO: need 'boxed' versions of each method to use here.
-                 * These should unbox the first parameter to a managed pointer
-                 * then call the acutal method
-                 * 
-                 * We should probably use a separate mangling scheme and
-                 * requestor.
-                 * 
-                 * Mangling change is done (append M)
-                 * 
-                 * This can be done during the loop below when requesting the
-                 * method.
+                /* 'boxed' versions of each method should unbox the
+                 * first parameter to a managed pointer then call
+                 * the acutal method
                  */
             }
             /* Iterate through methods */
@@ -264,7 +255,6 @@ namespace libtysila5.layout
                                 impl_ts.m.MethodDefOrRef, out mbody_id, out mbody_row);
                             impl_ts.m.GetMethodDefRow(mbody_id, mbody_row, out impl_ms, impl_ts.gtparams);
                             impl_ms.type = impl_ts;
-                            t.r.MethodRequestor.Request(impl_ms);
                             break;
                         }
                     }
@@ -287,11 +277,18 @@ namespace libtysila5.layout
                         other = impl_ts.other,
                         gtparams = iface_ms.type.gtparams
                     };
-                    t.r.MethodRequestor.Request(iface_ms);
                 }
 
-                if (is_boxed)
-                    impl_ms.is_boxed = true;
+                if(impl_ms != null)
+                {
+                    if (is_boxed)
+                    {
+                        impl_ms.is_boxed = true;
+                        t.r.BoxedMethodRequestor.Request(impl_ms);
+                    }
+                    else
+                        t.r.MethodRequestor.Request(impl_ms);
+                }
 
                 // Output reference
                 string impl_target = (impl_ms == null) ? "__cxa_pure_virtual" : impl_ms.MangleMethod();
@@ -562,7 +559,6 @@ namespace libtysila5.layout
                                 decl_ms.m, decl_ms.msig, impl_ts.gtparams, null))
                             {
                                 // this is the correct one
-                                t.r.MethodRequestor.Request(impl_ms);
                                 return impl_ms;
                             }
                         }

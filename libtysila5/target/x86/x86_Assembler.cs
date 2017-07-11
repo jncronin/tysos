@@ -273,6 +273,29 @@ namespace libtysila5.target.x86
 
             return new ContentsReg { basereg = r_ebp, disp = cur_stack - c.lv_total_size, size = size };
         }
+
+        protected internal override Code AssembleBoxedMethod(MethodSpec ms)
+        {
+            /* To unbox, we simply add the size of system.object to 
+             * first argument, then jmp to the actual method
+             */
+
+            var c = new Code();
+            c.mc = new List<MCInst>();
+
+            var this_reg = psize == 4 ? new ContentsReg { basereg = r_ebp, disp = 8, size = 4 } : x86_64.x86_64_Assembler.r_rdi;
+            var sysobjsize = layout.Layout.GetTypeSize(ms.m.SystemObject, this);
+            c.mc.Add(inst(psize == 4 ? x86_add_rm32_imm8 : x86_add_rm64_imm8, this_reg, sysobjsize, null));
+
+            var unboxed = ms.Unbox;
+            var act_meth = unboxed.MangleMethod();
+            r.MethodRequestor.Request(unboxed);
+
+
+            c.mc.Add(inst(x86_jmp_rel32, new Param { t = Opcode.vl_str, str = act_meth }, null));
+
+            return c;
+        }
     }
 }
 

@@ -82,6 +82,9 @@ namespace libtysila5.target
         protected internal abstract binary_library.IRelocationType GetDataToDataReloc();
         protected internal abstract binary_library.IRelocationType GetDataToCodeReloc();
 
+        protected internal abstract Code AssembleBoxedMethod(metadata.MethodSpec ms);
+        protected internal abstract void AssemblePass(Code c);
+
         public virtual void InitIntcalls() { }
 
         public virtual string GetCType(metadata.TypeSpec ts)

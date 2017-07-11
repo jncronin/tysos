@@ -84,6 +84,28 @@ namespace metadata
             return true;
         }
 
+        public MethodSpec Unbox
+        {
+            get
+            {
+                MethodSpec ret = new MethodSpec
+                {
+                    aliases = aliases,
+                    cc = cc,
+                    gmparams = gmparams,
+                    is_boxed = false,
+                    is_field = is_field,
+                    m = m,
+                    mangle_override = mangle_override,
+                    mdrow = mdrow,
+                    msig = msig,
+                    name_override = name_override,
+                    type = type.Unbox
+                };
+                return ret;
+            }
+        }
+
         public override int GetHashCode()
         {
             int hc = m.GetHashCode();

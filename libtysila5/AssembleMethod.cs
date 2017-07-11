@@ -35,6 +35,11 @@ namespace libtysila5
             MetadataStream base_m = null,
             Code code_override = null)
         {
+            if (ms.is_boxed)
+            {
+                throw new Exception("AssembleMethod called for boxed method - use AssembleBoxedMethod instead");
+            }
+
             var ts = bf.GetTextSection();
             t.bf = bf;
             t.text_section = ts;
@@ -131,7 +136,7 @@ namespace libtysila5
             ts.AddSymbol(meth_sym);
             meth_syms.Add(meth_sym);
 
-            foreach(var alias in ms.MethodAliases)
+            foreach (var alias in ms.MethodAliases)
             {
                 var alias_sym = bf.CreateSymbol();
                 alias_sym.Name = alias;
@@ -221,7 +226,7 @@ namespace libtysila5
                                 clause_count = (data_size - 4) / 12;
 
                             ehdr_offset += 4;
-                            for(int i = 0; i < clause_count; i++)
+                            for (int i = 0; i < clause_count; i++)
                             {
                                 var ehdr = ParseExceptionHeader(meth,
                                     ref ehdr_offset, is_fat, ms);
@@ -259,13 +264,13 @@ namespace libtysila5
 
             /* Choose instructions */
             target.ChooseInstructions.DoChoosing(cil);
-
-            ((target.x86.x86_Assembler)cil.t).AssemblePass(cil);
+            t.AssemblePass(cil);
+            //((target.x86.x86_Assembler)cil.t).AssemblePass(cil);
 
             foreach (var sym in meth_syms)
                 sym.Size = ts.Data.Count - (int)sym.Offset;
 
-            foreach(var extra_sym in cil.extra_labels)
+            foreach (var extra_sym in cil.extra_labels)
             {
                 var esym = bf.CreateSymbol();
                 esym.DefinedIn = ts;
@@ -277,7 +282,16 @@ namespace libtysila5
             }
 
             /* Dump debug */
-            if(debug_passes != null)
+            DumpDebug(debug_passes, meth_syms, cil);
+
+            return true;
+        }
+
+        private static void DumpDebug(StringBuilder debug_passes,
+            List<binary_library.ISymbol> meth_syms,
+            Code cil)
+        {
+            if (debug_passes != null)
             {
                 libtysila5.cil.CilNode cur_cil_node = null;
                 libtysila5.cil.CilNode.IRNode cur_ir_node = null;
@@ -285,13 +299,13 @@ namespace libtysila5
                 foreach (var sym in meth_syms)
                     debug_passes.AppendLine(sym.Name + ":");
 
-                foreach(var mc in cil.mc)
+                foreach (var mc in cil.mc)
                 {
-                    if(mc.parent != cur_ir_node)
+                    if (mc.parent != cur_ir_node)
                     {
                         cur_ir_node = mc.parent;
 
-                        if(cur_ir_node.parent != cur_cil_node)
+                        if (cur_ir_node.parent != cur_cil_node)
                         {
                             cur_cil_node = cur_ir_node.parent;
 
@@ -313,7 +327,6 @@ namespace libtysila5
                 debug_passes.AppendLine();
             }
 
-            return true;
         }
 
         private static metadata.ExceptionHeader ParseExceptionHeader(metadata.DataInterface di,
@@ -322,7 +335,7 @@ namespace libtysila5
         {
             metadata.ExceptionHeader ehdr = new metadata.ExceptionHeader();
             int flags = 0;
-            if(is_fat)
+            if (is_fat)
             {
                 flags = di.ReadInt(ehdr_offset);
                 ehdr.TryILOffset = di.ReadInt(ehdr_offset + 4);
@@ -339,7 +352,7 @@ namespace libtysila5
                 ehdr.HandlerLength = di.ReadSByte(ehdr_offset + 7);
             }
 
-            switch(flags)
+            switch (flags)
             {
                 case 0:
                     ehdr.EType = metadata.ExceptionHeader.ExceptionHeaderType.Catch;
@@ -377,6 +390,36 @@ namespace libtysila5
                 ehdr_offset += 12;
 
             return ehdr;
+        }
+
+        public static bool AssembleBoxedMethod(metadata.MethodSpec ms,
+            binary_library.IBinaryFile bf, target.Target t,
+            StringBuilder debug_passes = null)
+        {
+            var ts = bf.GetTextSection();
+            t.bf = bf;
+            t.text_section = ts;
+
+            // Symbol
+            List<binary_library.ISymbol> meth_syms = new List<binary_library.ISymbol>();
+            var mangled_name = ms.MangleMethod();
+            var meth_sym = bf.CreateSymbol();
+            meth_sym.Name = mangled_name;
+            meth_sym.ObjectType = binary_library.SymbolObjectType.Function;
+            meth_sym.Offset = (ulong)ts.Data.Count;
+            meth_sym.Type = binary_library.SymbolType.Weak;
+            ts.AddSymbol(meth_sym);
+            meth_syms.Add(meth_sym);
+
+            Code c = t.AssembleBoxedMethod(ms);
+            t.AssemblePass(c);
+
+            foreach (var sym in meth_syms)
+                sym.Size = ts.Data.Count - (int)sym.Offset;
+
+            DumpDebug(debug_passes, meth_syms, c);
+
+            return true;
         }
     }
 }

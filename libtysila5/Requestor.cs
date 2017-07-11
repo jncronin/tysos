@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using libtysila5.layout;
 using libtysila5.util;
 using metadata;
 
@@ -34,6 +35,7 @@ namespace libtysila5
         public abstract IndividualRequestor<TypeSpec> VTableRequestor { get; }
         public abstract IndividualRequestor<layout.Layout.MethodSpecWithEhdr> MethodRequestor { get; }
         public abstract IndividualRequestor<layout.Layout.MethodSpecWithEhdr> EHRequestor { get; }
+        public abstract IndividualRequestor<layout.Layout.MethodSpecWithEhdr> BoxedMethodRequestor { get; }
         public abstract IndividualRequestor<TypeSpec> StaticFieldRequestor { get; }
         public abstract IndividualRequestor<TypeSpec> DelegateRequestor { get; }
 
@@ -51,6 +53,8 @@ namespace libtysila5
                     return false;
                 if (!DelegateRequestor.Empty)
                     return false;
+                if (!BoxedMethodRequestor.Empty)
+                    return false;
                 return true;
             }
         }
@@ -60,6 +64,7 @@ namespace libtysila5
     {
         CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr> m;
         CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr> eh;
+        CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr> bm;
         CachingIndividualRequestor<TypeSpec> vt;
         CachingIndividualRequestor<TypeSpec> sf;
         CachingIndividualRequestor<TypeSpec> d;
@@ -68,6 +73,7 @@ namespace libtysila5
         {
             m = new CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr>(mstream);
             eh = new CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr>(mstream);
+            bm = new CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr>(mstream);
             vt = new CachingIndividualRequestor<TypeSpec>(mstream);
             sf = new CachingIndividualRequestor<TypeSpec>(mstream);
             d = new CachingIndividualRequestor<TypeSpec>(mstream);
@@ -110,6 +116,14 @@ namespace libtysila5
             get
             {
                 return d;
+            }
+        }
+
+        public override IndividualRequestor<Layout.MethodSpecWithEhdr> BoxedMethodRequestor
+        {
+            get
+            {
+                return bm;
             }
         }
     }

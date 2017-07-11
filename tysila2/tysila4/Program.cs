@@ -274,6 +274,14 @@ namespace tysila4
                         if (!quiet)
                             Console.WriteLine(d.MangleType() + "D");
                     }
+                    else if(!t.r.BoxedMethodRequestor.Empty)
+                    {
+                        var bm = t.r.BoxedMethodRequestor.GetNext();
+                        libtysila5.libtysila.AssembleBoxedMethod(bm.ms,
+                            bf, t, debug);
+                        if (!quiet)
+                            Console.WriteLine(bm.ms.MangleMethod());
+                    }
                 }
 
                 if (debug_file != null)

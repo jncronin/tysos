@@ -28,7 +28,7 @@ namespace libtysila5.target.x86
 {
     partial class x86_Assembler
     {
-        public void AssemblePass(Code c)
+        protected internal override void AssemblePass(Code c)
         { 
             var Code = text_section.Data as List<byte>;
             var code_start = Code.Count;
@@ -38,10 +38,13 @@ namespace libtysila5.target.x86
 
             /* Get maximum il offset of method */
             int max_il = 0;
-            foreach(var cil in c.cil)
+            if (c.cil != null)
             {
-                if (cil.il_offset > max_il)
-                    max_il = cil.il_offset;
+                foreach (var cil in c.cil)
+                {
+                    if (cil.il_offset > max_il)
+                        max_il = cil.il_offset;
+                }
             }
             max_il++;
 
@@ -53,26 +56,29 @@ namespace libtysila5.target.x86
 
             foreach(var I in c.mc)
             {
-                var cil = I.parent.parent;
                 var mc_offset = Code.Count - code_start;
                 I.offset = mc_offset;
 
-                if (il_starts[cil.il_offset] == -1)
+                if (I.parent != null)
                 {
-                    var ir = I.parent;
-                    /* We don't want the il offset for the first node to point
-                     * to the enter/enter_handler opcode as this potentially breaks
-                     * small methods like:
-                     * 
-                     * IL_0000: br.s IL_0000
-                     * 
-                     * where we want the jmp to be to the br irnode, rather than the enter irnode */
-                    if (ir.opcode != libtysila5.ir.Opcode.oc_enter &&
-                        ir.opcode != libtysila5.ir.Opcode.oc_enter_handler &&
-                        ir.ignore_for_mcoffset == false)
+                    var cil = I.parent.parent;
+                    if (il_starts[cil.il_offset] == -1)
                     {
-                        il_starts[cil.il_offset] = mc_offset;
-                        cil.mc_offset = mc_offset;
+                        var ir = I.parent;
+                        /* We don't want the il offset for the first node to point
+                         * to the enter/enter_handler opcode as this potentially breaks
+                         * small methods like:
+                         * 
+                         * IL_0000: br.s IL_0000
+                         * 
+                         * where we want the jmp to be to the br irnode, rather than the enter irnode */
+                        if (ir.opcode != libtysila5.ir.Opcode.oc_enter &&
+                            ir.opcode != libtysila5.ir.Opcode.oc_enter_handler &&
+                            ir.ignore_for_mcoffset == false)
+                        {
+                            il_starts[cil.il_offset] = mc_offset;
+                            cil.mc_offset = mc_offset;
+                        }
                     }
                 }
 
@@ -529,9 +535,32 @@ namespace libtysila5.target.x86
                         break;
                     case x86_jmp_rel32:
                         Code.Add(0xe9);
-                        rel_srcs.Add(Code.Count);
-                        rel_dests.Add((int)I.p[1].v);
-                        AddImm32(Code, 0);
+
+                        if (I.p[1].t == ir.Opcode.vl_br_target)
+                        {
+                            rel_srcs.Add(Code.Count);
+                            rel_dests.Add((int)I.p[1].v);
+                            AddImm32(Code, 0);
+                        }
+                        else if (I.p[1].t == ir.Opcode.vl_str)
+                        {
+                            var reloc = bf.CreateRelocation();
+                            reloc.DefinedIn = text_section;
+                            if (psize == 4)
+                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
+                            else
+                                reloc.Type = new binary_library.elf.ElfFile.Rel_x86_64_pc32();
+                            reloc.Addend = -4;
+                            reloc.References = bf.CreateSymbol();
+                            reloc.References.DefinedIn = null;
+                            reloc.References.Name = I.p[1].str;
+                            reloc.References.ObjectType = binary_library.SymbolObjectType.Function;
+                            reloc.Offset = (ulong)Code.Count;
+                            bf.AddRelocation(reloc);
+                            AddImm32(Code, 0);
+                        }
+                        else
+                            throw new NotSupportedException();
                         break;
                     case x86_ret:
                         Code.Add(0xc3);
