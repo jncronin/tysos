@@ -159,7 +159,7 @@ namespace tysos
         static void Throw(System.Exception exception)
         {
             Formatter.WriteLine("Exception thrown!", Program.arch.BootInfoOutput);
-            //Formatter.WriteLine(exception.ToString(), Program.arch.BootInfoOutput);
+            Formatter.WriteLine(exception.ToString(), Program.arch.BootInfoOutput);
 
             /* Unwind the stack */
             PageFault.unwinding = true;

@@ -114,6 +114,7 @@ namespace metadata
             pefh.Chars = file.ReadUShort((int)pefh_start + 18);
             if ((pefh.Chars & 0x3) != 0x2)
             {
+                System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: Invalid PE file header characteristics: " + pefh.Chars.ToString());
                 System.Diagnostics.Debugger.Break();
                 throw new Exception("Invalid PE file header characteristics");
             }

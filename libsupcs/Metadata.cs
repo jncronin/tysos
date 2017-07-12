@@ -25,19 +25,24 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using metadata;
 
 namespace libsupcs
 {
     unsafe class Metadata
     {
-        internal static Dictionary<string, metadata.MetadataStream> name_cache =
-            new Dictionary<string, metadata.MetadataStream>(
-                new GenericEqualityComparer<string>());
-        internal static Dictionary<ulong, metadata.MetadataStream> ptr_cache =
-            new Dictionary<ulong, metadata.MetadataStream>(
-                new GenericEqualityComparer<ulong>());
         static metadata.MetadataStream mscorlib = null;
         static BinaryAssemblyLoader bal = null;
+
+        static BinaryAssemblyLoader BAL
+        {
+            get
+            {
+                if (bal == null)
+                    bal = new BinaryAssemblyLoader();
+                return bal;
+            }
+        }
 
         public static metadata.MetadataStream MSCorlib
         {
@@ -53,9 +58,7 @@ namespace libsupcs
         {
             get
             {
-                if (bal == null)
-                    bal = new BinaryAssemblyLoader();
-                return bal;
+                return BAL;
             }
         }
 
@@ -65,12 +68,220 @@ namespace libsupcs
             metadata.PEFile pef = new metadata.PEFile();
             var m = pef.Parse(new metadata.StreamInterface(str), AssemblyLoader);
 
-            name_cache["mscorlib"] = m;
-            ptr_cache[(ulong)OtherOperations.GetStaticObjectAddress("mscorlib")] = m;
+            AssemblyLoader.AddToCache(m, "mscorlib");
+            mscorlib = m;
+            BinaryAssemblyLoader.ptr_cache[(ulong)OtherOperations.GetStaticObjectAddress("mscorlib")] = m;
+        }
+
+        internal static unsafe metadata.TypeSpec GetTypeSpec(TysosType t)
+        {
+            void** impl_ptr = t.GetImplOffset();
+            return GetTypeSpec(*impl_ptr);
+        }
+
+        internal static unsafe metadata.TypeSpec GetTypeSpec(RuntimeTypeHandle rth)
+        {
+            void* ptr = CastOperations.ReinterpretAsPointer(rth.Value);
+            return GetTypeSpec(ptr);
+        }
+
+        internal static unsafe metadata.TypeSpec GetTypeSpec(void* ptr)
+        {
+            // Ensure ptr is valid
+            if (ptr == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: called with null pointer");
+                throw new Exception("Invalid type handle");
+            }
+
+            // dereference vtbl pointer to get ti ptr
+            ptr = *((void**)ptr);
+            if (ptr == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: called with null pointer");
+                throw new Exception("Invalid type handle");
+            }
+
+            if (*((int*)ptr) != 0)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: called with invalid runtimehandle: " +
+                    (*((int*)ptr)).ToString() + " at " + ((ulong)ptr).ToString("X16"));
+                System.Diagnostics.Debugger.Break();
+                throw new Exception("Invalid type handle");
+            }
+
+            // Get number of metadata references and pointers to each
+            var ti_ptr = (void**)ptr;
+            var mdref_count = *(int*)(ti_ptr + 1);
+            var mdref_arr = ti_ptr + 2;
+            var sig_ptr = (byte*)(mdref_arr + mdref_count);
+
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: found " + mdref_count.ToString() + " metadata references");
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: parsing signature at " + ((ulong)sig_ptr).ToString());
+
+            // Parse the actual signature
+            return ParseTypeSpecSignature(ref sig_ptr, mdref_count, mdref_arr, null, null);
+        }
+
+        private static TypeSpec ParseTypeSpecSignature(ref byte* sig_ptr, int mdref_count, void** mdref_arr,
+            TypeSpec[] gtparams, TypeSpec[] gmparams)
+        {
+            TypeSpec ts = new TypeSpec();
+
+            var b = *sig_ptr++;
+
+            bool is_generic = false;
+
+            // CMOD_REQD/OPT
+            while (b == 0x1f || b == 0x20)
+                b = *sig_ptr++;
+
+            if(b == 0x15)
+            {
+                is_generic = true;
+                b = *sig_ptr++;
+            }
+
+            switch (b)
+            {
+                case 0x01:
+                    // VOID
+                    return null;
+                case 0x02:
+                case 0x03:
+                case 0x04:
+                case 0x05:
+                case 0x06:
+                case 0x07:
+                case 0x08:
+                case 0x09:
+                case 0x0a:
+                case 0x0b:
+                case 0x0c:
+                case 0x0d:
+                case 0x0e:
+                case 0x16:
+                case 0x18:
+                case 0x19:
+                case 0x1c:
+                    ts.m = MSCorlib;
+                    ts.tdrow = ts.m.simple_type_rev_idx[b];
+                    break;
+
+                case 0x0f:
+                    ts.m = AssemblyLoader.GetAssembly("mscorlib");
+                    ts.stype = TypeSpec.SpecialType.Ptr;
+                    ts.other = ParseTypeSpecSignature(ref sig_ptr, mdref_count, mdref_arr, gtparams, gmparams);
+                    break;
+
+                case 0x10:
+                    ts.m = AssemblyLoader.GetAssembly("mscorlib");
+                    ts.stype = TypeSpec.SpecialType.MPtr;
+                    ts.other = ParseTypeSpecSignature(ref sig_ptr, mdref_count, mdref_arr, gtparams, gmparams);
+                    break;
+
+                case 0x31:
+                case 0x32:
+                    // Encoded class/vtype
+                    var mdidx = SigReadUSCompressed(ref sig_ptr);
+                    ts.m = BAL.GetAssembly(*(mdref_arr + mdidx));
+                    var tok = SigReadUSCompressed(ref sig_ptr);
+                    int tid, trow;
+                    ts.m.GetCodedIndexEntry(tok, ts.m.TypeDefOrRef,
+                        out tid, out trow);
+
+                    ts = ts.m.GetTypeSpec(tid, trow, gtparams, gmparams);
+                    break;
+
+                case 0x13:
+                    // VAR
+                    var gtidx = SigReadUSCompressed(ref sig_ptr);
+                    if (gtparams == null)
+                        ts = new TypeSpec { stype = TypeSpec.SpecialType.Var, idx = (int)gtidx };
+                    else
+                        ts = gtparams[gtidx];
+                    break;
+
+                case 0x1e:
+                    // MVAR
+                    var gmidx = SigReadUSCompressed(ref sig_ptr);
+                    if (gmparams == null)
+                        ts = new TypeSpec { stype = TypeSpec.SpecialType.MVar, idx = (int)gmidx };
+                    else
+                        ts = gmparams[gmidx];
+                    break;
+
+                case 0x1d:
+                    ts.m = BAL.GetAssembly("mscorlib");
+                    ts.stype = TypeSpec.SpecialType.SzArray;
+
+                    ts.other = ParseTypeSpecSignature(ref sig_ptr, mdref_count, mdref_arr, gtparams, gmparams);
+                    break;
+
+                case 0x14:
+                    ts.m = BAL.GetAssembly("mscorlib");
+                    ts.stype = TypeSpec.SpecialType.Array;
+
+                    ts.other = ParseTypeSpecSignature(ref sig_ptr, mdref_count, mdref_arr, gtparams, gmparams);
+                    ts.arr_rank = (int)SigReadUSCompressed(ref sig_ptr);
+
+                    int boundsCount = (int)SigReadUSCompressed(ref sig_ptr);
+                    ts.arr_sizes = new int[boundsCount];
+                    for (int i = 0; i < boundsCount; i++)
+                        ts.arr_sizes[i] = (int)SigReadUSCompressed(ref sig_ptr);
+
+                    int loCount = (int)SigReadUSCompressed(ref sig_ptr);
+                    ts.arr_lobounds = new int[loCount];
+                    for (int i = 0; i < loCount; i++)
+                        ts.arr_lobounds[i] = (int)SigReadUSCompressed(ref sig_ptr);
+
+                    break;
+
+                case 0x45:
+                    ts = ParseTypeSpecSignature(ref sig_ptr, mdref_count, mdref_arr, gtparams, gmparams);
+                    ts.Pinned = true;
+                    break;
+
+                default:
+                    System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.ParseTypeSpecSignature: invalid signature byte: " + b.ToString());
+                    throw new NotImplementedException();
+            }
+
+            if (is_generic)
+            {
+                var gen_count = SigReadUSCompressed(ref sig_ptr);
+                ts.gtparams = new TypeSpec[gen_count];
+                for (uint i = 0; i < gen_count; i++)
+                {
+                    ts.gtparams[i] = ParseTypeSpecSignature(ref sig_ptr, mdref_count, mdref_arr, gtparams, gmparams);
+                }
+            }
+
+            return ts;
+        }
+
+        private static uint SigReadUSCompressed(ref byte* sig_ptr)
+        {
+            byte b1 = *sig_ptr++;
+            if ((b1 & 0x80) == 0)
+                return b1;
+
+            byte b2 = *sig_ptr++;
+            if ((b1 & 0xc0) == 0x80)
+                return (b1 & 0x3fU) << 8 | b2;
+
+            byte b3 = *sig_ptr++;
+            byte b4 = *sig_ptr++;
+            return (b1 & 0x1fU) << 24 | ((uint)b2 << 16) |
+                ((uint)b3 << 8) | b4;
         }
 
         class BinaryAssemblyLoader : metadata.AssemblyLoader
         {
+            internal static Dictionary<ulong, metadata.MetadataStream> ptr_cache =
+                new Dictionary<ulong, metadata.MetadataStream>(
+                    new GenericEqualityComparer<ulong>());
+
             public override Stream LoadAssembly(string name)
             {
                 void* ptr;
@@ -87,6 +298,40 @@ namespace libsupcs
 
                 return new BinaryStream((byte*)ptr, len);
             }
+
+            public unsafe virtual MetadataStream GetAssembly(void *ptr)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.BinaryAssemblyLoader: loading assembly at: " + ((ulong)ptr).ToString());
+
+                var bi = new BinaryInterface(ptr);
+                PEFile p = new PEFile();
+                var m = p.Parse(bi, this);
+
+                ptr_cache[(ulong)ptr] = m;
+                cache[m.AssemblyName] = m;
+
+                return m;
+            }
+        }
+
+        unsafe class BinaryInterface : metadata.DataInterface
+        {
+            byte* b;
+
+            public BinaryInterface(void *ptr)
+            {
+                b = (byte*)ptr;
+            }
+
+            public override byte ReadByte(int offset)
+            {
+                return *(b + offset);
+            }
+
+            public override DataInterface Clone(int offset)
+            {
+                return new BinaryInterface(b + offset);
+            }
         }
 
         class BinaryStream : System.IO.Stream
@@ -99,9 +344,14 @@ namespace libsupcs
             public BinaryStream(byte *data, long length)
             {
                 d = data;
-                len = Length;
+                len = length;
                 canwrite = true;
                 pos = 0;
+            }
+
+            public override int ReadByte()
+            {
+                return *(d + pos++);
             }
 
             public override bool CanRead

@@ -35,6 +35,19 @@ namespace libsupcs
     [SpecialType]
     public class TysosType : System.Type
     {
+        metadata.TypeSpec ts = null;
+
+        metadata.TypeSpec tspec
+        {
+            get
+            {
+                if(ts == null)
+                {
+                    ts = Metadata.GetTypeSpec(this);
+                }
+                return ts;
+            }
+        }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [ReinterpretAsMethod]
@@ -301,12 +314,18 @@ namespace libsupcs
             get { throw new NotImplementedException(); }
         }
 
+        string nspace = null, name = null;
         public override string Namespace
         {
             get {
-                var corlib = Metadata.MSCorlib;
-                System.Diagnostics.Debugger.Break();
-                throw new NotImplementedException();
+                if (nspace != null)
+                    return nspace;
+
+                var ts = tspec;
+                nspace = ts.m.GetStringEntry(metadata.MetadataStream.tid_TypeDef,
+                    ts.tdrow, 2);
+
+                return nspace;
             }
         }
 
@@ -332,7 +351,17 @@ namespace libsupcs
 
         public override string Name
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                if (name != null)
+                    return name;
+
+                var ts = tspec;
+                name = ts.m.GetStringEntry(metadata.MetadataStream.tid_TypeDef,
+                    ts.tdrow, 1);
+
+                return name;
+            }
         }
 
         public virtual TysosType UnboxedType { get { throw new NotImplementedException(); } }
@@ -422,6 +451,12 @@ namespace libsupcs
             *(void**)(retp + ClassOperations.GetSystemTypeImplOffset()) = vtbl;
 
             return ret;
+        }
+
+        internal unsafe void** GetImplOffset()
+        {
+            byte* tp = (byte*)CastOperations.ReinterpretAsPointer(this);
+            return (void**)(tp + ClassOperations.GetSystemTypeImplOffset());
         }
 
         [MethodAlias("_ZW6System4Type_14EqualsInternal_Rb_P2u1tV4Type")]

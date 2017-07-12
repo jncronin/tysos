@@ -63,6 +63,7 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_16GetInternalArray_RPv_P1W6System5Array"] = array_getInternalArray;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs16StringOperations_13GetDataOffset_Ri_P0"] = string_getDataOffset;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs16StringOperations_15GetLengthOffset_Ri_P0"] = string_getLengthOffset;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_26GetVtblInterfacesPtrOffset_Ri_P0"] = class_getVtblInterfacesPtrOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_27GetVtblExtendsVtblPtrOffset_Ri_P0"] = class_getVtblExtendsPtrOffset;
@@ -186,6 +187,12 @@ namespace libtysila5.ir
         private static Stack<StackItem> string_getDataOffset(CilNode n, Code c, Stack<StackItem> stack_before)
         {
             var stack_after = ldc(n, c, stack_before, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c));
+            return stack_after;
+        }
+
+        private static Stack<StackItem> string_getLengthOffset(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var stack_after = ldc(n, c, stack_before, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Length, c));
             return stack_after;
         }
 

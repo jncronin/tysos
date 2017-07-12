@@ -644,83 +644,6 @@ namespace libtysila5.target.x86
              *  call */
 
             return handle_call(n, c, false, c.t, target, call_ms, p, dest, dest != null);
-
-
-            if (target == null)
-                target = call_ms.MangleMethod();
-            if (temp_reg == null)
-                temp_reg = r_eax;
-
-            Reg act_dest = null;
-            metadata.TypeSpec rt;
-            int rct;
-            var push_list = get_push_list(n, c, call_ms,
-                out rt, ref act_dest, out rct, dest != null);
-
-            List<MCInst> r = new List<MCInst>();
-
-            // Save clobbered registers
-            int x = 0;
-            foreach (var push_reg in push_list)
-                handle_push(push_reg, ref x, r, n, c);
-
-
-            // Push arguments - only handles int32s
-            x = 0;
-            for(int i = p.Length - 1; i >= 0; i--)
-            {
-                var arg = p[i];
-                if(arg.t == ir.Opcode.vl_mreg)
-                {
-                    if (arg.mreg is ContentsReg)
-                    {
-                        r.Add(inst(x86_push_rm32, arg.mreg, n));
-                        x += 4;
-                    }
-                    else if (arg.mreg is DoubleReg)
-                    {
-                        r.Add(inst(x86_push_rm32, arg.mreg.SubReg(4, 4), n));
-                        r.Add(inst(x86_push_rm32, arg.mreg.SubReg(0, 4), n));
-                        x += 8;
-                    }
-                    else
-                    {
-                        r.Add(inst(x86_push_r32, arg.mreg, n));
-                        x += 4;
-                    }
-                }
-                else if(arg.t == ir.Opcode.vl_stack)
-                {
-                    // interpret this as lea eax, mreg; push eax;
-                    if (!(arg.mreg is ContentsReg))
-                        throw new NotImplementedException();
-
-                    r.Add(inst(x86_lea_r32, temp_reg, arg.mreg, n));
-                    r.Add(inst(x86_push_r32, temp_reg, n));
-                }
-                else
-                {
-                    r.Add(inst(x86_push_imm32, arg.v, n));
-                    x += 4;
-                }
-            }
-
-            // emit call
-            r.Add(inst(x86_call_rel32, new ir.Param { t = ir.Opcode.vl_call_target, str = "memcpy" }, n));
-
-            // restore stack
-            if(x != 0)
-                r.Add(inst(x <= 127 ? x86_add_rm32_imm8 : x86_add_rm32_imm32, r_esp, x, n));
-
-            // restore saved registers
-            for (int i = push_list.Count - 1; i >= 0; i--)
-                handle_pop(push_list[i], ref x, r, n, c);
-
-            // get return value
-            if (act_dest != null && dest != null)
-                handle_move(dest, act_dest, r, n, c);
-
-            return r;
         }
 
         private static List<MCInst> handle_call(CilNode.IRNode n, Code c, bool is_calli, Target t,
@@ -2464,10 +2387,12 @@ namespace libtysila5.target.x86
 
             var br_target = c.next_mclabel--;
 
+            r.Add(inst(x86_mov_rm32_imm32, r_eax, 0, n));
             r.Add(inst(Generic.g_mclabel, new ir.Param { t = ir.Opcode.vl_br_target, v = br_target }, n));
-            r.Add(inst_jmp(x86_jmp_rel32, br_target, n));
+            r.Add(inst(x86_cmp_rm32_imm32, r_eax, 1, n));
+            r.Add(inst_jmp(x86_jcc_rel32, br_target, ir.Opcode.cc_ne, n));
 
-            r.Add(inst(x86_int3, n));
+            //r.Add(inst(x86_int3, n));
 
             return r;
         }
@@ -3086,7 +3011,7 @@ namespace libtysila5.target.x86
             if (dest is ContentsReg)
             {
                 r.Add(inst(x86_mov_rm32_imm32, r_eax, new ir.Param { t = ir.Opcode.vl_str, str = n.imm_lab, v = n.imm_l }, n));
-                r.Add(inst(x86_mov_rm32_r32, dest, r_eax, n));
+                handle_move(dest, r_eax, r, n, c);
             }
             else
                 r.Add(inst(x86_mov_rm32_imm32, dest, new ir.Param { t = ir.Opcode.vl_str, str = n.imm_lab, v = n.imm_l }, n));
@@ -3684,7 +3609,7 @@ namespace libtysila5.target.x86
             List<MCInst> r = new List<MCInst>();
             if (!(src is ContentsReg))
                 throw new NotImplementedException();
-            r.Add(inst(x86_lea_r32, dest, src, n));
+            r.Add(inst(t.psize == 4 ? x86_lea_r32 : x86_lea_r64, dest, src, n));
 
             handle_move(act_dest, dest, r, n, c);
 
@@ -3793,7 +3718,7 @@ namespace libtysila5.target.x86
             handle_sub(t, r_esp, size, r_esp, r, n);
             r.Add(inst(t.psize == 4 ? x86_and_rm32_imm8 :
                 x86_and_rm64_imm8, r_esp, 0xfc, n));
-            r.Add(inst(x86_lea_r32, act_dest,
+            r.Add(inst(t.psize == 4 ? x86_lea_r32 : x86_lea_r64, act_dest,
                 new ContentsReg { basereg = r_esp }, n));
             handle_move(addr, act_dest, r, n, c);
             return r;
@@ -3816,7 +3741,7 @@ namespace libtysila5.target.x86
             if (!(src is ContentsReg))
                 throw new NotImplementedException();
 
-            r.Add(inst(x86_lea_r32, addr, src, n));
+            r.Add(inst(t.psize == 4 ? x86_lea_r32 : x86_lea_r64, addr, src, n));
             handle_move(act_addr, addr, r, n, c);
 
             return r;

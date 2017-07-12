@@ -313,6 +313,10 @@ namespace libsupcs
         [ReinterpretAsMethod]
         public unsafe static extern void* ReinterpretAsPointer(object o);
 
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        public unsafe static extern void* ReinterpretAsPointer(System.IntPtr o);
+
         [Bits64Only]
         [MethodImpl(MethodImplOptions.InternalCall)]
         [IgnoreImplementation]

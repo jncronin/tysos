@@ -28,6 +28,8 @@ namespace libsupcs
 {
     class String
     {
+        [WeakLinkage]
+        [AlwaysCompile]
         [MethodAlias("_Zu1S_14InternalStrcpy_Rv_P5u1Siu1Sii")]
         static unsafe bool InternalStrcpy(byte *dest, int destPos, byte *src, int srcPos, int count)
         {
@@ -54,6 +56,8 @@ namespace libsupcs
             return true;
         }
 
+        [WeakLinkage]
+        [AlwaysCompile]
         [MethodAlias("_Zu1S_14InternalStrcpy_Rv_P3u1Siu1S")]
         static unsafe bool InternalStrcpy(byte* dest, int destPos, byte* src)
         {
@@ -85,6 +89,15 @@ namespace libsupcs
             void* dst = str + StringOperations.GetDataOffset();
 
             MemoryOperations.MemCpy(dst, src, len);
+        }
+
+        [MethodAlias("_Zu1S_7#2Ector_Rv_P3u1tci")]
+        [AlwaysCompile]
+        static unsafe void StringCtor(byte *str, char c, int count)
+        {
+            char* dst = (char *)(str + StringOperations.GetDataOffset());
+            for (int i = 0; i < count; i++)
+                *dst++ = c;
         }
     }
 }

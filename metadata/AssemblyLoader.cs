@@ -27,7 +27,7 @@ namespace metadata
 {
     public abstract class AssemblyLoader
     {
-        Dictionary<string, MetadataStream> cache =
+        protected Dictionary<string, MetadataStream> cache =
             new Dictionary<string, MetadataStream>(
                 new GenericEqualityComparer<string>());
 
@@ -41,6 +41,12 @@ namespace metadata
             set { require_version_match = value; }
         }
 
+        /**<summary>Add an already loaded assembly to the cache</summary> */
+        public virtual void AddToCache(MetadataStream m, string name)
+        {
+            cache[name] = m;
+        }
+
         /**<summary>Load an assembly (even if it is already loaded).  See
         GetAssembly to avoid unnecessary loads</summary> */
         public abstract System.IO.Stream LoadAssembly(string name);
@@ -50,13 +56,8 @@ namespace metadata
         {
             MetadataStream ms;
 
-            FileInfo fs = new FileInfo(name);
-            var simple_name = fs.Name;
-            if(fs.Extension != null && fs.Extension.Length > 0)
-            {
-                simple_name = simple_name.Substring(0,
-                    simple_name.Length - fs.Extension.Length);
-            }
+            var simple_name = StripPathAndExtension(name);
+
             if (cache.TryGetValue(simple_name, out ms))
                 return ms;
 
@@ -79,13 +80,8 @@ namespace metadata
         {
             MetadataStream ms;
 
-            FileInfo fs = new FileInfo(name);
-            var simple_name = fs.Name;
-            if (fs.Extension != null && fs.Extension.Length > 0)
-            {
-                simple_name = simple_name.Substring(0,
-                    simple_name.Length - fs.Extension.Length);
-            }
+            var simple_name = StripPathAndExtension(name);
+
             if (cache.TryGetValue(simple_name, out ms))
             {
                 if(ms.MajorVersion == major &&
@@ -112,6 +108,33 @@ namespace metadata
                 return ms;
             }
             return null;
+        }
+
+        protected virtual string StripPathAndExtension(string name)
+        {
+            return StripExtension(StripPath(name));
+        }
+
+        protected virtual string StripPath(string name)
+        {
+            var li = name.LastIndexOf('\\');
+            var li2 = name.LastIndexOf('/');
+            if (li2 > li)
+                li = li2;
+
+            if (li == -1)
+                return name;
+            return
+                name.Substring(li + 1);
+        }
+
+        protected virtual string StripExtension(string name)
+        {
+            var li = name.LastIndexOf('.');
+            if (li == -1)
+                return name;
+            else
+                return name.Substring(0, li);
         }
     }
 }
