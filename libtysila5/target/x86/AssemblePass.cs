@@ -676,13 +676,14 @@ namespace libtysila5.target.x86
                         AddImm16(Code, I.p[3].v);
                         break;
                     case x86_mov_rm8disp_imm32:
+                        AddRex(Code, Rex(I.p[0].v, null, I.p[1].mreg, null, true));
                         Code.Add(0xc6);
                         Code.AddRange(ModRMSIB(0, GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                         AddImm8(Code, I.p[3].v);
                         break;
 
                     case x86_mov_rm8disp_r8:
-                        AddRex(Code, Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg));
+                        AddRex(Code, Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg, null, true));
                         Code.Add(0x88);
                         Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                         break;

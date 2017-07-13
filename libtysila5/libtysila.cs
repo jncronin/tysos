@@ -19,6 +19,7 @@
  * THE SOFTWARE.
  */
 
+using metadata;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -50,12 +51,22 @@ namespace libtysila5
                 f = fl;
             }
 
-            public override Stream LoadAssembly(string name)
+            public override DataInterface LoadAssembly(string name)
             {
                 var flr = f.LoadFile(name);
                 if (flr == null)
                     return null;
-                return flr.Stream;
+
+                // Load to an array interface (access is quicker than
+                //  constantly searching the stream)
+                var s = flr.Stream;
+                s.Seek(0, SeekOrigin.Begin);
+                var l = s.Length;
+
+                var arr = new byte[l];
+                s.Read(arr, 0, (int)l);
+
+                return new ArrayInterface(arr);
             }
         }
     }

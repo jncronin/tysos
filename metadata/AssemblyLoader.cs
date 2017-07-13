@@ -49,7 +49,7 @@ namespace metadata
 
         /**<summary>Load an assembly (even if it is already loaded).  See
         GetAssembly to avoid unnecessary loads</summary> */
-        public abstract System.IO.Stream LoadAssembly(string name);
+        public abstract DataInterface LoadAssembly(string name);
 
         /**<summary>Get an assembly by name</summary>*/
         public virtual MetadataStream GetAssembly(string name)
@@ -65,10 +65,7 @@ namespace metadata
             if (s == null)
                 return null;
             PEFile p = new metadata.PEFile();
-            if (s is System.IO.FileStream)
-                ms = p.Parse(s, this);
-            else
-                ms = p.Parse(new StreamInterface(s), this);
+            ms = p.Parse(s, this);
 
             cache[simple_name] = ms;
             return ms;

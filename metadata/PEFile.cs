@@ -311,6 +311,8 @@ namespace metadata
             m.SystemUInt32 = m.GetBuiltin("UInt32");
             m.SystemUInt64 = m.GetBuiltin("UInt64");
             m.SystemDelegate = m.GetBuiltin("Delegate");
+
+            System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: parsing complete");
             
             return m;
         }

@@ -2007,7 +2007,10 @@ namespace libtysila5.ir
 
             StackItem st_src;
             if (src == -1)
+            {
                 st_src = stack_after.Pop();
+                src = 0;
+            }
             else
                 st_src = stack_after.Peek(src);
 
@@ -2024,7 +2027,7 @@ namespace libtysila5.ir
                     throw new Exception("Cannot perform " + n.opcode.ToString() + " from address type " + Opcode.ct_names[ct_src]);
             }
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldind, ct = Opcode.GetCTFromType(ts), vt_size = c.t.GetSize(ts), imm_l = ts.IsSigned ? 1 : 0, stack_before = stack_before, stack_after = stack_after });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldind, ct = Opcode.GetCTFromType(ts), vt_size = c.t.GetSize(ts), imm_l = ts.IsSigned ? 1 : 0, stack_before = stack_before, stack_after = stack_after, arg_a = src });
 
             return stack_after;
         }

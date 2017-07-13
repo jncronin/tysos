@@ -135,7 +135,7 @@ namespace libtysila5.target.x86
             r.Add(inst_jmp(x86_jcc_rel32, target, cc, n));
         }
 
-        protected static void handle_move(Reg dest, Reg src, List<MCInst> r, CilNode.IRNode n, Code c, Reg temp_reg = null)
+        protected static void handle_move(Reg dest, Reg src, List<MCInst> r, CilNode.IRNode n, Code c, Reg temp_reg = null, int size = -1)
         {
             if (dest.Equals(src))
                 return;
@@ -213,10 +213,12 @@ namespace libtysila5.target.x86
                 {
                     if (dest.type == rt_gpr)
                     {
-                        if (c.t.psize == 4)
+                        if (src.size == 4 || size == 4)
                             r.Add(inst(x86_mov_r32_rm32, dest, src, n));
-                        else
+                        else if (c.t.psize == 8)
                             r.Add(inst(x86_mov_r64_rm64, dest, src, n));
+                        else
+                            throw new NotImplementedException();
                     }
                     else if (dest.type == rt_float)
                         r.Add(inst(x86_movsd_xmm_xmmm64, dest, src, n));
@@ -2453,6 +2455,21 @@ namespace libtysila5.target.x86
                 if (dreg is ContentsReg)
                     dreg = r_edx;
 
+                if(to_type == 0x18)
+                {
+                    if (t.psize == 4)
+                        to_type = 0x08;
+                    else
+                        to_type = 0x0a;
+                }
+                else if(to_type == 0x19)
+                {
+                    if (t.psize == 4)
+                        to_type = 0x09;
+                    else
+                        to_type = 0x0b;
+                }
+
                 switch (to_type)
                 {
                     case 0x04:
@@ -2481,8 +2498,6 @@ namespace libtysila5.target.x86
                         break;
                     case 0x08:
                     case 0x09:
-                    case 0x18:
-                    case 0x19:
                         // nop
                         if (!sreg.Equals(dreg))
                             handle_move(dreg, sreg, r, n, c);
@@ -3498,7 +3513,8 @@ namespace libtysila5.target.x86
                 n_ct == ir.Opcode.ct_vt ||
                 (n_ct == ir.Opcode.ct_int64 && t.psize == 8))
             {
-                handle_move(dest, src, r, n, c);
+                handle_move(dest, src, r, n, c, null,
+                    n_ct == ir.Opcode.ct_int32 ? 4 : -1);
                 return r;
             }
             else if (n_ct == ir.Opcode.ct_int64)
@@ -3681,7 +3697,8 @@ namespace libtysila5.target.x86
                 n_ct == ir.Opcode.ct_vt ||
                 n_ct == ir.Opcode.ct_int64)
             {
-                handle_move(dest, src, r, n, c);
+                handle_move(dest, src, r, n, c, null,
+                    n_ct == ir.Opcode.ct_int32 ? 4 : -1);
                 return r;
             }
             return null;

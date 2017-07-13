@@ -561,6 +561,13 @@ namespace libtysila5.layout
                                 // this is the correct one
                                 return impl_ms;
                             }
+                            if (MetadataStream.CompareSignature(impl_ms.m, impl_ms.msig,
+                                impl_ts.gtparams, null,
+                                decl_ms.m, decl_ms.msig, decl_ms.gtparams, null))
+                            {
+                                // this is the correct one
+                                return impl_ms;
+                            }
                         }
                     }
                 }

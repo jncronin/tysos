@@ -66,7 +66,7 @@ namespace libsupcs
         {
             var str = AssemblyLoader.LoadAssembly("mscorlib");
             metadata.PEFile pef = new metadata.PEFile();
-            var m = pef.Parse(new metadata.StreamInterface(str), AssemblyLoader);
+            var m = pef.Parse(str, AssemblyLoader);
 
             AssemblyLoader.AddToCache(m, "mscorlib");
             mscorlib = m;
@@ -282,30 +282,39 @@ namespace libsupcs
                 new Dictionary<ulong, metadata.MetadataStream>(
                     new GenericEqualityComparer<ulong>());
 
-            public override Stream LoadAssembly(string name)
+            public override DataInterface LoadAssembly(string name)
             {
                 void* ptr;
-                void* end;
+                System.Diagnostics.Debugger.Log(0, "metadata", "Metadata.BinaryAssemblyLoader.LoadAssembly: request to load " + name);
                 if(name == "mscorlib" || name == "mscorlib.dll")
                 {
                     ptr = OtherOperations.GetStaticObjectAddress("mscorlib");
-                    end = OtherOperations.GetStaticObjectAddress("mscorlib_end");
+                }
+                else if(name == "libsupcs" || name == "libsupcs.dll")
+                {
+                    ptr = OtherOperations.GetStaticObjectAddress("libsupcs");
+                }
+                else if (name == "metadata" || name == "metadata.dll")
+                {
+                    ptr = OtherOperations.GetStaticObjectAddress("metadata");
                 }
                 else
                     throw new NotImplementedException();
 
-                long len = (byte*)end - (byte*)ptr;
-
-                return new BinaryStream((byte*)ptr, len);
+                return new BinaryInterface(ptr);
             }
 
             public unsafe virtual MetadataStream GetAssembly(void *ptr)
             {
+                MetadataStream m;
+                if (ptr_cache.TryGetValue((ulong)ptr, out m))
+                    return m;
+
                 System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.BinaryAssemblyLoader: loading assembly at: " + ((ulong)ptr).ToString());
 
                 var bi = new BinaryInterface(ptr);
                 PEFile p = new PEFile();
-                var m = p.Parse(bi, this);
+                m = p.Parse(bi, this);
 
                 ptr_cache[(ulong)ptr] = m;
                 cache[m.AssemblyName] = m;
@@ -325,7 +334,9 @@ namespace libsupcs
 
             public override byte ReadByte(int offset)
             {
-                return *(b + offset);
+                var ret = *(b + offset);
+                //System.Diagnostics.Debugger.Break();
+                return ret;
             }
 
             public override DataInterface Clone(int offset)
@@ -343,6 +354,7 @@ namespace libsupcs
 
             public BinaryStream(byte *data, long length)
             {
+                System.Diagnostics.Debugger.Break();
                 d = data;
                 len = length;
                 canwrite = true;
@@ -351,7 +363,9 @@ namespace libsupcs
 
             public override int ReadByte()
             {
-                return *(d + pos++);
+                var ret = *(d + pos++);
+                System.Diagnostics.Debugger.Break();
+                return ret;
             }
 
             public override bool CanRead
@@ -409,6 +423,7 @@ namespace libsupcs
                 {
                     buffer[offset + i] = *(d + pos++);
                 }
+                System.Diagnostics.Debugger.Break();
                 return count;
             }
 
