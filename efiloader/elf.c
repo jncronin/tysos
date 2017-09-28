@@ -26,7 +26,9 @@
 #include <efi.h>
 #include <efilib.h>
 #include <sys/types.h>
-#include "tloadkif.h"
+
+#include <pmem_alloc.h>
+
 #include "elf.h"
 
 int elf_request_memory(uintptr_t base, uintptr_t size);
@@ -70,7 +72,7 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 	/* Iterate through them, loading as necessary */
 	for(int i = 0; i < (*ehdr)->e_phnum; i++)
 	{
-		Elf64_Phdr *phdr = (Elf64_Phdr *)((EFI_PHYSICAL_ADDRESS)phdrs + i * (*ehdr)->e_phentsize);
+		Elf64_Phdr *phdr = (Elf64_Phdr *)(uintptr_t)((EFI_PHYSICAL_ADDRESS)(uintptr_t)phdrs + i * (*ehdr)->e_phentsize);
 		if(phdr->p_type == PT_LOAD)
 		{
 			EFI_PHYSICAL_ADDRESS page_offset = phdr->p_vaddr & 0xfff;
@@ -98,11 +100,11 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 				size_t to_load = 0x1000 - page_offset;
 				if(to_load > phdr->p_filesz)
 					to_load = phdr->p_filesz;
-				fread_func(fobj, (void *)(first_page_paddr + page_offset), to_load);
+				fread_func(fobj, (void *)(uintptr_t)(first_page_paddr + page_offset), to_load);
 				seg_offset += to_load;
 				
 				size_t to_zero = 0x1000 - page_offset - to_load;
-				memset((void *)(first_page_paddr + page_offset + seg_offset), 0, to_zero);
+				memset((void *)(uintptr_t)(first_page_paddr + page_offset + seg_offset), 0, to_zero);
 				seg_offset += to_load;
 				
 				next_page_vaddr += 0x1000;
@@ -112,7 +114,7 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 
 			/* Now allocate the rest of the segment */
 			EFI_PHYSICAL_ADDRESS next_paddr;
-			Status = BS->AllocatePages(AllocateAnyPages, EfiLoaderCode, v_length / 0x1000, &next_paddr);
+			Status = alloc_code(v_length, &next_paddr);
 			if(Status != EFI_SUCCESS)
 			{
 				printf("error allocating pages for segment: %i\n", Status);
@@ -127,10 +129,10 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 
 			size_t rest_to_load = phdr->p_filesz - seg_offset;
 			EFI_PHYSICAL_ADDRESS cur_paddr = next_paddr + page_offset;
-			fread_func(fobj, (void *)cur_paddr, rest_to_load);
+			fread_func(fobj, (void *)(uintptr_t)cur_paddr, rest_to_load);
 			cur_paddr += rest_to_load;
 			size_t rest_to_zero = phdr->p_memsz - phdr->p_filesz;
-			memset((void *)cur_paddr, 0, rest_to_zero);
+			memset((void *)(uintptr_t)cur_paddr, 0, rest_to_zero);
 
 			/* Find all writeable sections - we need to add them as GC roots */
 			if ((phdr->p_flags & PF_W) != 0)

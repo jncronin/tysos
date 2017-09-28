@@ -89,38 +89,39 @@ static void add(const char *name, const char *path)
 	mod_count++;
 }
 
+static cfg_opt_t kernel_opts[] = {
+	CFG_STR("path", "/boot/tysos.bin", CFGF_NONE),
+	CFG_STR("cmdline", "", CFGF_NONE),
+	CFG_END()
+};
+
+static cfg_opt_t module_opts[] = {
+	CFG_STR("name", "", CFGF_NONE),
+	CFG_STR("path", "", CFGF_NODEFAULT),
+	CFG_END()
+};
+
+static cfg_opt_t video_opts[] = {
+	CFG_STR("width", "1024", CFGF_NONE),
+	CFG_STR("height", "768", CFGF_NONE),
+	CFG_STR("bpp", "32", CFGF_NONE),
+	CFG_END()
+};
+	
+static cfg_opt_t opts[] = {
+	CFG_SEC("kernel", kernel_opts, CFGF_NONE),
+	CFG_SEC("module", module_opts, CFGF_MULTI),
+	CFG_SEC("video", video_opts, CFGF_NONE),
+	CFG_END()
+};
+
 EFI_STATUS parse_cfg_file()
 {
-/* Attempt to load the config file */
-	cfg_opt_t kernel_opts[] = {
-		CFG_STR("path", "/boot/tysos.bin", CFGF_NONE),
-		CFG_STR("cmdline", "", CFGF_NONE),
-		CFG_END()
-	};
-
-	cfg_opt_t module_opts[] = {
-		CFG_STR("name", "", CFGF_NONE),
-		CFG_STR("path", "", CFGF_NODEFAULT),
-		CFG_END()
-	};
-
-	cfg_opt_t video_opts[] = {
-		CFG_STR("width", "1024", CFGF_NONE),
-		CFG_STR("height", "768", CFGF_NONE),
-		CFG_STR("bpp", "32", CFGF_NONE),
-		CFG_END()
-	};
-	
-	cfg_opt_t opts[] = {
-		CFG_SEC("kernel", kernel_opts, CFGF_NONE),
-		CFG_SEC("module", module_opts, CFGF_MULTI),
-		CFG_SEC("video", video_opts, CFGF_NONE),
-		CFG_END()
-	};
+	/* Attempt to load the config file */
 	cfg_t *cfg = NULL;
 	cfg = cfg_init(opts, 0);
 
-	switch(cfg_parse(cfg, "boot/boot.mnu"))
+	switch(cfg_parse(cfg, "/boot/boot.mnu"))
 	{
 		case CFG_FILE_ERROR:
 			fprintf(stderr, "error: configuration file could not be read (%s)\n", strerror(errno));
@@ -169,8 +170,8 @@ EFI_STATUS parse_cfg_file()
 		v_width = atoi(cfg_getstr(video_cfg, "width"));
 		v_height = atoi(cfg_getstr(video_cfg, "height"));
 		v_bpp = atoi(cfg_getstr(video_cfg, "bpp"));
-		printf("video: width: %i, height: %i, bpp: %i",
-			v_width, v_height, v_bpp);
+		printf("video: width: %d, height: %d\n",
+			v_width, v_height);
 	}
 
 	printf("end of configuration\n");

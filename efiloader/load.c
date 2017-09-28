@@ -1,6 +1,7 @@
 #include <efi.h>
 #include <efilib.h>
 #include <zlib.h>
+#include <stdint.h>
 
 extern EFI_PHYSICAL_ADDRESS elf_kernel;
 extern int elf_kernel_len;
@@ -13,7 +14,7 @@ EFI_STATUS load_file(FILE *f, long flen, EFI_PHYSICAL_ADDRESS paddr)
 		long to_read = 0x100000;
 		if(cur_offset + to_read > flen)
 			to_read = flen - cur_offset;
-		fread((void*)(paddr + cur_offset), to_read, 1, f);
+		fread((void*)(intptr_t)(paddr + cur_offset), to_read, 1, f);
 		printf(".");
 		cur_offset += 0x100000;
 	}

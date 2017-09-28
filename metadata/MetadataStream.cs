@@ -60,6 +60,7 @@ namespace metadata
         public int[] classlayouts;
         public int[] gtparams;
         public int[] gmparams;
+        public int[] const_field_owners;
 
         public int[] simple_type_idx;
         public int[] simple_type_rev_idx;
@@ -1606,6 +1607,22 @@ namespace metadata
 
                 fieldrvas[field] = rva;
             }
+        }
+
+        internal void PatchFieldConstants()
+        {
+            const_field_owners = new int[table_rows[tid_Field] + 1];
+
+            for (int i = 1; i <= table_rows[tid_Constant]; i++)
+            {
+                int parent_tid, parent_row;
+                GetCodedIndexEntry(tid_Constant,
+                    i, 1, HasConstant, out parent_tid, out parent_row);
+
+                if (parent_tid == tid_Field)
+                    const_field_owners[parent_row] = i;
+            }
+
         }
 
         /**<summary>Patch up class layouts</summary> */

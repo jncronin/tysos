@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using libtysila5.target;
 using metadata;
 
 namespace libtysila5
@@ -87,7 +88,10 @@ namespace libtysila5
                 case metadata.Spec.FullySpecSignature.FSSType.Field:
                     // For fields with static data we insert it here
                     AddFieldSpecFields(sig.OriginalSpec as MethodSpec, str_tab, t);
+                    break;
 
+                case Spec.FullySpecSignature.FSSType.Type:
+                    AddTypeSpecFields(sig.OriginalSpec as TypeSpec, str_tab, t);
                     break;
             }
 
@@ -106,6 +110,30 @@ namespace libtysila5
             str_tab.AddRange(sig.Signature);
 
             return ret;
+        }
+
+        private void AddTypeSpecFields(TypeSpec ts, List<byte> str_tab, Target t)
+        {
+            /* For types we add one special field:
+             * 
+             * If this is an enum, its a pointer to the vtable for the underlying type
+             * else zero
+             * 
+             * Second special field is initialized to zero, and is used at runtime
+             * to hold the pointer to the System.Type instance
+             */
+
+            if (ts.Unbox.IsEnum)
+            {
+                var ut = ts.Unbox.UnderlyingType;
+
+                sig_metadata_addrs[str_tab.Count] = ut.MangleType();
+            }
+
+            for (int i = 0; i < t.psize; i++)
+                str_tab.Add(0);
+            for (int i = 0; i < t.psize; i++)
+                str_tab.Add(0);
         }
 
         private void AddFieldSpecFields(MethodSpec fs, List<byte> str_tab, target.Target t)

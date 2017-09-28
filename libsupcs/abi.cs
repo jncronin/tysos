@@ -431,6 +431,20 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public unsafe static extern void Spinunlock(void* ptr);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern byte SyncValCompareAndSwap(byte* ptr, byte oldval, byte newval);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern ushort SyncValCompareAndSwap(ushort* ptr, ushort oldval, ushort newval);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern short SyncValCompareAndSwap(short* ptr, short oldval, short newval);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern uint SyncValCompareAndSwap(uint* ptr, uint oldval, uint newval);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern int SyncValCompareAndSwap(int* ptr, int oldval, int newval);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern void SpinlockHint();
     }
 
     public class ArrayOperations

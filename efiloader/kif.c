@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include "tloadkif.h"
 
 static EFI_PHYSICAL_ADDRESS kif_end = 0;
@@ -42,7 +43,7 @@ void *kmalloc(size_t n)
 		while (1);
 		//return NULL;
 	}
-	void *ret = (void *)kif_cur;
+	void *ret = (void *)(uintptr_t)kif_cur;
 	kif_cur += (EFI_PHYSICAL_ADDRESS)n;
 	kif_cur = align(kif_cur, 8);
 

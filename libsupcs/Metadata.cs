@@ -102,7 +102,7 @@ namespace libsupcs
                 throw new Exception("Invalid type handle");
             }
 
-            if (*((int*)ptr) != 0)
+            if ((*((int*)ptr) & 0xf) != 0)
             {
                 System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: called with invalid runtimehandle: " +
                     (*((int*)ptr)).ToString() + " at " + ((ulong)ptr).ToString("X16"));
@@ -112,6 +112,10 @@ namespace libsupcs
 
             // Get number of metadata references and pointers to each
             var ti_ptr = (void**)ptr;
+
+            // skip over enum underlying type field and tysos type pointer
+            ti_ptr += 2;
+
             var mdref_count = *(int*)(ti_ptr + 1);
             var mdref_arr = ti_ptr + 2;
             var sig_ptr = (byte*)(mdref_arr + mdref_count);

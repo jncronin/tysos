@@ -89,6 +89,12 @@ namespace libtysila5.target
 
         public virtual string GetCType(metadata.TypeSpec ts)
         {
+            int b;
+            return GetCType(ts, out b);
+        }
+
+        public virtual string GetCType(metadata.TypeSpec ts, out int bytesize)
+        {
             switch(ts.stype)
             {
                 case metadata.TypeSpec.SpecialType.None:
@@ -96,33 +102,46 @@ namespace libtysila5.target
                     {
                         case 0x02:
                         case 0x08:
+                            bytesize = 4;
                             return "int32_t";
                         case 0x03:
                         case 0x06:
+                            bytesize = 2;
                             return "int16_t";
                         case 0x04:
+                            bytesize = 1;
                             return "int8_t";
                         case 0x05:
+                            bytesize = 1;
                             return "uint8_t";
                         case 0x07:
+                            bytesize = 2;
                             return "uint16_t";
                         case 0x09:
+                            bytesize = 4;
                             return "uint32_t";
                         case 0x0a:
+                            bytesize = 8;
                             return "int64_t";
                         case 0x0b:
+                            bytesize = 8;
                             return "uint64_t";
                         case 0x0c:
+                            bytesize = 4;
                             return "float";
                         case 0x0d:
+                            bytesize = 8;
                             return "double";
                         case 0x18:
+                            bytesize = GetPointerSize();
                             return "INTPTR";
                         case 0x19:
+                            bytesize = GetPointerSize();
                             return "UINTPTR";
                     }
                     break;
             }
+            bytesize = GetPointerSize();
             return "INTPTR";
         }
 

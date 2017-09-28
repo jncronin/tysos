@@ -1337,8 +1337,9 @@ namespace libtysila5.ir
                 var boxed_ts = new metadata.TypeSpec { m = ts.m, stype = TypeSpec.SpecialType.Boxed, other = ts };
                 c.t.r.VTableRequestor.Request(boxed_ts);
                 var ptr_size = c.t.GetPointerSize();
+                var sysobj_size = layout.Layout.GetTypeSize(c.ms.m.SystemObject, c.t);
                 var data_size = c.t.GetSize(ts);
-                var boxed_size = util.util.align(ptr_size + data_size, ptr_size);
+                var boxed_size = util.util.align(sysobj_size + data_size, ptr_size);
 
                 // create boxed object
                 var stack_after = ldc(n, c, stack_before, boxed_size, 0x18);
@@ -1358,7 +1359,7 @@ namespace libtysila5.ir
 
                 // set object
                 stack_after = copy_to_front(n, c, stack_after);
-                stack_after = ldc(n, c, stack_after, layout.Layout.GetTypeSize(ts.m.SystemObject, c.t), 0x18);
+                stack_after = ldc(n, c, stack_after, sysobj_size, 0x18);
                 stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
                 stack_after = stind(n, c, stack_after, data_size, 2, 0);
 
@@ -1385,8 +1386,8 @@ namespace libtysila5.ir
             if (ts.IsValueType)
             {
                 // TODO ensure stack item is a boxed instance of ts
-
-                var stack_after = ldc(n, c, stack_before, c.t.GetPointerSize(), 0x18);
+                var sysobj_size = layout.Layout.GetTypeSize(c.ms.m.SystemObject, c.t);
+                var stack_after = ldc(n, c, stack_before, sysobj_size, 0x18);
                 stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
                 stack_after = ldind(n, c, stack_after, ts);
                 return stack_after;
@@ -2001,7 +2002,7 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        internal static Stack<StackItem> ldind(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts, int src = -1)
+        internal static Stack<StackItem> ldind(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts, int src = -1, bool check_type = true)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
@@ -2018,13 +2019,16 @@ namespace libtysila5.ir
 
             var ct_src = st_src.ct;
 
-            switch (ct_src)
+            if (check_type)
             {
-                case Opcode.ct_intptr:
-                case Opcode.ct_ref:
-                    break;
-                default:
-                    throw new Exception("Cannot perform " + n.opcode.ToString() + " from address type " + Opcode.ct_names[ct_src]);
+                switch (ct_src)
+                {
+                    case Opcode.ct_intptr:
+                    case Opcode.ct_ref:
+                        break;
+                    default:
+                        throw new Exception("Cannot perform " + n.opcode.ToString() + " from address type " + Opcode.ct_names[ct_src]);
+                }
             }
 
             n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldind, ct = Opcode.GetCTFromType(ts), vt_size = c.t.GetSize(ts), imm_l = ts.IsSigned ? 1 : 0, stack_before = stack_before, stack_after = stack_after, arg_a = src });

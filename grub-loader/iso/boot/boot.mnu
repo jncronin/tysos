@@ -1,0 +1,114 @@
+kernel
+{
+	path = "/tysos.bin.gz"
+	cmdline = ""
+}
+
+module
+{
+	name = "mscorlib"
+	path = "/mscorlib.dll"
+}
+
+module
+{
+	name = "libsupcs"
+	path = "/libsupcs.dll"
+}
+
+module
+{
+	name = "test_002"
+	path = "/test_002.exe"
+}
+
+module
+{
+	name = "debugprint"
+	path = "/debugprint.to"
+}
+
+module
+{
+	name = "vfs"
+	path = "/vfs.to"
+}
+
+module
+{
+	name = "acpipc"
+	path = "/acpipc.to"
+}
+
+module
+{
+	name = "logger"
+	path = "/logger.to"
+}
+
+module
+{
+	name = "modfs"
+	path = "/modfs.to"
+}
+
+module
+{
+	name = "fsdump"
+	path = "/fsdump.to"
+}
+
+module
+{
+	name = "pci"
+	path = "/pci.to"
+}
+
+module
+{
+	name = "bga"
+	path = "/bga.to"
+}
+
+module
+{
+	name = "pciide"
+	path = "/pciide.to"
+}
+
+module
+{
+	name = "ata"
+	path = "/ata.to"
+}
+
+module
+{
+	name = "disk"
+	path = "/disk.to"
+}
+
+module
+{
+	name = "framebuffer"
+	path = "/framebuffer.to"
+}
+
+module
+{
+	name = "gui"
+	path = "/gui.to"
+}
+
+module
+{
+	name = "net"
+	path = "/net.to"
+}
+
+module
+{
+	name = "pcnet32"
+	path = "/pcnet32.to"
+}
+

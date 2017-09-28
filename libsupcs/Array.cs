@@ -105,6 +105,11 @@ namespace libsupcs
         [AlwaysCompile]
         static unsafe int GetLength(void *arr, int rank)
         {
+            if(arr == null)
+            {
+                System.Diagnostics.Debugger.Break();
+                throw new ArgumentNullException();
+            }
             int arrRank = *(int*)((byte*)arr + ArrayOperations.GetRankOffset());
             if (rank < 0 || rank >= arrRank)
             {

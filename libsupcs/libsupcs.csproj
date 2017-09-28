@@ -60,6 +60,7 @@
     <Compile Include="Array.cs" />
     <Compile Include="Buffer.cs" />
     <Compile Include="clib.cs" />
+    <Compile Include="Enum.cs" />
     <Compile Include="EqualityComparer.cs" />
     <Compile Include="exceptions.cs" />
     <Compile Include="Locale.cs" />

@@ -24,7 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tloadkif.h"
+
+#include <pmem_alloc.h>
 
 /* First and last virtual address to start allocating with allocate_any */
 #define START_VMEM_ADDR		0x10000000ULL
@@ -139,7 +140,7 @@ EFI_STATUS allocate(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS *pa
 	if(align_length & 0xfff)
 		align_length = (length + 0x1000) & ~0xfff;
 	EFI_PHYSICAL_ADDRESS paddr;
-	EFI_STATUS s = BS->AllocatePages(AllocateAnyPages, EfiLoaderData, align_length / 4096, &paddr);
+	EFI_STATUS s = alloc_data(align_length, &paddr);
 	if(s != EFI_SUCCESS)
 	{
 		printf("allocate: AllocatePages failed: %i\n", s);
@@ -153,18 +154,18 @@ EFI_STATUS allocate(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS *pa
 
 static EFI_STATUS get_child_entry(EFI_PHYSICAL_ADDRESS parent, int idx, EFI_PHYSICAL_ADDRESS *child)
 {
-	uint64_t *pte = (uint64_t *)((uintptr_t)parent + 8 * (EFI_PHYSICAL_ADDRESS)idx);
+	uint64_t *pte = (uint64_t *)(uintptr_t)(parent + 8 * (EFI_PHYSICAL_ADDRESS)idx);
 	if((*pte & 0x1) == 0)
 	{
 		/* Entry does not exist - create it */
 		EFI_PHYSICAL_ADDRESS page;
-		EFI_STATUS s = BS->AllocatePages(AllocateAnyPages, EfiLoaderCode, 1, &page);
+		EFI_STATUS s = alloc_code(0x1000, &page);
 		if(s != EFI_SUCCESS)
 		{
 			printf("get_child_entry: failed to allocate a free page: %i\n", s);
 			return s;
 		}
-		memset((void *)page, 0, 0x1000);
+		memset((void *)(uintptr_t)page, 0, 0x1000);
 		*pte = (uint64_t)page | 0x3ULL;
 	}
 
@@ -212,7 +213,7 @@ static EFI_STATUS build_pte_for_page(EFI_PHYSICAL_ADDRESS paddr, UINTPTR vaddr, 
 		return s;
 
 	/* Now set the page table entry */
-	uint64_t *pte = (uint64_t *)((uintptr_t)pt + 8 * pt_index);
+	uint64_t *pte = (uint64_t *)(uintptr_t)(pt + 8 * pt_index);
 	*pte = (uint64_t)paddr | 0x3ULL;
 	//printf("pte: address: %x, val: %x\n", pte, *pte);
 
@@ -248,13 +249,13 @@ static EFI_STATUS build_pte_for_region(struct vmem_map_entry *r, EFI_PHYSICAL_AD
 EFI_STATUS build_page_tables(EFI_PHYSICAL_ADDRESS *pml4t_out)
 {
 	EFI_PHYSICAL_ADDRESS pml4t;
-	EFI_STATUS s = BS->AllocatePages(AllocateAnyPages, EfiLoaderCode, 1, &pml4t);
+	EFI_STATUS s = alloc_code(0x1000, &pml4t);
 	if(s != EFI_SUCCESS)
 	{
 		printf("build_page_tables: couldn't allocate pml4t (%i)\n", s);
 		return s;
 	}
-	memset((void *)pml4t, 0, 0x1000);
+	memset((void *)(uintptr_t)pml4t, 0, 0x1000);
 
 	struct vmem_map_entry *cur_vmem = first;
 	while(cur_vmem != NULL)
@@ -266,8 +267,9 @@ EFI_STATUS build_page_tables(EFI_PHYSICAL_ADDRESS *pml4t_out)
 				cur_vmem->base, cur_vmem->length, cur_vmem->src);
 			return s;
 		}
-		printf("build_page_tables: region mapped (base: %x, length: %x, src: %x)\n",
-			cur_vmem->base, cur_vmem->length, cur_vmem->src);
+		printf("build_page_tables: region mapped (base: %p", cur_vmem->base);
+		printf(" length: %p", cur_vmem->length);
+		printf(" src: %p)\n", cur_vmem->src);
 
 		cur_vmem = cur_vmem->next;
 	}
@@ -275,7 +277,7 @@ EFI_STATUS build_page_tables(EFI_PHYSICAL_ADDRESS *pml4t_out)
 	/* Point the last entry back to itself */
 	uint64_t recursive_entry = (uint64_t)pml4t;
 	recursive_entry |= 0x3;
-	*(uint64_t *)(pml4t + 0xff8) = recursive_entry;
+	*(uint64_t *)(uintptr_t)(pml4t + 0xff8) = recursive_entry;
 
 	if(pml4t_out)
 		*pml4t_out = pml4t;

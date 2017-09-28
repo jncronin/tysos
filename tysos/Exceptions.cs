@@ -159,6 +159,11 @@ namespace tysos
         static void Throw(System.Exception exception)
         {
             Formatter.WriteLine("Exception thrown!", Program.arch.BootInfoOutput);
+
+            Formatter.Write("PC: ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)Program.arch.GetUnwinder().Init().UnwindOne().GetInstructionPointer(), "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
+
             Formatter.WriteLine(exception.ToString(), Program.arch.BootInfoOutput);
 
             /* Unwind the stack */

@@ -137,7 +137,7 @@ namespace metadata
                     return m.SystemArray;
 
                 case SpecialType.Boxed:
-                    return m.SystemValueType;
+                    return other.GetExtends();
             }
 
             if(m.td_extends_override[tdrow] != null)

@@ -37,7 +37,7 @@ namespace libsupcs
     {
         metadata.TypeSpec ts = null;
 
-        metadata.TypeSpec tspec
+        internal metadata.TypeSpec tspec
         {
             get
             {
@@ -371,28 +371,69 @@ namespace libsupcs
 
         [MethodAlias("_ZW6System4Type_18type_is_subtype_of_Rb_P3V4TypeV4Typeb")]
         [AlwaysCompile]
-        static bool IsSubtypeOf(TysosType subclass, TysosType superclass, bool check_interfaces)
+        static unsafe bool IsSubtypeOf(void* subclass, void* superclass, bool check_interfaces)
         {
-            throw new NotImplementedException();
+            var sub_vt = *(void**)((byte*)subclass + ClassOperations.GetSystemTypeImplOffset());
+            var super_vt = *(void**)((byte*)superclass + ClassOperations.GetSystemTypeImplOffset());
+
+            var cur_sub_vt = *(void**)((byte*)sub_vt + ClassOperations.GetVtblExtendsVtblPtrOffset());
+
+            while(cur_sub_vt != null)
+            {
+                if (cur_sub_vt == super_vt)
+                    return true;
+
+                cur_sub_vt = *(void**)((byte*)cur_sub_vt + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            }
+
+            if(check_interfaces)
+                throw new NotImplementedException();
+
+            return false;
         }
 
         [MethodAlias("_ZW6System4Type_23type_is_assignable_from_Rb_P2V4TypeV4Type")]
         [AlwaysCompile]
-        static bool IsAssignableFrom(TysosType cur_type, TysosType from_type)
+        static unsafe bool IsAssignableFrom(TysosType cur_type, TysosType from_type)
         {
             if (cur_type == from_type)
                 return true;
 
-            if (cur_type.IsBoxed && from_type.IsBoxed)
-                return IsAssignableFrom(ReinterpretAsType(cur_type.UnboxedType), ReinterpretAsType(from_type.UnboxedType));
-            if (cur_type.IsManagedPointer && from_type.IsManagedPointer)
-                return IsAssignableFrom(ReinterpretAsType(cur_type.UnboxedType), ReinterpretAsType(from_type.UnboxedType));
-            if (cur_type.IsZeroBasedArray && from_type.IsZeroBasedArray)
-                return IsAssignableFrom(ReinterpretAsType(cur_type.UnboxedType), ReinterpretAsType(from_type.UnboxedType));
-            if (cur_type.IsManagedPointer && from_type.IsManagedPointer)
-                return IsAssignableFrom(ReinterpretAsType(cur_type.UnboxedType), ReinterpretAsType(from_type.UnboxedType));
+            var cur_vtbl = *((void**)((byte*)CastOperations.ReinterpretAsPointer(cur_type) + ClassOperations.GetSystemTypeImplOffset()));
+            var from_vtbl = *((void**)((byte*)CastOperations.ReinterpretAsPointer(from_type) + ClassOperations.GetSystemTypeImplOffset()));
 
-            return IsSubtypeOf(from_type, cur_type, true);
+            // check extends chain
+            var cur_from_vtbl = from_vtbl;
+            while(cur_from_vtbl != null)
+            {
+                if (cur_from_vtbl == cur_vtbl)
+                    return true;
+                cur_from_vtbl = *((void**)((byte*)cur_from_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset()));
+            }
+
+            // check interfaces
+            var cur_from_iface_ptr = *(void***)((byte*)cur_vtbl + ClassOperations.GetVtblInterfacesPtrOffset());
+            while(*cur_from_iface_ptr != null)
+            {
+                if (*cur_from_iface_ptr == cur_vtbl)
+                    return true;
+                cur_from_iface_ptr += 2;
+            }
+
+            // check whether they are arrays of the same type
+            var cur_ts = cur_type.tspec;
+            var from_ts = cur_type.tspec;
+
+            if(cur_ts.stype == metadata.TypeSpec.SpecialType.SzArray &&
+                from_ts.stype == metadata.TypeSpec.SpecialType.SzArray)
+            {
+                if (cur_ts.other.Equals(from_ts.other))
+                    return true;
+            }
+
+            // TODO: complex array
+
+            return false;
         }
 
         public override Type GetGenericTypeDefinition()
@@ -400,15 +441,11 @@ namespace libsupcs
             throw new InvalidOperationException();
         }
 
-        public bool IsBoxed { get { throw new NotImplementedException(); } }
-        public bool IsUnmanagedPointer { get { throw new NotImplementedException(); } }
-        public bool IsZeroBasedArray { get { throw new NotImplementedException(); } }
-        public bool IsManagedPointer { get { throw new NotImplementedException(); } }
+        public bool IsUnmanagedPointer { get { return tspec.stype == metadata.TypeSpec.SpecialType.Ptr; } }
+        public bool IsZeroBasedArray { get { return tspec.stype == metadata.TypeSpec.SpecialType.SzArray; } }
+        public bool IsManagedPointer { get { return tspec.stype == metadata.TypeSpec.SpecialType.MPtr; } }
         public bool IsDynamic { get { throw new NotImplementedException(); } }
         public uint TypeFlags { get { throw new NotImplementedException(); } }
-        public bool IsSimpleType { get { throw new NotImplementedException(); } }
-        public uint SimpleTypeElementType { get { throw new NotImplementedException(); } }
-        public TysosType GetUnboxedType() { return ReinterpretAsType(UnboxedType); }
 
         public bool IsUninstantiatedGenericTypeParameter { get { throw new NotImplementedException(); } }
         public bool IsUninstantiatedGenericMethodParameter { get { throw new NotImplementedException(); } }
@@ -446,11 +483,7 @@ namespace libsupcs
         {
             void* vtbl = *obj;
 
-            var ret = new TysosType();
-            byte* retp = (byte*)CastOperations.ReinterpretAsPointer(ret);
-            *(void**)(retp + ClassOperations.GetSystemTypeImplOffset()) = vtbl;
-
-            return ret;
+            return internal_from_handle(vtbl);
         }
 
         internal unsafe void** GetImplOffset()
@@ -461,16 +494,15 @@ namespace libsupcs
 
         [MethodAlias("_ZW6System4Type_14EqualsInternal_Rb_P2u1tV4Type")]
         [AlwaysCompile]
-        static bool EqualsInternal(TysosType a, TysosType b)
+        static unsafe bool EqualsInternal(TysosType a, TysosType b)
         {
-            return a.CompareTypes(b);
-        }
+            void* a_vtbl = *(void**)((byte*)CastOperations.ReinterpretAsPointer(a) + ClassOperations.GetSystemTypeImplOffset());
+            void* b_vtbl = *(void**)((byte*)CastOperations.ReinterpretAsPointer(b) + ClassOperations.GetSystemTypeImplOffset());
 
-        protected internal virtual bool CompareTypes(TysosType other)
-        {
-            if (this.IsDynamic || other.IsDynamic)
-                throw new NotImplementedException("CompareTypes not implemented for dynamic types");
-            return this == other;
+            if ((a_vtbl != null) && (a_vtbl == b_vtbl))
+                return true;
+
+            return a.tspec.Equals(b.tspec);
         }
 
         [AlwaysCompile]
@@ -495,29 +527,6 @@ namespace libsupcs
 
             if (from_type == to_type)
                 return from_obj;
-
-            bool has_rtti = true;
-            if (from_type == null)
-                has_rtti = false;
-            if (*(void**)from_type == null)
-                has_rtti = false;
-            if (to_type == null)
-                has_rtti = false;
-            if (*(void**)to_type == null)
-                has_rtti = false;
-
-            /* Check for equality amongst dynamic types */
-            if (has_rtti)
-            {
-                TysosType from_type_obj = ReinterpretAsType(from_type);
-                TysosType to_type_obj = ReinterpretAsType(to_type);
-                if ((from_type_obj.IsDynamic || to_type_obj.IsDynamic) && (from_type_obj.TypeFlags != 0) && (from_type_obj.TypeFlags == to_type_obj.TypeFlags))
-                {
-                    if (IsAssignableFrom(to_type_obj.GetUnboxedType(), from_type_obj.GetUnboxedType()))
-                        return from_obj;
-                    return null;
-                }
-            }
 
             /* Check whether we extend the type */
             void* cur_extends_vtbl = *(void**)((byte*)from_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
@@ -551,34 +560,6 @@ namespace libsupcs
         {
             if (IsValueType)
                 return GetClassSize();
-            else
-                return OtherOperations.GetPointerSize();
-        }
-
-        /** <summary>Get the size of the type when it is an array element.  This will the return the pointer size
-         * for reference types and boxed value types and the packed size for unboxed value types</summary> */
-        internal virtual int GetSizeAsArrayElement()
-        {
-            if (IsValueType)
-            {
-                if (IsSimpleType)
-                {
-                    switch (SimpleTypeElementType)
-                    {
-                        case 0x02:
-                        case 0x04:
-                        case 0x05:
-                            return 1;
-
-                        case 0x03:
-                        case 0x06:
-                        case 0x07:
-                            return 2;
-                    }
-                }
-
-                return GetClassSize();
-            }
             else
                 return OtherOperations.GetPointerSize();
         }
@@ -682,6 +663,63 @@ namespace libsupcs
 
             // Set the mutex lock on the new object to 0
             *(void**)((byte*)ret + ClassOperations.GetMutexLockOffset()) = null;
+
+            return ret;
+        }
+
+        [AlwaysCompile]
+        [WeakLinkage]
+        [MethodAlias("_ZW6System4Type_20internal_from_handle_RV4Type_P1u1I")]
+        static internal unsafe TysosType internal_from_handle(void *vtbl)
+        {
+            /* The default value for a type info is:
+             * 
+             * intptr type (= 0)
+             * intptr enum_underlying_type_vtbl_ptr
+             * intptr tysostype pointer
+             * intptr metadata reference count
+             * metadata references
+             * signature
+             * 
+             * To satisfy the constraint that there can only exist one
+             * System.Type representation for a given type, we need to
+             * do some trickery to ensure that this occurs.
+             * 
+             * On call of this function, we check the second byte of 'type'
+             * If it is '2' (i.e type = 0x0200), we can take the third
+             * member as a valid tysostype pointer
+             * 
+             * If it is '1', we wait until it is '2'
+             * 
+             * If it is zero, we atomically set it to '1' and create the
+             * tysos type, then set it to '2' when done
+             */
+            void* ti = *(void**)vtbl;
+            byte* lck = (byte*)ti + 1;
+
+            while(true)
+            {
+                if(*lck == 2)
+                {
+                    void* ttype = *((void**)ti + 2);
+                    return ReinterpretAsType(ttype);
+                }
+                else if(*lck == 0)
+                {
+                    if (OtherOperations.SyncValCompareAndSwap(lck, 0, 1) == 0)
+                        break;
+                }
+                OtherOperations.SpinlockHint();
+            }
+
+            var ret = new TysosType();
+
+            var ret_obj = CastOperations.ReinterpretAsPointer(ret);
+            *(void**)((byte*)ret_obj + ClassOperations.GetSystemTypeImplOffset()) = vtbl;
+
+            *((void**)ti + 2) = ret_obj;
+
+            *lck = 2;
 
             return ret;
         }

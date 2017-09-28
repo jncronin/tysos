@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\ir\IrOpcodes.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 14:12:58 on 10 July 2017
+ * It was generated at 15:04:29 on 15 July 2017
  * from D:\tysos\branches\tysila3\libtysila5\ir\IrOpcodes.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -117,8 +117,10 @@ namespace libtysila5.ir
 		public const int oc_break = 73;
 		public const int oc_mclabel = 74;
 		public const int oc_memcpy = 75;
-		public const int oc_x86_portin = 76;
-		public const int oc_x86_portout = 77;
+		public const int oc_syncvalcompareandswap = 76;
+		public const int oc_spinlockhint = 77;
+		public const int oc_x86_portin = 78;
+		public const int oc_x86_portout = 79;
 		
 		internal static void init_oc()
 		{
@@ -179,8 +181,10 @@ namespace libtysila5.ir
 			oc_names[73] = "break";
 			oc_names[74] = "mclabel";
 			oc_names[75] = "memcpy";
-			oc_names[76] = "x86_portin";
-			oc_names[77] = "x86_portout";
+			oc_names[76] = "syncvalcompareandswap";
+			oc_names[77] = "spinlockhint";
+			oc_names[78] = "x86_portin";
+			oc_names[79] = "x86_portout";
 		}
 	}
 }
@@ -189,33 +193,33 @@ namespace libtysila5.ir
 {
 	partial class Opcode
 	{
-		public const int cc_always = 78;
-		public const int cc_never = 79;
-		public const int cc_eq = 80;
-		public const int cc_ne = 81;
-		public const int cc_gt = 82;
-		public const int cc_ge = 83;
-		public const int cc_lt = 84;
-		public const int cc_le = 85;
-		public const int cc_a = 86;
-		public const int cc_ae = 87;
-		public const int cc_b = 88;
-		public const int cc_be = 89;
+		public const int cc_always = 80;
+		public const int cc_never = 81;
+		public const int cc_eq = 82;
+		public const int cc_ne = 83;
+		public const int cc_gt = 84;
+		public const int cc_ge = 85;
+		public const int cc_lt = 86;
+		public const int cc_le = 87;
+		public const int cc_a = 88;
+		public const int cc_ae = 89;
+		public const int cc_b = 90;
+		public const int cc_be = 91;
 		
 		internal static void init_cc()
 		{
-			cc_names[78] = "always";
-			cc_names[79] = "never";
-			cc_names[80] = "eq";
-			cc_names[81] = "ne";
-			cc_names[82] = "gt";
-			cc_names[83] = "ge";
-			cc_names[84] = "lt";
-			cc_names[85] = "le";
-			cc_names[86] = "a";
-			cc_names[87] = "ae";
-			cc_names[88] = "b";
-			cc_names[89] = "be";
+			cc_names[80] = "always";
+			cc_names[81] = "never";
+			cc_names[82] = "eq";
+			cc_names[83] = "ne";
+			cc_names[84] = "gt";
+			cc_names[85] = "ge";
+			cc_names[86] = "lt";
+			cc_names[87] = "le";
+			cc_names[88] = "a";
+			cc_names[89] = "ae";
+			cc_names[90] = "b";
+			cc_names[91] = "be";
 		}
 	}
 }
@@ -246,25 +250,25 @@ namespace libtysila5.ir
 {
 	partial class Opcode
 	{
-		public const int ct_unknown = 90;
-		public const int ct_int32 = 91;
-		public const int ct_int64 = 92;
-		public const int ct_intptr = 93;
-		public const int ct_float = 94;
-		public const int ct_object = 95;
-		public const int ct_ref = 96;
-		public const int ct_vt = 97;
+		public const int ct_unknown = 92;
+		public const int ct_int32 = 93;
+		public const int ct_int64 = 94;
+		public const int ct_intptr = 95;
+		public const int ct_float = 96;
+		public const int ct_object = 97;
+		public const int ct_ref = 98;
+		public const int ct_vt = 99;
 		
 		internal static void init_ct()
 		{
-			ct_names[90] = "unknown";
-			ct_names[91] = "int32";
-			ct_names[92] = "int64";
-			ct_names[93] = "intptr";
-			ct_names[94] = "float";
-			ct_names[95] = "object";
-			ct_names[96] = "ref";
-			ct_names[97] = "vt";
+			ct_names[92] = "unknown";
+			ct_names[93] = "int32";
+			ct_names[94] = "int64";
+			ct_names[95] = "intptr";
+			ct_names[96] = "float";
+			ct_names[97] = "object";
+			ct_names[98] = "ref";
+			ct_names[99] = "vt";
 		}
 	}
 }

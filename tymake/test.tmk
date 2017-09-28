@@ -45,7 +45,11 @@ function grub_finds()
 {
 	if(MAKE_ISO == "y")
 	{
-		export GRUB_MKIMAGE = find("grub-mkimage", "grub mkimage tool", GRUB_MKIMAGE);
+		//export GRUB_MKIMAGE = find("grub-mkimage", "grub mkimage tool", GRUB_MKIMAGE);
+		export GRUBCC = find("i686-elf-gcc", "cross compiler for i686", GRUBCC);
+		export GRUBAR = find("i686-elf-ar", "cross archiver for i686", GRUBAR);
+		export GRUBSRC = find("multiboot.h", "multiboot.h file in grub include directory", "c:/grub/include/multiboot.h");
+		export GRUBSRC = dir(GRUBSRC);
 		find_xorriso();
 	}
 }
@@ -59,6 +63,7 @@ if (TARGET == "x86_64")
 {
 	XCC = find("x86_64-elf-gcc", "cross compiler for x86_64-elf", XCC);
 	XAR = find("x86_64-elf-ar", "cross archiver for x86_64-elf", XAR);
+	XOBJCOPY = find("x86_64-elf-objcopy", "cross objcopy for x86_64", XOBJCOPY);
 	XRANLIB = find("x86_64-elf-ranlib", "cross ranlib for x86_64-elf", XRANLIB);
 	YASMFLAGS = "-felf64";
 	TYSILAARCH = "x86_64";
@@ -77,6 +82,7 @@ else if (TARGET == "x86")
 {
 	XCC = find("i586-elf-gcc", "cross compiler for i586-elf", XCC);
 	XAR = find("i586-elf-gcc", "cross archiver for i586-elf", XAR);
+	XOBJCOPY = find("i586-elf-objcopy", "cross objcopy for i586", XOBJCOPY);
 	YASMFLAGS = "-felf";
 	TYSILAARCH = "i586";
 	TLARCH = "x86-elf-tyobj";
@@ -267,70 +273,159 @@ rulefor(LIBSUPCSA, [ LIBSUPCSOBJ ] + LIBSUPCS_CPU_OBJ + LIBSUPCS_COMPILER_RT,
 	shellcmd("$XRANLIB $_RULE_OUTPUT");
 });
 
+/* Rules for GRUB modules */
+if(USE_GRUB)
+{
+	ZLIBDIR = ROOT + "/tload/tloadefi/zlib";
+	CONFUSEDIR = ROOT + "/tload/tloadefi/confuse-2.7/src";
+	GRUBCFLAGS = "-I$GRUBSRC -I$ROOT/grub-loader " +
+		"-I$ROOT/tload/tloadefi/efilibc/inc " +
+		"-I$CONFUSEDIR -I$ZLIBDIR " +
+		"-I$ROOT/tload/tloadefi/efilibc/efi " +
+		"-I$ROOT/tload/tloadefi/efilibc/efi/inc " +
+		"-I$ROOT/tload/tloadefi/efilibc/efi/inc/protocol " +
+		"-I$ROOT/tload/tloadefi/efilibc/efi/inc/x86_64 " +
+		"-I$ROOT/efiloader " + 
+		"-Wall -W -Os -DGRUB_MACHINE_PCBIOS=1 " +
+		"-Wshadow -g -falign-jumps=1 -falign-loops=1 -falign-functions=1 -mno-mmx " +
+		"-mno-sse -mno-sse2 -mno-3dnow -m32 -fno-stack-protector -mno-stack-arg-probe " +
+		"-mrtd -mregparm=3 -MD -DGRUB_UTIL -std=gnu99 -ffreestanding " +
+		"-DGRUB_FILE=__FILE__ -DTYGRUB";
+	GRUBLDFLAGS = "-m32 -nostdlib -Wl,--build-id=none -Wl,-r,-d";
+
+	rulefor("%.grub.o", [ "%.c" ], [ "test.tmk" ], function() {
+		return(shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBCFLAGS -c $_RULE_INPUT"));
+	});
+	rulefor("%.grub.o", [ "%.s" ], [ "test.tmk" ], function() {
+		return(shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBCFLAGS -c $_RULE_INPUT"));
+	});
+	rulefor("%.target32.grub.o", [ "%.target.grub.o" ], [ "test.tmk" ], function() {
+		return(shellcmd("$XOBJCOPY -O elf32-i386 $_RULE_INPUT $_RULE_OUTPUT"));
+	});
+	rulefor("%.target.grub.o", [ "%.s" ], [ "test.tmk" ], function() {
+			return(shellcmd("$XCC -o $_RULE_OUTPUT -c $_RULE_INPUT"));
+	});
+
+	ZLIB = ZLIBDIR + "/libz.grub.a";
+	rulefor(ZLIB, [ ZLIBDIR + "/adler32.grub.o", ZLIBDIR + "/compress.grub.o", ZLIBDIR + "/crc32.grub.o",
+		ZLIBDIR + "/deflate.grub.o", ZLIBDIR + "/gzclose.grub.o", ZLIBDIR + "/gzlib.grub.o", ZLIBDIR + "/gzread.grub.o",
+		ZLIBDIR + "/gzwrite.grub.o", ZLIBDIR + "/infback.grub.o", ZLIBDIR + "/inffast.grub.o", ZLIBDIR + "/inflate.grub.o",
+		ZLIBDIR + "/inftrees.grub.o", ZLIBDIR + "/trees.grub.o", ZLIBDIR + "/uncompr.grub.o", ZLIBDIR + "/zutil.grub.o" ],
+		[ "test.tmk" ],
+		function()
+	{
+		shellcmd("$GRUBAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+	});
+
+	CONFUSE = CONFUSEDIR + "/libconfuse.grub.a";
+	rulefor(CONFUSE, [ CONFUSEDIR + "/confuse.grub.o", CONFUSEDIR + "/lexer.grub.o" ],
+		[ "test.tmk" ],
+		function()
+	{
+		shellcmd("$GRUBAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+	});
+
+	GRUBLOADER = ROOT + "/grub-loader/tygrub.mod";
+	rulefor(GRUBLOADER,
+		[
+			ROOT + "/grub-loader/tygrub.grub.o",
+			ROOT + "/efiloader/cfg.grub.o",
+			ROOT + "/tload/tloadefi/efilibc/strtod.grub.o",
+			ROOT + "/tload/tloadefi/efilibc/scanf.grub.o",
+			ROOT + "/tload/tloadefi/efilibc/strtoll.grub.o",
+			ROOT + "/tload/tloadefi/efilibc/strtoull.grub.o",
+			ROOT + "/tload/tloadefi/efilibc/string.grub.o",
+			ROOT + "/tload/tloadefi/efilibc/atoi.grub.o",
+			ROOT + "/tload/tloadefi/efilibc/atof.grub.o",
+			ROOT + "/efiloader/vmem.grub.o",
+			ROOT + "/grub-loader/grublibc.grub.o",
+			ROOT + "/efiloader/load.grub.o",
+			ROOT + "/efiloader/elf.grub.o",
+			ROOT + "/efiloader/pmem_alloc.grub.o",
+			ROOT + "/efiloader/kif.grub.o",
+			ROOT + "/efiloader/tloadkif.grub.o",
+			ROOT + "/efiloader/modules.grub.o",
+			ROOT + "/grub-loader/tramp.target32.grub.o",
+		],
+		[ ZLIB, CONFUSE ],
+		function()
+	{
+		shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBLDFLAGS -L$ZLIBDIR -L$CONFUSEDIR $_RULE_INPUTS -lz.grub -lconfuse.grub -lgcc");
+	});
+	// Special case tloadkif so it uses kmalloc rather than malloc
+	rulefor(ROOT + "/efiloader/tloadkif.grub.o",
+		[ ROOT + "/efiloader/tloadkif.c" ], [], function()
+	{
+		return(shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBCFLAGS -Dmalloc=kmalloc -c $_RULE_INPUT"));
+	});
+}
+
 /* Rules for EFI applications */
-
-EFILIBCDIR = ROOT + "/tload/tloadefi/efilibc";
-ZLIBDIR = ROOT + "/tload/tloadefi/zlib";
-CONFUSEDIR = ROOT + "/tload/tloadefi/confuse-2.7/src";
-EFICFLAGS = "-I" + EFILIBCDIR + "/inc -I" + EFILIBCDIR + "/efi/inc -I" + EFILIBCDIR + "/efi/inc/protocol -I" + EFILIBCDIR + "/efi/inc/x86_64 -I" 
-	+ EFILIBCDIR + " -I" + EFILIBCDIR + "/efi -I" + ZLIBDIR + " -I" + CONFUSEDIR + " -ffreestanding -std=gnu11 -Wall -Wextra -Werror";
-EFILDFLAGS = "-nostdlib -fno-use-linker-plugin -Wl,-dll -shared -Wl,--subsystem,10 -e efi_main";
-
-rulefor("%.efi.o", [ "%.c" ], [ "test.tmk" ], function() {
-	return(shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -c $_RULE_INPUT"));
-});
-rulefor("%.efi.o", [ "%.s" ], [ "test.tmk" ], function() {
-	shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -c $_RULE_INPUT");
-});
-
-EFILIBC = EFILIBCDIR + "/libefilibc.a";
-rulefor(EFILIBC, [
-	EFILIBCDIR + "/abort.efi.o", EFILIBCDIR + "/atof.efi.o", 
-	EFILIBCDIR + "/atoi.efi.o", EFILIBCDIR + "/console.efi.o", EFILIBCDIR + "/data.efi.o",
-	EFILIBCDIR + "/efilibc.efi.o", EFILIBCDIR + "/file.efi.o", EFILIBCDIR + "/malloc.efi.o", EFILIBCDIR + "/misc.efi.o", EFILIBCDIR + "/printf.efi.o",
-	EFILIBCDIR + "/scanf.efi.o", EFILIBCDIR + "/serial.efi.o", EFILIBCDIR + "/string.efi.o", EFILIBCDIR + "/strtod.efi.o", EFILIBCDIR + "/strtol.efi.o",
-	EFILIBCDIR + "/strtoll.efi.o", EFILIBCDIR + "/strtoull.efi.o" ],
-	[ "test.tmk" ],
-	function()
+if(USE_UEFI)
 {
-	shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
-});
+	EFILIBCDIR = ROOT + "/tload/tloadefi/efilibc";
+	ZLIBDIR = ROOT + "/tload/tloadefi/zlib";
+	CONFUSEDIR = ROOT + "/tload/tloadefi/confuse-2.7/src";
+	EFICFLAGS = "-I" + EFILIBCDIR + "/inc -I" + EFILIBCDIR + "/efi/inc -I" + EFILIBCDIR + "/efi/inc/protocol -I" + EFILIBCDIR + "/efi/inc/x86_64 -I" 
+		+ EFILIBCDIR + " -I" + EFILIBCDIR + "/efi -I" + ZLIBDIR + " -I" + CONFUSEDIR + " -ffreestanding -std=gnu11 -Wall -Wextra -Werror";
+	EFILDFLAGS = "-nostdlib -fno-use-linker-plugin -Wl,-dll -shared -Wl,--subsystem,10 -e efi_main";
 
-ZLIB = ZLIBDIR + "/libz.a";
-rulefor(ZLIB, [ ZLIBDIR + "/adler32.efi.o", ZLIBDIR + "/compress.efi.o", ZLIBDIR + "/crc32.efi.o",
-	ZLIBDIR + "/deflate.efi.o", ZLIBDIR + "/gzclose.efi.o", ZLIBDIR + "/gzlib.efi.o", ZLIBDIR + "/gzread.efi.o",
-	ZLIBDIR + "/gzwrite.efi.o", ZLIBDIR + "/infback.efi.o", ZLIBDIR + "/inffast.efi.o", ZLIBDIR + "/inflate.efi.o",
-	ZLIBDIR + "/inftrees.efi.o", ZLIBDIR + "/trees.efi.o", ZLIBDIR + "/uncompr.efi.o", ZLIBDIR + "/zutil.efi.o" ],
-	[ "test.tmk" ],
-	function()
-{
-	shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
-});
+	rulefor("%.efi.o", [ "%.c" ], [ "test.tmk" ], function() {
+		return(shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -c $_RULE_INPUT"));
+	});
+	rulefor("%.efi.o", [ "%.s" ], [ "test.tmk" ], function() {
+		shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -c $_RULE_INPUT");
+	});
 
-CONFUSE = CONFUSEDIR + "/libconfuse.a";
-rulefor(CONFUSE, [ CONFUSEDIR + "/confuse.efi.o", CONFUSEDIR + "/lexer.efi.o" ],
-	[ "test.tmk" ],
-	function()
-{
-	shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
-});
+	EFILIBC = EFILIBCDIR + "/libefilibc.a";
+	rulefor(EFILIBC, [
+		EFILIBCDIR + "/abort.efi.o", EFILIBCDIR + "/atof.efi.o", 
+		EFILIBCDIR + "/atoi.efi.o", EFILIBCDIR + "/console.efi.o", EFILIBCDIR + "/data.efi.o",
+		EFILIBCDIR + "/efilibc.efi.o", EFILIBCDIR + "/file.efi.o", EFILIBCDIR + "/malloc.efi.o", EFILIBCDIR + "/misc.efi.o", EFILIBCDIR + "/printf.efi.o",
+		EFILIBCDIR + "/scanf.efi.o", EFILIBCDIR + "/serial.efi.o", EFILIBCDIR + "/string.efi.o", EFILIBCDIR + "/strtod.efi.o", EFILIBCDIR + "/strtol.efi.o",
+		EFILIBCDIR + "/strtoll.efi.o", EFILIBCDIR + "/strtoull.efi.o" ],
+		[ "test.tmk" ],
+		function()
+	{
+		shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+	});
 
-EFILOADER = ROOT + "/efiloader/efiloader.bin";
-rulefor(EFILOADER, [ ROOT + "/efiloader/main.efi.o", ROOT + "/efiloader/tloadkif.efi.o", ROOT + "/efiloader/load.efi.o",
-	ROOT + "/efiloader/elf.efi.o", ROOT + "/efiloader/vmem.efi.o", ROOT + "/efiloader/modules.efi.o",
-	ROOT + "/efiloader/kif.efi.o", ROOT + "/efiloader/cfg.efi.o", ROOT + "/efiloader/tramp.efi.o" ],
-	[ EFILIBC, ZLIB, CONFUSE ],
-	function()
-{
-	shellcmd("$EFICC -o $_RULE_OUTPUT $EFILDFLAGS -L$EFILIBCDIR -L$ZLIBDIR -L$CONFUSEDIR $_RULE_INPUTS -lz -lconfuse -lefilibc -lgcc");
-});
-// Special case tloadkif so it uses kmalloc rather than malloc
-rulefor(ROOT + "/efiloader/tloadkif.efi.o",
-	[ ROOT + "/efiloader/tloadkif.c" ], [], function()
-{
-	return(shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -Dmalloc=kmalloc -c $_RULE_INPUT"));
-});
+	ZLIB = ZLIBDIR + "/libz.a";
+	rulefor(ZLIB, [ ZLIBDIR + "/adler32.efi.o", ZLIBDIR + "/compress.efi.o", ZLIBDIR + "/crc32.efi.o",
+		ZLIBDIR + "/deflate.efi.o", ZLIBDIR + "/gzclose.efi.o", ZLIBDIR + "/gzlib.efi.o", ZLIBDIR + "/gzread.efi.o",
+		ZLIBDIR + "/gzwrite.efi.o", ZLIBDIR + "/infback.efi.o", ZLIBDIR + "/inffast.efi.o", ZLIBDIR + "/inflate.efi.o",
+		ZLIBDIR + "/inftrees.efi.o", ZLIBDIR + "/trees.efi.o", ZLIBDIR + "/uncompr.efi.o", ZLIBDIR + "/zutil.efi.o" ],
+		[ "test.tmk" ],
+		function()
+	{
+		shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+	});
 
+	CONFUSE = CONFUSEDIR + "/libconfuse.a";
+	rulefor(CONFUSE, [ CONFUSEDIR + "/confuse.efi.o", CONFUSEDIR + "/lexer.efi.o" ],
+		[ "test.tmk" ],
+		function()
+	{
+		shellcmd("$EFIAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+	});
+
+	EFILOADER = ROOT + "/efiloader/efiloader.bin";
+	rulefor(EFILOADER, [ ROOT + "/efiloader/main.efi.o", ROOT + "/efiloader/tloadkif.efi.o", ROOT + "/efiloader/load.efi.o",
+		ROOT + "/efiloader/elf.efi.o", ROOT + "/efiloader/vmem.efi.o", ROOT + "/efiloader/modules.efi.o",
+		ROOT + "/efiloader/kif.efi.o", ROOT + "/efiloader/cfg.efi.o", ROOT + "/efiloader/tramp.efi.o",
+		ROOT + "/efiloader/pmem_alloc.efi.o" ],
+		[ EFILIBC, ZLIB, CONFUSE ],
+		function()
+	{
+		shellcmd("$EFICC -o $_RULE_OUTPUT $EFILDFLAGS -L$EFILIBCDIR -L$ZLIBDIR -L$CONFUSEDIR $_RULE_INPUTS -lz -lconfuse -lefilibc -lgcc");
+	});
+	// Special case tloadkif so it uses kmalloc rather than malloc
+	rulefor(ROOT + "/efiloader/tloadkif.efi.o",
+		[ ROOT + "/efiloader/tloadkif.c" ], [], function()
+	{
+		return(shellcmd("$EFICC -o $_RULE_OUTPUT $EFICFLAGS -Dmalloc=kmalloc -c $_RULE_INPUT"));
+	});
+}
 
 rulefor(ROOT + "/efiloader/tloadkif.c", [ TYSOS ], [ TYSILA, MSCORLIB ], function()
 {
@@ -401,9 +496,14 @@ ELTORITO = GRUBDIR + "/eltorito.img";
 // for quick kernel testing
 PROCESSES = [];
 
+build(GRUBLOADER);
+
 if(defined(USE_GRUB))
 {
-	rulefor(ISOIMAGE, [ KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG ],
+	build(GRUBLOADER);
+
+	return(0);
+/* rulefor(ISOIMAGE, [ KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG ],
 		[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT ], function()
 	{
 		cp(KERNEL, ISODIR);
@@ -437,7 +537,7 @@ if(defined(USE_GRUB))
 		feltorito.Write(bcoreimg, 0, fcoreimg.Length);
 
 		shellcmd("$XORRISO -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
-	});
+	}); */
 }
 else if(defined(USE_UEFI))
 {

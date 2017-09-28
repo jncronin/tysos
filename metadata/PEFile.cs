@@ -281,6 +281,7 @@ namespace metadata
             m.PatchFieldDefOwners();
             m.PatchFieldRVAs();
             m.PatchClassLayouts();
+            m.PatchFieldConstants();
             m.PatchGTypes();
             if(m.table_rows[MetadataStream.tid_Assembly] == 1 &&
                 (m.assemblyName = m.GetStringEntry(MetadataStream.tid_Assembly, 1, 7)) == "mscorlib")

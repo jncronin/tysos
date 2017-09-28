@@ -64,41 +64,7 @@ namespace libsupcs.x86_64
                         continue;
                     }
                     TysosType p_type = TysosType.ReinterpretAsType(**(void***)CastOperations.ReinterpretAsPointer(parameters[i]));
-                    if (p_type.IsBoxed)
-                    {
-                        int size = p_type.GetUnboxedType().GetClassSize();
-                        if (size > 8)
-                        {
-                            if (size > 0xffffff)
-                            {
-                                throw new Exception("x86_64.Invoke: value type (" +
-                                    p_type.FullName + ") is too large (" + size.ToString() +
-                                    " bytes)");
-                            }
-                            uint val = ((uint)size) << 8;
-                            val |= 3;
-                            plocs[i] = val;
-                        }
-                        else
-                        {
-                            if (p_type.Equals(typeof(float)) || p_type.Equals(typeof(double)))
-                            {
-                                plocs[i] = 2;
-                            }
-                            else if(size > 4)
-                            {
-                                plocs[i] = 1;
-                            }
-                            else
-                            {
-                                plocs[i] = 4;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        plocs[i] = 0;
-                    }
+                    plocs[i] = 0;
                 }
             }
 
@@ -110,7 +76,7 @@ namespace libsupcs.x86_64
             if (rettype != null && rettype.IsValueType)
             {
                 if (rettype.IsEnum)
-                    rettype = rettype.GetUnboxedType();
+                    rettype = Enum.GetUnderlyingEnumType(rettype);
                 if (rettype == typeof(int))
                     ret = ReinterpretAsInt(ret);
                 else if (rettype == typeof(uint))

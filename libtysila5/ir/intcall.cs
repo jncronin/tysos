@@ -93,6 +93,32 @@ namespace libtysila5.ir
             intcalls["_ZW20System#2EDiagnostics8Debugger_3Log_Rv_P3iu1Su1S"] = debugger_Log;
 
             intcalls["_ZW19System#2EReflection8Assembly_20GetExecutingAssembly_RV8Assembly_P0"] = assembly_GetExecutingAssembly;
+
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_21SyncValCompareAndSwap_Rh_P3Phhh"] = sync_cswap;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_12SpinlockHint_Rv_P0"] = spinlock_hint;
+        }
+
+        private static Stack<StackItem> spinlock_hint(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_spinlockhint, stack_before = stack_before, stack_after = stack_before });
+            return stack_before;
+        }
+
+        private static Stack<StackItem> sync_cswap(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var stack_after = new Stack<StackItem>(stack_before);
+
+            stack_after.Pop();
+            stack_after.Pop();
+            var ret_type_ptr = stack_after.Pop().ts;
+            var ret_type = ret_type_ptr.other;
+
+            var size = c.t.GetSize(ret_type);
+            stack_after.Push(new StackItem { ts = ret_type });
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_syncvalcompareandswap, imm_l = size, imm_ul = ret_type.IsSigned ? 1UL : 0UL, stack_before = stack_before, stack_after = stack_after });
+
+            return stack_after;
         }
 
         private static Stack<StackItem> runtimeHelpers_getOffsetToStringData(CilNode n, Code c, Stack<StackItem> stack_before)
