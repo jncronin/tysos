@@ -26,8 +26,6 @@
 #include <tloadkif.h>
 #include <stdio.h>
 
-#define DEBUG
-
 #ifdef TYGRUB
 #include <grub/relocator.h>
 extern struct grub_relocator *grub_tygrub_relocator;

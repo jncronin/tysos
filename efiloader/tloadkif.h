@@ -49,36 +49,17 @@ void Init_Multiboot_Module(struct Multiboot_Module *obj);
 
 struct System_Object {
     INTPTR __vtbl;
-    uint32_t __reserved0;
-    uint32_t __reserved1;
     int64_t __mutex_lock;
-    uint32_t __reserved2;
-    uint32_t __reserved3;
 };
 
 struct System_String {
     INTPTR __vtbl;
-    uint16_t __reserved0;
-    uint32_t __reserved1;
-    uint32_t __reserved2;
-    uint32_t __reserved3;
     int64_t __mutex_lock;
-    uint16_t __reserved4;
-    uint32_t __reserved5;
-    uint32_t __reserved6;
-    uint32_t __reserved7;
     int32_t length;
-    uint16_t __reserved8;
-    uint32_t __reserved9;
-    uint32_t __reserved10;
-    uint32_t __reserved11;
-    uint32_t __reserved12;
+    uint32_t __reserved0;
     int16_t start_char;
-    uint32_t __reserved13;
-    uint32_t __reserved14;
-    uint32_t __reserved15;
-    uint32_t __reserved16;
-    uint32_t __reserved17;
+    uint16_t __reserved1;
+    uint32_t __reserved2;
 };
 
 struct Multiboot_Header {

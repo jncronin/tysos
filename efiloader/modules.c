@@ -23,6 +23,7 @@
 #include <efilib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdint.h>
 #include "tloadkif.h"
 
 EFI_STATUS allocate_fixed(UINTPTR base, UINTPTR length, EFI_PHYSICAL_ADDRESS src);
@@ -35,7 +36,10 @@ EFI_STATUS load_module(const char *fname, UINTPTR *vaddr, size_t *length, EFI_PH
 	FILE *fmod = fopen(fname, "r");
 	if(fmod == NULL)
 	{
-		printf("load_module: cannot load %s (%i)\n", fname, errno);
+		printf("load_module: cannot load %s (%d)\n", fname, errno);
+		*vaddr = 0;
+		*length = 0;
+		*paddr_out = 0;
 		return EFI_NOT_FOUND;
 	}
 
@@ -51,11 +55,11 @@ EFI_STATUS load_module(const char *fname, UINTPTR *vaddr, size_t *length, EFI_PH
 	EFI_STATUS s = allocate(flen_align, vaddr, &paddr);
 	if(s != EFI_SUCCESS)
 	{
-		printf("load_module: cannot allocate %i bytes for %s (%i)\n", flen_align, fname, s);
+		printf("load_module: cannot allocate %d bytes for %s (%d)\n", (size_t)flen_align, fname, (size_t)s);
 		return s;
 	}
 
-	printf("load_module: load %s (length %i) to paddr %x, vaddr %x\n", fname, flen, paddr, vaddr ? *vaddr : 0x0);
+	printf("load_module: load %s (length %d) to paddr %p, vaddr %p\n", fname, (size_t)flen, (intptr_t)paddr, (intptr_t)(vaddr ? *vaddr : 0x0));
 	load_file(fmod, flen, paddr);
 	printf(" done.\n");
 

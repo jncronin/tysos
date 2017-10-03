@@ -36,6 +36,7 @@ struct vmem_map_entry
 	struct vmem_map_entry *next;
 	UINTPTR base;
 	UINTPTR length;
+	UINTPTR start_hole;
 	EFI_PHYSICAL_ADDRESS src;
 };
 
@@ -66,6 +67,7 @@ static EFI_STATUS add(UINTPTR base, UINTPTR length, EFI_PHYSICAL_ADDRESS src)
 	ent->base = base;
 	ent->length = length;
 	ent->src = src;
+	ent->start_hole = 0;
 	ent->next = NULL;
 
 	if(first == NULL)
@@ -102,6 +104,15 @@ EFI_PHYSICAL_ADDRESS get_pmem_for_vmem(UINTPTR vaddr)
 	if(isect == NULL)
 		return 0;
 	return vaddr - isect->base + isect->src;
+}
+
+EFI_STATUS add_start_hole(UINTPTR base, UINTPTR len)
+{
+	struct vmem_map_entry *r = get_intersect(base, 1);
+	if (r == NULL)
+		return EFI_ABORTED;
+	r->start_hole = len;
+	return EFI_SUCCESS;
 }
 
 EFI_STATUS allocate_fixed(UINTPTR base, UINTPTR length, EFI_PHYSICAL_ADDRESS src)
@@ -222,7 +233,7 @@ static EFI_STATUS build_pte_for_page(EFI_PHYSICAL_ADDRESS paddr, UINTPTR vaddr, 
 
 static EFI_STATUS build_pte_for_region(struct vmem_map_entry *r, EFI_PHYSICAL_ADDRESS pml4t)
 {
-	UINTPTR cur_offset = 0x0;
+	UINTPTR cur_offset = r->start_hole & ~0xfff;
 
 	if(r->base & 0xfff || r->length & 0xfff || r->src & 0xfff)
 	{

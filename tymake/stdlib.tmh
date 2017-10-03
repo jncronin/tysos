@@ -6,6 +6,35 @@ if(!defined(STDLIB_TMH))
 	STDLIB = 1;
 	STDLIB_VER = 1;
 
+	export function downloadextract(string uri)
+	{
+		dfile = download(uri, 1);
+		return extract(dfile, 1);
+	}
+
+	export function downloadextract(string uri, string member)
+	{
+		return downloadextract(uri) + "/" + member;
+	}
+
+	export function downloadextract(string uri, string member, string default)
+	{
+		if(default == "")
+		{
+			return downloadextract(uri, member);
+		}
+		else
+		{
+			return default;
+		}
+	}
+
+	export function downloadextract(string uri, string member, void default)
+	{
+		return downloadextract(uri, member, "");
+	}
+
+
 	export function typroject(string name, string config, string tools_ver, int unsafe)
 	{
 		_p = _typroject(name, config, tools_ver, unsafe);
@@ -90,9 +119,24 @@ if(!defined(STDLIB_TMH))
 
 	export function find(string name, string desc, string test)
 	{
+		return find(name, desc, test, []);
+	}
+
+	export function find(string name, string desc, void test, array extra_paths)
+	{
+		return find(name, desc, "", extra_paths);
+	}
+
+	export function find(string name, string desc, string test, array extra_paths)
+	{
 		_path_splits = PATH.split(PATH_SPLIT);
 		_path_splits.add("");
 		_path_splits.add("/");
+
+		foreach(_extra_path in extra_paths)
+		{
+			_path_splits.add(_extra_path);
+		}
 
 		_exts = [ "" ];
 		_exts.addrange(EXEC_EXTENSIONS);

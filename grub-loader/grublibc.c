@@ -19,6 +19,7 @@ struct glc_file
 	int eof;
 	int error;
 	int fileno;
+	int offset_offset;
 };
 
 #define MAX_FILENO		1024
@@ -27,7 +28,7 @@ static int next_fileno = 3;
 
 static void update_fpos(struct glc_file *fp)
 {
-	fp->pos = (int)fp->fp->offset;
+	fp->pos = *(int *)(((uintptr_t)fp->fp) + fp->offset_offset);
 }
 
 static void update_feof(struct glc_file *fp)
@@ -160,6 +161,9 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 		return -1;
 	}
 
+	if (size == 0)
+		return 0;
+
 	struct glc_file *fp = (struct glc_file *)stream;
 	grub_ssize_t read = grub_file_read(fp->fp, ptr, size * nmemb);
 	update_fpos(fp);
@@ -213,9 +217,26 @@ FILE *fopen(const char *path, const char *mode)
 		struct glc_file *fp = (struct glc_file *)grub_malloc(sizeof(struct glc_file));
 		fp->fp = ret;
 		fp->pos = 0;
-		fp->size = grub_file_size(ret);
 		fp->eof = 0;
 		fp->fileno = next_fileno++;
+
+		int32_t *r = (int32_t *)ret;
+
+		/* This is a total hack.  Because the alignment of the host grub may be 4 or 8 bytes
+		    for int64_t's, the size member is either at offset 0x34 or 0x38.
+			
+			Thankfully, the previous member (estimated_speed) is not filled in upon opening,
+			so we can inspect r[0x34] and use it if non-zero, else use r[0x38]*/
+		if (r[0x34])
+		{
+			fp->size = (int)r[0x34 / 4];
+			fp->offset_offset = 0xc;
+		}
+		else
+		{
+			fp->size = (int)r[0x38 / 4];
+			fp->offset_offset = 0x10;
+		}
 
 		fileno_map[fp->fileno] = fp;
 		return (FILE*)fp;
@@ -257,7 +278,12 @@ int fseek(FILE *stream, long offset, int whence)
 		return -1;
 	}
 
-	grub_file_seek(fp->fp, fp->pos);
+	if (grub_file_seek(fp->fp, fp->pos) == (grub_off_t)-1)
+	{
+		printf("grub_file_seek failed\n");
+		update_feof(fp);
+		return -1;
+	}
 	update_feof(fp);
 	return 0;
 }

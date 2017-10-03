@@ -65,6 +65,7 @@ EFI_STATUS load_kernel(const char *fname, void **fobj, size_t(**fread_func)(void
 EFI_STATUS allocate_fixed(UINTPTR base, UINTPTR length, EFI_PHYSICAL_ADDRESS src);
 EFI_STATUS allocate_any(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS src);
 EFI_STATUS allocate(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS *paddr_out);
+EFI_STATUS add_start_hole(UINTPTR base, UINTPTR len);
 EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t(*fread_func)(void *, void *, size_t), off_t(*fseek_func)(void *, off_t, int));
 EFI_STATUS load_module(const char *fname, UINTPTR *addr, size_t *length, EFI_PHYSICAL_ADDRESS *paddr);
 EFI_STATUS build_page_tables(EFI_PHYSICAL_ADDRESS *pml4t_out);
@@ -103,6 +104,11 @@ struct cfg_module
 
 EFI_PHYSICAL_ADDRESS align(EFI_PHYSICAL_ADDRESS v, EFI_PHYSICAL_ADDRESS alignment)
 {
+	if (align == 0)
+	{
+		printf("warning: requested alignment of 0\n");
+		return v;
+	}
 	if (v % alignment)
 		return v + alignment - (v % alignment);
 	else
@@ -125,15 +131,20 @@ uint64_t Get_Symbol_Addr(const char *name)
 {
 	static Elf64_Sym *last_sym = NULL;
 
-#ifdef DEBUG
-	//printf("Get_Symbol_Addr: sym_tab_paddr: %p, sym_tab_size: %p, sym_tab_entsize: %p\n",
-	//	(uintptr_t)sym_tab_paddr, (uintptr_t)sym_tab_size, (uintptr_t)sym_tab_entsize);
-#endif
+//#ifdef DEBUG
+//	printf("Get_Symbol_Addr: sym_tab_paddr: %p, sym_tab_size: %p, sym_tab_entsize: %p\n",
+//		(uintptr_t)sym_tab_paddr, (uintptr_t)sym_tab_size, (uintptr_t)sym_tab_entsize);
+//#endif
 
 	if (last_sym != NULL)
 	{
 		if (!strcmp(sym_name(last_sym), name))
+		{
+//#ifdef DEBUG
+//			printf("Get_Symbol_Addr: returning cache'd value %p\n", (uintptr_t)last_sym->st_value);
+//#endif
 			return (uint64_t)last_sym->st_value;
+		}
 	}
 
 	for (unsigned int i = 0; i < ((unsigned int)sym_tab_size / (unsigned int)sym_tab_entsize); i++)
@@ -142,6 +153,10 @@ uint64_t Get_Symbol_Addr(const char *name)
 		if (!strcmp(sym_name(cur_sym), name))
 		{
 			last_sym = cur_sym;
+//#ifdef DEBUG
+//			printf("Get_Symbol_Addr: returning found value %p\n", (uintptr_t)cur_sym->st_value);
+//#endif
+
 			return (uint64_t)cur_sym->st_value;
 		}
 	}
@@ -168,9 +183,26 @@ static int mmap_iter(grub_uint64_t addr, grub_uint64_t size,
 
 	(*mmap_ia)->base_addr = addr;
 	(*mmap_ia)->length = size;
-	(*mmap_ia)->type = (int32_t)type;
 
-	(*mmap_ia_ptr)++;
+	switch (type)
+	{
+		case GRUB_MEMORY_AVAILABLE:
+			(*mmap_ia)->type = UEfiConventionalMemory;
+			break;
+		case GRUB_MEMORY_CODE:
+			(*mmap_ia)->type = UEfiLoaderCode;
+			break;
+		case GRUB_MEMORY_ACPI:
+			(*mmap_ia)->type = UEfiACPIReclaimMemory;
+			break;
+		default:
+			(*mmap_ia)->type = UEfiUnusableMemory;
+			break;
+	}
+
+	uintptr_t new_ptr = (uintptr_t)(*mmap_ia_ptr);
+	new_ptr += sizeof(INTPTR);
+	*mmap_ia_ptr = (struct Multiboot_MemoryMap **)new_ptr;
 
 	return 0;
 }
@@ -340,14 +372,22 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 
 	/* Allocate space for the stack */
 	UINTPTR kernel_stack;
-	UINTPTR kernel_stack_len = 0x8000;
+	UINTPTR kernel_stack_len = 0x2000;
 	Status = allocate(kernel_stack_len, &kernel_stack, NULL);
 	if (Status != EFI_SUCCESS)
 	{
 		printf("error: couldn't allocate kernel stack\n");
 		return GRUB_ERR_OUT_OF_MEMORY;
 	}
-	printf("kernel stack at %x\n", (uintptr_t)kernel_stack);
+	printf("kernel stack at %p-%p\n", (uintptr_t)kernel_stack,
+		(uintptr_t)(kernel_stack + kernel_stack_len));
+
+	Status = add_start_hole(kernel_stack, 0x1000);
+	if (Status != EFI_SUCCESS)
+	{
+		printf("error: couldn't add 1 page hole at start of stack region\n");
+		return GRUB_ERR_OUT_OF_MEMORY;
+	}
 
 	/* Allocate for the identity-mapped trampoline code */
 	EFI_PHYSICAL_ADDRESS p_tramp;
@@ -384,11 +424,13 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	printf("pmlt4 at %x\n", pml4t);
 
 	/* Build the kif */
-	CreateString((struct System_String **)&mbheader->loader_name, "efiloader");
+	CreateString((struct System_String **)&mbheader->loader_name, "tygrub");
 	(*((struct System_String **)&mbheader->loader_name))->__vtbl += mb_adjust;
 	mbheader->loader_name += mb_adjust;
 	CreateString((struct System_String **)&mbheader->cmdline, cfg_get_kcmdline());
 	(*((struct System_String **)&mbheader->cmdline))->__vtbl += mb_adjust;
+
+
 	mbheader->cmdline += mb_adjust;
 	mbheader->has_vga = 0;
 	mbheader->tysos_paddr = (uint64_t)elf_kernel;
@@ -407,8 +449,6 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	mbheader->machine_major_type = x86_64;
 	mbheader->machine_minor_type = BIOS;
 	mbheader->virt_bda = 0;
-
-
 
 	char *buf;
 	buf = grub_xasprintf("%dx%dx%d,%dx%d,800x600x16,640x480x8,auto",

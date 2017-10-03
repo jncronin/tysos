@@ -94,7 +94,7 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 			EFI_PHYSICAL_ADDRESS first_page_paddr = get_pmem_for_vmem(vpage_start);
 			UINTPTR next_page_vaddr = vpage_start;
 			size_t seg_offset = 0;
-			printf("first_page_paddr: %x, page_offset: %x, vpage_start: %x, v_length: %x\n", first_page_paddr, page_offset, vpage_start, v_length);
+			printf("first_page_paddr: %p, page_offset: %p, vpage_start: %p, v_length: %p\n", (uintptr_t)first_page_paddr, (uintptr_t)page_offset, (uintptr_t)vpage_start, (uintptr_t)v_length);
 			if(first_page_paddr)
 			{
 				size_t to_load = 0x1000 - page_offset;

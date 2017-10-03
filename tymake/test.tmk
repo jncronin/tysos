@@ -45,11 +45,15 @@ function grub_finds()
 {
 	if(MAKE_ISO == "y")
 	{
-		//export GRUB_MKIMAGE = find("grub-mkimage", "grub mkimage tool", GRUB_MKIMAGE);
 		export GRUBCC = find("i686-elf-gcc", "cross compiler for i686", GRUBCC);
 		export GRUBAR = find("i686-elf-ar", "cross archiver for i686", GRUBAR);
 		export GRUBSRC = find("multiboot.h", "multiboot.h file in grub include directory", "c:/grub/include/multiboot.h");
 		export GRUBSRC = dir(GRUBSRC);
+		export CDBOOT = find("cdboot.img", "GRUB cdboot.img", "", [ downloadextract("ftp://ftp.gnu.org/gnu/grub/grub-2.02-for-windows.zip", "grub-2.02-for-windows/i386-pc", GRUBBIN) ]);
+		export GZIP = find("gzip", "gzip", GZIP);
+
+		export GRUB_MKIMAGE = find("grub-mkimage.exe", "GRUB mkimage tool", GRUB_MKIMAGE, [ dir(dir(CDBOOT)) ]);
+
 		find_xorriso();
 	}
 }
@@ -290,10 +294,10 @@ if(USE_GRUB)
 		"-Wshadow -g -falign-jumps=1 -falign-loops=1 -falign-functions=1 -mno-mmx " +
 		"-mno-sse -mno-sse2 -mno-3dnow -m32 -fno-stack-protector -mno-stack-arg-probe " +
 		"-mrtd -mregparm=3 -MD -DGRUB_UTIL -std=gnu99 -ffreestanding " +
-		"-DGRUB_FILE=__FILE__ -DTYGRUB";
+		"-DGRUB_FILE=__FILE__ -DTYGRUB -malign-data=compat";
 	GRUBLDFLAGS = "-m32 -nostdlib -Wl,--build-id=none -Wl,-r,-d";
 
-	rulefor("%.grub.o", [ "%.c" ], [ "test.tmk" ], function() {
+	rulefor("%.grub.o", [ "%.c" ], [ "test.tmk", ROOT + "/efiloader/tloadkif.h" ], function() {
 		return(shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBCFLAGS -c $_RULE_INPUT"));
 	});
 	rulefor("%.grub.o", [ "%.s" ], [ "test.tmk" ], function() {
@@ -339,6 +343,9 @@ if(USE_GRUB)
 			ROOT + "/tload/tloadefi/efilibc/atof.grub.o",
 			ROOT + "/efiloader/vmem.grub.o",
 			ROOT + "/grub-loader/grublibc.grub.o",
+			ROOT + "/grub-loader/umoddi3.grub.o",
+			ROOT + "/grub-loader/udivmoddi4.grub.o",
+			ROOT + "/grub-loader/udivdi3.grub.o",
 			ROOT + "/efiloader/load.grub.o",
 			ROOT + "/efiloader/elf.grub.o",
 			ROOT + "/efiloader/pmem_alloc.grub.o",
@@ -350,7 +357,7 @@ if(USE_GRUB)
 		[ ZLIB, CONFUSE ],
 		function()
 	{
-		shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBLDFLAGS -L$ZLIBDIR -L$CONFUSEDIR $_RULE_INPUTS -lz.grub -lconfuse.grub -lgcc");
+		shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBLDFLAGS -L$ZLIBDIR -L$CONFUSEDIR $_RULE_INPUTS -lz.grub -lconfuse.grub");
 	});
 	// Special case tloadkif so it uses kmalloc rather than malloc
 	rulefor(ROOT + "/efiloader/tloadkif.grub.o",
@@ -489,34 +496,50 @@ PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj"), DEBUGPRIN
 
 COREIMG = OUTDIR + "/core.img";
 XORRISO = "xorriso";
-CDBOOT = "f:/cygwin64/usr/local/lib/grub/i386-pc/cdboot.img";
 GRUBPREFIX_CFG = OUTDIR + "/grub_prefix.cfg";
 ELTORITO = GRUBDIR + "/eltorito.img";
+
+BOOT_MNU = OUTDIR + "/boot.mnu";
+
 
 // for quick kernel testing
 PROCESSES = [];
 
-build(GRUBLOADER);
+
 
 if(defined(USE_GRUB))
 {
-	build(GRUBLOADER);
+	GRUB_MOD_DIR = GRUBDIR + "/i386-pc";
+	GRUBCFG = ROOT + "/grub-loader/iso/boot/grub/grub.cfg";
+	autodir(GRUB_MOD_DIR);
 
-	return(0);
-/* rulefor(ISOIMAGE, [ KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG ],
-		[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT ], function()
+	rulefor(ISOIMAGE, [ KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU ],
+		[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT, GRUB_MOD_DIR ], function()
 	{
 		cp(KERNEL, ISODIR);
 		cp(GRUBCFG, GRUBDIR);
 		cp(LIBSUPCS, ISODIR);
 		cp(MSCORLIB, ISODIR);
+		cp(GRUBLOADER, ISODIR);
+		cp(BOOT_MNU, BOOTDIR);
+
+		// Compress kernel
+		shellcmd("$GZIP -f $ISODIR/tysos.bin");
 
 		foreach(proc in PROCESSES)
 		{
 			cp(proc, ISODIR);
 		}
 
-		shellcmd("$GRUB_MKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -O i386-pc biosdisk multiboot configfile normal iso9660");
+		foreach(mod in files(dir(CDBOOT)))
+		{
+			cp(mod, GRUBDIR + "/i386-pc");
+		}
+
+		GRUB_PREFIX = dir(CDBOOT);
+		GRUB_MODS = "biosdisk multiboot configfile normal iso9660 all_video gfxterm acpi relocator";
+
+		shellcmd("$GRUB_MKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -p $GRUB_PREFIX -O i386-pc $GRUB_MODS");
 	
 		fcdboot = fopen(CDBOOT);
 		fcoreimg = fopen(COREIMG);
@@ -537,15 +560,13 @@ if(defined(USE_GRUB))
 		feltorito.Write(bcoreimg, 0, fcoreimg.Length);
 
 		shellcmd("$XORRISO -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
-	}); */
+	});
 }
 else if(defined(USE_UEFI))
 {
 	IMGDIR = OUTDIR + "/img";
 	autodir(IMGDIR + "/EFI/BOOT");
 	autodir(IMGDIR + "/boot");
-
-	BOOT_MNU = OUTDIR + "/boot.mnu";
 
 	rulefor(ISOIMAGE, [ KERNEL, LIBSUPCS, MSCORLIB, EFILOADER, BOOT_MNU ] + PROCESSES,
 		[ IMGDIR, IMGDIR + "/EFI/BOOT", IMGDIR + "/boot", ISODIR ],

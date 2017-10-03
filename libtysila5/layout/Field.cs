@@ -38,7 +38,14 @@ namespace libtysila5.layout
             int cur_align = 1;
 
             if (ts.SimpleType != 0)
-                return GetTypeSize(ts, t, is_static);
+            {
+                // simple types larger than a pointer (e.g. object/string)
+                //  still aling to pointer size;
+                var ret = GetTypeSize(ts, t, is_static);
+                if (ret < t.psize)
+                    return ret;
+                return t.psize;
+            }
 
             // reference types will always have a pointer and int64 in them
             if (is_static == false && !ts.IsValueType)
