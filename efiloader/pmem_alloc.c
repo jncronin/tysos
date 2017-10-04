@@ -19,12 +19,17 @@
 * THE SOFTWARE.
 */
 
-#ifndef PMEM_ALLOC_H
-#define PMEM_ALLOC_H 1
-
 #include <efi.h>
 #include <tloadkif.h>
 #include <stdio.h>
+#include <stdint.h>
+
+/* A list of assigned physical memory locations */
+#define MAX_PMEM_LOCS		512
+uintptr_t pmem_base[MAX_PMEM_LOCS];
+uintptr_t pmem_len[MAX_PMEM_LOCS];
+
+int cur_pmem_ptr = 0;
 
 #ifdef TYGRUB
 #include <grub/relocator.h>
@@ -59,6 +64,8 @@ EFI_STATUS alloc_code(UINTPTR len, EFI_PHYSICAL_ADDRESS *paddr)
 		printf("src: %p, srcv: %p, target: %p, size: %p, nsubchunks: %d\n",
 			gp->src, gp->srcv, gp->target, gp->size, gp->nsubchunks);
 #endif
+		pmem_base[cur_pmem_ptr] = (uintptr_t)*paddr;
+		pmem_len[cur_pmem_ptr++] = (uintptr_t)len;
 		return EFI_SUCCESS;
 	}
 	else
@@ -83,6 +90,4 @@ EFI_STATUS alloc_data(UINTPTR len, EFI_PHYSICAL_ADDRESS *paddr)
 {
 	return BS->AllocatePages(AllocateAnyPages, EfiLoaderData, len / 4096, paddr);
 }
-#endif
-
 #endif

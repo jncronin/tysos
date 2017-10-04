@@ -259,8 +259,6 @@ namespace tysos.x86_64
             /* Set up interrupts */
             ulong idt_start = VirtualRegions.Alloc(256 * 16, 0x1000, "idt");
             VirtMem.map_page(idt_start);
-            while (true) ;
-            Formatter.WriteLine("x86_64: IDT page mapped", DebugOutput);
             Interrupts = new Interrupts(idt_start);
             Formatter.WriteLine("x86_64: IDT allocated", DebugOutput);
 

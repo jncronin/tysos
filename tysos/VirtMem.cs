@@ -164,7 +164,7 @@ namespace tysos
             ulong pt_entry_addr = page_index >> 12;
 
             // Create pages in the paging hierarchy as necessary
-            Program.arch.BootInfoOutput.Write("a");
+            //Program.arch.BootInfoOutput.Write("a");
             if ((pstructs[pml4t_entry_addr] & 0x1) == 0)
             {
                 if (pmem == null)
@@ -185,7 +185,7 @@ namespace tysos
                 //Formatter.Write("5", Program.arch.DebugOutput);
             }
 
-            Program.arch.BootInfoOutput.Write("b");
+            //Program.arch.BootInfoOutput.Write("b");
             if ((pstructs[pdpt_entry_addr] & 0x1) == 0)
             {
                 if (pmem == null)
@@ -206,7 +206,7 @@ namespace tysos
                 //Formatter.Write("5", Program.arch.DebugOutput);
             }
 
-            Program.arch.BootInfoOutput.Write("c");
+            //Program.arch.BootInfoOutput.Write("c");
             if ((pstructs[pd_entry_addr] & 0x1) == 0)
             {
                 if (pmem == null)
@@ -240,7 +240,7 @@ namespace tysos
             {
                 // Allocate a page if there is not one already allocated, or we are requesting
                 //  a write to the blank page
-                Program.arch.BootInfoOutput.Write("d");
+                //Program.arch.BootInfoOutput.Write("d");
                 if ((pstructs[pt_entry_addr] & 0x1) == 0 || 
                     (writeable && ((pstructs[pt_entry_addr] & page_mask) == blank_page_paddr)))
                 {
@@ -249,43 +249,43 @@ namespace tysos
                         Program.arch.BootInfoOutput.Write("pmem invalid");
                         libsupcs.OtherOperations.Halt();
                     }
-                    Formatter.Write("D", Program.arch.DebugOutput);
+                    //Formatter.Write("D", Program.arch.DebugOutput);
                     paddr = pmem.BeginGetPage();
-                    Formatter.Write("1", Program.arch.DebugOutput);
+                    //Formatter.Write("1", Program.arch.DebugOutput);
                     pstructs[pt_entry_addr] = page_attrs | (paddr & paddr_mask);
-                    Formatter.Write("2", Program.arch.DebugOutput);
+                    //Formatter.Write("2", Program.arch.DebugOutput);
                     libsupcs.x86_64.Cpu.Invlpg(vaddr & page_mask);
-                    Formatter.Write("3", Program.arch.DebugOutput);
+                    //Formatter.Write("3", Program.arch.DebugOutput);
                     pmem.EndGetPage(paddr, vaddr & page_mask);
-                    Formatter.Write("4", Program.arch.DebugOutput);
+                    //Formatter.Write("4", Program.arch.DebugOutput);
                     libsupcs.MemoryOperations.QuickClearAligned16(vaddr & page_mask, 0x1000);
-                    Formatter.Write("5", Program.arch.DebugOutput);
+                    //Formatter.Write("5", Program.arch.DebugOutput);
 
-                    Formatter.WriteLine(Program.arch.DebugOutput);
-                    Formatter.Write("map: ", Program.arch.DebugOutput);
-                    Formatter.Write(paddr & paddr_mask, "X", Program.arch.DebugOutput);
-                    Formatter.Write(" to ", Program.arch.DebugOutput);
-                    Formatter.Write(vaddr & page_mask, "X", Program.arch.DebugOutput);
-                    Formatter.WriteLine(Program.arch.DebugOutput);
+                    //Formatter.WriteLine(Program.arch.DebugOutput);
+                    //Formatter.Write("map: ", Program.arch.DebugOutput);
+                    //Formatter.Write(paddr & paddr_mask, "X", Program.arch.DebugOutput);
+                    //Formatter.Write(" to ", Program.arch.DebugOutput);
+                    //Formatter.Write(vaddr & page_mask, "X", Program.arch.DebugOutput);
+                    //Formatter.WriteLine(Program.arch.DebugOutput);
 
                     return paddr & paddr_mask;
                 }
                 else
                 {
-                    Program.arch.BootInfoOutput.Write("e");
+                    //Program.arch.BootInfoOutput.Write("e");
                     return pstructs[pt_entry_addr] & paddr_mask;
                 }
             }
             else if(paddr == blank_page)
             {
-                Program.arch.BootInfoOutput.Write("f");
+                //Program.arch.BootInfoOutput.Write("f");
                 pstructs[pt_entry_addr] = page_attrs | (blank_page_paddr & paddr_mask);
                 libsupcs.x86_64.Cpu.Invlpg(vaddr & page_mask);
                 return blank_page_paddr;
             }
             else
             {
-                Program.arch.BootInfoOutput.Write("g");
+                //Program.arch.BootInfoOutput.Write("g");
                 // Map the actual page
                 //Formatter.Write("E", Program.arch.DebugOutput);
                 pstructs[pt_entry_addr] = page_attrs | (paddr & paddr_mask);

@@ -95,6 +95,10 @@ extern int v_width;
 extern int v_height;
 extern int v_bpp;
 
+extern uintptr_t pmem_base[];
+extern uintptr_t pmem_len[];
+extern int cur_pmem_ptr;
+
 struct cfg_module
 {
 	const char *name;
@@ -372,7 +376,7 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 
 	/* Allocate space for the stack */
 	UINTPTR kernel_stack;
-	UINTPTR kernel_stack_len = 0x2000;
+	UINTPTR kernel_stack_len = 0x10000;
 	Status = allocate(kernel_stack_len, &kernel_stack, NULL);
 	if (Status != EFI_SUCCESS)
 	{
@@ -467,11 +471,33 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	grub_uint32_t map_entries = grub_get_multiboot_mmap_count();
 	struct __array *mmap_array;
 	struct Multiboot_MemoryMap **mmap_ia =
-		(struct Multiboot_MemoryMap **)Create_Ref_Array(&mmap_array, map_entries);
+		(struct Multiboot_MemoryMap **)Create_Ref_Array(&mmap_array, map_entries + cur_pmem_ptr);
 	(*mmap_ia)->__vtbl += mb_adjust;
 	mbheader->mmap = (uint64_t)(uintptr_t)mmap_array + mb_adjust;
 
 	grub_mmap_iterate(mmap_iter, &mmap_ia);
+
+	// Add physical memory chunks as used to the memory map
+	for (int i = 0; i < cur_pmem_ptr; i++)
+	{
+		struct Multiboot_MemoryMap *new_mmap = (struct Multiboot_MemoryMap *)kmalloc(sizeof(struct Multiboot_MemoryMap));
+		Init_Multiboot_MemoryMap(new_mmap);
+		new_mmap->__vtbl += mb_adjust;
+
+		new_mmap->base_addr = (uint64_t)pmem_base[i];
+		new_mmap->length = (uint64_t)pmem_len[i];
+		new_mmap->type = UEfiLoaderData;
+
+		uintptr_t ia_ptr = (uintptr_t)mmap_ia;
+		ia_ptr += i * sizeof(UINTPTR);
+		struct Multiboot_MemoryMap **cur_mmap_ptr =
+			(struct Multiboot_MemoryMap **)ia_ptr;
+		*cur_mmap_ptr = new_mmap;
+
+		printf("Added used physical chunk %p-%p\n",
+			(uintptr_t)new_mmap->base_addr,
+			(uintptr_t)(new_mmap->base_addr + new_mmap->length));
+	}
 
 	mmap_array->inner_array += mb_adjust;
 	mmap_array->lobounds += mb_adjust;
