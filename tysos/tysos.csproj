@@ -154,6 +154,7 @@
     <Compile Include="x86_64\Acpi.cs" />
     <Compile Include="Arch.cs" />
     <Compile Include="x86_64\Arch.cs" />
+    <Compile Include="x86_64\BIOS.cs" />
     <Compile Include="x86_64\gdb_stub.cs" />
     <Compile Include="x86_64\Hpet.cs" />
     <Compile Include="collections\Lists.cs" />

@@ -88,7 +88,7 @@ namespace tysos.x86_64
             else if(rsdt != 0)
             {
                 /* Use RSDT */
-                ulong rsdt_va = Program.map_in(xsdt, 36, "RSDT header");
+                ulong rsdt_va = Program.map_in(rsdt, 36, "RSDT header");
                 uint len = *(uint*)(rsdt_va + 4);
                 rsdt_va = Program.map_in(rsdt, len, "RSDT");
 

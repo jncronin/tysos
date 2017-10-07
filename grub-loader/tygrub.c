@@ -42,6 +42,7 @@
 #include <grub/term.h>
 #include <grub/video.h>
 #include <grub/multiboot.h>
+#include <grub/acpi.h>
 
 #include <efi.h>
 
@@ -54,7 +55,7 @@
 
 char modname[] __attribute__((section(".modname"))) = "tygrub";
 
-char moddeps[] __attribute__((section(".moddeps"))) = "relocator\0video\0vbe\0multiboot\0gfxterm";
+char moddeps[] __attribute__((section(".moddeps"))) = "relocator\0video\0vbe\0multiboot\0gfxterm\0acpi";
 
 GRUB_MOD_LICENSE("GPLv3+");
 
@@ -502,6 +503,13 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	mmap_array->inner_array += mb_adjust;
 	mmap_array->lobounds += mb_adjust;
 	mmap_array->sizes += mb_adjust;
+
+	/* Add acpi table data */
+	void *rsdpv2 = grub_machine_acpi_get_rsdpv2();
+	if (rsdpv2 != NULL)
+		mbheader->virt_bda = (uint64_t)(uintptr_t)rsdpv2;
+	else
+		mbheader->virt_bda = (uint64_t)(uintptr_t)grub_machine_acpi_get_rsdpv1();
 
 	printf("Success - running trampoline function\n");
 	trampoline_func((uint64_t)ehdr->e_entry,

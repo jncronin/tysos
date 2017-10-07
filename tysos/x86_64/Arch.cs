@@ -438,6 +438,9 @@ namespace tysos.x86_64
                 case Multiboot.MachineMinorType_x86.UEFI:
                     fwconf = new UEFI(VirtualRegions, VirtMem, mboot.virt_bda);
                     break;
+                case Multiboot.MachineMinorType_x86.BIOS:
+                    fwconf = new BIOS(VirtualRegions, VirtMem, mboot.virt_bda);
+                    break;
                 default:
                     throw new Exception("Unsupported firmware: " + bios.ToString());
             }
