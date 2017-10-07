@@ -454,7 +454,15 @@ namespace libsupcs
 
         protected override bool IsValueTypeImpl()
         {
-            throw new NotImplementedException();
+            unsafe
+            {
+                void* extends = *(void**)((byte*)CastOperations.ReinterpretAsPointer(this) + ClassOperations.GetVtblExtendsVtblPtrOffset());
+
+                if (extends == OtherOperations.GetStaticObjectAddress("_Zu1L") ||
+                    extends == OtherOperations.GetStaticObjectAddress("_ZW6System4Enum"))
+                    return true;
+                return false;
+            }
         }
 
         [MethodAlias("_ZW6System4Type_15make_array_type_RV4Type_P2u1ti")]
@@ -584,9 +592,26 @@ namespace libsupcs
             void* o1vt = *o1;
             void* o2vt = *o2;
 
+            /* Rationalise vtables to enums to their underlying type counterparts */
+            void* o1ext = *(void**)((byte*)o1vt + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            void* o2ext = *(void**)((byte*)o2vt + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            if(o1ext == OtherOperations.GetStaticObjectAddress("_ZW6System4Enum"))
+            {
+                void** enum_ti = *(void***)o1vt;
+                o1vt = *(enum_ti + 1);
+            }
+            if (o2ext == OtherOperations.GetStaticObjectAddress("_ZW6System4Enum"))
+            {
+                void** enum_ti = *(void***)o2vt;
+                o2vt = *(enum_ti + 1);
+            }
+
             // This needs fixing for dynamic types
             if (o1vt != o2vt)
+            {
+                while (true) ;
                 return false;
+            }
 
             // Get type sizes
             int o1tsize = *(int*)((byte*)o1vt + ClassOperations.GetVtblTypeSizeOffset());
@@ -600,7 +625,7 @@ namespace libsupcs
             byte* o1_ptr = (byte*)o1 + header_size;
             byte* o2_ptr = (byte*)o2 + header_size;
 
-            if (MemoryOperations.MemCmp(o1_ptr, o2_ptr, o1tsize) == 0)
+            if (MemoryOperations.MemCmp(o1_ptr, o2_ptr, o1tsize - header_size) == 0)
                 return true;
             else
                 return false;

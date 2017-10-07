@@ -404,6 +404,34 @@ namespace tysos.x86_64
             Formatter.Write("x86_64: new heap of type ", Program.arch.DebugOutput);
             Formatter.WriteLine(gc.gc.Heap.ToString(), Program.arch.DebugOutput); */
 
+            /* Test a dictionary */
+            var dtest = new Dictionary<int, int>(new Program.MyGenericEqualityComparer<int>());
+            dtest[2] = 42;
+            var dout = dtest[2];
+            Formatter.Write("x86_64: dictionary test: ", DebugOutput);
+            Formatter.Write((ulong)dout, DebugOutput);
+            Formatter.WriteLine(DebugOutput);
+
+            /* Test enum comparer */
+            var enumcomp = new metadata.GenericEqualityComparerEnum<metadata.MetadataStream.TableId>();
+            if (enumcomp.Equals(metadata.MetadataStream.TableId.Assembly, metadata.MetadataStream.TableId.Assembly))
+                Formatter.WriteLine("x86_64: enumcomp test passed", DebugOutput);
+            else
+                Formatter.WriteLine("x86_64: enumcomp test failed", DebugOutput);
+
+            /* Test an enum dictionary */
+            var dtest2 = new Dictionary<metadata.MetadataStream.TableId, int>(new metadata.GenericEqualityComparerEnum<metadata.MetadataStream.TableId>());
+            dtest2[metadata.MetadataStream.TableId.TypeDef] = 42;
+            var dout2 = dtest2[metadata.MetadataStream.TableId.TypeDef];
+            Formatter.Write("x86_64: enum dictionary test: ", DebugOutput);
+            Formatter.Write((ulong)dout, DebugOutput);
+            Formatter.WriteLine(DebugOutput);
+
+            /* Test MetadataStream ctor */
+            Formatter.WriteLine("x86_64: Testing metadata ctor", DebugOutput);
+            var mtest = new metadata.MetadataStream();
+            Formatter.WriteLine("x86_64: done", DebugOutput);
+
             /* Initialize firmware */
             switch(bios)
             {

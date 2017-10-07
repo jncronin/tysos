@@ -136,5 +136,84 @@ namespace libsupcs
         {
             System.Diagnostics.Debugger.Break();
         }
+
+        [MethodAlias("_ZW6System5Array_12GetValueImpl_Ru1O_P2u1ti")]
+        [WeakLinkage]
+        [AlwaysCompile]
+        static unsafe void *GetValueImpl(void *arr, int pos)
+        {
+            /* Get the element type of the array */
+            void* et = *(void**)((byte*)arr + ArrayOperations.GetElemTypeOffset());
+
+            /* Get a pointer to the source data */
+            var elem_size = *(int*)((byte*)arr + ArrayOperations.GetElemSizeOffset());
+            void* ia = *(void**)((byte*)arr + ArrayOperations.GetInnerArrayOffset());
+            void* sptr = (void*)((byte*)ia + pos * elem_size);
+
+            /* Is this a value type? In which case we need to return a boxed value */
+            void* extends = *(void**)((byte*)et + ClassOperations.GetVtblExtendsVtblPtrOffset());
+
+            if (extends == OtherOperations.GetStaticObjectAddress("_Zu1L") ||
+                extends == OtherOperations.GetStaticObjectAddress("_ZW6System4Enum"))
+            {
+                /* This is a value type.  We need to read the size of the element,
+                 * create a new object of the appropriate size and copy the data
+                 * into it */
+                byte *ret = (byte*)MemoryOperations.GcMalloc(elem_size + ClassOperations.GetBoxedTypeDataOffset());
+                *(void**)(ret + ClassOperations.GetVtblFieldOffset()) = et;
+                *(ulong*)(ret + ClassOperations.GetMutexLockOffset()) = 0;
+
+                /* Avoid calls to memcpy if possible */
+                switch(elem_size)
+                {
+                    case 1:
+                        *(byte*)(ret + ClassOperations.GetBoxedTypeDataOffset()) = *(byte*)sptr;
+                        return ret;
+                    case 2:
+                        *(ushort*)(ret + ClassOperations.GetBoxedTypeDataOffset()) = *(ushort*)sptr;
+                        return ret;
+                    case 4:
+                        *(uint*)(ret + ClassOperations.GetBoxedTypeDataOffset()) = *(uint*)sptr;
+                        return ret;
+                    case 8:
+                        if (OtherOperations.GetPointerSize() >= 8)
+                        {
+                            *(ulong*)(ret + ClassOperations.GetBoxedTypeDataOffset()) = *(ulong*)sptr;
+                            return ret;
+                        }
+                        else
+                        {
+                            *(uint*)(ret + ClassOperations.GetBoxedTypeDataOffset()) = *(uint*)sptr;
+                            *(uint*)(ret + ClassOperations.GetBoxedTypeDataOffset() + 4) = *(uint*)((byte*)sptr + 4);
+                            return ret;
+                        }
+                    case 16:
+                        if (OtherOperations.GetPointerSize() >= 8)
+                        {
+                            *(ulong*)(ret + ClassOperations.GetBoxedTypeDataOffset()) = *(ulong*)sptr;
+                            *(ulong*)(ret + ClassOperations.GetBoxedTypeDataOffset() + 8) = *(ulong*)((byte*)sptr + 8);
+                            return ret;
+                        }
+                        else
+                        {
+                            *(uint*)(ret + ClassOperations.GetBoxedTypeDataOffset()) = *(uint*)sptr;
+                            *(uint*)(ret + ClassOperations.GetBoxedTypeDataOffset() + 4) = *(uint*)((byte*)sptr + 4);
+                            *(uint*)(ret + ClassOperations.GetBoxedTypeDataOffset() + 8) = *(uint*)((byte*)sptr + 8);
+                            *(uint*)(ret + ClassOperations.GetBoxedTypeDataOffset() + 12) = *(uint*)((byte*)sptr + 12);
+                            return ret;
+                        }
+                }
+
+                /* Do data copy via memcpy */
+                MemoryOperations.MemCpy(ret + ClassOperations.GetBoxedTypeDataOffset(),
+                    sptr, elem_size);
+                return ret;
+            }
+            else
+            {
+                /* Its a reference type, so just return the pointer */
+                return *(void**)sptr;                 
+            }
+        }
     }
 }
