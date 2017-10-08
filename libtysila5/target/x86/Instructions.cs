@@ -609,6 +609,8 @@ namespace libtysila5.target.x86
             ulong defined = 0;
             foreach (var si in n.stack_after)
                 defined |= si.reg.mask;
+            foreach (var si in n.stack_before)
+                defined |= si.reg.mask;
 
             var rt_idx = call_ms.m.GetMethodDefSigRetTypeIndex(call_ms.msig);
             rt = call_ms.m.GetTypeSpec(ref rt_idx, call_ms.gtparams, call_ms.gmparams);

@@ -251,6 +251,7 @@ namespace tysos
         public ulong BeginGetPage()
         {
             ulong ret = bmp.GetFreePage();
+
             if (ret == 0x0UL)
             {
                 Formatter.WriteLine("pmem: allocating from stack", Program.arch.DebugOutput);

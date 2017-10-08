@@ -448,7 +448,7 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	mbheader->tysos_size = kernel_high - kernel_low;
 	mbheader->tysos_static_start = static_start & ~0x7ULL;
 	mbheader->tysos_static_end = static_end;
-	mbheader->stack_low = kernel_stack;
+	mbheader->stack_low = kernel_stack + 0x1000;
 	mbheader->stack_high = kernel_stack + kernel_stack_len;
 
 	mbheader->machine_major_type = x86_64;

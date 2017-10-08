@@ -149,6 +149,52 @@ namespace tysos
         [libsupcs.Profile(false)]
         public ulong map_page(ulong vaddr, ulong paddr, bool writeable, bool cache_disable, bool write_through)
         {
+            /*
+            // Check to see if the physical page is already mapped
+            for(int pml4e = 0; pml4e < 512; pml4e++)
+            {
+                ulong pml4ei = (ulong)pml4e + 0xffffffe00;
+                if((pstructs[pml4ei] & 0x1) != 0)
+                {
+                    for(int pdpte = 0; pdpte < 512; pdpte++)
+                    {
+                        ulong pdptei = (ulong)pdpte + ((ulong)pml4e << 9) + 0xffffc0000;
+                        if((pstructs[pdptei] & 0x1) != 0)
+                        {
+                            for(int pde = 0; pde < 512; pde++)
+                            {
+                                ulong pdei = (ulong)pde + ((ulong)pdpte << 9) + ((ulong)pml4e << 18) + 0xff8000000;
+                                if((pstructs[pdei] & 0x1) != 0)
+                                {
+                                    for(int pte = 0; pte < 512; pte++)
+                                    {
+                                        ulong ptei = (ulong)pte + ((ulong)pde << 9) + ((ulong)pdpte << 18) + ((ulong)pml4e << 27);
+                                        if((pstructs[ptei] & 0x1) != 0)
+                                        {
+                                            // This page is mapped.
+                                            ulong cur_paddr = pstructs[ptei] & 0xfffffffffffff000UL;
+                                            if(cur_paddr == paddr)
+                                            {
+                                                Formatter.Write("vmem: warning: attempting to map physical address ", Program.arch.DebugOutput);
+                                                Formatter.Write(paddr, "X", Program.arch.DebugOutput);
+                                                Formatter.Write(" twice.  Previously mapped to ", Program.arch.DebugOutput);
+
+                                                ulong old_vaddr = ((ulong)pml4e << 39) + ((ulong)pdpte << 30) + ((ulong)pde << 21) + ((ulong)pte << 12);
+                                                Formatter.Write(old_vaddr, "X", Program.arch.DebugOutput);
+                                                Formatter.Write(", now mapping to ", Program.arch.DebugOutput);
+                                                Formatter.Write(vaddr, "X", Program.arch.DebugOutput);
+                                                Formatter.WriteLine(Program.arch.DebugOutput);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            */
+
             /* Optimised based on profiling concerns */
 
             /* in the current 48 bit implementation of x86_64, only the first 48 bits of the address

@@ -48,6 +48,9 @@ typedef union
 	}s;
 } udwords;
 
+du_int
+__udivmoddi4(du_int a, du_int b, du_int* rem);
+
 /* Returns: a % b */
 
 du_int

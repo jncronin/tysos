@@ -518,7 +518,9 @@ namespace libsupcs
         internal static unsafe void *CastClassEx(void *from_obj, void *to_vtbl)
         {
             if (from_obj == null)
+            {
                 return null;
+            }
 
             if (to_vtbl == null)
                 throw new InvalidCastException("CastClassEx: to_vtbl is null");
@@ -535,6 +537,28 @@ namespace libsupcs
 
             if (from_type == to_type)
                 return from_obj;
+
+            /* If both are arrays with non-null elem types, do an array-element-compatible-with
+             *  (CIL I:8.7.1) comparison */
+            void* from_extends = *(void**)((byte*)from_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            void* to_extends = *(void**)((byte*)to_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            if(from_extends == OtherOperations.GetStaticObjectAddress("_ZW6System5Array") &&
+                from_extends == to_extends)
+            {
+                void* from_et = *(((void**)from_type) + 1);
+                void* to_et = *(((void**)to_type) + 1);
+
+                if(from_et != null && to_et != null)
+                {
+                    from_et = get_array_element_compatible_with_vt(from_et);
+                    to_et = get_array_element_compatible_with_vt(to_et);
+
+                    if (from_et == to_et)
+                        return from_obj;
+                    else
+                        return null;
+                }
+            }
 
             /* Check whether we extend the type */
             void* cur_extends_vtbl = *(void**)((byte*)from_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
@@ -559,7 +583,44 @@ namespace libsupcs
                 }
             }
 
+            while (true) ;
             return null;
+        }
+
+        private static unsafe void* get_array_element_compatible_with_vt(void* et)
+        {
+            /* If this is an enum, get underlying type */
+            et = get_enum_underlying_type(et);
+
+            /* If this is a signed integer type, return the unsigned counterpart */
+            if (et == OtherOperations.GetStaticObjectAddress("_Za"))
+                return OtherOperations.GetStaticObjectAddress("_Zh");
+            else if (et == OtherOperations.GetStaticObjectAddress("_Zs"))
+                return OtherOperations.GetStaticObjectAddress("_Zt");
+            else if (et == OtherOperations.GetStaticObjectAddress("_Zc"))
+                return OtherOperations.GetStaticObjectAddress("_Zt");
+            else if (et == OtherOperations.GetStaticObjectAddress("_Zi"))
+                return OtherOperations.GetStaticObjectAddress("_Zj");
+            else if (et == OtherOperations.GetStaticObjectAddress("_Zx"))
+                return OtherOperations.GetStaticObjectAddress("_Zy");
+            else if (et == OtherOperations.GetStaticObjectAddress("_Zu1I"))
+                return OtherOperations.GetStaticObjectAddress("_Zu1U");
+
+            /* Else return the vtable unchanged */
+            return et;
+        }
+
+        /* If this is an enum vtable, return its underlying type, else
+         * return the vtable unchanged */
+        private static unsafe void* get_enum_underlying_type(void* vt)
+        {
+            void* extends = *(void**)((byte*)vt + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            if (extends == OtherOperations.GetStaticObjectAddress("_ZW6System4Enum"))
+            {
+                void** ti = *(void***)vt;
+                return *(ti + 1);
+            }
+            return vt;
         }
 
         /** <summary>Get the size of the type when it is a field in a type.  This will return the pointer size for

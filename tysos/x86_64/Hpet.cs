@@ -40,19 +40,21 @@ namespace tysos.x86_64
 
         public Hpet(Virtual_Regions vreg, VirtMem vmem, ulong paddr)
         {
-            Formatter.WriteLine("Initialising HPET", Program.arch.DebugOutput);
+            Formatter.Write("Initialising HPET at physical address ", Program.arch.DebugOutput);
+            Formatter.Write(paddr, "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
             hpet_reg_space_vaddr = Program.map_in(paddr, 0x1000, "HPET", true, true, true);
 
             /* General capabilities register at offset 0
-             * 
-             * bits 0-7         revision id
-             * bits 12-8        one less than number of timers (i.e. id of last timer)
-             * bit 13           count size cap.  1 if main counter is 64 bits wide, else 0
-             * bit 14           reserved
-             * bit 15           legacy replacement route capable
-             * bits 16-31       vendor ID (as per PCI)
-             * bits 32-63       rate at which main counter increments in femtoseconds (10 ^ -15)
-             */
+                  * 
+                  * bits 0-7         revision id
+                  * bits 12-8        one less than number of timers (i.e. id of last timer)
+                  * bit 13           count size cap.  1 if main counter is 64 bits wide, else 0
+                  * bit 14           reserved
+                  * bit 15           legacy replacement route capable
+                  * bits 16-31       vendor ID (as per PCI)
+                  * bits 32-63       rate at which main counter increments in femtoseconds (10 ^ -15)
+                  */
             ulong gen_cap = ReadQwordRegister(0);
             timer_count = (int)(((gen_cap >> 8) & 0x1f) + 1);
             main_timer_is_64_bit = ((gen_cap & 0x2000) == 0x2000);

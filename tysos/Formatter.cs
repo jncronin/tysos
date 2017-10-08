@@ -262,6 +262,12 @@ namespace tysos
         [libsupcs.Profile(false)]
         private static void _Write(ulong v, int Base, IDebugOutput s, bool uppercase, int min_digits)
         {
+            if (digits == null)
+            {
+                s.Write("<error>");
+                return;
+            }
+
             int cur_digit = 0;
 
             while (v != 0)

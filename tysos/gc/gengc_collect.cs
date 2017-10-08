@@ -115,7 +115,7 @@ namespace tysos.gc
             Formatter.WriteLine("done", Program.arch.DebugOutput);
 #endif
 
-/* blacken reachable blocks */
+            /* blacken reachable blocks */
 #if GENGC_BASICDEBUG
             Formatter.Write("gengc: blackening reachable blocks... ", Program.arch.DebugOutput);
 #endif
@@ -221,7 +221,7 @@ namespace tysos.gc
             Formatter.WriteLine("done", Program.arch.DebugOutput);
 #endif
 
-/* Iterate through again, setting white to free and black to white */
+            /* Iterate through again, setting white to free and black to white */
 #if GENGC_BASICDEBUG
             Formatter.Write("gengc: freeing white blocks... ", Program.arch.DebugOutput);
 #endif
@@ -361,13 +361,13 @@ namespace tysos.gc
 
         private unsafe void grey_object(byte* obj_start, byte* obj_end)
         {
-#if GENGC_DEBUG
+//#if GENGC_DEBUG
             Formatter.Write("gengc: greying object from ", Program.arch.DebugOutput);
             Formatter.Write((ulong)obj_start, "X", Program.arch.DebugOutput);
             Formatter.Write(" to ", Program.arch.DebugOutput);
             Formatter.Write((ulong)obj_end, "X", Program.arch.DebugOutput);
             Formatter.WriteLine(Program.arch.DebugOutput);
-#endif
+//#endif
 
             byte** cur_ptr = (byte**)obj_start;
             while((byte*)cur_ptr + sizeof(void*) <= obj_end)
@@ -385,11 +385,11 @@ namespace tysos.gc
                 /* First, check its at all valid (i.e. points within the heap) */
                 if(obj >= heap_start && obj < heap_end)
                 {
-#if GENGC_DEBUG
+//#if GENGC_DEBUG
                     Formatter.Write("gengc: grey_object: object has member ", Program.arch.DebugOutput);
                     Formatter.Write((ulong)obj, "X", Program.arch.DebugOutput);
                     Formatter.WriteLine(" which is potentially within the heap", Program.arch.DebugOutput);
-#endif
+//#endif
 
                     /* Now get the chunk that contains it in the used tree */
                     chunk_header* chk = search(hdr, 1, 1, obj);

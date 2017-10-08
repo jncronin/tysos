@@ -70,6 +70,7 @@ namespace tysos.gc
     {
         /* The number of allocations since the last collection */
         int allocs = 0;
+        internal int ready = 0;
 
         /* tree_idx determines which tree is being used:
          * 
@@ -141,6 +142,14 @@ namespace tysos.gc
             sm_total_counts = new int[] { 512, 256, 160, 128, 80, 64, 48, 40, 32, 16, 8, 8, 8,
             8, 8 };
 
+            /* Check the total size needed for sm_sizes/total_counts array */
+            ulong sm_arrays_end = ((ulong)hdr + (ulong)sizeof(heap_header) +
+                (ulong)sm_sizes.Length * (ulong)sizeof(sma_header*) +
+                (ulong)sm_total_counts.Length * (ulong)sizeof(int));
+            Formatter.Write("gengc: sm_arrays_end: ", Program.arch.DebugOutput);
+            Formatter.Write(sm_arrays_end, "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
+
             /* Check we have enough space for our structures */
             if (((byte*)end - (byte*)start) < 0x100000)
                 throw new Exception("Not enough heap space provided");
@@ -211,6 +220,8 @@ namespace tysos.gc
                 *get_sma_ptr(i) = null;
                 *get_sm_free_ptr(i) = 0;
             }
+
+            ready = 1;
         }
 
         [libsupcs.Uninterruptible]
@@ -238,6 +249,7 @@ namespace tysos.gc
             {
                 chunk_header* c = allocate_chunk(length);
                 alloc_in_progress = false;
+
                 if (c == null)
                     return null;
                 return (void*)((byte*)c + sizeof(chunk_header));
@@ -420,6 +432,7 @@ namespace tysos.gc
             // TODO: ?zero the returned memory block
 
             *sma_ptr = h;
+
             return h;
         }
 
@@ -548,6 +561,30 @@ namespace tysos.gc
 
             while(src != nil)
             {
+                /*Formatter.Write("gengc: search: src: ", Program.arch.DebugOutput);
+                Formatter.Write((ulong)src, "X", Program.arch.DebugOutput);
+                Formatter.Write(", parent: ", Program.arch.DebugOutput);
+                Formatter.Write((ulong)src->parent, "X", Program.arch.DebugOutput);
+                Formatter.Write(", left: ", Program.arch.DebugOutput);
+                Formatter.Write((ulong)src->left, "X", Program.arch.DebugOutput);
+                Formatter.Write(", right: ", Program.arch.DebugOutput);
+                Formatter.Write((ulong)src->right, "X", Program.arch.DebugOutput);
+                Formatter.WriteLine(Program.arch.DebugOutput);*/
+
+                if(src == null)
+                {
+                    Formatter.WriteLine("gengc: search: error: src is null", Program.arch.DebugOutput);
+                    Formatter.Write("gengc: tree_idx: ", Program.arch.DebugOutput);
+                    Formatter.Write((ulong)tree_idx, Program.arch.DebugOutput);
+                    Formatter.Write(", pattern: ", Program.arch.DebugOutput);
+                    Formatter.Write((ulong)pattern, Program.arch.DebugOutput);
+                    Formatter.Write(", root: ", Program.arch.DebugOutput);
+                    Formatter.Write((ulong)root, "X", Program.arch.DebugOutput);
+                    Formatter.Write(", nil: ", Program.arch.DebugOutput);
+                    Formatter.Write((ulong)nil, "X", Program.arch.DebugOutput);
+                    Formatter.WriteLine(Program.arch.DebugOutput);
+                    while (true) ;
+                }
                 byte* node_val;
                 if(tree_idx == 0)
                 {

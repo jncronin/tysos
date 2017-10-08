@@ -117,7 +117,8 @@ namespace libtysila5
             /* For types we add one special field:
              * 
              * If this is an enum, its a pointer to the vtable for the underlying type
-             * else zero
+             * If it is a zero-based array, its a pointer to the vtable for the element type
+             * Else zero
              * 
              * Second special field is initialized to zero, and is used at runtime
              * to hold the pointer to the System.Type instance
@@ -128,6 +129,10 @@ namespace libtysila5
                 var ut = ts.Unbox.UnderlyingType;
 
                 sig_metadata_addrs[str_tab.Count] = ut.MangleType();
+            }
+            else if(ts.stype == TypeSpec.SpecialType.SzArray)
+            {
+                sig_metadata_addrs[str_tab.Count] = ts.other.MangleType();
             }
 
             for (int i = 0; i < t.psize; i++)
