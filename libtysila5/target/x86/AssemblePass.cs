@@ -684,7 +684,7 @@ namespace libtysila5.target.x86
                         break;
 
                     case x86_mov_rm8disp_r8:
-                        AddRex(Code, Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg, null, true));
+                        AddRex(Code, Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg, null, true, true));
                         Code.Add(0x88);
                         Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
                         break;
@@ -1062,7 +1062,11 @@ namespace libtysila5.target.x86
                 }
             }
             if (rex != 0)
+            {
+                if (psize == 4)
+                    throw new Exception("Cannot encode rex prefix in ia32 mode");
                 return (byte)(0x40 | rex);
+            }
             return 0;
         }
 

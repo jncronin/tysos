@@ -86,6 +86,7 @@ export function target_init(string name, int ptr_size, int is_msb)
 	instr(tdef, "break");
 	instr(tdef, "mclabel");
 	instr(tdef, "memcpy");
+	instr(tdef, "memset");
 	instr(tdef, "syncvalcompareandswap");
 	instr(tdef, "spinlockhint");
 

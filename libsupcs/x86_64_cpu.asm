@@ -28,6 +28,7 @@ weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_11WriteGSData_Rv_P2iPv:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_6Invlpg_Rv_P1y:function
 weak _ZN14libsupcs#2Edll8libsupcs15OtherOperations_4Exit_Rv_P0:function
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_4Sgdt_Rv_P1Pv:function
+weak _ZN14libsupcs#2Edll8libsupcs15OtherOperations_13AsmBreakpoint_Rv_P0:function
 
 weak _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_5Break_Rv_P0:function
 
@@ -46,6 +47,13 @@ weak _conv_u8_r8:function
 
 extern __display_halt
 extern __undefined_func
+
+_ZN14libsupcs#2Edll8libsupcs15OtherOperations_13AsmBreakpoint_Rv_P0:
+	mov	rax, 0
+.L0:
+	cmp	rax, 1
+	jne	.L0
+	ret
 
 _ZN14libsupcs#2Edll17libsupcs#2Ex86_643Cpu_7get_Cr3_Ry_P0:
 	mov	rax, cr3

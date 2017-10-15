@@ -1072,9 +1072,9 @@ namespace libtysila5.target.x86
             // Restore stack
             if (push_length != 0)
             {
-                var add_oc = x86_add_rm32_imm32;
+                var add_oc = t.psize == 4 ? x86_add_rm32_imm32 : x86_add_rm64_imm32;
                 if (push_length < 128)
-                    add_oc = x86_add_rm32_imm8;
+                    add_oc = t.psize == 4 ? x86_add_rm32_imm8 : x86_add_rm64_imm8;
                 r.Add(inst(add_oc, r_esp, push_length, n));
             }
 
@@ -1141,9 +1141,9 @@ namespace libtysila5.target.x86
                 {
                     var psize = util.util.align(cr.size, 4);
                     if (psize <= 127)
-                        r.Add(inst(x86_sub_rm32_imm8, r_esp, psize, n));
+                        r.Add(inst(c.t.psize == 4 ? x86_sub_rm32_imm8 : x86_sub_rm64_imm8, r_esp, psize, n));
                     else
-                        r.Add(inst(x86_sub_rm32_imm32, r_esp, psize, n));
+                        r.Add(inst(c.t.psize == 4 ? x86_sub_rm32_imm32 : x86_sub_rm64_imm32, r_esp, psize, n));
                     handle_move(new ContentsReg { basereg = r_esp, size = cr.size },
                         cr, r, n, c);
                 }
@@ -1164,7 +1164,7 @@ namespace libtysila5.target.x86
                 }
                 else if (reg.type == rt_float)
                 {
-                    r.Add(inst(x86_sub_rm32_imm8, r_esp, 8, n));
+                    r.Add(inst(c.t.psize == 4 ? x86_sub_rm32_imm8 : x86_sub_rm64_imm8, r_esp, 8, n));
                     r.Add(inst(x86_movsd_xmmm64_xmm, new ContentsReg { basereg = r_esp, size = 8 }, reg, n));
                     push_length += 8;
                 }
@@ -1186,9 +1186,9 @@ namespace libtysila5.target.x86
                         r, n, c);
                     var psize = util.util.align(cr.size, 4);
                     if (psize <= 127)
-                        r.Add(inst(x86_add_rm32_imm8, r_esp, psize, n));
+                        r.Add(inst(c.t.psize == 4 ? x86_add_rm32_imm8 : x86_add_rm64_imm8, r_esp, psize, n));
                     else
-                        r.Add(inst(x86_add_rm32_imm32, r_esp, psize, n));
+                        r.Add(inst(c.t.psize == 4 ? x86_add_rm32_imm32 : x86_add_rm64_imm32, r_esp, psize, n));
                 }
                 pop_length += 4;
             }
@@ -1208,7 +1208,7 @@ namespace libtysila5.target.x86
                 else if (reg.type == rt_float)
                 {
                     r.Add(inst(x86_movsd_xmm_xmmm64, reg, new ContentsReg { basereg = r_esp, size = 8 }, n));
-                    r.Add(inst(x86_add_rm32_imm8, r_esp, 8, n));
+                    r.Add(inst(c.t.psize == 4 ? x86_add_rm32_imm8 : x86_add_rm64_imm8, r_esp, 8, n));
                     pop_length += 8;
                 }
             }
@@ -1860,6 +1860,48 @@ namespace libtysila5.target.x86
             r.Add(inst(x86_mov_rm32_imm32, r_ecx, 1, n));
             r.Add(inst(x86_lock_cmpxchg_rm8_r8, new ContentsReg { basereg = r_edx }, r_ecx, n));
             r.Add(inst_jmp(x86_jcc_rel32, t1, ir.Opcode.cc_ne, n));
+
+            return r;
+        }
+
+        internal static List<MCInst> handle_memset(
+           Target t,
+           List<CilNode.IRNode> nodes,
+           int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            var dr = n.stack_before.Peek(n.arg_a).reg;
+            var cv = n.stack_before.Peek(n.arg_b);
+            var cr = cv.reg;
+
+            List<MCInst> r = new List<MCInst>();
+
+            if (cv.min_l == cv.max_l && cv.min_l <= t.psize * 4 &&
+                cv.min_l % t.psize == 0 &&
+                dr.type == rt_gpr)
+            {
+                // can optimise call away
+                for(int i = 0; i < cv.min_l; i+= t.psize)
+                {
+                    var cdr = new ContentsReg { basereg = dr, disp = i, size = t.psize };
+
+                    r.Add(inst(t.psize == 4 ? x86_mov_rm32_imm32 : x86_mov_rm64_imm32,
+                        cdr, new ir.Param { t = ir.Opcode.vl_c32, v = 0 }, n));
+
+                }
+                return r;
+            }
+
+            r.AddRange(handle_call(n, c,
+                c.special_meths.GetMethodSpec(c.special_meths.memset),
+                new ir.Param[]
+                {
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = dr },
+                            0,
+                            new ir.Param { t = ir.Opcode.vl_mreg, mreg = cr },
+                },
+                null, "memset"));
 
             return r;
         }
@@ -3492,7 +3534,7 @@ namespace libtysila5.target.x86
                         r.Add(inst(x86_push_imm32, n.imm_l, n));
                         r.Add(inst(x86_cvtss2sd_xmm_xmmm32, act_dest,
                             new ContentsReg { basereg = r_esp, size = 4 }, n));
-                        r.Add(inst(x86_add_rm32_imm8, r_esp, t.psize, n));
+                        r.Add(inst(t.psize == 4 ? x86_add_rm32_imm8 : x86_add_rm64_imm8, r_esp, t.psize, n));
                         handle_move(dest, act_dest, r, n, c);
                         return r;
                     }
@@ -3531,7 +3573,7 @@ namespace libtysila5.target.x86
                             r.Add(inst(x86_push_r32, r_eax, n));
                             r.Add(inst(x86_movsd_xmm_xmmm64, act_dest,
                                 new ContentsReg { basereg = r_esp, size = 8 }, n));
-                            r.Add(inst(x86_add_rm32_imm8, r_esp, 8, n));
+                            r.Add(inst(x86_add_rm64_imm8, r_esp, 8, n));
                             handle_move(dest, act_dest, r, n, c);
                             return r;
                         }
@@ -3571,6 +3613,7 @@ namespace libtysila5.target.x86
             var n_ct = n.ctret;
             var src = c.lv_locs[(int)n.imm_l];
             var dest = n.stack_after.Peek(n.res_a).reg;
+            var vt_size = n.vt_size;
 
             var r = new List<MCInst>();
             if (n_ct == ir.Opcode.ct_int32 ||
@@ -3578,8 +3621,42 @@ namespace libtysila5.target.x86
                 n_ct == ir.Opcode.ct_vt ||
                 (n_ct == ir.Opcode.ct_int64 && t.psize == 8))
             {
-                handle_move(dest, src, r, n, c, null,
-                    n_ct == ir.Opcode.ct_int32 ? 4 : -1);
+                if (vt_size < 4)
+                {
+                    // perform a sign/zero extension load
+                    int oc = 0;
+                    if (vt_size == 1)
+                    {
+                        if (n.imm_ul == 0)
+                            oc = x86_movzxbd;
+                        else
+                            oc = x86_movsxbd;
+                    }
+                    else if (vt_size == 2)
+                    {
+                        if (n.imm_ul == 0)
+                            oc = x86_movzxwd;
+                        else
+                            oc = x86_movsxwd;
+                    }
+                    else
+                        throw new NotSupportedException("Invalid vt_size");
+
+                    if (dest is ContentsReg)
+                    {
+                        r.Add(inst(oc, r_eax, src, n));
+                        handle_move(dest, r_eax, r, n, c);
+                    }
+                    else
+                    {
+                        r.Add(inst(oc, dest, src, n));
+                    }
+                }
+                else
+                {
+                    handle_move(dest, src, r, n, c, null,
+                        n_ct == ir.Opcode.ct_int32 ? 4 : -1);
+                }
                 return r;
             }
             else if (n_ct == ir.Opcode.ct_int64)

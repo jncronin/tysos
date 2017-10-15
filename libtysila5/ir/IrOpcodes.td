@@ -80,6 +80,7 @@ intmap("libtysila5.ir", "Opcode", "oc", "oc_names", "init_oc", [
 	"break",
 	"mclabel",
 	"memcpy",
+	"memset",
 	"syncvalcompareandswap",
 	"spinlockhint",
 

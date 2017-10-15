@@ -68,6 +68,7 @@ namespace tysos.x86_64
             hpet_freq_mhz *= 0.000000001;
             hpet_freq_mhz = 1 / hpet_freq_mhz;
 
+            libsupcs.OtherOperations.AsmBreakpoint();
             Program.arch.DebugOutput.Write("HPET frequency is " + hpet_freq_mhz.ToString() + " Mhz\n");
 
             DisableMainCounter();

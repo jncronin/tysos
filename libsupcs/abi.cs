@@ -445,6 +445,9 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public unsafe static extern void SpinlockHint();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern void AsmBreakpoint();
     }
 
     public class ArrayOperations

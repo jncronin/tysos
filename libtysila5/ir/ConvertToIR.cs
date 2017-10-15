@@ -968,6 +968,15 @@ namespace libtysila5.ir
             return stack_after;
         }
 
+        private static Stack<StackItem> memset(CilNode n, Code c, Stack<StackItem> stack_before, int dest = 1, int length = 0)
+        {
+            var stack_after = new Stack<StackItem>(stack_before);
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_memset, stack_before = stack_before, stack_after = stack_after, arg_a = dest, arg_b = length });
+
+            return stack_after;
+        }
+
         private static Stack<StackItem> pop(CilNode n, Code c, Stack<StackItem> stack_before)
         {
             var stack_after = new Stack<StackItem>(stack_before);
@@ -1543,6 +1552,13 @@ namespace libtysila5.ir
 
                 /* Load up the address of the object for passing to the constructor */
                 stack_after = ldobja(n, c, stack_after, objtype);
+
+                /* Clear the memory */
+                stack_after = copy_to_front(n, c, stack_after);
+                stack_after = ldc(n, c, stack_after, layout.Layout.GetTypeSize(objtype, c.t));
+                stack_after = memset(n, c, stack_after);
+                stack_after = pop(n, c, stack_after);
+                stack_after = pop(n, c, stack_after);
             }
             else
             {
@@ -2986,7 +3002,7 @@ namespace libtysila5.ir
             var vt_size = c.t.GetSize(ts);
             var ct = Opcode.GetCTFromType(ts);
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldloc, ctret = ct, vt_size = vt_size, imm_l = v, stack_before = stack_before, stack_after = stack_after });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldloc, ctret = ct, vt_size = vt_size, imm_l = v, imm_ul = ts.IsSigned ? 1UL : 0UL, stack_before = stack_before, stack_after = stack_after });
 
             return stack_after;
         }
