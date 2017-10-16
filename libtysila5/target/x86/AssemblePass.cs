@@ -1039,6 +1039,8 @@ namespace libtysila5.target.x86
                 rex |= 0x4;
             if (rm_ocreg != null && rm_ocreg.id >= x86_64.x86_64_Assembler.r_r8.id)
                 rex |= 0x1;
+            if ((rm_ocreg is ContentsReg) && (((ContentsReg)rm_ocreg).basereg.id >= x86_64.x86_64_Assembler.r_r8.id))
+                rex |= 0x1;
             if(sib_index != null && sib_index.id >= x86_64.x86_64_Assembler.r_r8.id)
                 rex |= 0x2;
             if (is_rm8 && rm_ocreg != null && !(rm_ocreg is ContentsReg))
