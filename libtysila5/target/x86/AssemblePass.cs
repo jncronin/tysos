@@ -1001,6 +1001,16 @@ namespace libtysila5.target.x86
                         AddImm8(Code, I.p[3].v);
                         break;
 
+                    case x86_roundsd_xmm_xmmm64_imm8:
+                        Code.Add(0x66);
+                        Code.Add(0x0f);
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
+                        Code.Add(0x3a);
+                        Code.Add(0x0b);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        AddImm8(Code, I.p[3].v);
+                        break;
+
                     case x86_iret:
                     case x86_iretq:
                         AddRex(Code, Rex(I.p[0].v, null, null));

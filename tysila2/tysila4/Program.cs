@@ -63,7 +63,7 @@ namespace tysila4
             var argc = args.Length;
             char c;
             var go = new XGetoptCS.XGetopt();
-            var arg_str = "t:L:f:e:o:d:qDC:H:";
+            var arg_str = "t:L:f:e:o:d:qDC:H:m:";
             string target = "x86";
             string debug_file = null;
             string output_file = null;
@@ -72,6 +72,7 @@ namespace tysila4
             string hfile = null;
             bool quiet = false;
             bool require_metadata_version_match = true;
+            Dictionary<string, object> opts = new Dictionary<string, object>();
             while((c = go.Getopt(argc, args, arg_str)) != '\0')
             {
                 switch(c)
@@ -102,6 +103,33 @@ namespace tysila4
                         break;
                     case 'H':
                         hfile = go.Optarg;
+                        break;
+                    case 'm':
+                        {
+                            var opt = go.Optarg;
+                            object optval = true;
+                            if(opt.Contains("="))
+                            {
+                                var optvals = opt.Substring(opt.IndexOf("=") + 1);
+                                opt = opt.Substring(0, opt.IndexOf("="));
+
+                                int intval;
+                                if (optvals.ToLower() == "false" || optvals.ToLower() == "off" || optvals.ToLower() == "no")
+                                    optval = false;
+                                else if (optvals.ToLower() == "true" || optvals.ToLower() == "on" || optvals.ToLower() == "yes")
+                                    optval = true;
+                                else if (int.TryParse(optvals, out intval))
+                                    optval = intval;
+                                else
+                                    optval = optvals;
+                            }
+                            else if(opt.StartsWith("no-"))
+                            {
+                                opt = opt.Substring(3);
+                                optval = false;
+                            }
+                            opts[opt] = optval;
+                        }
                         break;
                 }
             }
@@ -143,6 +171,16 @@ namespace tysila4
             }
 
             var t = libtysila5.target.Target.targets[target];
+            // try and set target options
+            foreach(var kvp in opts)
+            {
+                if(!t.Options.TrySet(kvp.Key, kvp.Value))
+                {
+                    Console.WriteLine("Unable to set target option " + kvp.Key + " to " + kvp.Value.ToString());
+                    return;
+                }
+            }
+
             if (output_file != null)
             {
                 var bf = new binary_library.elf.ElfFile(binary_library.Bitness.Bits32);

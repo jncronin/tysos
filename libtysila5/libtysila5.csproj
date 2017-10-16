@@ -65,6 +65,7 @@
     <Compile Include="target\MCGraph.cs" />
     <Compile Include="target\MCInst.cs" />
     <Compile Include="target\Target.cs" />
+    <Compile Include="target\TargetOptions.cs" />
     <Compile Include="target\Targets.cs" />
     <Compile Include="target\Trie.cs" />
     <Compile Include="target\x86\AssemblePass.cs" />

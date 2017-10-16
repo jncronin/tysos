@@ -151,19 +151,21 @@ METADATAOBJ = objfromexe(METADATA);
 
 
 LIBSUPCS_COMPILER_RT = [
-	ROOT + "/libsupcs/compiler_rt/ashldi3.o",
-	ROOT + "/libsupcs/compiler_rt/ashrdi3.o",
-	ROOT + "/libsupcs/compiler_rt/divdi3.o",
-	ROOT + "/libsupcs/compiler_rt/fixdfdi.o",
-	ROOT + "/libsupcs/compiler_rt/fixunsdfdi.o",
-	ROOT + "/libsupcs/compiler_rt/fixunsdfsi.o",
-	ROOT + "/libsupcs/compiler_rt/floatdidf.o",
-	ROOT + "/libsupcs/compiler_rt/floatundidf.o",
-	ROOT + "/libsupcs/compiler_rt/lshrdi3.o",
-	ROOT + "/libsupcs/compiler_rt/moddi3.o",
-	ROOT + "/libsupcs/compiler_rt/muldi3.o",
-	ROOT + "/libsupcs/compiler_rt/negdi2.o",
-	ROOT + "/libsupcs/compiler_rt/udivmoddi4.o"
+	ROOT + "/libsupcs/compiler_rt/ashldi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/ashrdi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/divdi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/fixdfdi.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/fixunsdfdi.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/fixunsdfsi.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/floatdidf.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/floatundidf.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/lshrdi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/moddi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/muldi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/negdi2.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/udivmoddi4.$TARGET.o",
+
+	ROOT + "/libsupcs/netlib/s_rint.$TARGET.o"
 ];
 
 KERNEL = ROOT + "/tysos.bin";
@@ -238,11 +240,11 @@ typroject(CORLIB_TY_SRCS);
 /* Rules for assembling CLR binaries */
 rulefor("%.obj", [ "%.exe" ], [ TYSILA, CORLIB_DLL, "test.tmk" ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 rulefor("%.obj", [ "%.dll" ], [ TYSILA, CORLIB_DLL, "test.tmk" ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 /*rulefor "%.to" inputs { "%.obj" } depends { TL, "test.tmk" } {
 	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
@@ -266,6 +268,14 @@ rulefor("%.o", [ "%.c" ], [ "test.tmk" ], function() {
 });
 
 rulefor("%.o", [ "%.s" ], [ "test.tmk" ], function() {
+	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
+});
+
+rulefor("%.$TARGET.o", [ "%.c" ], [ "test.tmk" ], function() {
+	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
+});
+
+rulefor("%.$TARGET.o", [ "%.s" ], [ "test.tmk" ], function() {
 	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
 });
 

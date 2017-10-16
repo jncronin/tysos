@@ -35,6 +35,66 @@ namespace libtysila5.target.x86
             init_instrs();
         }
 
+        bool has_cpu_feature(string name)
+        {
+            // get cpu family, model, stepping
+            int family = 0;
+            var lvls = Environment.GetEnvironmentVariable("PROCESSOR_LEVEL");
+            if(lvls != null)
+            {
+                int.TryParse(lvls, out family);
+            }
+
+            int model = 0;
+            int stepping = 0;
+            var rev = Environment.GetEnvironmentVariable("PROCESSOR_REVISION");
+            if(rev != null)
+            {
+                if(rev.Length == 4)
+                {
+                    string mods = rev.Substring(0, 2);
+                    string steps = rev.Substring(2, 2);
+
+                    int.TryParse(mods, System.Globalization.NumberStyles.HexNumber, null, out model);
+                    int.TryParse(steps, System.Globalization.NumberStyles.HexNumber, null, out stepping);
+                }
+            }
+
+            bool is_amd64 = false;
+            var parch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
+            if (parch != null && parch == "AMD64")
+                is_amd64 = true;
+
+            if(name == "sse2")
+            {
+                if (is_amd64)
+                    return true;
+                if (family == 6 || family == 15)
+                    return true;
+                return false;
+            }
+
+            if(name == "sse4_1")
+            {
+                if (family == 6 && model >= 6)
+                    return true;
+                return false;
+            }
+
+            throw new NotImplementedException();
+        }
+
+        void init_cpu_feature_option(string s)
+        {
+            Options.InternalAdd(s, has_cpu_feature(s));
+        }
+
+        protected void init_options()
+        {
+            // cpu features
+            init_cpu_feature_option("sse4_1");
+        }
+
         public override void InitIntcalls()
         {
             ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortOut_Rv_P2th"] = portout_byte;
@@ -43,6 +103,24 @@ namespace libtysila5.target.x86
             ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortInb_Rh_P1t"] = portin_byte;
             ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortInw_Rt_P1t"] = portin_word;
             ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortInd_Rj_P1t"] = portin_dword;
+            ConvertToIR.intcalls["_ZW6System4Math_5Round_Rd_P1d"] = math_Round;
+        }
+
+        private static util.Stack<StackItem> math_Round(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
+        {
+            var stack_after = new util.Stack<StackItem>(stack_before);
+
+            var old = stack_after.Pop();
+
+            // propagate immediate value if there is one
+            double min_imm = Math.Round(BitConverter.ToDouble(BitConverter.GetBytes(old.min_ul), 0));
+            double max_imm = Math.Round(BitConverter.ToDouble(BitConverter.GetBytes(old.max_ul), 0));
+
+            stack_after.Push(new StackItem { ts = c.ms.m.GetSimpleTypeSpec(0xd), min_ul = BitConverter.ToUInt64(BitConverter.GetBytes(min_imm), 0), max_ul = BitConverter.ToUInt64(BitConverter.GetBytes(max_imm), 0) });
+
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = ir.Opcode.oc_target_specific, imm_l = x86_roundsd_xmm_xmmm64_imm8, stack_before = stack_before, stack_after = stack_after, arg_a = 0, res_a = 0 });
+
+            return stack_after;
         }
 
         private static util.Stack<StackItem> portin_byte(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)

@@ -55,6 +55,8 @@ namespace libtysila5.ir
         public int string_PaiiEncoding;
         public int string_Paii;
 
+        public int rint;
+
         MetadataStream corlib;
 
         List<byte> b = new List<byte>();
@@ -77,6 +79,7 @@ namespace libtysila5.ir
             var Pc = c.Pointer;
             var Zc = c.SzArray;
             var Pv = m.SystemVoid.Type.Pointer;
+            var d = corlib.GetSimpleTypeSpec(0xd);
 
             gcmalloc = CreateMethodSignature(b, I,
                 new metadata.TypeSpec[] { i });
@@ -129,6 +132,8 @@ namespace libtysila5.ir
 
             debugger_Log = CreateMethodSignature(null,
                 new TypeSpec[] { i, s, s });
+
+            rint = CreateMethodSignature(d, new TypeSpec[] { d });
 
             sh_blob = new BlobStream(b);
 

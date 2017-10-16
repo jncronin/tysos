@@ -87,6 +87,9 @@ namespace libtysila5.target
 
         public virtual void InitIntcalls() { }
 
+        TargetOptions opts = new TargetOptions();
+        public TargetOptions Options { get { return opts; } }
+
         public virtual string GetCType(metadata.TypeSpec ts)
         {
             int b;

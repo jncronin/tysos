@@ -141,6 +141,7 @@ foreach(target_def in target_defs)
 	print("\t\tinternal " + target_def.assembler + "()\n");
 	print("\t\t{\n");
 	print("\t\t\tinit_ccs();\n");
+	print("\t\t\tinit_options();\n");
 
 	/* Registers used for allocating to various ct types */
 	foreach(cttype in target_def.ct_map)

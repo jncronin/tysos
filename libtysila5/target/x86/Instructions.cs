@@ -30,17 +30,67 @@ namespace libtysila5.target.x86
     {
         private static void handle_briff(Reg srca, Reg srcb, int cc, int target, List<MCInst> r, CilNode.IRNode n)
         {
+            if (srca is ContentsReg && !(srcb is ContentsReg))
+                cc = ir.Opcode.cc_invert_map[cc];
+
+            int oc;
+            
+            switch(cc)
+            {
+                case ir.Opcode.cc_a:
+                    cc = ir.Opcode.cc_a;
+                    oc = x86_ucomisd_xmm_xmmm64;
+                    break;
+                case ir.Opcode.cc_ae:
+                    cc = ir.Opcode.cc_ae;
+                    oc = x86_ucomisd_xmm_xmmm64;
+                    break;
+                case ir.Opcode.cc_b:
+                    cc = ir.Opcode.cc_b;
+                    oc = x86_ucomisd_xmm_xmmm64;
+                    break;
+                case ir.Opcode.cc_be:
+                    cc = ir.Opcode.cc_be;
+                    oc = x86_ucomisd_xmm_xmmm64;
+                    break;
+                case ir.Opcode.cc_eq:
+                    cc = ir.Opcode.cc_eq;
+                    oc = x86_comisd_xmm_xmmm64;
+                    break;
+                case ir.Opcode.cc_ge:
+                    cc = ir.Opcode.cc_ae;
+                    oc = x86_comisd_xmm_xmmm64;
+                    break;
+                case ir.Opcode.cc_gt:
+                    cc = ir.Opcode.cc_a;
+                    oc = x86_comisd_xmm_xmmm64;
+                    break;
+                case ir.Opcode.cc_le:
+                    cc = ir.Opcode.cc_be;
+                    oc = x86_comisd_xmm_xmmm64;
+                    break;
+                case ir.Opcode.cc_lt:
+                    cc = ir.Opcode.cc_b;
+                    oc = x86_comisd_xmm_xmmm64;
+                    break;
+                case ir.Opcode.cc_ne:
+                    cc = ir.Opcode.cc_ne;
+                    oc = x86_comisd_xmm_xmmm64;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
             if (!(srca is ContentsReg))
-                r.Add(inst(x86_comisd_xmm_xmmm64, srca, srcb, n));
+                r.Add(inst(oc, srca, srcb, n));
             else if (!(srcb is ContentsReg))
             {
-                r.Add(inst(x86_comisd_xmm_xmmm64, srcb, srca, n));
+                r.Add(inst(oc, srcb, srca, n));
                 cc = ir.Opcode.cc_invert_map[cc];
             }
             else
             {
                 r.Add(inst(x86_movsd_xmm_xmmm64, r_xmm7, srca, n));
-                r.Add(inst(x86_comisd_xmm_xmmm64, srca, srcb, n));
+                r.Add(inst(oc, srca, srcb, n));
             }
             r.Add(inst_jmp(x86_jcc_rel32, target, cc, n));
         }
@@ -3886,6 +3936,54 @@ namespace libtysila5.target.x86
             else
                 r.Add(inst(oc2, dest, r_eax, n));
             
+
+            return r;
+        }
+
+        internal static List<MCInst> handle_target_specific(
+                        Target t,
+            List<CilNode.IRNode> nodes,
+            int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            switch(n.imm_l)
+            {
+                case x86_roundsd_xmm_xmmm64_imm8:
+                    return handle_roundsd(t, nodes, start, count, c);
+                default:
+                    throw new NotImplementedException("Invalid target specific operation");
+            }
+        }
+
+        internal static List<MCInst> handle_roundsd(
+                        Target t,
+            List<CilNode.IRNode> nodes,
+            int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            var src = n.stack_before[n.arg_a].reg;
+            var dest = n.stack_after[n.res_a].reg;
+            var act_dest = dest;
+
+            var r = new List<MCInst>();
+
+            if ((bool)t.Options["sse4_1"] == true)
+            {
+                if (dest is ContentsReg)
+                    act_dest = r_xmm7;
+
+                r.Add(inst(x86_roundsd_xmm_xmmm64_imm8, act_dest, src, 0, n));
+
+                handle_move(dest, act_dest, r, n, c);
+            }
+            else
+            {
+                r.AddRange(handle_call(n, c,
+                    c.special_meths.GetMethodSpec(c.special_meths.rint),
+                    new ir.Param[] { src }, dest, "rint"));
+            }
 
             return r;
         }

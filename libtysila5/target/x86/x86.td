@@ -158,6 +158,7 @@ x86_instrs = [
 	"comisd_xmm_xmmm64",
 	"ucomisd_xmm_xmmm64",
 	"cmpsd_xmm_xmmm64_imm8",
+	"roundsd_xmm_xmmm64_imm8",
 
 	// put x86_64 instructions after mov_r64_imm64
 	"mov_r64_imm64",
