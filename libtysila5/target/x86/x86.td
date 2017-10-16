@@ -43,13 +43,13 @@ x86_def.ct_map =
 	[
 		[ ct_int32, [ esi, edi, ecx, ebx ] ],
 		[ ct_int64, [ ] ],
-		[ ct_float, [ xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6 ] ],
+		[ ct_float, [ xmm1, xmm2, xmm3, xmm4, xmm5, xmm6 ] ],
 	];
 x86_64_def.ct_map = 
 	[
 		[ ct_int32, [ r8, r9, r10, r11, r12, r13, r14, r15, rsi, rdi, rcx, rbx ] ],
 		[ ct_int64, [ r8, r9, r10, r11, r12, r13, r14, r15, rsi, rdi, rcx, rbx ] ],
-		[ ct_float, [ xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 ] ],
+		[ ct_float, [ xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 ] ],
 	];
 
 x86_instrs = [

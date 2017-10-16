@@ -430,6 +430,7 @@ namespace tysos.x86_64
              * bus_frequency = bus_cycles / actual time delay
              */
 
+            libsupcs.OtherOperations.AsmBreakpoint();
             double actual_time_delay = Convert.ToDouble((long)delta_hpet) * hpet.MainCounterCycleLength;
             ulong bus_cycles = delta_lapic * LApicTimerDivisor;
             double bus_frequency = Convert.ToDouble((long)bus_cycles) / actual_time_delay;

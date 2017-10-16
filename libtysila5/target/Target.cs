@@ -1,7 +1,7 @@
 /* D:\tysos\branches\tysila3\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 16:02:55 on 14 October 2017
+ * It was generated at 15:27:59 on 16 October 2017
  * from D:\tysos\branches\tysila3\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -942,7 +942,7 @@ namespace libtysila5.target.x86
 			init_ccs();
 			ct_regs[94] = 6912;
 			ct_regs[95] = 0;
-			ct_regs[97] = 8323072;
+			ct_regs[97] = 8257536;
 			ct_regs[96] = ct_regs[94];
 			ct_regs[98] = ct_regs[94];
 			ct_regs[99] = ct_regs[94];
@@ -1100,7 +1100,7 @@ namespace libtysila5.target.x86_64
 			init_ccs();
 			ct_regs[94] = 34225527552;
 			ct_regs[95] = 34225527552;
-			ct_regs[97] = 8761741606912;
+			ct_regs[97] = 8761741541376;
 			ct_regs[96] = ct_regs[95];
 			ct_regs[98] = ct_regs[95];
 			ct_regs[99] = ct_regs[95];
