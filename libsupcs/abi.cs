@@ -351,6 +351,10 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern int GetSystemTypeImplOffset();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [IgnoreImplementation]
+        public extern static int GetFieldOffset(string typename, string field);
     }
 
     public class JitOperations

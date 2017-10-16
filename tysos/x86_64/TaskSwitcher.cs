@@ -37,15 +37,12 @@ namespace tysos.x86_64
         {
             // Load up the offsets of fields within structures
 
-            System.Type cpu_type = typeof(Cpu);
-            cur_thread_pointer = (ulong)((libsupcs.TysosField)cpu_type.GetField("currentThread")).Offset;
+            cur_thread_pointer = (ulong)libsupcs.ClassOperations.GetFieldOffset("_ZN11tysos#2Edll5tysos3Cpu", "currentThread");
             cur_thread_pointer += libsupcs.CastOperations.ReinterpretAsUlong(Program.arch.CurrentCpu);
 
-            System.Type thread_type = typeof(Thread);
-            tsi_within_thread = (ulong)((libsupcs.TysosField)thread_type.GetField("saved_state")).Offset;
+            tsi_within_thread = (ulong)libsupcs.ClassOperations.GetFieldOffset("_ZN11tysos#2Edll5tysos6Thread", "saved_state");
 
-            System.Type tsi_type = typeof(x86_64.TaskSwitchInfo);
-            rsp_within_tsi = (ulong)((libsupcs.TysosField)tsi_type.GetField("rsp")).Offset;
+            rsp_within_tsi = (ulong)libsupcs.ClassOperations.GetFieldOffset("_ZN11tysos#2Edll14tysos#2Ex86_6414TaskSwitchInfo", "rsp");
         }
 
         public override void Switch(Thread next)
