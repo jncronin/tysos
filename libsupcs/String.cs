@@ -99,5 +99,27 @@ namespace libsupcs
             for (int i = 0; i < count; i++)
                 *dst++ = c;
         }
+
+        [MethodAlias("_Zu1S_7#2Ector_Rv_P4u1tu1Zcii")]
+        [AlwaysCompile]
+        static unsafe void StringCtor(byte *str, char[] srcArr, int startIndex, int length)
+        {
+            void* src = (byte*)MemoryOperations.GetInternalArray(srcArr) + sizeof(char) * startIndex;
+            int len = length * sizeof(char);
+            void* dst = str + StringOperations.GetDataOffset();
+
+            MemoryOperations.MemCpy(dst, src, len);
+        }
+
+        [MethodAlias("_Zu1S_7#2Ector_Rv_P4u1tPcii")]
+        [AlwaysCompile]
+        static unsafe void StringCtor(byte* str, char* value, int startIndex, int length)
+        {
+            void* src = value + length;
+            int len = length * sizeof(char);
+            void* dst = str + StringOperations.GetDataOffset();
+
+            MemoryOperations.MemCpy(dst, src, len);
+        }
     }
 }

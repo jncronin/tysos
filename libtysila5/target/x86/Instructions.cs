@@ -595,9 +595,28 @@ namespace libtysila5.target.x86
             }
 
             // Restore used regs
-            int x = 0;
-            for (int i = c.regs_saved.Count - 1; i >= 0; i--)
-                handle_pop(c.regs_saved[i], ref x, r, n, c);
+
+            if (!n.parent.is_in_excpt_handler)
+            {
+                // we use values relative to rbp here in case the function
+                // did a localloc which has changed the stack pointer
+                for (int i = 0; i < c.regs_saved.Count; i++)
+                {
+                    ContentsReg cr = new ContentsReg { basereg = r_ebp, disp = -c.lv_total_size - c.stack_total_size - t.psize * (i + 1), size = t.psize };
+                    handle_move(c.regs_saved[i], cr, r, n, c);
+                }
+            }
+            else
+            {
+                // in exception handler we have to pop the values off the stack
+                // because rsp is not by default restored so we may return to the
+                // wrong place
+
+                // this works because we do not allow localloc in exception handlers
+                int x = 0;
+                for (int i = c.regs_saved.Count - 1; i >= 0; i--)
+                    handle_pop(c.regs_saved[i], ref x, r, n, c);
+            }
 
             if(!n.parent.is_in_excpt_handler)
                 r.Add(inst(t.psize == 4 ? x86_mov_r32_rm32 : x86_mov_r64_rm64, r_esp, r_ebp, n));
