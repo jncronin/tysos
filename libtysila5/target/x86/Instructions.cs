@@ -4068,6 +4068,9 @@ namespace libtysila5.target.x86
             if (act_dest is ContentsReg)
                 act_dest = r_edx;
 
+            if (n.parent.is_in_excpt_handler)
+                throw new Exception("localloc not allowed in exception handlers");
+
             List<MCInst> r = new List<MCInst>();
             handle_sub(t, r_esp, size, r_esp, r, n);
             r.Add(inst(t.psize == 4 ? x86_and_rm32_imm8 :
