@@ -53,17 +53,6 @@ namespace tysos.gc
                     ret = simple_heap.Alloc(size);
                     break;
 
-                case HeapType.BoehmGC:
-                    ret = boehm.Alloc(size);
-                    //Formatter.Write("BoehmGC returned: ", Program.arch.DebugOutput);
-                    //Formatter.Write(ret, "X", Program.arch.DebugOutput);
-                    //Formatter.WriteLine(Program.arch.DebugOutput);
-                    break;
-
-                case HeapType.TysosGC:
-                    ret = tysos_gc.Alloc(size);
-                    break;
-
                 case HeapType.PerCPU:
                     ret = Program.arch.CurrentCpu.CpuAlloc(size);
                     break;
@@ -90,46 +79,15 @@ namespace tysos.gc
             return ret;
         }
 
-        internal static void RegisterObject(ulong addr)
-        {
-            switch (Heap)
-            {
-                case HeapType.TysosGC:
-                    tysos_gc.cur_gc.RegisterObject(addr);
-                    break;
-
-                case HeapType.BoehmGC:
-                    boehm.RegisterObject(addr);
-                    break;
-            }
-        }
-
         internal static void ScheduleCollection()
         {
-            switch (Heap)
-            {
-                case HeapType.TysosGC:
-                    tysos_gc.ScheduleCollection();
-                    break;
 
-                case HeapType.BoehmGC:
-                    boehm.ScheduleCollection();
-                    break;
-            }
         }
 
         internal static void DoCollection()
         {
             switch (Heap)
             {
-                case HeapType.TysosGC:
-                    tysos_gc.DoCollection();
-                    break;
-
-                case HeapType.BoehmGC:
-                    boehm.DoCollection();
-                    break;
-
                 case HeapType.GenGC:
                     gengc.heap.DoCollection();
                     break;

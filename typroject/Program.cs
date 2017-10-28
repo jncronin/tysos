@@ -577,7 +577,7 @@ namespace typroject
                 pref.ProjectFile = rel_path(prit.Current.SelectSingleNode("./@Include", nm).Value, uri_basedir, uri_curdir);
                 pref.ProjectName = prit.Current.SelectSingleNode("./d:Name", nm).Value;
                 FileInfo pref_fi = new FileInfo(pref.ProjectFile);
-                xml_read(pref, pref_fi.Open(FileMode.Open, FileAccess.Read), config, pref_fi.DirectoryName, curdir);
+                xml_read(pref, pref_fi.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite), config, pref_fi.DirectoryName, curdir);
                 ret.ProjectReferences.Add(pref);
             }
 

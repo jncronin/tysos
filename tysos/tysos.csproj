@@ -108,8 +108,6 @@
     <Compile Include="Cpu.cs" />
     <Compile Include="elf\ElfFileReader.cs" />
     <Compile Include="Event.cs" />
-    <Compile Include="gc\boehm.cs" />
-    <Compile Include="gc\gc.cs" />
     <Compile Include="gc\gengc.cs" />
     <Compile Include="gc\gengc_collect.cs" />
     <Compile Include="gc\gengc_collectthread.cs" />

@@ -837,7 +837,7 @@ namespace tysos
                         ulong static_obj_addr = *(cur_so);
                         ulong typeinfo_addr = *(ulong*)(sym_addr + 8);
 
-                        gc.gc.RegisterObject(static_obj_addr);
+                        gc.gengc.heap.AddRoots((byte*)cur_so, (byte*)(cur_so + 1));
 
                         sym_addr += 16;
                         cur_so = (ulong*)sym_addr;
@@ -1009,7 +1009,7 @@ namespace tysos
                             ulong static_obj_addr = *(cur_so);
                             ulong typeinfo_addr = *(ulong*)(sym_addr + 8);
 
-                            gc.gc.RegisterObject(static_obj_addr);
+                            gc.gengc.heap.AddRoots((byte*)cur_so, (byte*)(cur_so + 1));
 
                             sym_addr += 16;
                             cur_so = (ulong*)sym_addr;

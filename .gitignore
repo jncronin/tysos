@@ -7,6 +7,30 @@
 *.userosscache
 *.sln.docstates
 
+*.obj
+*.o
+*.d
+*.ko
+*.bin
+*.dll
+*.exe
+*.mod
+*.iso
+*.gz
+*.a
+*.img
+
+serial.txt
+char-conversions.cs
+UnicodeData.cs
+category-dump
+
+corlib.dll.ty.sources
+
+mscorlib.txt
+
+boot/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
