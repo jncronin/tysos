@@ -347,9 +347,9 @@ namespace libtysila5
             {
                 flags = di.ReadShort(ehdr_offset);
                 ehdr.TryILOffset = di.ReadShort(ehdr_offset + 2);
-                ehdr.TryLength = di.ReadSByte(ehdr_offset + 4);
+                ehdr.TryLength = di.ReadByte(ehdr_offset + 4);
                 ehdr.HandlerILOffset = di.ReadShort(ehdr_offset + 5);
-                ehdr.HandlerLength = di.ReadSByte(ehdr_offset + 7);
+                ehdr.HandlerLength = di.ReadByte(ehdr_offset + 7);
             }
 
             switch (flags)
