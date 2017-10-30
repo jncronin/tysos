@@ -963,6 +963,10 @@ namespace libtysila5.ir
                             stack_after = endfilter(n, c, stack_before);
                             break;
 
+                        case cil.Opcode.DoubleOpcodes.refanytype:
+                            stack_after = refanytype(n, c, stack_before);
+                            break;
+
                         default:
                             throw new NotImplementedException(n.ToString());
                     }
@@ -977,6 +981,20 @@ namespace libtysila5.ir
 
             //foreach (var after in n.il_offsets_after)
             //    DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static Stack<StackItem> refanytype(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            // extract the 'Type' member as a RuntimeTypeHandle
+            var typed_ref = c.ms.m.al.GetAssembly("mscorlib").GetTypeSpec("System", "TypedReference");
+
+
+            var stack_after = ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typed_ref, "Type", c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
+            stack_after[stack_after.Count - 1] = new StackItem { ts = typed_ref };
+
+            return stack_after;
         }
 
         private static Stack<StackItem> mkrefany(CilNode n, Code c, Stack<StackItem> stack_before)

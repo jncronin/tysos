@@ -250,6 +250,7 @@ namespace libtysila5.cil
             initblk = 0x18,
             rethrow = 0x1A,
             _sizeof = 0x1C,
+            refanytype = 0x1D,
 
             flip = 0x20,
             flip3 = 0x21,
