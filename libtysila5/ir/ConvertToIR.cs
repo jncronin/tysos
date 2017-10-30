@@ -883,6 +883,10 @@ namespace libtysila5.ir
                     stack_after = endfinally(n, c, stack_before);
                     break;
 
+                case cil.Opcode.SingleOpcodes.mkrefany:
+                    stack_after = mkrefany(n, c, stack_before);
+                    break;
+
                 case cil.Opcode.SingleOpcodes.double_:
                     switch(n.opcode.opcode2)
                     {
@@ -957,6 +961,47 @@ namespace libtysila5.ir
 
             //foreach (var after in n.il_offsets_after)
             //    DoConversion(c.offset_map[after], c, stack_after);
+        }
+
+        private static Stack<StackItem> mkrefany(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var ts = n.GetTokenAsTypeSpec(c);
+
+            Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
+
+            c.t.r.VTableRequestor.Request(ts.Box);
+
+            // Ensure the stack type is a managed pointer to push_ts
+            var stack_type = stack_after.Peek().ts;
+            if (!stack_type.Equals(ts.ManagedPointer))
+                throw new Exception("mkrefany ptr is not managed pointer to " + ts.MangleType());
+
+            // Build the new System.TypedReference object on the stack
+            var typed_ref = ts.m.al.GetAssembly("mscorlib").GetTypeSpec("System", "TypedReference");
+            stack_after.Push(new StackItem { ts = typed_ref });
+
+            // Save the 'Type' member
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(typed_ref, "Type", c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = ldlab(n, c, stack_after, ts.MangleType());
+            stack_after = stind(n, c, stack_after, c.t.psize);
+
+            // Save the 'Value' member
+            stack_after = copy_to_front(n, c, stack_after);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(typed_ref, "Value", c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+            stack_after = copy_to_front(n, c, stack_after, 2);
+            stack_after = stind(n, c, stack_after, c.t.psize);
+
+            // Rearrange stack ..., ptr, typedRef.  -> ..., typedRef
+            var stack_after2 = new Stack<StackItem>(stack_after);
+            stack_after2.Pop();
+            stack_after2.Pop();
+            stack_after2.Push(new StackItem { ts = typed_ref });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stackcopy, arg_a = 0, res_a = 0, stack_before = stack_after, stack_after = stack_after2 });
+
+            return stack_after2;
         }
 
         private static Stack<StackItem> memcpy(CilNode n, Code c, Stack<StackItem> stack_before, int dest = 2, int src = 1, int count = 0)
