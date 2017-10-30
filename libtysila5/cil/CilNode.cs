@@ -101,6 +101,7 @@ namespace libtysila5.cil
 
         public bool is_meth_start = false;
         public bool is_eh_start = false;
+        public bool is_filter_start = false;
 
         public bool is_in_excpt_handler = false;
 

@@ -65,7 +65,8 @@ namespace libtysila5.cil
                         {
                             n.try_starts.Add(ehdr);
                         }
-                        if (ehdr.HandlerILOffset == offset)
+                        if (ehdr.HandlerILOffset == offset ||
+                            (ehdr.EType == metadata.ExceptionHeader.ExceptionHeaderType.Filter && ehdr.FilterOffset == offset))
                         {
                             n.handler_starts.Add(ehdr);
                         }
@@ -308,7 +309,17 @@ namespace libtysila5.cil
             if (ehdrs != null)
             {
                 foreach (var e in ehdrs)
+                {
                     ret.starts.Add(ret.offset_map[e.HandlerILOffset]);
+
+                    if (e.EType == metadata.ExceptionHeader.ExceptionHeaderType.Filter)
+                    {
+                        var filter_start = ret.offset_map[e.FilterOffset];
+                        ret.starts.Add(filter_start);
+                        filter_start.is_filter_start = true;
+                    }
+                }
+                
             }
 
             ret.ehdrs = ehdrs;

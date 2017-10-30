@@ -99,7 +99,7 @@ namespace libtysila5.ir
             {
                 if (n.il_offset == 0)
                     n.is_meth_start = true;
-                else
+                else if(n.is_filter_start == false)
                     n.is_eh_start = true;
             }
 
@@ -112,8 +112,16 @@ namespace libtysila5.ir
                 {
                     if (n.is_meth_start)
                         DoConversion(n, c, new Stack<StackItem>());
+                    else if(n.is_filter_start)
+                    {
+                        var stack = new Stack<StackItem>();
+                        stack.Push(new StackItem { ts = c.ms.m.SystemObject });
+                        DoConversion(n, c, stack);
+                    }
                     else if (n.is_eh_start)
                     {
+                        if (n.is_filter_start)
+                            System.Diagnostics.Debugger.Break();
                         var stack = new Stack<StackItem>();
                         if (n.handler_starts.Count != 0)
                         {
