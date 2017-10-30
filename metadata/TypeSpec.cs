@@ -666,6 +666,16 @@ namespace metadata
                     other.AddSignature(sig, mods);
                     break;
 
+                case SpecialType.Ptr:
+                    sig.Add(0x0f);
+                    other.AddSignature(sig, mods);
+                    break;
+
+                case SpecialType.MPtr:
+                    sig.Add(0x10);
+                    other.AddSignature(sig, mods);
+                    break;
+
                 case SpecialType.Array:
                     sig.Add(0x14);
                     other.AddSignature(sig, mods);
