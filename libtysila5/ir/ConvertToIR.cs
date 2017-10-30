@@ -866,6 +866,10 @@ namespace libtysila5.ir
                     stack_after = unbox_any(n, c, stack_before);
                     break;
 
+                case cil.Opcode.SingleOpcodes.unbox:
+                    stack_after = unbox(n, c, stack_before);
+                    break;
+
                 case cil.Opcode.SingleOpcodes.box:
                     stack_after = box(n, c, stack_before);
                     break;
@@ -1452,6 +1456,20 @@ namespace libtysila5.ir
                 c.t.r.VTableRequestor.Request(ts);
                 return stack_before;
             }
+        }
+
+        private static Stack<StackItem> unbox(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var ts = n.GetTokenAsTypeSpec(c);
+
+            // TODO: ensure stack item is a boxed instance of ts
+
+            // simply add the offset to the boxed instance to the original pointer
+            var stack_after = ldc(n, c, stack_before, layout.Layout.GetTypeSize(c.ms.m.SystemObject, c.t), 0x18);
+            stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+
+            stack_after[stack_after.Count - 1] = new StackItem { ts = ts.ManagedPointer };
+            return stack_after;
         }
 
         private static Stack<StackItem> unbox_any(CilNode n, Code c, Stack<StackItem> stack_before)
