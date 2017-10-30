@@ -69,6 +69,14 @@ namespace libtysila5
         CachingIndividualRequestor<TypeSpec> sf;
         CachingIndividualRequestor<TypeSpec> d;
 
+#if DEBUG
+        void CheckInstatiated(TypeSpec t)
+        {
+            if (t.IsGenericTemplate)
+                throw new Exception();
+        }
+#endif
+
         public CachingRequestor(MetadataStream mstream = null)
         {
             m = new CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr>(mstream);
@@ -77,6 +85,10 @@ namespace libtysila5
             vt = new CachingIndividualRequestor<TypeSpec>(mstream);
             sf = new CachingIndividualRequestor<TypeSpec>(mstream);
             d = new CachingIndividualRequestor<TypeSpec>(mstream);
+
+#if DEBUG
+            d.DebugCheck = CheckInstatiated;
+#endif
         }
 
         public override IndividualRequestor<layout.Layout.MethodSpecWithEhdr> MethodRequestor
@@ -142,6 +154,11 @@ namespace libtysila5
         util.Stack<T> pending = new util.Stack<T>();
         MetadataStream m;
 
+#if DEBUG
+        public delegate void DebugChecker(T val);
+        public DebugChecker DebugCheck { get; internal set; }
+#endif
+
         public CachingIndividualRequestor(MetadataStream mstream = null)
         {
             m = mstream;
@@ -162,6 +179,10 @@ namespace libtysila5
 
         public override void Request(T v)
         {
+#if DEBUG
+            if(DebugCheck != null)
+                DebugCheck(v);
+#endif
             if (m != null && m != v.Metadata)
             {
                 if(!v.IsInstantiatedGenericType && 
