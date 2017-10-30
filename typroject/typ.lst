@@ -1,10 +1,10 @@
 
 // ==========================================================================
-//  GPPG error listing for yacc source file <typ.y - 28/10/2017 18:08:46>
+//  GPPG error listing for yacc source file <typ.y - 30/10/2017 10:53:49>
 // ==========================================================================
 //  Version:  1.5.2
 //  Machine:  DESKTOP-JOHN
-//  DateTime: 28/10/2017 18:08:48
+//  DateTime: 30/10/2017 10:53:50
 //  UserName: jncro
 // ==========================================================================
 
@@ -15,7 +15,7 @@
 %start expression
 %partial
 
-%token	EQUALS COLON MUL LPAREN RPAREN AMP PLUS MINUS DOLLARS COMMA NEWLINE FUNC ASSIGN NOT NOTEQUAL LEQUAL GEQUAL LBRACE RBRACE
+%token	EQUALS COLON MUL LPAREN RPAREN AMP PLUS MINUS DOLLARS COMMA NEWLINE FUNC ASSIGN NOT NOTEQUAL LEQUAL GEQUAL LBRACE RBRACE AT PERCENT
 %token	LBRACK RBRACK DOT LT GT LSHIFT RSHIFT SEMICOLON LOR LAND OR AND APPEND ASSIGNIF
 %token	IF ELSE INCLUDE RULEFOR INPUTS DEPENDS ALWAYS SHELLCMD TYPROJECT SOURCES MKDIR FUNCTION RETURN EXPORT
 %token	INTEGER STRING VOID ARRAY OBJECT FUNCREF ANY NULL
@@ -27,20 +27,20 @@
 		public int intval;
 		public string strval;
 		public Expression exprval;
+		public List<Expression> listval;
 	}
 	
 %token <intval>	INT
-%token <strval> STRING
-%type <exprval> expression expr expr2 expr3 expr6 expr7 expr10 expr11
+%token <strval> STRING LABEL
+%type <exprval> expression expr expr2 expr3 expr6 expr7 expr10 expr11 propexpr
+%type <listval> arglist
 
 %%
 
 expression :		expr							{ $$ = $1; val = $1; }
-expr		:	LPAREN expr2 RPAREN				{ $$ = $2; }
-//^^
-// Error: Syntax error, unexpected anchoredSymbol
-// ----------------------------------------------
-			|	expr2							{ $$ = $1; }
+			;
+
+expr		:	expr2							{ $$ = $1; }
 			;
 
 expr2		:	expr3 LOR expr2					{ $$ = new Expression { a = $1, b = $3, op = Tokens.LOR }; }
@@ -69,6 +69,23 @@ expr10		:	NOT expr10						{ $$ = new Expression { a = $2, b = null, op = Tokens.
 
 expr11		:	STRING							{ $$ = new StringExpression { val = $1 }; }
 			|	INT								{ $$ = new IntExpression { val = $1 }; }
+			|	LPAREN expr RPAREN				{ $$ = $2; }
+			|	DOLLARS LPAREN propexpr RPAREN	{ $$ = new PropertyExpression { val = $3 }; }
+			|	AT LPAREN LABEL RPAREN			{ $$ = new ListExpression { val = $3 }; }
+			|	PERCENT LPAREN LABEL RPAREN		{ $$ = new MetadataExpression { val = $3 }; }
+			;
+
+propexpr		:	LABEL							{ $$ = new LabelExpression { val = $1 }; }
+			|	LABEL LPAREN arglist RPAREN		{ $$ = new LabelExpression { val = $1, arglist = $3 }; }
+			|	prop-expr DOT propexpr			{ $$ = new LabelExpression { val = $3, srcval = $1 }; }
+//------^^
+// Error: This character is invalid in this context
+// ------------------------------------------------
+			;
+
+arglist		:	expr								{ $$ = new List<Expression> { $1 }; }
+			|	arglist COMMA expr				{ $$ = new List<Expression>($1); $$.Add($3); }
+			|									{ $$ = new List<Expression>(); }
 			;
 
 %%

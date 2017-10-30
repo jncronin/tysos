@@ -111,6 +111,19 @@ namespace typroject
                         return new EvalResult(1);
                     else
                         return new EvalResult(0);
+
+                case Tokens.GEQUAL:
+                    ea = a.Evaluate(s);
+                    eb = b.Evaluate(s);
+
+                    check_null(ea);
+                    check_null(eb);
+
+                    if (ea.AsInt >= eb.AsInt)
+                        return new EvalResult(1);
+                    else
+                        return new EvalResult(0);
+
             }
 
             throw new NotImplementedException(op.ToString());
@@ -150,6 +163,8 @@ namespace typroject
                             return intval;
                         case ResultType.String:
                             if (strval == null || strval == "")
+                                return 0;
+                            if (strval.ToLower() == "false")
                                 return 0;
                             return 1;
                         default:
@@ -207,6 +222,153 @@ namespace typroject
         }
     }
 
+    internal class PropertyExpression : Expression
+    {
+        public Expression val;
+
+        public override EvalResult Evaluate(MakeState s)
+        {
+            return val.Evaluate(s);
+        }
+    }
+
+    internal class ListExpression : Expression
+    {
+        public Expression val;
+
+        public override EvalResult Evaluate(MakeState s)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    
+    internal class LabelDotExpression : Expression
+    {
+        public Expression val;
+        public Expression srcval;
+
+        public override EvalResult Evaluate(MakeState s)
+        {
+            var lhs = srcval.Evaluate(s);
+
+            // search for a method containing the appropriate arguments
+            LabelExpression rhs = val as LabelExpression;
+            if (val is LabelDotExpression)
+                rhs = ((LabelDotExpression)val).srcval as LabelExpression;
+
+            string[] args = new string[rhs.arglist.Count];
+            Type[] str_types = new Type[rhs.arglist.Count];
+            for (int i = 0; i < rhs.arglist.Count; i++)
+            {
+                args[i] = rhs.arglist[i].Evaluate(s).strval;
+                str_types[i] = typeof(string);
+            }
+
+            var str_type = typeof(string);
+
+
+
+            var meth = str_type.GetMethod(rhs.val, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public, null, str_types, null);
+            var res = meth.Invoke(lhs.strval, args);
+
+            var ret = res.ToString();
+            if (ret.ToLower() == "true")
+                return new EvalResult(1);
+            else if (ret.ToLower() == "false")
+                return new EvalResult(0);
+            else
+                return new EvalResult(ret);
+        }
+    }
+
+    internal class LabelExpression : Expression
+    {
+        public string val;
+        public List<Expression> arglist;
+
+        public override EvalResult Evaluate(MakeState s)
+        {
+            if(arglist != null)
+                throw new NotImplementedException();
+
+            return new EvalResult(s.props[val]);
+        }
+    }
+
+    internal class MetadataExpression : Expression
+    {
+        public Expression val;
+
+        public override EvalResult Evaluate(MakeState s)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    internal class ExistsExpression : Expression
+    {
+        public Expression val;
+
+        public override EvalResult Evaluate(MakeState s)
+        {
+            var v = val.Evaluate(s);
+
+            try
+            {
+                System.IO.FileSystemInfo fi = new System.IO.FileInfo(v.strval);
+                if ((fi.Attributes & System.IO.FileAttributes.Directory) == System.IO.FileAttributes.Directory)
+                    fi = new System.IO.DirectoryInfo(v.strval);
+                if (fi.Exists)
+                    return new EvalResult(1);
+                else
+                    return new EvalResult(0);
+            }
+            catch (Exception)
+            {
+                return new EvalResult(0);
+            }
+        }
+    }
+
+    internal class StaticExpression : Expression
+    {
+        public string type;
+        public Expression val;
+
+        public override EvalResult Evaluate(MakeState s)
+        {
+            Type t = null;
+            foreach(var ass in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                t = ass.GetType(type);
+                if (t != null)
+                    break;
+            }
+            if (t == null)
+                throw new NotSupportedException();
+
+            var rhs = val as LabelExpression;
+
+            string[] args = new string[rhs.arglist.Count];
+            Type[] str_types = new Type[rhs.arglist.Count];
+            for(int i = 0; i < rhs.arglist.Count; i++)
+            {
+                args[i] = rhs.arglist[i].Evaluate(s).strval;
+                str_types[i] = typeof(string);
+            }
+
+            var meth = t.GetMethod(rhs.val, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public, null, str_types, null);
+            var r = meth.Invoke(null, args).ToString();
+
+            if (r.ToLower() == "true")
+                return new EvalResult(1);
+            else if (r.ToLower() == "false")
+                return new EvalResult(0);
+            else
+                return new EvalResult(r);
+        }
+    }
+
     partial class Parser
     {
         internal Parser(Scanner s) : base(s) { }
@@ -221,9 +383,27 @@ namespace typroject
 
         public override void yyerror(string format, params object[] args)
         {
+            StringBuilder sb = new StringBuilder();
+
+            Scanner s = new Scanner(text);
+            int tok;
+            do
+            {
+                tok = s.yylex();
+                sb.Append((Tokens)tok);
+                if(tok == (int)Tokens.LABEL || tok == (int)Tokens.STRING)
+                {
+                    sb.Append("(");
+                    sb.Append(s.yylval.strval);
+                    sb.Append(")");
+                }
+                sb.Append(" ");
+            } while (tok != (int)Tokens.EOF);
+
+
             var stext = String.Format(format, args);
             stext = stext.Replace("LABEL", tokTxt);
-            throw new Exception(stext + " at line " + yyline + ", col " + yycol + " in " + text);
+            throw new Exception(stext + " at line " + yyline + ", col " + yycol + " in " + text + " (" + sb.ToString() + ")");
         }
 
         internal int sline { get { return yyline; } }

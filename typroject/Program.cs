@@ -36,6 +36,16 @@ namespace typroject
 
         static int Main(string[] args)
         {
+            // test
+            var teststr = "'$(IsReferenceAssembly)' == '' AND($(MSBuildProjectFullPath.Contains('\\ref\\')) OR $(MSBuildProjectFullPath.Contains('/ref/')))";
+            Scanner stest = new Scanner(teststr);
+            int tok;
+            do
+            {
+                tok = stest.yylex();
+                var sval = stest.yytext;
+            } while (tok != (int)Tokens.EOF);
+
             string fname = null;
             List<string> sources = new List<string>();
             string cur_dir = Environment.CurrentDirectory;
@@ -373,7 +383,8 @@ namespace typroject
                 return "";
             else
             {
-                if (double.Parse(tools_ver) >= 12.0)
+                double tvd;
+                if (double.TryParse(tools_ver, out tvd) && tvd >= 12.0)
                 {
                     // this is a visual studio version and libs are in program files/msbuild/x
                     var ret = Project.add_dir_split(Project.add_dir_split(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)) + "MSBuild") + tools_ver;
@@ -433,6 +444,7 @@ namespace typroject
         internal XmlNamespaceManager nm;
         internal Dictionary<string, XPathNavigator> targets = new Dictionary<string, XPathNavigator>();
         internal Dictionary<string, List<string>> items = new Dictionary<string, List<string>>();
+        internal Dictionary<string, object> tasks = new Dictionary<string, object>();
 
         public string ErrorMessage;
 
@@ -595,6 +607,8 @@ namespace typroject
                 props["__BuildArch"] = "x64";
 
                 is_proj = true;
+
+                ret.tasks["GenerateResourcesCode"] = new Microsoft.DotNet.Build.Tasks.GenerateResourcesCode();
             }
             ret.properties = props;
 
@@ -732,6 +746,35 @@ namespace typroject
                     if (process_condition(n, props, nm))
                         ret.targets[n.SelectSingleNode("@Name", nm).Value] = n;
                 }
+                else if(n.Name == "UsingTask")
+                {
+                    // ignore
+                }
+                else if(n.Name == "Choose")
+                {
+                    if(process_condition(n, props, nm))
+                    {
+                        bool when_done = false;
+                        foreach(XPathNavigator cn in n.Select("child::*", nm))
+                        {
+                            if(cn.Name == "When")
+                            {
+                                if(process_condition(cn, props, nm))
+                                {
+                                    process_node(cn, ret, props, nm);
+                                    when_done = true;
+                                    break;
+                                }
+                            }
+                            else if(cn.Name == "Otherwise" && !when_done)
+                            {
+                                process_node(cn, ret, props, nm);
+                                when_done = true;
+                                break;
+                            }
+                        }
+                    }
+                }
                 else
                     throw new NotImplementedException();
             }
@@ -739,6 +782,8 @@ namespace typroject
 
         private static void process_itemgroup(XPathNavigator n, Project ret, Dictionary<string, string> props, XmlNamespaceManager nm)
         {
+            if (n.InnerXml.Contains("SafeFileHandle.Windows.cs"))
+                System.Diagnostics.Debugger.Break();
             if(process_condition(n, props, nm))
             {
                 foreach (XPathNavigator cn in n.Select("child::*"))
@@ -761,12 +806,16 @@ namespace typroject
                     if (autogenn != null)
                         throw new NotImplementedException();
                     var fname = process_string(n.SelectSingleNode("@Include", nm).Value, props);
-                    ret.Sources.Add(rel_path(fname, ret.uri_basedir, ret.uri_curdir));
+
+                    if (fname.Contains("SafeFileHandle.Windows"))
+                        System.Diagnostics.Debugger.Break();
+
+                    var rp = rel_path(fname, ret.uri_basedir, ret.uri_curdir);
+                    if(!ret.Sources.Contains(rp))
+                        ret.Sources.Add(rp);
                 }
                 else
                 {
-                    if (n.Name.ToLower().Contains("resource"))
-                        throw new NotImplementedException();
                     // Silently ignore
                 }
 
@@ -776,7 +825,9 @@ namespace typroject
                     items = new List<string>();
                     ret.items[n.Name] = items;
                 }
-                items.Add(process_string(n.SelectSingleNode("@Include", nm).Value, props));
+                var str = process_string(n.SelectSingleNode("@Include", nm).Value, props);
+                if (!items.Contains(str))
+                    items.Add(str);
             }
         }
 
@@ -947,7 +998,7 @@ namespace typroject
 
         private static bool process_condition(string value, Dictionary<string, string> props)
         {
-            value = process_string(value, props);
+            //value = process_string(value, props);
 
             var p = new Parser(new Scanner(value));
             p.Parse();
@@ -1003,11 +1054,6 @@ namespace typroject
             System.IO.TextWriter output, string tools_ver_override)
         {
             /* First handle any custom build actions */
-            foreach(var k in properties.Keys)
-            {
-                if (k.Contains("DependsOn"))
-                    System.Diagnostics.Debugger.Break();
-            }
             if (properties.ContainsKey("PrepareResourcesDependsOn"))
                 process_dependson(properties["PrepareResourcesDependsOn"]);
 
@@ -1020,6 +1066,10 @@ namespace typroject
                 process_dependson(properties["BuildDependsOn"]);
             if (properties.ContainsKey("CoreBuildDependsOn"))
                 process_dependson(properties["CoreBuildDependsOn"]);
+
+            /* Ensure output directory exists */
+            var of = new FileInfo(OutputFile);
+            create_directory(of.Directory);
 
             Program.platform = (int)Environment.OSVersion.Platform;
             string tv = tools_ver;
@@ -1208,6 +1258,8 @@ namespace typroject
             foreach(var t in ts)
             {
                 var t2 = t.Trim();
+                if (t2 == "")
+                    continue;
 
                 var tnode = targets[t2];
 
@@ -1262,10 +1314,40 @@ namespace typroject
                     process_itemgroup(n, project, props, nm);
                 else if (n.Name == "PropertyGroup")
                     process_propertygroup(n, project, props, nm);
-                else
+                else if (project.tasks.ContainsKey(n.Name))
+                {
+                    // Fill in appropriate properties
+                    var obj = project.tasks[n.Name];
+                    foreach(XPathNavigator anode in n.Select("@*", nm))
+                    {
+                        var aname = anode.Name;
+                        var atext = process_string(anode.Value, props, project.items);
 
+                        var pi = obj.GetType().GetProperty(aname);
+                        pi.SetValue(obj, atext);
+                    }
+
+                    var ret = obj.GetType().GetMethod("Execute").Invoke(obj, null);
+                    if ((bool)ret == false)
+                        throw new Exception();
+                }
+                else
                     throw new NotImplementedException();
             }
+        }
+
+        private void gen_res_code(XPathNavigator n, XmlNamespaceManager nm)
+        {
+            var resx_file = process_string(n.SelectSingleNode("@ResxFilePath", nm).Value, properties, items);
+            var os_file = process_string(n.SelectSingleNode("@OutputSourceFilePath", nm).Value, properties, items);
+            var aname = process_string(n.SelectSingleNode("@AssemblyName", nm).Value, properties, items);
+
+            var csc = new FileInfo(Program.csc(tools_ver));
+            var resgen = add_dir_split(csc.DirectoryName) + "resgen.exe";
+            if (!(new FileInfo(resgen)).Exists)
+                throw new NotSupportedException();
+
+            throw new NotImplementedException();
         }
 
         private static void create_directory(DirectoryInfo directory)
