@@ -955,6 +955,10 @@ namespace libtysila5.ir
                             stack_after = get_virt_ftn_ptr(n, c, stack_before);
                             break;
 
+                        case cil.Opcode.DoubleOpcodes.endfilter:
+                            stack_after = endfilter(n, c, stack_before);
+                            break;
+
                         default:
                             throw new NotImplementedException(n.ToString());
                     }
@@ -1209,6 +1213,15 @@ namespace libtysila5.ir
             var stack_after = new Stack<StackItem>(stack_before);
 
             n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, stack_before = stack_after, stack_after = stack_after });
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> endfilter(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var stack_after = new Stack<StackItem>(stack_before);
+
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, stack_before = stack_after, stack_after = stack_after, ct = Opcode.ct_int32 });
 
             return stack_after;
         }
