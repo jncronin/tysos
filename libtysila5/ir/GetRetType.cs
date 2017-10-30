@@ -38,9 +38,8 @@ namespace libtysila5.ir
                     if (ts.m.is_corlib && ts.m.simple_type_idx[ts.tdrow] != -1)
                         return GetCTFromType(ts.m.simple_type_idx[ts.tdrow]);
 
-                    var extends = ts.GetExtends();
-                    if (extends != null && extends.Equals(ts.m.SystemEnum))
-                        return ct_int32;
+                    if (ts.IsEnum)
+                        return GetCTFromType(ts.UnderlyingType);
 
                     if (ts.IsValueType)
                         return ct_vt;
