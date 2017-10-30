@@ -766,7 +766,7 @@ namespace libtysila5.target.x86
             var sig_idx = call_ms.msig;
             var pcount = call_ms.m.GetMethodDefSigParamCountIncludeThis(sig_idx);
             sig_idx = call_ms.m.GetMethodDefSigRetTypeIndex(sig_idx);
-            var rt2 = call_ms.m.GetTypeSpec(ref sig_idx, c.ms.gtparams, c.ms.gmparams);
+            var rt2 = call_ms.m.GetTypeSpec(ref sig_idx, call_ms.gtparams == null ? c.ms.gtparams : call_ms.gtparams, c.ms.gmparams);
 
             int calli_adjust = is_calli ? 1 : 0;
 

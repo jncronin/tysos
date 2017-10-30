@@ -107,6 +107,17 @@ namespace metadata
             return (cc & 0x60) == 0x20;
         }
 
+        /** <summary>Does the method have a non-explicit this pointer?</summary> */
+        public bool GetMethodDefSigHasNonExplicitThis(int idx, out int cc)
+        {
+            // Parse blob length
+            SigReadUSCompressed(ref idx);
+
+            // Parse calling convention
+            cc = (int)sh_blob.di.ReadByte(idx++);
+            return (cc & 0x60) == 0x20;
+        }
+
         /** <summary>Get index of type in a field sig</summary> */
         public int GetFieldSigTypeIndex(int idx)
         {

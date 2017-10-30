@@ -478,9 +478,12 @@ namespace metadata
             if (pca != pcb)
                 return false;
 
-            // Explicit this
-            if (ma.GetMethodDefSigHasNonExplicitThis(msiga) !=
-                mb.GetMethodDefSigHasNonExplicitThis(msigb))
+            // Explicit this and calling convention
+            int cca, ccb;
+            if (ma.GetMethodDefSigHasNonExplicitThis(msiga, out cca) !=
+                mb.GetMethodDefSigHasNonExplicitThis(msigb, out ccb))
+                return false;
+            if (cca != ccb)
                 return false;
 
             // Return type
@@ -825,7 +828,7 @@ namespace metadata
                                             }
                                             else
                                             {
-                                                var mdrow = newts.m.GetMethodDefRow(newts, name, (int)sig, this);
+                                                var mdrow = newts.m.GetMethodDefRow(newts, name, (int)sig, this, true, gmparams);
                                                 var msig = (int)newts.m.GetIntEntry(tid_MethodDef, mdrow, 4);
 
                                                 ms = new metadata.MethodSpec
@@ -1269,7 +1272,7 @@ namespace metadata
                 return null;
         }
 
-        public int GetMethodDefRow(TypeSpec ts, string name, int sig, MetadataStream sig_m, bool throw_on_error = true)
+        public int GetMethodDefRow(TypeSpec ts, string name, int sig, MetadataStream sig_m, bool throw_on_error = true, TypeSpec[] gmparams = null)
         {
             var first_mdef = ts.m.GetIntEntry(tid_TypeDef, ts.tdrow, 5);
             var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
@@ -1285,8 +1288,8 @@ namespace metadata
                     // compare signatures
                     var cur_sig = (int)ts.m.GetIntEntry(tid_MethodDef, (int)mdef_row, 4);
 
-                    if (CompareSignature(ts.m, cur_sig, ts.gtparams, null,
-                        sig_m, sig, ts.gtparams, null))
+                    if (CompareSignature(ts.m, cur_sig, ts.gtparams, gmparams,
+                        sig_m, sig, ts.gtparams, gmparams))
                         return (int)mdef_row;
                 }
             }
