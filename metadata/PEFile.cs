@@ -283,8 +283,15 @@ namespace metadata
             m.PatchClassLayouts();
             m.PatchFieldConstants();
             m.PatchGTypes();
-            if(m.table_rows[MetadataStream.tid_Assembly] == 1 &&
-                (m.assemblyName = m.GetStringEntry(MetadataStream.tid_Assembly, 1, 7)) == "mscorlib")
+            if (m.table_rows[MetadataStream.tid_Assembly] == 1)
+            {
+                m.assemblyName = m.GetStringEntry(MetadataStream.tid_Assembly, 1, 7);
+
+                // Handle dotnet coreclr mscorlib having a different name
+                if (m.assemblyName == "System.Private.CoreLib")
+                    m.assemblyName = "mscorlib";
+            }
+            if (m.assemblyName == "mscorlib")
             {
                 m.is_corlib = true;
                 m.PatchSimpleTypes();
