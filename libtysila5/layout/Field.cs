@@ -186,6 +186,30 @@ namespace libtysila5.layout
             if (ts.SimpleType == 0)
                 align = GetTypeAlignment(ts, t, is_static);
 
+            if(ts.Equals(ts.m.SystemString) && !is_static)
+            {
+                /* System.String has a special layout in dotnet clr because the fields
+                 * length and firstchar are reversed */
+                if(fname == null)
+                {
+                    // size = sizeof(Object) + sizeof(int length), aligned to pointer size
+                    return GetTypeSize(ts.m.SystemObject, t) + t.GetPointerSize();
+                }
+                else
+                {
+                    if (fname == "length" || fname == "m_stringLength")
+                    {
+                        return GetTypeSize(ts.m.SystemObject, t);
+                    }
+                    else if (fname == "start_char" || fname == "m_firstChar")
+                    {
+                        return GetTypeSize(ts.m.SystemObject, t) + t.GetPointerSize();
+                    }
+                    else
+                        throw new NotSupportedException();
+                }
+            }
+
             /* Iterate through methods looking for requested
                   one */
             var first_fdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
