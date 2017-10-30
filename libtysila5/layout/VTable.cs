@@ -53,7 +53,7 @@ namespace libtysila5.layout
                 return;
 
             // If its a delegate type we also need to output its methods
-            if (ts.IsDelegate)
+            if (ts.IsDelegate && !ts.IsGenericTemplate)
                 t.r.DelegateRequestor.Request(ts);
 
             var os = of.GetRDataSection();
@@ -91,7 +91,7 @@ namespace libtysila5.layout
 
             /* IFacePtr */
             IRelocation if_reloc = null;
-            if (!ts.IsGenericTemplate && !ts.IsInterface)
+            if (!ts.IsGenericTemplate && !ts.IsInterface && ts.stype != TypeSpec.SpecialType.Ptr && ts.stype != TypeSpec.SpecialType.MPtr)
             {
                 if_reloc = of.CreateRelocation();
                 if_reloc.DefinedIn = os;
@@ -126,7 +126,7 @@ namespace libtysila5.layout
             for (int i = 0; i < ptr_size; i++, offset++)
                 d.Add(0);
 
-            if (ts.IsInterface || ts.IsGenericTemplate)
+            if (ts.IsInterface || ts.IsGenericTemplate || ts.stype == TypeSpec.SpecialType.MPtr || ts.stype == TypeSpec.SpecialType.Ptr)
             {
                 /* Type size is zero for somethinh we cannot
                  * instantiate */

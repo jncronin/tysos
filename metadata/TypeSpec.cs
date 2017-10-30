@@ -259,6 +259,8 @@ namespace metadata
             {
                 if (!IsValueType)
                     return this;
+                if (stype == SpecialType.Ptr || stype == SpecialType.MPtr)
+                    return this;
                 return new TypeSpec { m = m, stype = SpecialType.Boxed, other = this };
             }
         }

@@ -2726,8 +2726,6 @@ namespace libtysila5.target.x86
                     case 0x19:
                         if (!srca.Equals(dreg))
                         {
-                            if (t.psize == 8)
-                                throw new NotImplementedException();
                             handle_move(dreg, sreg, r, n, c);
                         }
                         // nop - ignore high 32 bits
@@ -3812,6 +3810,8 @@ namespace libtysila5.target.x86
                     }
                     else
                         return t.handle_external(t, nodes, start, count, c, "__moddi3");
+                case ir.Opcode.ct_float:
+                    return t.handle_external(t, nodes, start, count, c, "fmod");
             }
 
             throw new NotImplementedException();

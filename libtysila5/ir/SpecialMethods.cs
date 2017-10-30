@@ -170,20 +170,29 @@ namespace libtysila5.ir
             };
         }
 
-        internal int CreateMethodSignature(TypeSpec rettype, TypeSpec[] ps, bool has_this = false)
+        internal int CreateMethodSignature(TypeSpec rettype, TypeSpec[] ps, bool has_this = false, TypeSpec[] gmparams = null)
         {
-            return CreateMethodSignature(b, rettype, ps, has_this);
+            return CreateMethodSignature(b, rettype, ps, has_this, gmparams);
         }
 
-        int CreateMethodSignature(List<byte> b, TypeSpec rettype, TypeSpec[] ps, bool has_this = false)
+        int CreateMethodSignature(List<byte> b, TypeSpec rettype, TypeSpec[] ps, bool has_this = false, TypeSpec[] gmparams = null)
         {
             List<byte> tmp = new List<byte>();
 
+            byte cc = 0;
             if (has_this)
-                tmp.Add(0x20);
-            else
-                tmp.Add(0x0);
+                cc |= 0x20;
+            if (gmparams != null)
+                cc |= 0x10;
 
+            tmp.Add(cc);
+            if(gmparams != null)
+            {
+                CompressInt(tmp, gmparams.Length);
+                foreach (var gmp in gmparams)
+                    CreateTypeSignature(tmp, gmp);
+            }
+            
             CompressInt(tmp, ps.Length);
             CreateTypeSignature(tmp, rettype);
             foreach (var p in ps)
@@ -213,6 +222,11 @@ namespace libtysila5.ir
                         stype = ts.m.simple_type_idx[ts.tdrow];
                     if (stype == -1)
                     {
+                        if (ts.gtparams != null)
+                        {
+                            tmp.Add(0x15);
+                        }
+
                         int val = 0;
                         if (ts.IsValueType)
                             val = 0x11;
@@ -221,6 +235,7 @@ namespace libtysila5.ir
 
                         val |= 0x80;
                         tmp.Add((byte)val);
+
 
                         CompressInt(tmp, ts.m.AssemblyName.Length);
                         foreach (var ch in ts.m.AssemblyName)
@@ -232,6 +247,13 @@ namespace libtysila5.ir
                             ts.tdrow,
                             TypeDefOrRef);
                         CompressInt(tmp, tok);
+
+                        if(ts.gtparams != null)
+                        {
+                            CompressInt(tmp, ts.gtparams.Length);
+                            foreach (var gtp in ts.gtparams)
+                                CreateTypeSignature(tmp, gtp);
+                        }
                     }
                     else
                         tmp.Add((byte)stype);

@@ -1152,7 +1152,7 @@ namespace libtysila5.ir
             var t = n.GetTokenAsTypeSpec(c);
 
             var ts = stack_before.Peek().ts;
-            if (ts.stype == TypeSpec.SpecialType.MPtr)
+            if (ts.stype == TypeSpec.SpecialType.MPtr || ts.stype == TypeSpec.SpecialType.Ptr)
             {
                 if (!t.IsAssignmentCompatibleWith(ts.other))
                     throw new Exception("initobj verification failed");
@@ -1431,7 +1431,7 @@ namespace libtysila5.ir
                     throw new Exception("Box called with invalid parameter: " + ts.ToString() +
                         " vs " + stack_before.Peek().ts);
 
-                var boxed_ts = new metadata.TypeSpec { m = ts.m, stype = TypeSpec.SpecialType.Boxed, other = ts };
+                var boxed_ts = ts.Box;
                 c.t.r.VTableRequestor.Request(boxed_ts);
                 var ptr_size = c.t.GetPointerSize();
                 var sysobj_size = layout.Layout.GetTypeSize(c.ms.m.SystemObject, c.t);
