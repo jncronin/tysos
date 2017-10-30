@@ -1331,6 +1331,10 @@ namespace typroject
                     if ((bool)ret == false)
                         throw new Exception();
                 }
+                else if(n.Name == "Error")
+                {
+                    throw new Exception(process_string(n.SelectSingleNode("@Text", nm).Value, props, project.items));
+                }
                 else
                     throw new NotImplementedException();
             }
