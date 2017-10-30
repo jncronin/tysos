@@ -40,7 +40,11 @@ namespace libtysila5.ir
             if(delegate_m_target == null)
             {
                 delegate_m_target = ts.m.GetFieldDefRow("m_target", ts.m.SystemDelegate);
+                if (delegate_m_target == null)
+                    delegate_m_target = ts.m.GetFieldDefRow("_target", ts.m.SystemDelegate);
                 delegate_method_ptr = ts.m.GetFieldDefRow("method_ptr", ts.m.SystemDelegate);
+                if (delegate_method_ptr == null)
+                    delegate_method_ptr = ts.m.GetFieldDefRow("_methodPtr", ts.m.SystemDelegate);
             }
 
             // Generate required delegate methods in IR
