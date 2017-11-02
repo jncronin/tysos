@@ -25,7 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using libtysila5.target;
-
+using binary_library.binary;
 
 namespace tysila4
 {
@@ -35,23 +35,24 @@ namespace tysila4
             string output_cinit)
         {
             FileStream fs = new FileStream(output_header, FileMode.Create, FileAccess.Write);
-            StreamWriter sw = new StreamWriter(fs);
+            var sw = fs;
 
-            StreamWriter hmsw = new StreamWriter(new MemoryStream());
-            StreamWriter cmsw = new StreamWriter(new MemoryStream());
+            var hmsw = new MemoryStream();
+            var cmsw = new MemoryStream();
 
-            StreamWriter oci = null;
+            FileStream oci = null;
             System.IO.FileInfo header_fi = new FileInfo(output_header);
             if (output_cinit != null)
             {
-                oci = new StreamWriter(new FileStream(output_cinit, FileMode.Create, FileAccess.Write));
-                oci.WriteLine("#include \"" + header_fi.Name + "\"");
-                oci.WriteLine("#include <string.h>");
-                oci.WriteLine("#include <stdlib.h>");
-                oci.WriteLine("#include <stdint.h>");
-                oci.WriteLine();
-                oci.WriteLine("INTPTR Get_Symbol_Addr(const char *name);");
-                oci.WriteLine();
+                oci = new FileStream(output_cinit, FileMode.Create, FileAccess.Write);
+
+                HexFile.writeStr(oci, "#include \"" + header_fi.Name + "\"", true);
+                HexFile.writeStr(oci, "#include <string.h>", true);
+                HexFile.writeStr(oci, "#include <stdlib.h>", true);
+                HexFile.writeStr(oci, "#include <stdint.h>", true);
+                HexFile.writeStr(oci, "", true);
+                HexFile.writeStr(oci, "INTPTR Get_Symbol_Addr(const char *name);", true);
+                HexFile.writeStr(oci, "", true);
             }
 
             List<string> advance_defines = new List<string>();
@@ -92,35 +93,36 @@ namespace tysila4
                 }
             }
 
-            sw.WriteLine("#include <stdint.h>");
-            sw.WriteLine();
-            sw.WriteLine("#ifdef INTPTR");
-            sw.WriteLine("#undef INTPTR");
-            sw.WriteLine("#endif");
-            sw.WriteLine("#ifdef UINTPTR");
-            sw.WriteLine("#undef UINTPTR");
-            sw.WriteLine("#endif");
-            sw.WriteLine();
-            sw.WriteLine("#define INTPTR " + ((ass.GetPointerSize() == 4) ? ass.GetCType(m.SystemInt32) : ass.GetCType(m.SystemInt64)));
-            sw.WriteLine("#define UINTPTR " + ((ass.GetPointerSize() == 4) ? ass.GetCType(m.GetSimpleTypeSpec(0x09)) : ass.GetCType(m.GetSimpleTypeSpec(0x0b))));
-            sw.WriteLine();
+            HexFile.writeStr(sw, "");
+            HexFile.writeStr(sw, "#include <stdint.h>");
+            HexFile.writeStr(sw, "");
+            HexFile.writeStr(sw, "#ifdef INTPTR");
+            HexFile.writeStr(sw, "#undef INTPTR");
+            HexFile.writeStr(sw, "#endif");
+            HexFile.writeStr(sw, "#ifdef UINTPTR");
+            HexFile.writeStr(sw, "#undef UINTPTR");
+            HexFile.writeStr(sw, "#endif");
+            HexFile.writeStr(sw, "");
+            HexFile.writeStr(sw, "#define INTPTR " + ((ass.GetPointerSize() == 4) ? ass.GetCType(m.SystemInt32) : ass.GetCType(m.SystemInt64)));
+            HexFile.writeStr(sw, "#define UINTPTR " + ((ass.GetPointerSize() == 4) ? ass.GetCType(m.GetSimpleTypeSpec(0x09)) : ass.GetCType(m.GetSimpleTypeSpec(0x0b))));
+            HexFile.writeStr(sw, "");
             EmitArrayType(sw, ass, m);
             foreach (string s in advance_defines)
-                sw.WriteLine(s);
-            sw.WriteLine();
+                HexFile.writeStr(sw, s);
+            HexFile.writeStr(sw, "");
             if (oci != null)
             {
                 foreach (string s2 in func_headers)
-                    sw.WriteLine(s2);
-                sw.WriteLine();
+                    HexFile.writeStr(sw, s2);
+                HexFile.writeStr(sw, "");
             }
             hmsw.Flush();
-            StreamReader hmsr = new StreamReader(hmsw.BaseStream);
+            StreamReader hmsr = new StreamReader(hmsw);
             hmsr.BaseStream.Seek(0, SeekOrigin.Begin);
             string hs = hmsr.ReadLine();
             while (hs != null)
             {
-                sw.WriteLine(hs);
+                HexFile.writeStr(sw, hs);
                 hs = hmsr.ReadLine();
             }
 
@@ -129,23 +131,23 @@ namespace tysila4
             if (oci != null)
             {
                 foreach (string s in external_defines)
-                    oci.WriteLine(s);
-                oci.WriteLine();
+                    HexFile.writeStr(sw, s);
+                HexFile.writeStr(sw, "");
 
                 cmsw.Flush();
-                StreamReader cmsr = new StreamReader(cmsw.BaseStream);
+                StreamReader cmsr = new StreamReader(cmsw);
                 cmsr.BaseStream.Seek(0, SeekOrigin.Begin);
                 string cs = cmsr.ReadLine();
                 while (cs != null)
                 {
-                    oci.WriteLine(cs);
+                    HexFile.writeStr(sw, cs);
                     cs = cmsr.ReadLine();
                 }
                 oci.Close();
             }
         }
 
-        private static void EmitType(TypeSpec tdr, StreamWriter hmsw, StreamWriter cmsw,
+        private static void EmitType(TypeSpec tdr, Stream hmsw, Stream cmsw,
             List<string> advance_defines, List<string> external_defines, List<string> header_funcs, Target ass)
         {
             //Layout l = Layout.GetTypeInfoLayout(new Assembler.TypeToCompile { _ass = ass, tsig = new Signature.Param(tdr, ass), type = tdr }, ass, false);
@@ -162,7 +164,7 @@ namespace tysila4
 
             if (!tdr.IsEnum)
             {
-                hmsw.WriteLine("struct " + tns + "_" + tname + " {");
+                HexFile.writeStr(hmsw, "struct " + tns + "_" + tname + " {");
                 advance_defines.Add("struct " + tns + "_" + tname + ";");
 
                 List<TypeSpec> fields = new List<TypeSpec>();
@@ -173,39 +175,39 @@ namespace tysila4
                 for (int i = 0; i < fields.Count; i++)
                 {
                     int bytesize;
-                    hmsw.WriteLine("    " + ass.GetCType(fields[i], out bytesize) + " " + fnames[i] + ";");
+                    HexFile.writeStr(hmsw, "    " + ass.GetCType(fields[i], out bytesize) + " " + fnames[i] + ";");
 
                     // Pad out to align size
                     bytesize = align - bytesize;
                     while ((bytesize % 2) != 0)
                     {
-                        hmsw.WriteLine("    uint8_t __reserved" + (next_rsvd++).ToString() + ";");
+                        HexFile.writeStr(hmsw, "    uint8_t __reserved" + (next_rsvd++).ToString() + ";");
                         bytesize--;
                     }
                     while ((bytesize % 4) != 0)
                     {
-                        hmsw.WriteLine("    uint16_t __reserved" + (next_rsvd++).ToString() + ";");
+                        HexFile.writeStr(hmsw, "    uint16_t __reserved" + (next_rsvd++).ToString() + ";");
                         bytesize -= 2;
                     }
                     while(bytesize != 0)
                     {
-                        hmsw.WriteLine("    uint32_t __reserved" + (next_rsvd++).ToString() + ";");
+                        HexFile.writeStr(hmsw, "    uint32_t __reserved" + (next_rsvd++).ToString() + ";");
                         bytesize -= 4;
                     }
                 }
 
 
                 //if (packed_structs)
-                //    hmsw.WriteLine("} __attribute__((__packed__));");
+                //    HexFile.writeStr(hmsw, "} __attribute__((__packed__));");
                 //else
-                    hmsw.WriteLine("};");
+                HexFile.writeStr(hmsw, "};");
             }
             else
             {
                 // Identify underlying type
                 var utype = tdr.UnderlyingType;
                 bool needs_comma = false;
-                hmsw.WriteLine("enum " + tns + "_" + tname + " {");
+                HexFile.writeStr(hmsw, "enum " + tns + "_" + tname + " {");
 
                 var first_fdef = tdr.m.GetIntEntry(MetadataStream.tid_TypeDef,
                     tdr.tdrow, 4);
@@ -238,18 +240,18 @@ namespace tysila4
                                     (int)fdef_row, 1);
 
                                 if (needs_comma)
-                                    hmsw.WriteLine(",");
-                                hmsw.Write("    " + fname + " = " + v.ToString());
+                                    HexFile.writeStr(hmsw, ",");
+                                HexFile.writeStr(hmsw, "    " + fname + " = " + v.ToString(), true);
                                 needs_comma = true;
                             }
                         }
                     }
                 }
-                hmsw.WriteLine();
-                hmsw.WriteLine("};");
+                HexFile.writeStr(hmsw);
+                HexFile.writeStr(hmsw, "};");
             }
 
-            hmsw.WriteLine();
+            HexFile.writeStr(hmsw);
 
             //if (output_cinit != null)
             //{
@@ -257,15 +259,15 @@ namespace tysila4
                 {
                     string init_func = "void Init_" + tns + "_" + tname + "(struct " +
                         tns + "_" + tname + " *obj)";
-                    cmsw.WriteLine(init_func);
+                    HexFile.writeStr(cmsw, init_func);
                     header_funcs.Add(init_func + ";");
-                    cmsw.WriteLine("{");
+                    HexFile.writeStr(cmsw, "{");
 
-                    cmsw.WriteLine("    obj->__vtbl = Get_Symbol_Addr(\"" + tdr.MangleType() + "\");");
-                    cmsw.WriteLine("    obj->__mutex_lock = 0;");
+                    HexFile.writeStr(cmsw, "    obj->__vtbl = Get_Symbol_Addr(\"" + tdr.MangleType() + "\");");
+                    HexFile.writeStr(cmsw, "    obj->__mutex_lock = 0;");
 
-                    cmsw.WriteLine("}");
-                    cmsw.WriteLine();
+                    HexFile.writeStr(cmsw, "}");
+                    HexFile.writeStr(cmsw);
 
                     if(tdr.Equals(tdr.m.SystemString))
                         EmitStringInit(tdr, hmsw, cmsw, advance_defines, external_defines, header_funcs, ass);
@@ -273,7 +275,7 @@ namespace tysila4
             //}
         }
 
-        private static void EmitArrayInit(StreamWriter hmsw, StreamWriter cmsw, List<string> header_funcs,
+        private static void EmitArrayInit(Stream hmsw, Stream cmsw, List<string> header_funcs,
             Target ass, MetadataStream m)
         {
             EmitArrayInit(m.SystemObject, "Ref", hmsw, cmsw, header_funcs, ass);
@@ -290,26 +292,26 @@ namespace tysila4
             EmitArrayInit(m.GetSimpleTypeSpec(0x0b), "U8", hmsw, cmsw, header_funcs, ass);
         }
 
-        private static void EmitArrayType(StreamWriter hmsw, Target ass, MetadataStream m)
+        private static void EmitArrayType(Stream hmsw, Target ass, MetadataStream m)
         {
-            hmsw.WriteLine("struct __array");
-            hmsw.WriteLine("{");
-            hmsw.WriteLine("    INTPTR           __vtbl;");
-            hmsw.WriteLine("    int64_t          __mutex_lock;");
-            hmsw.WriteLine("    INTPTR           elemtype;");
-            hmsw.WriteLine("    INTPTR           lobounds;");
-            hmsw.WriteLine("    INTPTR           sizes;");
-            hmsw.WriteLine("    INTPTR           inner_array;");
-            hmsw.WriteLine("    INTPTR           rank;");
-            hmsw.WriteLine("    int32_t          elem_size;");
+            HexFile.writeStr(hmsw, "struct __array");
+            HexFile.writeStr(hmsw, "{");
+            HexFile.writeStr(hmsw, "    INTPTR           __vtbl;");
+            HexFile.writeStr(hmsw, "    int64_t          __mutex_lock;");
+            HexFile.writeStr(hmsw, "    INTPTR           elemtype;");
+            HexFile.writeStr(hmsw, "    INTPTR           lobounds;");
+            HexFile.writeStr(hmsw, "    INTPTR           sizes;");
+            HexFile.writeStr(hmsw, "    INTPTR           inner_array;");
+            HexFile.writeStr(hmsw, "    INTPTR           rank;");
+            HexFile.writeStr(hmsw, "    int32_t          elem_size;");
             //if (packed_structs)
-            //    hmsw.WriteLine("} __attribute__((__packed__));");
+            //    HexFile.writeStr(hmsw, "} __attribute__((__packed__));");
             //else
-                hmsw.WriteLine("};");
-            hmsw.WriteLine();
+            HexFile.writeStr(hmsw, "};");
+            HexFile.writeStr(hmsw);
         }
 
-        private static void EmitArrayInit(TypeSpec ts, string tname, StreamWriter hmsw, StreamWriter cmsw,
+        private static void EmitArrayInit(TypeSpec ts, string tname, Stream hmsw, Stream cmsw,
             List<string> header_funcs, Target ass)
         {
             string typestr = ass.GetCType(ts);
@@ -348,25 +350,25 @@ namespace tysila4
             //int elem_size = ass.GetPackedSizeOf(new Signature.Param(baseType_Type));
 
             header_funcs.Add(init_func_name + ";");
-            cmsw.WriteLine(init_func_name);
-            cmsw.WriteLine("{");
-            cmsw.WriteLine("    *arr_obj = (struct __array *)malloc(sizeof(struct __array));");
-            cmsw.WriteLine("    (*arr_obj)->__vtbl = Get_Symbol_Addr(\"" + ts.SzArray.MangleType() + "\");");
-            cmsw.WriteLine("    (*arr_obj)->__mutex_lock = 0;");
-            cmsw.WriteLine("    (*arr_obj)->rank = 1;");
-            cmsw.WriteLine("    (*arr_obj)->elem_size = sizeof(" + typestr + ");");
-            cmsw.WriteLine("    (*arr_obj)->elemtype = Get_Symbol_Addr(\"" + ts.MangleType() + "\");");
-            cmsw.WriteLine("    (*arr_obj)->lobounds = (INTPTR)(intptr_t)malloc(sizeof(int32_t));");
-            cmsw.WriteLine("    (*arr_obj)->sizes = (INTPTR)(intptr_t)malloc(sizeof(int32_t));");
-            cmsw.WriteLine("    (*arr_obj)->inner_array = (INTPTR)(intptr_t)malloc(length * sizeof(int32_t));");
-            cmsw.WriteLine("    *(int32_t *)(intptr_t)((*arr_obj)->lobounds) = 0;");
-            cmsw.WriteLine("    *(int32_t *)(intptr_t)((*arr_obj)->sizes) = length;");
-            cmsw.WriteLine("    return((void *)(intptr_t)((*arr_obj)->inner_array));");
-            cmsw.WriteLine("}");
-            cmsw.WriteLine();
+            HexFile.writeStr(cmsw, init_func_name);
+            HexFile.writeStr(cmsw, "{");
+            HexFile.writeStr(cmsw, "    *arr_obj = (struct __array *)malloc(sizeof(struct __array));");
+            HexFile.writeStr(cmsw, "    (*arr_obj)->__vtbl = Get_Symbol_Addr(\"" + ts.SzArray.MangleType() + "\");");
+            HexFile.writeStr(cmsw, "    (*arr_obj)->__mutex_lock = 0;");
+            HexFile.writeStr(cmsw, "    (*arr_obj)->rank = 1;");
+            HexFile.writeStr(cmsw, "    (*arr_obj)->elem_size = sizeof(" + typestr + ");");
+            HexFile.writeStr(cmsw, "    (*arr_obj)->elemtype = Get_Symbol_Addr(\"" + ts.MangleType() + "\");");
+            HexFile.writeStr(cmsw, "    (*arr_obj)->lobounds = (INTPTR)(intptr_t)malloc(sizeof(int32_t));");
+            HexFile.writeStr(cmsw, "    (*arr_obj)->sizes = (INTPTR)(intptr_t)malloc(sizeof(int32_t));");
+            HexFile.writeStr(cmsw, "    (*arr_obj)->inner_array = (INTPTR)(intptr_t)malloc(length * sizeof(int32_t));");
+            HexFile.writeStr(cmsw, "    *(int32_t *)(intptr_t)((*arr_obj)->lobounds) = 0;");
+            HexFile.writeStr(cmsw, "    *(int32_t *)(intptr_t)((*arr_obj)->sizes) = length;");
+            HexFile.writeStr(cmsw, "    return((void *)(intptr_t)((*arr_obj)->inner_array));");
+            HexFile.writeStr(cmsw, "}");
+            HexFile.writeStr(cmsw);
         }
 
-        private static void EmitStringInit(TypeSpec tdr, StreamWriter hmsw, StreamWriter cmsw,
+        private static void EmitStringInit(TypeSpec tdr, Stream hmsw, Stream cmsw,
             List<string> advance_defines, List<string> external_defines, List<string> header_funcs, Target ass)
         {
             // Emit a string creation instruction of the form:
@@ -375,22 +377,22 @@ namespace tysila4
             string init_func = "void CreateString(struct System_String **obj, const char *s)";
             header_funcs.Add(init_func + ";");
 
-            cmsw.WriteLine(init_func);
-            cmsw.WriteLine("{");
-            cmsw.WriteLine("    int l = strlen(s);");
-            cmsw.WriteLine("    int i;");
-            cmsw.WriteLine("    " + ass.GetCType(tdr.m.SystemChar) + " *p;");
-            cmsw.WriteLine("    *obj = (struct System_String *)malloc(sizeof(struct System_String) + l * sizeof(" +
+            HexFile.writeStr(cmsw, init_func);
+            HexFile.writeStr(cmsw, "{");
+            HexFile.writeStr(cmsw, "    int l = strlen(s);");
+            HexFile.writeStr(cmsw, "    int i;");
+            HexFile.writeStr(cmsw, "    " + ass.GetCType(tdr.m.SystemChar) + " *p;");
+            HexFile.writeStr(cmsw, "    *obj = (struct System_String *)malloc(sizeof(struct System_String) + l * sizeof(" +
                 ass.GetCType(tdr.m.SystemChar) + "));");
-            cmsw.WriteLine("    Init_System_String(*obj);");
-            cmsw.WriteLine("    (*obj)->length = l;");
-            cmsw.WriteLine("    p = &((*obj)->start_char);");
-            //cmsw.WriteLine("    p = (" + ass.GetCType(BaseType_Type.Char) +
+            HexFile.writeStr(cmsw, "    Init_System_String(*obj);");
+            HexFile.writeStr(cmsw, "    (*obj)->length = l;");
+            HexFile.writeStr(cmsw, "    p = &((*obj)->start_char);");
+            //HexFile.writeStr(cmsw, "    p = (" + ass.GetCType(BaseType_Type.Char) +
             //    " *)(*obj + sizeof(struct System_String));");
-            cmsw.WriteLine("    for(i = 0; i < l; i++)");
-            cmsw.WriteLine("        p[i] = (" + ass.GetCType(tdr.m.SystemChar) + ")s[i];");
-            cmsw.WriteLine("}");
-            cmsw.WriteLine();
+            HexFile.writeStr(cmsw, "    for(i = 0; i < l; i++)");
+            HexFile.writeStr(cmsw, "        p[i] = (" + ass.GetCType(tdr.m.SystemChar) + ")s[i];");
+            HexFile.writeStr(cmsw, "}");
+            HexFile.writeStr(cmsw);
         }
     }
 }

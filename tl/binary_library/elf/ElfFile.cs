@@ -503,15 +503,19 @@ namespace binary_library.elf
                     if(sect == null)
                     {
                         // default to 0x0
+#if HAVE_SYSTEM
                         Console.WriteLine("Entry point " + EntryPoint +
                             " not found, defaulting to 0x0");
+#endif
                         e_entry = 0;
                     }
                     else
                     {
+#if HAVE_SYSTEM
                         Console.WriteLine("Entry point " + EntryPoint +
                             " not found, defaulting to 0x" +
                             sect.LoadAddress.ToString("X"));
+#endif
                         e_entry = sect.LoadAddress;
                     }
                 }

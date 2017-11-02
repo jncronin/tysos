@@ -136,7 +136,7 @@ namespace metadata
 
                 pefh.Sections[i].Name = new String(w_str);
                 pefh.Sections[i].Name = pefh.Sections[i].Name.Remove(pefh.Sections[i].Name.IndexOf("\0"));
-                System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: section name: " + pefh.Sections[i].Name + Environment.NewLine);
+                System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: section name: " + pefh.Sections[i].Name + "\n");
 
                 pefh.Sections[i].VSize = file.ReadUInt((int)s_start + 8);
                 pefh.Sections[i].VAddress = file.ReadUInt((int)s_start + 12);

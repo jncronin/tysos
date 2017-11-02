@@ -59,7 +59,7 @@ namespace binary_library.binary
             }
             progbits.Sort((a, b) => a.LoadAddress.CompareTo(b.LoadAddress));
 
-            StreamWriter sw = new StreamWriter(w.BaseStream, Encoding.ASCII);
+            //StreamWriter sw = new StreamWriter(w.BaseStream, Encoding.ASCII);
 
             // Now rebase zero to be the load address of the first section
             uint addr = 0;
@@ -75,7 +75,7 @@ namespace binary_library.binary
                 // write zeros up to the current load address
                 while (base_addr < sect.LoadAddress)
                 {
-                    Write(sw, addr, 0);
+                    Write(w.BaseStream, addr, 0);
                     base_addr++;
                     addr++;
                 }
@@ -83,17 +83,26 @@ namespace binary_library.binary
                 // write the section data
                 foreach (byte b in sect.Data)
                 {
-                    Write(sw, addr, b);
+                    Write(w.BaseStream, addr, b);
                     base_addr++;
                     addr++;
                 }
             }
 
-            sw.WriteLine(":00000001FF");
-            sw.Flush();
+            writeStr(w.BaseStream, ":00000001FF", true);
+            w.BaseStream.Flush();
         }
 
-        private void Write(StreamWriter sw, uint addr, byte v)
+        /* Implemented here incase mscorlib does not contain StreamWriter */
+        public static void writeStr(Stream s, string v = "", bool newline = true)
+        {
+            foreach (var c in v)
+                s.WriteByte((byte)c);
+            if (newline)
+                s.WriteByte((byte)'\n');
+        }
+
+        private void Write(Stream sw, uint addr, byte v)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(":01");
@@ -107,7 +116,7 @@ namespace binary_library.binary
             csum &= 0xffU;
             sb.Append(csum.ToString("X2"));
 
-            sw.WriteLine(sb.ToString());
+            writeStr(sw, sb.ToString(), true);
         }
     }
 }

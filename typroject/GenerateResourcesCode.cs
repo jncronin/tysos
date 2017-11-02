@@ -36,6 +36,9 @@ namespace Microsoft.DotNet.Build.Tasks
             {
                 _resourcesName = "FxResources." + AssemblyName;
 
+                // ensure output directory exists
+                typroject.Project.create_directory(OutputSourceFilePath);
+
                 using (_targetStream = File.CreateText(OutputSourceFilePath))
                 {
                     if (String.Equals(Path.GetExtension(OutputSourceFilePath), ".vb", StringComparison.OrdinalIgnoreCase))

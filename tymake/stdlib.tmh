@@ -34,15 +34,45 @@ if(!defined(STDLIB_TMH))
 		return downloadextract(uri, member, "");
 	}
 
-
 	export function typroject(string name, string config, string tools_ver, int unsafe)
 	{
-		_p = _typroject(name, config, tools_ver, unsafe);
+		return typroject(name, config, tools_ver, unsafe, [], []);
+	}
+
+	export function typroject(string name, string config, string tools_ver, int unsafe, array imports)
+	{
+		return typroject(name, config, tools_ver, unsafe, imports, []);
+	}
+
+	export function typroject(string name, string config, string tools_ver, int unsafe, array imports, array ref_overrides)
+	{
+		return typroject(name, config, tools_ver, unsafe, imports, ref_overrides, 1);
+	}
+
+	__typroject_loaded = [=];
+
+	export function typrojectfromoutput(string output_name)
+	{
+		return __typroject_loaded.get(output_name);
+	}
+
+	export function typroject(string name, string config, string tools_ver, int unsafe, array imports, array ref_overrides, int add_depends)
+	{
+		TYPROJECT_LIBDIR ?= "";
+
+		_p = _typroject(name, config, tools_ver, unsafe, imports, ref_overrides, TYPROJECT_LIBDIR);
 
 		_depends = [];
-		foreach(dep in _p.ProjectReferences)
+		if(add_depends != 0)
 		{
-			_depends.add(typroject(dep, config, tools_ver, unsafe));
+			foreach(dep in _p.ProjectReferences)
+			{
+				_depends.add(typroject(dep, config, tools_ver, unsafe, [], ref_overrides));
+			}
+		}
+		if(defined(TYPROJECT_EXTRADEPENDS))
+		{
+			_depends.addrange(TYPROJECT_EXTRADEPENDS);
 		}
 
 		_depends.add(dir(_p.OutputFile));
@@ -57,6 +87,7 @@ if(!defined(STDLIB_TMH))
 			mkdir(_RULE_OUTPUT);
 		});
 
+		__typroject_loaded.add(_p.OutputFile, _p);
 		return _p.OutputFile;
 	}
 

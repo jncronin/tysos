@@ -145,21 +145,103 @@ function tobjfromexe(string exe)
 	return dir(exe) + "/" + basefname(exe) + ".to";
 }
 
-TYSILAPROJ = ROOT + "/tysila4/tysila4.csproj";
-TYSILA = typroject(TYSILAPROJ, "Release", "4.0", 1);
-TYSOS = typroject(ROOT + "/tysos/tysos.csproj", "Release", "3.5", 1);
-TYSOSOBJ = objfromexe(TYSOS);
-MSCORLIB = ROOT + "/mono/corlib/mscorlib.dll";
+TYPROJECT_EXTRADEPENDS = [ THIS ];
+
+
+/* coreclr corlib is distributed amongst several assemblies */
+DOTNETCORLIB = typroject(ROOT + "/coreclr/src/mscorlib/System.Private.CoreLib.csproj", "Release", "4.6.1", 1, [], [], 0);
+dntp = typrojectfromoutput(DOTNETCORLIB);
+dntp.add("AssemblyName", "mscorlib");
+build(DOTNETCORLIB);
+
+/* Copy dotnet corlib output to MSCORLIB */
+MSCORLIB = ROOT + "/coreclr/mscorlib.dll";
 MSCORLIBOBJ = objfromexe(MSCORLIB);
-LIBSUPCS = typroject(ROOT + "/libsupcs/libsupcs.csproj", "Release", "3.5", 1);
+MSCORLIBDIR = dir(MSCORLIB);
+
+rulefor(MSCORLIB, [ DOTNETCORLIB ], [ THIS ], function()
+{
+	cp(DOTNETCORLIB, MSCORLIB);
+});
+build(MSCORLIB);
+
+
+/* function to build a constituent assembly */
+COREFX_LIB = "corefx/lib";		// place results here
+autodir(COREFX_LIB);
+corefx_projs = [=];
+
+function build_corefx(string name)
+{
+	/* decorate name if it isn't already */
+	if(ext(name) != ".csproj")
+	{
+		name = "corefx/src/" + name + "/src/" + name + ".csproj";
+	}
+
+	if(corefx_projs.containskey(name))
+	{
+		return corefx_projs.get(name);
+	}
+
+	_p = _typroject(name, "Release", "4.6.1", 1, [], [ "mscorlib=$MSCORLIB" ], COREFX_LIB);
+
+	_depends = [];
+	foreach(dep in _p.ProjectReferences)
+	{
+		_depends.add(build_corefx(dep));
+	}
+	foreach(dep in _p.References)
+	{
+		_depends.add(build_corefx("corefx/src/" + dep + "/src/" + dep + ".csproj"));
+	}
+	_depends.add(COREFX_LIB);
+	_depends.add(THIS);
+
+	rulefor(_p.OutputFile, _p.Sources, _depends, function()
+	{
+		_p.Build();
+	});
+
+	_o = COREFX_LIB + "/" + basefname(name) + ".dll";
+	rulefor(_o, [ _p.OutputFile ], [], function()
+	{
+		cp(_RULE_INPUT, _RULE_OUTPUT);
+	});
+
+	corefx_projs.add(name, _o);
+
+	return _o;
+}
+
+/* Build some common ones (pulls in others) - see COREFX_LIB for assemblies produced */
+build(build_corefx("System.Console"));
+build(build_corefx("System.IO.FileSystem"));
+
+/* Build a list of reference assemblies to include in all projects (in future we will do this more cleverly) */
+COREFX_REFS = "";
+foreach(ref in files(COREFX_LIB))
+{
+	COREFX_REFS = COREFX_REFS + ";" + basefname(ref);
+}
+
+/* Make all run-time assemblies depend on the dotnet corlib and this file */
+//TYPROJECT_LIBDIR = COREFX_LIB;
+REF_OVERRIDES = [ ];
+
+
+TYSILAPROJ = ROOT + "/tysila4/tysila4.csproj";
+TYSILA = typroject(TYSILAPROJ, "Release", "4.6.1", 1, [], REF_OVERRIDES);
+TYSOS = typroject(ROOT + "/tysos/tysos.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
+TYSOSOBJ = objfromexe(TYSOS);
+LIBSUPCS = typroject(ROOT + "/libsupcs/libsupcs.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
 LIBSUPCSOBJ = objfromexe(LIBSUPCS);
 LIBSUPCSA = dir(LIBSUPCS) + "/" + basefname(LIBSUPCS) + ".a";
-LIBASMOBJ = objfromexe(typroject(ROOT + "/libasm/libasm.csproj", "Release", "3.5", 1));
-LIBTYSILAOBJ = objfromexe(typroject(ROOT + "/libtysila/libtysila.csproj", "Release", "3.5", 1));
-MSCORLIBDIR = dir(MSCORLIB);
+LIBASMOBJ = objfromexe(typroject(ROOT + "/libasm/libasm.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+LIBTYSILAOBJ = objfromexe(typroject(ROOT + "/libtysila/libtysila.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
 TYSOSDIR = dir(TYSOS);
 LIBSUPCSDIR = dir(LIBSUPCS);
-METADATA = typroject(ROOT + "/metadata/metadata.csproj", "Release", "3.5", 1);
+METADATA = typroject(ROOT + "/metadata/metadata.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
 METADATAOBJ = objfromexe(METADATA);
 
 
@@ -185,7 +267,7 @@ KERNEL = ROOT + "/tysos.bin";
 
 /* Rules for char-conversions */
 CC_DIR = ROOT + "/unicode_support/char-conversions";
-CHAR_CONVERSIONS_PROG = typroject(CC_DIR + "/char-conversions.csproj");
+CHAR_CONVERSIONS_PROG = typroject(CC_DIR + "/char-conversions.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
 CC_INTERMEDIATE = CC_DIR + "/category-dump";
 CC_OUTPUT = CC_DIR + "/char-conversions.cs";
 
@@ -206,7 +288,7 @@ rulefor(ROOT + "/tysos/lib/char-conversions.cs", [ CC_OUTPUT ], [], function()
 
 /* Rules for UnicodeData */
 US_DIR = ROOT + "/unicode_support";
-US_PROG = typroject(US_DIR + "/unicode_support.csproj");
+US_PROG = typroject(US_DIR + "/unicode_support.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
 US_INPUT = US_DIR + "/UnicodeData.txt";
 US_OUTPUT = US_DIR + "/UnicodeData.cs";
 
@@ -220,39 +302,12 @@ rulefor(ROOT + "/tysos/lib/UnicodeData.cs", [ US_OUTPUT ], [], function()
 	cp(_RULE_INPUT, _RULE_OUTPUT);
 });
 
-/* Rules for mscorlib sources */
-CORLIB_DIR = ROOT + "/mono/corlib";
-CORLIB_SRC = CORLIB_DIR + "/corlib.dll.sources";
-CORLIB_OPTS = CORLIB_DIR + "/corlib.dll.sources.options";
-CORLIB_TY_SRCS = CORLIB_DIR + "/corlib.dll.ty.sources";
-CORLIB_DLL = CORLIB_DIR + "/mscorlib.dll";
-
-rulefor(CORLIB_TY_SRCS, [ CORLIB_SRC, CORLIB_OPTS ], [], function()
-{
-	f_a = fopen(CORLIB_OPTS);
-	b_a = [];
-	f_a.Read(b_a, 0, f_a.Length);
-
-	f_b = fopen(CORLIB_SRC);
-	b_b = [];
-	f_b.Read(b_b, 0, f_b.Length);
-
-	b_o = [];
-	b_o.addrange(b_a);
-	b_o.addrange(strtoarr("#assemblyname mscorlib.dll\n\n"));
-	b_o.addrange(b_b);
-
-	f_o = fopen(CORLIB_TY_SRCS);
-	f_o.Write(b_o, 0, b_o.length);
-	f_o.Close();
-});
-
 /* Rules for assembling CLR binaries */
-rulefor("%.obj", [ "%.exe" ], [ TYSILA, CORLIB_DLL, THIS ], function()
+rulefor("%.obj", [ "%.exe" ], [ TYSILA, MSCORLIB, THIS ], function()
 {
 	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
-rulefor("%.obj", [ "%.dll" ], [ TYSILA, CORLIB_DLL, THIS ], function()
+rulefor("%.obj", [ "%.dll" ], [ TYSILA, MSCORLIB, THIS ], function()
 {
 	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
@@ -465,10 +520,6 @@ setoutputcolor(["cyan"]);
 print("Building for $TARGET\n");
 setoutputcolor([]);
 
-build(CORLIB_TY_SRCS);
-typroject(CORLIB_TY_SRCS);
-
-
 OUTDIR = ROOT + "/iso_image";
 autodir(OUTDIR);
 ISODIR = OUTDIR + "/iso";
@@ -482,23 +533,23 @@ ISOIMAGE = OUTDIR + "/tysos.iso";
 GRUBCFG = OUTDIR + "/grub.cfg";
 
 // Processes
-DEBUGPRINTOBJ = tobjfromexe(typroject(ROOT + "/testsuite/debugprint/debugprint.csproj"));
-VFSOBJ = tobjfromexe(typroject(ROOT + "/processes/services/vfs/vfs.csproj"));
-ACPIPCOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/acpipc/acpipc.csproj"));
-LOGGEROBJ = tobjfromexe(typroject(ROOT + "/processes/services/logger/logger.csproj"));
-MODFSOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/modfs/modfs.csproj"));
-FSDUMPOBJ = tobjfromexe(typroject(ROOT + "/testsuite/fsdump/fsdump.csproj"));
-PCIOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pci/pci.csproj"));
-BGAOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/bga/bga.csproj"));
-PCIIDEOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pciide/pciide.csproj"));
-ATAOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/ata/ata.csproj"));
-DISKOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/disk/disk.csproj"));
-FRAMEBUFFEROBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/framebuffer/framebuffer.csproj"));
-GUIOBJ = tobjfromexe(typroject(ROOT + "/processes/services/gui/gui.csproj"));
-NETOBJ = tobjfromexe(typroject(ROOT + "/processes/services/net/net.csproj"));
-PCNET32OBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pcnet32/pcnet32.csproj"));
+DEBUGPRINTOBJ = tobjfromexe(typroject(ROOT + "/testsuite/debugprint/debugprint.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+VFSOBJ = tobjfromexe(typroject(ROOT + "/processes/services/vfs/vfs.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+ACPIPCOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/acpipc/acpipc.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+LOGGEROBJ = tobjfromexe(typroject(ROOT + "/processes/services/logger/logger.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+MODFSOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/modfs/modfs.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+FSDUMPOBJ = tobjfromexe(typroject(ROOT + "/testsuite/fsdump/fsdump.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+PCIOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pci/pci.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+BGAOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/bga/bga.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+PCIIDEOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pciide/pciide.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+ATAOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/ata/ata.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+DISKOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/disk/disk.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+FRAMEBUFFEROBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/framebuffer/framebuffer.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+GUIOBJ = tobjfromexe(typroject(ROOT + "/processes/services/gui/gui.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+NETOBJ = tobjfromexe(typroject(ROOT + "/processes/services/net/net.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
+PCNET32OBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pcnet32/pcnet32.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
 
-PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj"), DEBUGPRINTOBJ,
+PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES), DEBUGPRINTOBJ,
 	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ, PCIOBJ, BGAOBJ, PCIIDEOBJ,
 	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ, GUIOBJ, NETOBJ, PCNET32OBJ ];
 

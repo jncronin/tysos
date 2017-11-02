@@ -60,7 +60,10 @@ namespace binary_library
         ISection CreateSection();
         ISection CreateContentsSection();
         ISection FindSection(string name);
+
+#if HAVE_SYSTEM
         ISection FindSection(System.Text.RegularExpressions.Regex r);
+#endif
 
         int GetSymbolCount();
         ISymbol GetSymbol(int idx);

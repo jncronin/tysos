@@ -384,6 +384,8 @@ namespace typroject
             else
             {
                 double tvd;
+                if (tools_ver.StartsWith("v"))
+                    tools_ver = tools_ver.Substring(1);
                 if (double.TryParse(tools_ver, out tvd) && tvd >= 12.0)
                 {
                     // this is a visual studio version and libs are in program files/msbuild/x
@@ -391,6 +393,11 @@ namespace typroject
                     return ret;
                 }
 
+                /* Get from the Reference Assemblies folder */
+                var ref_ass_path = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) + "\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v" + tools_ver + "\\mscorlib.dll";
+                var rap_fi = new FileInfo(ref_ass_path);
+                if (rap_fi.Exists)
+                    return rap_fi.DirectoryName;
 
                 string fwork_ver;
                 if (tools_ver == "4.5")
@@ -431,6 +438,7 @@ namespace typroject
         internal Uri uri_basedir, uri_curdir;
         internal Dictionary<string, string> properties;
         public string tools_ver;
+        public string lib_dir;
         public OutputType output_type;
         public string assembly_name;
         public string extra_add;
@@ -444,7 +452,9 @@ namespace typroject
         internal XmlNamespaceManager nm;
         internal Dictionary<string, XPathNavigator> targets = new Dictionary<string, XPathNavigator>();
         internal Dictionary<string, List<string>> items = new Dictionary<string, List<string>>();
-        internal Dictionary<string, object> tasks = new Dictionary<string, object>();
+        internal Dictionary<string, Type> tasks = new Dictionary<string, Type>();
+
+        internal Dictionary<string, string> reference_overrides = null;
 
         public string ErrorMessage;
 
@@ -454,10 +464,10 @@ namespace typroject
 
         public enum OutputType { Exe, Library };
 
-        public static Project xml_read(Stream file, string config, string basedir, string curdir)
+        public static Project xml_read(Stream file, string config, string basedir, string curdir, List<string> imports = null, List<string> ref_overrides = null)
         {
             Project ret = new Project();
-            return xml_read(ret, file, config, basedir, curdir);
+            return xml_read(ret, file, config, basedir, curdir, null, imports, ref_overrides);
         }
 
         public static Project sources_read(Stream file, string config, string basedir, string curdir)
@@ -568,7 +578,8 @@ namespace typroject
             return ret;
         }
 
-        internal static Project xml_read(Project ret, Stream file, string config, string basedir, string curdir, Dictionary<string, string> props = null)
+        internal static Project xml_read(Project ret, Stream file, string config, string basedir, string curdir, Dictionary<string, string> props = null,
+            List<string> imports = null, List<string> ref_overrides = null)
         {
             /* Load a project from the project file specified */
             basedir = add_dir_split(basedir);
@@ -576,10 +587,25 @@ namespace typroject
             Uri uri_basedir = new Uri(basedir);
             Uri uri_curdir = new Uri(curdir);
 
+            /* Reference overrides are of the form assembly_name = path */
+            if (ref_overrides != null)
+            {
+                if (ret.reference_overrides == null)
+                    ret.reference_overrides = new Dictionary<string, string>();
+                foreach(var ro in ref_overrides)
+                {
+                    var ros = ro.Split('=');
+                    ret.reference_overrides[ros[0].Trim()] = ros[1].Trim();
+                }
+            }
+
             XPathDocument r = new XPathDocument(file);
             XPathNavigator n = r.CreateNavigator();
-            n.MoveToRoot();
-            n.MoveToFirstChild();
+            foreach(XPathNavigator cn in n.SelectChildren(XPathNodeType.Element))
+            {
+                n = cn;
+                break;
+            }
             XmlNamespaceManager nm = new XmlNamespaceManager(n.NameTable);
             nm.AddNamespace("d", n.NamespaceURI);
 
@@ -605,10 +631,15 @@ namespace typroject
 
                 props["__BuildOS"] = "Linux";
                 props["__BuildArch"] = "x64";
+                props["OSGroup"] = "Linux";
+                props["TargetsUnix"] = "true";
+
+                props["Configuration"] = config;
 
                 is_proj = true;
 
-                ret.tasks["GenerateResourcesCode"] = new Microsoft.DotNet.Build.Tasks.GenerateResourcesCode();
+                ret.tasks["GenerateResourcesCode"] = typeof(Microsoft.DotNet.Build.Tasks.GenerateResourcesCode);
+
             }
             ret.properties = props;
 
@@ -628,14 +659,30 @@ namespace typroject
                     props["MSBuildProjectFullPath"] = props["MSBuildThisFileFullPath"];
                     props["MSBuildProjectName"] = props["MSBuildThisFileName"];
                     props["MSBuildProjectExtension"] = props["MSBuildThisFileExtension"];
-                    props["MSBuildProjectDirectory"] = props["MSBuildThisFileDirectory"];
-                    props["MSBuildProjectDirectoryNoRoot"] = props["MSBuildThisFileDirectoryNoRoot"];
+                    props["MSBuildProjectDirectory"] = remove_dir_split(props["MSBuildThisFileDirectory"]);
+                    props["MSBuildProjectDirectoryNoRoot"] = remove_dir_split(props["MSBuildThisFileDirectoryNoRoot"]);
+
+                    if (fsi.Name == "System.Private.CoreLib.csproj")
+                    {
+                        props["MSBuildProjectName"] = "mscorlib";
+                        props["OutputFile"] = "mscorlib.dll";
+                        props["AssemblyName"] = "mscorlib";
+                    }
 
                     var deftargs = n.SelectSingleNode("@DefaultTargets", nm);
                     if(deftargs != null)
                     {
                         props["MSBuildProjectDefaultTargets"] = deftargs.Value;
                     }
+                }
+            }
+
+            /* process any imports */
+            if(imports != null)
+            {
+                foreach(var import in imports)
+                {
+                    //process_import(new FileInfo(import), ret);
                 }
             }
 
@@ -664,7 +711,18 @@ namespace typroject
                 ret.output_type = OutputType.Exe;
             else
                 throw new Exception("Unknown output type: " + otype);
-            ret.assembly_name = props["AssemblyName"];
+
+            try
+            {
+                if (props["MSBuildProjectName"] == "mscorlib")
+                    ret.assembly_name = "mscorlib";
+                else
+                    ret.assembly_name = props["AssemblyName"];
+            }
+            catch(KeyNotFoundException)
+            {
+                ret.assembly_name = props["MSBuildProjectName"];
+            }
 
             if (ret.ProjectName == null)
                 ret.ProjectName = ret.assembly_name;
@@ -761,14 +819,20 @@ namespace typroject
                             {
                                 if(process_condition(cn, props, nm))
                                 {
-                                    process_node(cn, ret, props, nm);
+                                    foreach (XPathNavigator wcn in cn.Select("child::*", nm))
+                                    {
+                                        process_node(wcn, ret, props, nm);
+                                    }
                                     when_done = true;
                                     break;
                                 }
                             }
                             else if(cn.Name == "Otherwise" && !when_done)
                             {
-                                process_node(cn, ret, props, nm);
+                                foreach (XPathNavigator wcn in cn.Select("child::*", nm))
+                                {
+                                    process_node(wcn, ret, props, nm);
+                                }
                                 when_done = true;
                                 break;
                             }
@@ -797,7 +861,7 @@ namespace typroject
         {
             if(process_condition(n, props, nm))
             {
-                if(n.Name == "Compile")
+                if (n.Name == "Compile")
                 {
                     var dependsn = n.SelectSingleNode("@DependentUpon", nm);
                     if (dependsn != null)
@@ -807,12 +871,32 @@ namespace typroject
                         throw new NotImplementedException();
                     var fname = process_string(n.SelectSingleNode("@Include", nm).Value, props);
 
-                    if (fname.Contains("SafeFileHandle.Windows"))
-                        System.Diagnostics.Debugger.Break();
-
                     var rp = rel_path(fname, ret.uri_basedir, ret.uri_curdir);
-                    if(!ret.Sources.Contains(rp))
+                    if (!ret.Sources.Contains(rp))
                         ret.Sources.Add(rp);
+                }
+                else if(n.Name == "ProjectReference")
+                {
+                    var prfname = rel_path(process_string(n.SelectSingleNode("@Include", nm).Value, props, ret.items), ret.uri_basedir, ret.uri_curdir);
+
+                    Project pref = new Project();
+
+                    var prguidn = n.SelectSingleNode("./d:Project", nm);
+                    if(prguidn != null)
+                        pref.Guid = new Guid(process_string(prguidn.Value, props, ret.items));
+                    var prnamen = n.SelectSingleNode("./d:Name", nm);
+                    if(prnamen != null)
+                        pref.ProjectName = process_string(prnamen.Value, props, ret.items);
+
+                    pref.ProjectFile = prfname;
+                    FileInfo pref_fi = new FileInfo(pref.ProjectFile);
+                    xml_read(pref, pref_fi.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite), ret.configuration, pref_fi.DirectoryName, ret.curdir);
+                    ret.ProjectReferences.Add(pref);
+                }
+                else if(n.Name == "Reference")
+                {
+                    var rname = process_string(n.SelectSingleNode("@Include", nm).Value, props, ret.items);
+                    ret.References.Add(rname);
                 }
                 else
                 {
@@ -846,7 +930,7 @@ namespace typroject
         {
             if(process_condition(n, props, nm))
             {
-                props[n.Name] = process_string(n.Value, props);
+                props[n.Name] = process_string(n.Value, props, ret.items);
             }
         }
 
@@ -858,34 +942,10 @@ namespace typroject
                 var pname = proj.Value;
                 pname = process_string(pname, props);
 
-                var pfi = new FileInfo(pname);
+                var pfi = new FileInfo(rel_path(pname, ret.uri_basedir, ret.uri_curdir));
                 if(pfi.Exists)
                 {
-                    /* Save all the 'msbuildthisfile' properties */
-                    var fp = props["MSBuildThisFileFullPath"];
-                    var fn = props["MSBuildThisFileName"];
-                    var fe = props["MSBuildThisFileExtension"];
-                    var fd = props["MSBuildThisFileDirectory"];
-                    var fdnr = props["MSBuildThisFileDirectoryNoRoot"];
-
-                    /* save curdir/basedir */
-                    var cd = ret.curdir;
-                    var ucd = ret.uri_curdir;
-                    var ubd = ret.uri_basedir;
-                    
-                    xml_read(ret, pfi.OpenRead(), ret.configuration, pfi.DirectoryName, ret.curdir, props);
-
-                    /* Restore thiffile properties */
-                    props["MSBuildThisFileFullPath"] = fp;
-                    props["MSBuildThisFileName"] = fn;
-                    props["MSBuildThisFileExtension"] = fe;
-                    props["MSBuildThisFileDirectory"] = fd;
-                    props["MSBuildThisFileDirectoryNoRoot"] = fdnr;
-
-                    /* Restore curdir/basedir */
-                    ret.curdir = cd;
-                    ret.uri_curdir = ucd;
-                    ret.uri_basedir = ubd;
+                    process_import(pfi, ret);
                 }
                 else
                 {
@@ -893,9 +953,40 @@ namespace typroject
             }
         }
 
+        private static void process_import(FileInfo pfi, Project ret)
+        {
+            /* Save all the 'msbuildthisfile' properties */
+            var fp = ret.properties["MSBuildThisFileFullPath"];
+            var fn = ret.properties["MSBuildThisFileName"];
+            var fe = ret.properties["MSBuildThisFileExtension"];
+            var fd = ret.properties["MSBuildThisFileDirectory"];
+            var fdnr = ret.properties["MSBuildThisFileDirectoryNoRoot"];
+
+            /* save curdir/basedir */
+            var cd = ret.curdir;
+            var ucd = ret.uri_curdir;
+            var ubd = ret.uri_basedir;
+
+            xml_read(ret, pfi.OpenRead(), ret.configuration, pfi.DirectoryName, ret.curdir, ret.properties);
+
+            /* Restore thiffile properties */
+            ret.properties["MSBuildThisFileFullPath"] = fp;
+            ret.properties["MSBuildThisFileName"] = fn;
+            ret.properties["MSBuildThisFileExtension"] = fe;
+            ret.properties["MSBuildThisFileDirectory"] = fd;
+            ret.properties["MSBuildThisFileDirectoryNoRoot"] = fdnr;
+
+            /* Restore curdir/basedir */
+            ret.curdir = cd;
+            ret.uri_curdir = ucd;
+            ret.uri_basedir = ubd;
+        }
+
         internal static string process_string(string value, Dictionary<string, string> props, Dictionary<string, List<string>> items = null)
         {
             StringBuilder ret = new StringBuilder();
+
+            int substituted = 0;
 
             for(int i = 0; i < value.Length;)
             {
@@ -909,7 +1000,10 @@ namespace typroject
                     i++;
 
                     if (value[i] != '(')
-                        throw new NotSupportedException();
+                    {
+                        ret.Append(value[i - 1]);
+                        continue;
+                    }
                     i++;
 
                     int bcount = 1;     // brackets count to get nested variables
@@ -967,12 +1061,18 @@ namespace typroject
                         }
                         else
                             throw new NotImplementedException();
+
+                        substituted++;
                     }
                     else if (!is_item && props.ContainsKey(vn))
+                    {
                         ret.Append(props[vn]);
-                    else if(is_item && items.ContainsKey(vn))
+                        substituted++;
+                    }
+                    else if (is_item && items.ContainsKey(vn))
                     {
                         ret.Append(string.Join(";", items[vn]));
+                        substituted++;
                     }
                 }
                 else
@@ -982,7 +1082,12 @@ namespace typroject
                 }
             }
 
-            return ret.ToString();
+            // handle nested defines
+            var r = ret.ToString();
+            if (substituted != 0 && (r.Contains("$") || (r.Contains("@") && items != null)))
+                return process_string(r, props, items);
+            else
+                return r;
         }
 
         private static bool process_condition(XPathNavigator n, Dictionary<string, string> props, XmlNamespaceManager nm)
@@ -1016,6 +1121,11 @@ namespace typroject
                 return dir;
             else
                 return dir + System.IO.Path.DirectorySeparatorChar;
+        }
+
+        internal static string remove_dir_split(string dir)
+        {
+            return dir.TrimEnd(Path.DirectorySeparatorChar);
         }
 
         internal static string remove_drive(string dir)
@@ -1053,6 +1163,30 @@ namespace typroject
         public int build(List<string> extra_defines, List<string> extra_libdirs, List<string> extra_libs, bool do_unsafe,
             System.IO.TextWriter output, string tools_ver_override)
         {
+            /* Set AssemblyName to what it has been defined as */
+            properties["AssemblyName"] = assembly_name;
+            properties["AssemblyTitle"] = assembly_name;
+
+            /* Ensure output paths exist */
+            if (properties.ContainsKey("OutputPath"))
+                create_directory(new DirectoryInfo(properties["OutputPath"]));
+            if (properties.ContainsKey("IntermediateOutputPath"))
+                create_directory(new DirectoryInfo(properties["IntermediateOutputPath"]));
+
+            /* Run any PrepareForBuild target */
+            if (targets.ContainsKey("PrepareForBuild"))
+            {
+                process_node(targets["PrepareForBuild"], this, properties, nm);
+            }
+
+            /*foreach(var k in properties.Keys)
+            {
+                if(k.Contains("DependsOn"))
+                {
+                    var v = properties[k];
+                    Console.WriteLine(k + ": " + process_string(v, properties, items));
+                }
+            }*/
             /* First handle any custom build actions */
             if (properties.ContainsKey("PrepareResourcesDependsOn"))
                 process_dependson(properties["PrepareResourcesDependsOn"]);
@@ -1128,19 +1262,35 @@ namespace typroject
                 sb.Append("\" ");
             }
 
-            sb.Append("/lib:\"");
             string tvd = Program.ref_dir(tools_ver);
-            if (tvd.EndsWith("\\"))
-                tvd = tvd.Substring(0, tvd.Length - 1);
-            sb.Append(tvd);
-            sb.Append("\" ");
+            /* Reference the tools directory if mscorlib is not overridden */
+            if (lib_dir != null || reference_overrides == null || !reference_overrides.ContainsKey("mscorlib"))
+            {
+                if (lib_dir != null)
+                    tvd = lib_dir;
+
+                sb.Append("/lib:\"");
+                if (tvd.EndsWith("\\"))
+                    tvd = tvd.Substring(0, tvd.Length - 1);
+                sb.Append(tvd);
+                sb.Append("\" ");
+            }
 
             /* Directly reference mscorlib in the appropriate tools dir.
              * This helps v4+ compilers target the correct framework */
+            Dictionary<string, bool> ro_added = new Dictionary<string, bool>();
             if (is_v4plus && get_prop("NoStdLib", properties).ToLower() != "true")
             {
                 sb.Append("/nostdlib ");
-                sb.Append("/r:" + add_dir_split(tvd) + "mscorlib.dll ");
+
+                if (reference_overrides != null && reference_overrides.ContainsKey("mscorlib"))
+                {
+                    foreach (var ro in get_reference_overrides(reference_overrides["mscorlib"], "mscorlib"))
+                        sb.Append("/r:" + ro + " ");
+                    ro_added["mscorlib"] = true;
+                }
+                else
+                    sb.Append("/r:\"" + Program.replace_dir_split(add_dir_split(tvd)) + "mscorlib.dll\" ");
             }
 
             foreach (string lib in extra_libs)
@@ -1152,14 +1302,51 @@ namespace typroject
                 sb.Append(ld); sb.Append("\" ");
             }
 
+            /* First, replace those project declared references we are using with overrides if necessary */
+            List<string> new_refs = new List<string>();
             foreach (string lib in References)
             {
-                sb.Append("/reference:\"");
-                sb.Append(Program.replace_dir_split(lib));
-                if (lib.Contains(".dll") || lib.Contains(".exe"))
-                    sb.Append("\" ");
+                var lib2 = Program.replace_dir_split(lib);
+                if (reference_overrides != null && reference_overrides.ContainsKey(lib2))
+                {
+                    if (ro_added.ContainsKey(lib2))
+                        continue;
+
+                    foreach (var ro in get_reference_overrides(reference_overrides[lib2], lib2))
+                        new_refs.Add(ro);
+
+                    ro_added[lib2] = true;
+                }
                 else
-                    sb.Append(".dll\" ");
+                    new_refs.Add("\"" + lib2 + "\"");
+            }
+
+            /* Next add overrides that are unaccounted for */
+            if(reference_overrides != null)
+            {
+                foreach(var kvp in reference_overrides)
+                {
+                    if (!ro_added.ContainsKey(kvp.Key))
+                    {
+                        foreach(var ro in get_reference_overrides(kvp.Value, kvp.Key))
+                            new_refs.Add(ro);
+                        ro_added[kvp.Key] = true;
+                    }
+                }
+            }
+
+            /* Finally add to the build command */
+
+            foreach(var lib in new_refs)
+            { 
+                sb.Append("/r:");
+                var lref = Program.replace_dir_split(lib);
+                if(!lref.Contains(".dll") && !lref.Contains(".exe"))
+                {
+                    lref = lib.TrimEnd('\"') + ".dll\"";
+                }
+                sb.Append(lref);
+                sb.Append(" ");
             }
 
             foreach (Project pref in ProjectReferences)
@@ -1205,6 +1392,7 @@ namespace typroject
                 }
             }
 
+            string old_cmd_args = cmd_args;
             if ((csc_cmd.Length + cmd_args.Length > 2080) || use_response)
             {
                 System.DateTime now = System.DateTime.Now;
@@ -1215,6 +1403,10 @@ namespace typroject
                 sw.Close();
                 cmd_args = "/nologo /noconfig @" + cmd_file;
             }
+
+#if DEBUG
+            Console.WriteLine("Performing csc build step for " + OutputFile);
+#endif
 
             System.Diagnostics.Process c_proc = new System.Diagnostics.Process();
             c_proc.EnableRaisingEvents = false;
@@ -1250,6 +1442,13 @@ namespace typroject
             }
 
             return 0;
+        }
+
+        private IEnumerable<string> get_reference_overrides(string joined, string override_name)
+        {
+            var ros = joined.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var ro in ros)
+                yield return "\"" + ro.Trim() + "\"";
         }
 
         private void process_dependson(string v)
@@ -1317,17 +1516,18 @@ namespace typroject
                 else if (project.tasks.ContainsKey(n.Name))
                 {
                     // Fill in appropriate properties
-                    var obj = project.tasks[n.Name];
+                    var t = project.tasks[n.Name];
+                    var obj = t.GetConstructor(Type.EmptyTypes).Invoke(null);
                     foreach(XPathNavigator anode in n.Select("@*", nm))
                     {
                         var aname = anode.Name;
                         var atext = process_string(anode.Value, props, project.items);
 
-                        var pi = obj.GetType().GetProperty(aname);
+                        var pi = t.GetProperty(aname);
                         pi.SetValue(obj, atext);
                     }
 
-                    var ret = obj.GetType().GetMethod("Execute").Invoke(obj, null);
+                    var ret = t.GetMethod("Execute").Invoke(obj, null);
                     if ((bool)ret == false)
                         throw new Exception();
                 }
@@ -1354,7 +1554,20 @@ namespace typroject
             throw new NotImplementedException();
         }
 
-        private static void create_directory(DirectoryInfo directory)
+        internal static void create_directory(FileInfo f)
+        {
+            create_directory(f.Directory);
+        }
+
+        internal static void create_directory(string fname)
+        {
+            FileInfo fi = new FileInfo(fname);
+            if (fi.Exists)
+                return;
+            create_directory(fi);
+        }
+
+        internal static void create_directory(DirectoryInfo directory)
         {
             if (directory.Exists)
                 return;

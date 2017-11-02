@@ -291,7 +291,10 @@ namespace typroject
             if(arglist != null)
                 throw new NotImplementedException();
 
-            return new EvalResult(s.props[val]);
+            if (!s.props.ContainsKey(val))
+                return new EvalResult("");
+            else
+                return new EvalResult(s.props[val]);
         }
     }
 
@@ -327,6 +330,23 @@ namespace typroject
             {
                 return new EvalResult(0);
             }
+        }
+    }
+
+    internal class HasTrailingSlashExpression : Expression
+    {
+        public Expression val;
+
+        public override EvalResult Evaluate(MakeState s)
+        {
+            var v = val.Evaluate(s).strval;
+
+            v = Program.replace_dir_split(v);
+
+            if (v.EndsWith("/") || v.EndsWith("\\"))
+                return new EvalResult(1);
+            else
+                return new EvalResult(0);
         }
     }
 

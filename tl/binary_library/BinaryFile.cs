@@ -187,6 +187,7 @@ namespace binary_library
             return null;
         }
 
+#if HAVE_SYSTEM
         public virtual ISection FindSection(System.Text.RegularExpressions.Regex r)
         {
             foreach (ISection sect in sections)
@@ -196,6 +197,7 @@ namespace binary_library
             }
             return null;
         }
+#endif
 
         public virtual bool ContainsSymbol(ISymbol symbol)
         {

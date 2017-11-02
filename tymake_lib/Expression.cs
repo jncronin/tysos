@@ -670,6 +670,24 @@ namespace tymake_lib
                         break;
 
                     case EvalResult.ResultType.Object:
+                        if(m == "11containskeyos")
+                        {
+                            return new EvalResult(elabel.objval.ContainsKey(f.args[0].Evaluate(s).strval) ? 1 : 0);
+                        }
+                        else if(m == "3addoss")
+                        {
+                            elabel.objval[f.args[0].Evaluate(s).strval] = new EvalResult(f.args[1].Evaluate(s).strval);
+                            return new EvalResult();
+                        }
+                        else if(m == "3addoso")
+                        {
+                            elabel.objval[f.args[0].Evaluate(s).strval] = new EvalResult(f.args[1].Evaluate(s).objval);
+                            return new EvalResult();
+                        }
+                        else if(m == "3getos")
+                        {
+                            return elabel.objval[f.args[0].Evaluate(s).strval];
+                        }
                         if (elabel.objval.ContainsKey(m))
                         {
                             EvalResult feval = elabel.objval[m];
@@ -738,20 +756,20 @@ namespace tymake_lib
 
         public string Mangle(MakeState s)
         {
-            List<Expression.EvalResult> ers = new List<EvalResult>();
+            List<Expression.EvalResult.ResultType> ers = new List<EvalResult.ResultType>();
             foreach (var arg in args)
-                ers.Add(arg.Evaluate(s));
+                ers.Add(arg.Evaluate(s).Type);
             return Mangle(target, ers);
         }
 
-        public static string Mangle(string target, List<Expression.EvalResult> args)
+        public static string Mangle(string target, List<Expression.EvalResult.ResultType> args)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(target.Length.ToString());
             sb.Append(target);
             foreach (var e in args)
             {
-                switch (e.Type)
+                switch (e)
                 {
                     case EvalResult.ResultType.Int:
                         sb.Append("i");
@@ -784,7 +802,15 @@ namespace tymake_lib
 
         public override EvalResult Evaluate(MakeState s)
         {
-            List<string> mangle_all = MangleAll(s);
+            var mangled_name = Mangle(s);
+            if (s.funcs.ContainsKey(mangled_name))
+            {
+                List<EvalResult> args_to_pass = new List<EvalResult>();
+                foreach (Expression arg in args)
+                    args_to_pass.Add(arg.Evaluate(s));
+                return s.funcs[mangled_name].Run(s, args_to_pass);
+            }
+            /*List<string> mangle_all = MangleAll(s);
             foreach (var mangled_name in mangle_all)
             {
                 if (s.funcs.ContainsKey(mangled_name))
@@ -794,53 +820,58 @@ namespace tymake_lib
                         args_to_pass.Add(arg.Evaluate(s));
                     return s.funcs[mangled_name].Run(s, args_to_pass);
                 }
-            }
+            }*/
 
             throw new Statement.SyntaxException("unable to find function " + Mangle(s));
         }
 
         static Dictionary<string, List<string>> mangle_all_cache = new Dictionary<string, List<string>>();
 
-        private List<string> MangleAll(MakeState s)
+        public static List<string> MangleAll(string target, List<Expression.EvalResult.ResultType> args, MakeState s)
         {
-            var cache_key = Mangle(s);
-            List<string> ret;
-            if (mangle_all_cache.TryGetValue(cache_key, out ret))
-                return ret;
-
-            List<Expression.EvalResult> ers = new List<EvalResult>();
-            foreach (var arg in args)
-                ers.Add(arg.Evaluate(s));
-
-            ret = new List<string>();
+            var ret = new List<string>();
             for(int i = 0; i <= args.Count; i++)
             {
-                MangleAllLine(i, 0, ret, ers);
+                MangleAllLine(target, i, ret, args);
             }
 
-            mangle_all_cache[cache_key] = ret;
             return ret;
         }
 
-        private void MangleAllLine(int total_anys,
-            int cur_anys, List<string> ret,
-            List<Expression.EvalResult> args_in)
+        private static void MangleAllLine(string target, int cur_idx, List<string> ret,
+            List<Expression.EvalResult.ResultType> args_in)
         {
-            if (cur_anys == total_anys)
+            if (cur_idx == args_in.Count)
             {
-                var m = Mangle(target, args_in);
-                if (!ret.Contains(m))
-                    ret.Add(m);
+                // we've reached the end of a chain of changes - add resultant item
+                ret.Add(Mangle(target, args_in));
             }
             else
             {
-                for(int i = 0; i < args_in.Count; i++)
+                if (args_in[cur_idx] == EvalResult.ResultType.Any)
                 {
-                    if (args_in[i].Type == EvalResult.ResultType.Any)
-                        continue;
-                    List<EvalResult> new_args_in = new List<EvalResult>(args_in);
-                    new_args_in[i] = new EvalResult { Type = EvalResult.ResultType.Any };
-                    MangleAllLine(total_anys, cur_anys + 1, ret, new_args_in);
+                    // We need to produce new arrays for every possible option at this index
+                    // Re-use array because args_in is never changed in MangleAllLine
+                    var new_arr = new List<EvalResult.ResultType>(args_in);
+                    new_arr[cur_idx] = EvalResult.ResultType.Void;
+                    MangleAllLine(target, cur_idx + 1, ret, new_arr);
+
+                    new_arr[cur_idx] = EvalResult.ResultType.String;
+                    MangleAllLine(target, cur_idx + 1, ret, new_arr);
+
+                    new_arr[cur_idx] = EvalResult.ResultType.Object;
+                    MangleAllLine(target, cur_idx + 1, ret, new_arr);
+
+                    new_arr[cur_idx] = EvalResult.ResultType.Int;
+                    MangleAllLine(target, cur_idx + 1, ret, new_arr);
+
+                    new_arr[cur_idx] = EvalResult.ResultType.Array;
+                    MangleAllLine(target, cur_idx + 1, ret, new_arr);
+                }
+                else
+                {
+                    // pass on to next item
+                    MangleAllLine(target, cur_idx + 1, ret, args_in);
                 }
             }
         }

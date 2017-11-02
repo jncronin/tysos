@@ -29,6 +29,27 @@ namespace tymake
 {
     partial class Program
     {
+        internal class RuleForExists : FunctionStatement
+        {
+            public RuleForExists()
+            {
+                name = "rulefor";
+                args = new List<FunctionArg>
+                {
+                    new FunctionArg { name = "output", argtype = Expression.EvalResult.ResultType.String }
+                };
+            }
+
+            public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
+            {
+                TyMakeState tms = s as TyMakeState;
+                string wc_pat;
+                if (tms.GetRule(passed_args[0].strval, out wc_pat) == null)
+                    return new Expression.EvalResult(0);
+                else
+                    return new Expression.EvalResult(1);
+            }
+        }
         internal class RuleForFunction : FunctionStatement
         {
             public RuleForFunction()
@@ -187,7 +208,20 @@ namespace tymake
                 bool to_build = false;
                 System.IO.FileSystemInfo targ_fi = new System.IO.FileInfo(tfile);
                 DateTime targ_lwt = DateTime.Now;
-                if (!Statement.FileDirExists(tfile))
+                if(s.GetDefine("REBUILD_ALL").AsInt != 0 && ((targ_fi.Attributes & System.IO.FileAttributes.Directory) != System.IO.FileAttributes.Directory))
+                {
+                    to_build = true;
+
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    System.Console.WriteLine("Building " + tfile
+#if DEBUG
+                        + " because REBUILD_ALL is set"
+#endif
+                        );
+                    Console.ResetColor();
+
+                }
+                else if (!Statement.FileDirExists(tfile))
                 {
                     to_build = true;
 
@@ -255,7 +289,7 @@ namespace tymake
                         targ_fi = new System.IO.FileInfo(tfile);
                         if ((targ_fi.Attributes & System.IO.FileAttributes.Directory) == System.IO.FileAttributes.Directory)
                             targ_fi = new System.IO.DirectoryInfo(tfile);
-                        if (targ_fi.Exists == false || targ_fi.LastWriteTime.CompareTo(targ_lwt) <= 0)
+                        if (targ_fi.Exists == false || targ_fi.LastWriteTime.CompareTo(targ_lwt) < 0)
                         {
                             Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine("Rule failed to build " + tfile);

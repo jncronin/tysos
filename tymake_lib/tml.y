@@ -216,6 +216,7 @@ arglist		:	arglist COMMA arg				{ $$ = new List<FunctionStatement.FunctionArg>($
 
 objexpr		:	LBRACK objlist RBRACK			{ $$ = $2; }
 			|	LBRACK objlist COMMA RBRACK		{ $$ = $2; }
+			|	LBRACK ASSIGN RBRACK				{ $$ = new List<ObjDef>(); }
 			;
 
 objlist		:	objmember						{ $$ = new List<ObjDef> { $1 }; }

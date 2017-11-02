@@ -113,7 +113,7 @@ namespace tymake_lib
             if (tok_name is LabelExpression)
             {
                 var tn = ((LabelExpression)tok_name).val;
-                s.SetLocalDefine(tn, e);
+                s.SetDefine(tn, e, assignop);
                 if (export)
                     ExportDef(tn, s);
             }
@@ -375,16 +375,23 @@ namespace tymake_lib
         {
             if (name != null)
             {
-                string mangledname = Mangle();
-                s.funcs[mangledname] = this;
+                var arg_types = new List<Expression.EvalResult.ResultType>();
+                foreach (var arg in args)
+                    arg_types.Add(arg.argtype);
+                var mangled_names = FuncCall.MangleAll(name, arg_types, s);
 
-                if (export)
+                foreach (var mangledname in mangled_names)
                 {
-                    MakeState cur_s = s.parent;
-                    while (cur_s != null)
+                    s.funcs[mangledname] = this;
+
+                    if (export)
                     {
-                        cur_s.funcs[mangledname] = this;
-                        cur_s = cur_s.parent;
+                        MakeState cur_s = s.parent;
+                        while (cur_s != null)
+                        {
+                            cur_s.funcs[mangledname] = this;
+                            cur_s = cur_s.parent;
+                        }
                     }
                 }
             }
@@ -408,7 +415,15 @@ namespace tymake_lib
                     fs.args = ofs.args;
                     fs.code = ofs.code;
 
-                    new_s.funcs[fs.Mangle()] = fs;
+
+                    var arg_types = new List<Expression.EvalResult.ResultType>();
+                    foreach (var arg in fs.args)
+                        arg_types.Add(arg.argtype);
+                    var mangledname = FuncCall.Mangle(fs.name, arg_types);
+                    /* var mangled_names = FuncCall.MangleAll(fs.name, arg_types, s);
+
+                    foreach(var mangledname in mangled_names) */
+                        new_s.funcs[mangledname] = fs;
                 }
                 else
                     new_s.SetLocalDefine(args[i].name, passed_args[i]);
@@ -557,9 +572,14 @@ namespace tymake_lib
         {
             var f = include_file.Evaluate(s).strval;
 
-            MakeState new_s = s.Clone();
+            var saved_this = s.GetDefine("THIS");
 
-            return TymakeLib.ExecuteFile(f, new_s);
+            MakeState new_s = s.Clone();
+            var ret = TymakeLib.ExecuteFile(f, new_s);
+
+            s.SetDefine("THIS", saved_this, true);
+
+            return ret;
         }
     }
 }

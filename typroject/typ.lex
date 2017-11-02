@@ -27,6 +27,7 @@
 [tT][rR][uU][eE]		yylval.intval = 1; return (int)Tokens.INT;
 [fF][aA][lL][sS][eE]		yylval.intval = 0; return (int)Tokens.INT;
 [eE][xX][iI][sS][tT][sS]		return (int)Tokens.EXISTS;
+[hH][aA][sS][tT][rR][aA][iI][lL][iI][nN][gG][sS][lL][aA][sS][hH]		return (int)Tokens.HASTRAILINGSLASH;
 "$"			return (int)Tokens.DOLLARS;
 "@"			return (int)Tokens.AT;
 "%"			return (int)Tokens.PERCENT;

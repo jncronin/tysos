@@ -39,14 +39,18 @@ namespace libtysila5.target.x86
         {
             // get cpu family, model, stepping
             int family = 0;
+#if HAVE_SYSTEM
             var lvls = Environment.GetEnvironmentVariable("PROCESSOR_LEVEL");
             if(lvls != null)
             {
                 int.TryParse(lvls, out family);
             }
+#endif
 
             int model = 0;
             int stepping = 0;
+
+#if HAVE_SYSTEM
             var rev = Environment.GetEnvironmentVariable("PROCESSOR_REVISION");
             if(rev != null)
             {
@@ -59,11 +63,14 @@ namespace libtysila5.target.x86
                     int.TryParse(steps, System.Globalization.NumberStyles.HexNumber, null, out stepping);
                 }
             }
+#endif
 
             bool is_amd64 = false;
+#if HAVE_SYSTEM
             var parch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
             if (parch != null && parch == "AMD64")
                 is_amd64 = true;
+#endif
 
             if(name == "sse2")
             {
