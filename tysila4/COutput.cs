@@ -131,8 +131,8 @@ namespace tysila4
             if (oci != null)
             {
                 foreach (string s in external_defines)
-                    HexFile.writeStr(sw, s);
-                HexFile.writeStr(sw, "");
+                    HexFile.writeStr(oci, s);
+                HexFile.writeStr(oci, "");
 
                 cmsw.Flush();
                 StreamReader cmsr = new StreamReader(cmsw);
@@ -140,7 +140,7 @@ namespace tysila4
                 string cs = cmsr.ReadLine();
                 while (cs != null)
                 {
-                    HexFile.writeStr(sw, cs);
+                    HexFile.writeStr(oci, cs);
                     cs = cmsr.ReadLine();
                 }
                 oci.Close();
