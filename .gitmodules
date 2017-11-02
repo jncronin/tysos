@@ -3,3 +3,11 @@
 	url = https://github.com/dotnet/coreclr.git
 	branch = release/2.0.0
 
+[submodule "corefx"]
+	path = corefx
+	url = https://github.com/dotnet/corefx.git
+	branch = release/2.0.0
+	
+[submodule "tymake/ILMerge"]
+	path = tymake/ILMerge
+	url = https://github.com/Microsoft/ILMerge.git
