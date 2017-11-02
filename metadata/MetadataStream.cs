@@ -503,6 +503,14 @@ namespace metadata
             {
                 var pa = ma.GetTypeSpec(ref msiga, gtparamsa, gmparamsa);
                 var pb = mb.GetTypeSpec(ref msigb, gtparamsb, gmparamsb);
+
+                if(pa.stype == TypeSpec.SpecialType.MVar)
+                {
+                    if (pb.stype != TypeSpec.SpecialType.MVar)
+                        return false;
+                    return pa.idx == pb.idx;
+                }
+
                 if (!pa.Equals(pb))
                     return false;
             }
