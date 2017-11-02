@@ -35,6 +35,7 @@ namespace tymake
             TymakeLib.InitMakeState(s, Console.In,
                 Console.Out, Console.Out);
             new TyProject().Execute(s);
+            new TyProjectLibDirFunction().Execute(s);
             new RuleForFunction().Execute(s);
             new BuildCommandStatement().Execute(s);
             new AutoDirStatement().Execute(s);
@@ -104,104 +105,6 @@ namespace tymake
                         Console.WriteLine(e.Message);
                     }
                 }
-            }
-        }
-    }
-
-    class TyProject : FunctionStatement
-    {
-        public TyProject()
-        {
-            name = "_typroject";
-            args = new List<FunctionArg> { new FunctionArg { name = "projfile", argtype = Expression.EvalResult.ResultType.String },
-                new FunctionArg { name = "config", argtype = Expression.EvalResult.ResultType.String },
-                new FunctionArg { name = "tools_ver", argtype = Expression.EvalResult.ResultType.String },
-                new FunctionArg { name = "unsafe", argtype = Expression.EvalResult.ResultType.Int },
-                new FunctionArg { name = "imports", argtype = Expression.EvalResult.ResultType.Array },
-                new FunctionArg { name = "ref_overrides", argtype = Expression.EvalResult.ResultType.Array },
-                new FunctionArg { name = "lib_dir", argtype = Expression.EvalResult.ResultType.String } };
-        }
-
-        public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> args)
-        {
-            string fname = args[0].strval;
-            string config = args[1].strval;
-            string tools_ver = args[2].strval;
-            bool do_unsafe = (args[3].intval == 0) ? false : true;
-
-            string cur_dir = Environment.CurrentDirectory;
-            System.IO.FileInfo fi = new System.IO.FileInfo(fname);
-            if (!fi.Exists)
-            {
-                throw new Exception("_typroject: " + fname + " does not exist");
-            }
-
-            /* Extract out imports */
-            List<string> imports = new List<string>();
-            foreach (var import in args[4].arrval)
-                imports.Add(import.strval);
-
-            /* Extract out ref overrides */
-            List<string> ref_overrides = new List<string>();
-            foreach (var ro in args[5].arrval)
-                ref_overrides.Add(ro.strval);
-
-
-            typroject.Project p = null;
-            if (fname.ToLower().EndsWith(".csproj"))
-                p = typroject.Project.xml_read(fi.OpenRead(), config, fi.DirectoryName, cur_dir, imports, ref_overrides);
-            else if (fname.ToLower().EndsWith(".sources"))
-                p = typroject.Project.sources_read(fi.OpenRead(), config, fi.DirectoryName, cur_dir);
-
-            if (args[6].strval != "")
-                p.lib_dir = args[6].strval;
-
-            Dictionary<string, Expression.EvalResult> ret = new Dictionary<string, Expression.EvalResult>();
-            ret["OutputFile"] = new Expression.EvalResult(p.OutputFile);
-            ret["OutputType"] = new Expression.EvalResult(p.output_type.ToString());
-            ret["AssemblyName"] = new Expression.EvalResult(p.assembly_name);
-            ret["Configuration"] = new Expression.EvalResult(p.configuration);
-            ret["Defines"] = new Expression.EvalResult(p.defines);
-            ret["Sources"] = new Expression.EvalResult(p.Sources);
-            ret["GACReferences"] = new Expression.EvalResult(p.References);
-            ret["ProjectReferences"] = new Expression.EvalResult(new string[] { });
-            foreach (typroject.Project pref in p.ProjectReferences)
-                ret["ProjectReferences"].arrval.Add(new Expression.EvalResult(pref.ProjectFile));
-            ret["References"] = new Expression.EvalResult(new string[] { });
-            foreach (var rref in p.References)
-                ret["References"].arrval.Add(new Expression.EvalResult(rref));
-            ret["ProjectFile"] = new Expression.EvalResult(fi.FullName);
-            ret["ProjectName"] = new Expression.EvalResult(p.ProjectName);
-
-            BuildFunction build = new BuildFunction(p);
-            ret[build.Mangle()] = new Expression.EvalResult(build);
-
-            if (do_unsafe)
-                build.do_unsafe = true;
-            if (tools_ver != "")
-                p.tools_ver = tools_ver;
-
-            return new Expression.EvalResult(ret);
-        }
-
-        class BuildFunction : FunctionStatement
-        {
-            typroject.Project p;
-            internal bool do_unsafe = false;
-
-            public BuildFunction(typroject.Project proj)
-            {
-                name = "Build";
-                args = new List<FunctionArg> { new FunctionArg { argtype = Expression.EvalResult.ResultType.Object, name = "this" } };
-                p = proj;
-            }
-
-            public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
-            {
-                var o = passed_args[0].objval;
-                p.assembly_name = o["AssemblyName"].strval;
-                
-                return new Expression.EvalResult(p.build(new List<string>(), new List<string>(), new List<string>(), do_unsafe));
             }
         }
     }

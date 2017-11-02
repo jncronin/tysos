@@ -157,7 +157,7 @@ build(DOTNETCORLIB);
 /* Copy dotnet corlib output to MSCORLIB */
 MSCORLIB = ROOT + "/coreclr/mscorlib.dll";
 MSCORLIBOBJ = objfromexe(MSCORLIB);
-MSCORLIBDIR = dir(MSCORLIB);
+MSCORLIBDIR = "\"" + typroject_refdir("4.6.1") + "\"";
 
 rulefor(MSCORLIB, [ DOTNETCORLIB ], [ THIS ], function()
 {

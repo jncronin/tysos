@@ -29,23 +29,13 @@ using System.Xml.XPath;
 
 namespace typroject
 {
-    class Program
+    public class Program
     {
         static string tools_ver_override = null;
-        public static int platform;
+        public static int platform { get { return (int)Environment.OSVersion.Platform; } }
 
         static int Main(string[] args)
         {
-            // test
-            var teststr = "'$(IsReferenceAssembly)' == '' AND($(MSBuildProjectFullPath.Contains('\\ref\\')) OR $(MSBuildProjectFullPath.Contains('/ref/')))";
-            Scanner stest = new Scanner(teststr);
-            int tok;
-            do
-            {
-                tok = stest.yylex();
-                var sval = stest.yytext;
-            } while (tok != (int)Tokens.EOF);
-
             string fname = null;
             List<string> sources = new List<string>();
             string cur_dir = Environment.CurrentDirectory;
@@ -57,7 +47,6 @@ namespace typroject
             bool werror = false;
 
             bool emit_depends = false;
-            platform = (int)Environment.OSVersion.Platform;
 
             /* parse args */
             int i = 0;
@@ -1205,7 +1194,6 @@ namespace typroject
             var of = new FileInfo(OutputFile);
             create_directory(of.Directory);
 
-            Program.platform = (int)Environment.OSVersion.Platform;
             string tv = tools_ver;
             if (tools_ver_override != null)
                 tv = tools_ver_override;
