@@ -196,7 +196,7 @@ namespace libtysila5.ir
 
             // assemblyName entry
             stack_after = copy_to_front(n, c, stack_after);
-            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(systemAssembly, "assemblyName", c.t), 0x18);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(tysosAssembly, "assemblyName", c.t), 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_after = ldstr(n, c, stack_after, c.ms.m.AssemblyName);
             stack_after = stind(n, c, stack_after, c.t.psize);
@@ -263,6 +263,8 @@ namespace libtysila5.ir
         {
             var dgate = c.ms.m.SystemDelegate.Type;
             var method_ptr = dgate.m.GetFieldDefRow("method_ptr", dgate);
+            if (method_ptr == null)
+                method_ptr = dgate.m.GetFieldDefRow("_methodPtr", dgate);
             TypeSpec fld_ts;
             var stack_after = ldflda(n, c, stack_before, false, out fld_ts, 0, method_ptr);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
@@ -272,7 +274,7 @@ namespace libtysila5.ir
 
         private static Stack<StackItem> class_getSystemTypeImplOffset(CilNode n, Code c, Stack<StackItem> stack_before)
         {
-            var systype = c.ms.m.al.GetAssembly("mscorlib").GetTypeSpec("System", "Type");
+            var systype = c.ms.m.al.GetAssembly("libsupcs").GetTypeSpec("libsupcs", "TysosType");
             var v = layout.Layout.GetFieldOffset(systype, "_impl", c.t);
 
             return ldc(n, c, stack_before, v);

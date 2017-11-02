@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.CompilerServices;
+using System.Reflection;
 
 namespace libsupcs
 {
@@ -35,9 +36,10 @@ namespace libsupcs
      * it directly outside of corlib therefore we need to use the following attribute */
     [ExtendsOverride("_ZW19System#2EReflection8Assembly")]
     [VTableAlias("__tysos_assembly_vt")]
-    public unsafe class TysosAssembly
+    public unsafe class TysosAssembly : System.Reflection.Assembly
     {
         void* metadata;
+        string assemblyName;
 
         [MethodAlias("_ZW19System#2EReflection8Assembly_8GetTypes_Ru1ZU6System4Type_P2u1tb")]
         System.Type[] GetTypes(bool exportedOnly)
@@ -54,6 +56,8 @@ namespace libsupcs
             mod = null;
             return null;
         }
+
+        public override string FullName => assemblyName;
     }
 
     [ExtendsOverride("_ZW19System#2EReflection6Module")]

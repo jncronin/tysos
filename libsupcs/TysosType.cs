@@ -33,9 +33,10 @@ namespace libsupcs
 {
     [VTableAlias("__tysos_type_vt")]
     [SpecialType]
-    public class TysosType : System.Type
+    public unsafe class TysosType : System.Type
     {
         metadata.TypeSpec ts = null;
+        void* _impl;
 
         internal metadata.TypeSpec tspec
         {
