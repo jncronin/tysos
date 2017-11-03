@@ -167,6 +167,143 @@ namespace libsupcs
             System.Diagnostics.Debugger.Break();
         }
 
+        [WeakLinkage]
+        [MethodAlias("_ZW6System5Array_20InternalGetReference_Rv_P4u1tPviPi")]
+        [AlwaysCompile]
+        static unsafe void InternalGetReference(void *arr, System.TypedReference *typedref, int ranks, int *rank_indices)
+        {
+            // idx = rightmost-index + 2nd-right * rightmost-size + 3rd-right * 2nd-right-size * right-size + ...
+
+            // rank checking is done by System.Array members in coreclr
+            int* lovals = *(int**)((byte*)arr + ArrayOperations.GetLoboundsOffset());
+            int* sizes = *(int**)((byte*)arr + ArrayOperations.GetSizesOffset());
+
+            // first get index of first rank
+            if (rank_indices[0] > sizes[0])
+                throw new IndexOutOfRangeException();
+            int index = rank_indices[0] - lovals[0];
+
+            // now repeat mul rank size; add rank index; rank-1 times
+            for(int rank = 1; rank < ranks; rank++)
+            {
+                if (rank_indices[rank] > sizes[rank])
+                    throw new IndexOutOfRangeException();
+
+                index *= sizes[rank];
+                index += rank_indices[rank];
+            }
+
+            // get pointer to actual data
+            int et_size = *(int*)((byte*)arr + ArrayOperations.GetElemSizeOffset());
+            void* ptr = *(byte**)((byte*)arr + ArrayOperations.GetInnerArrayOffset()) + index * et_size;
+
+            // store to the typed reference
+            *(void**)((byte*)typedref + ClassOperations.GetTypedReferenceValueOffset()) = ptr;
+            *(void**)((byte*)typedref + ClassOperations.GetTypedReferenceTypeOffset()) =
+                *(void**)((byte*)arr + ArrayOperations.GetElemTypeOffset());
+        }
+
+        [MethodAlias("_Zu1T_16InternalToObject_Ru1O_P1Pv")]
+        [WeakLinkage]
+        [AlwaysCompile]
+        static unsafe void* InternalToObject(void *typedref)
+        {
+            // get the type from the typed reference to see if we need to box the object
+            //  or simply return the address as a reference type
+
+            void* et = *(void**)((byte*)typedref + ClassOperations.GetTypedReferenceTypeOffset());
+            void* src = *(void**)((byte*)typedref + ClassOperations.GetTypedReferenceValueOffset());
+
+            void* etextends = *(void**)((byte*)et + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            if (etextends == OtherOperations.GetStaticObjectAddress("_Zu1L") ||
+                etextends == OtherOperations.GetStaticObjectAddress("_ZW6System4Enum"))
+            {
+                // this is a boxed value type.  Get its size
+                var vt_size = TysosType.GetValueTypeSize(et);
+
+                // build a new boxed type
+                var ret = MemoryOperations.GcMalloc(*(int*)((byte*)et + ClassOperations.GetVtblTypeSizeOffset()));
+
+                // dst ptr
+                var dst = (byte*)ret + ClassOperations.GetBoxedTypeDataOffset();
+
+                CopyMem(dst, (byte*)src, vt_size);
+
+                return ret;
+            }
+            else
+            {
+                // simply copy the reference
+                return *(void**)src;
+            }
+        }
+
+        [MethodAlias("_ZW6System5Array_16InternalSetValue_Rv_P2Pvu1O")]
+        [WeakLinkage]
+        [AlwaysCompile]
+        static unsafe void InternalSetValue(void* typedref, void* objval)
+        {
+            // get the type from the typed reference to see if we need to unbox the object
+            //  or store as a reference type
+
+            void* et = *(void**)((byte*)typedref + ClassOperations.GetTypedReferenceTypeOffset());
+            void* ptr = *(void**)((byte*)typedref + ClassOperations.GetTypedReferenceValueOffset());
+
+            void* etextends = *(void**)((byte*)et + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            if (etextends == OtherOperations.GetStaticObjectAddress("_Zu1L") ||
+                etextends == OtherOperations.GetStaticObjectAddress("_ZW6System4Enum"))
+            {
+                // this is a boxed value type.  Get its size
+                var vt_size = TysosType.GetValueTypeSize(et);
+
+                // src ptr
+                void* src = *(void**)((byte*)objval + ClassOperations.GetBoxedTypeDataOffset());
+
+                CopyMem((byte*)ptr, (byte*)src, vt_size);
+            }
+            else
+            {
+                // simply copy the reference
+                *(void**)ptr = objval;
+            }
+        }
+
+        private static unsafe void CopyMem(byte* dst, byte* src, int vt_size)
+        {
+            /* memcpy for non-aligned sizes and addresses - ensures we don't overwrite adjacent
+             * array indices.  Does not return so breaks memcpy semantics */
+            
+            // TODO ensure pointers are aligned
+            while(vt_size >+ 8)
+            {
+                *(ulong*)dst = *(ulong*)src;
+                dst += 8;
+                src += 8;
+                vt_size -= 8;
+            }
+            while (vt_size >+ 4)
+            {
+                *(uint*)dst = *(uint*)src;
+                dst += 4;
+                src += 4;
+                vt_size -= 4;
+            }
+            while (vt_size >+ 2)
+            {
+                *(ushort*)dst = *(ushort*)src;
+                dst += 2;
+                src += 2;
+                vt_size -= 2;
+            }
+            while(vt_size >= 1)
+            {
+                *dst = *src;
+                dst++;
+                src++;
+                vt_size--;
+            }
+        }
+
         [MethodAlias("_ZW6System5Array_12GetValueImpl_Ru1O_P2u1ti")]
         [WeakLinkage]
         [AlwaysCompile]

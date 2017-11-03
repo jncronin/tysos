@@ -114,7 +114,10 @@ namespace libtysila5
                     ms.Name == "get_IsSynchronized" ||
                     ms.Name == "get_SyncRoot" ||
                     ms.Name == "get_IsFixedSize" ||
-                    ms.Name == "Clone")
+                    ms.Name == "Clone" ||
+                    ms.Name == "CompareTo" ||
+                    ms.Name == "GetHashCode" ||
+                    ms.Name == "Equals")
                     code_override = ir.ConvertToIR.CreateVectorUnimplemented(ms, t);
                 else
                     return false;

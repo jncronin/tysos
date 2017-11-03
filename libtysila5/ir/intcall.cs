@@ -97,6 +97,21 @@ namespace libtysila5.ir
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_21SyncValCompareAndSwap_Rh_P3Phhh"] = sync_cswap;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_12SpinlockHint_Rv_P0"] = spinlock_hint;
+
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_28GetTypedReferenceValueOffset_Ri_P0"] = typedref_ValueOffset;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_27GetTypedReferenceTypeOffset_Ri_P0"] = typedref_TypeOffset;
+        }
+
+        private static Stack<StackItem> typedref_ValueOffset(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var typedref = c.ms.m.al.GetAssembly("mscorlib").GetSimpleTypeSpec((int)CorElementType.TypedByRef);
+            return ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typedref, "Value", c.t), (int)CorElementType.I4);
+        }
+
+        private static Stack<StackItem> typedref_TypeOffset(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var typedref = c.ms.m.al.GetAssembly("mscorlib").GetSimpleTypeSpec((int)CorElementType.TypedByRef);
+            return ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typedref, "Type", c.t), (int)CorElementType.I4);
         }
 
         private static Stack<StackItem> spinlock_hint(CilNode n, Code c, Stack<StackItem> stack_before)

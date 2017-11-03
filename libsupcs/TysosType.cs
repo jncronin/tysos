@@ -453,6 +453,24 @@ namespace libsupcs
         public int UgtpIdx { get { throw new NotImplementedException(); } }
         public int UgmpIdx { get { throw new NotImplementedException(); } }
 
+        internal unsafe static int GetValueTypeSize(void *boxed_vtbl)
+        {
+            /* Boxed value types (that aren't enums) store their size in the
+             * typeinfo.  Enums store the underlying type there, so we have
+             * to call ourselves again if this is an enum. */
+
+            void* ti = *(void**)boxed_vtbl;
+            void* extends = *(void**)((byte*)boxed_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            if (extends == OtherOperations.GetStaticObjectAddress("_ZW6System4Enum"))
+            {
+                void *underlying_type = *((void**)ti + 1);
+                return GetValueTypeSize(underlying_type);
+            }
+
+            /* All calling functions should guarantee this is a value type, so the following is valid */
+            return *(int*)((void**)ti + 1);
+        }
+
         protected override bool IsValueTypeImpl()
         {
             unsafe

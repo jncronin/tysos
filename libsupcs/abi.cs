@@ -326,6 +326,12 @@ namespace libsupcs
     public class ClassOperations
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern int GetTypedReferenceTypeOffset();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern int GetTypedReferenceValueOffset();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern int GetMutexLockOffset();
 
         [MethodImpl(MethodImplOptions.InternalCall)]
