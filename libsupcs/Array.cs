@@ -100,6 +100,21 @@ namespace libsupcs
             return *(lbPtr + rank);
         }
 
+        [MethodAlias("_ZW6System5Array_5Clear_Rv_P3V5Arrayii")]
+        [WeakLinkage]
+        [AlwaysCompile]
+        static unsafe void Clear(void *arr, int index, int length)
+        {
+            /* Get a pointer to the source data */
+            var elem_size = *(int*)((byte*)arr + ArrayOperations.GetElemSizeOffset());
+            void* ia = *(void**)((byte*)arr + ArrayOperations.GetInnerArrayOffset());
+            void* sptr = (void*)((byte*)ia + index * elem_size);
+
+            var mem_size = length * elem_size;
+
+            MemoryOperations.MemSet(sptr, 0, mem_size);
+        }
+
         [MethodAlias("_ZW6System5Array_10get_Length_Ri_P1u1t")]
         [WeakLinkage]
         [AlwaysCompile]
