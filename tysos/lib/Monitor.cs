@@ -48,6 +48,7 @@ namespace tysos.lib
         [libsupcs.AlwaysCompile]
         [libsupcs.Uninterruptible]
         [libsupcs.MethodAlias("_ZW18System#2EThreading7Monitor_12Monitor_exit_Rv_P1u1O")]
+        [libsupcs.MethodAlias("_ZW18System#2EThreading7Monitor_4Exit_Rv_P1u1O")]
         static unsafe void Monitor_exit(object obj)
         {
             byte* mla = (byte*)libsupcs.CastOperations.ReinterpretAsPointer(obj);
