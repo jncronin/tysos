@@ -100,6 +100,20 @@ namespace libsupcs
             return *(lbPtr + rank);
         }
 
+        [MethodAlias("_ZW6System5Array_10get_Length_Ri_P1u1t")]
+        [WeakLinkage]
+        [AlwaysCompile]
+        static unsafe int GetLength(void *arr)
+        {
+            int ret = 0;
+            int arrRank = *(int*)((byte*)arr + ArrayOperations.GetRankOffset());
+            int* szPtr = *(int**)((byte*)arr + ArrayOperations.GetSizesOffset());
+
+            for (int i = 0; i < arrRank; i++)
+                ret = ret * *(szPtr + i);
+            return ret;
+        }
+        
         [MethodAlias("_ZW6System5Array_9GetLength_Ri_P2u1ti")]
         [WeakLinkage]
         [AlwaysCompile]
@@ -121,6 +135,7 @@ namespace libsupcs
             return *(szPtr + rank);
         }
 
+        [MethodAlias("_ZW6System5Array_8get_Rank_Ri_P1u1t")]
         [MethodAlias("_ZW6System5Array_7GetRank_Ri_P1u1t")]
         [WeakLinkage]
         [AlwaysCompile]
