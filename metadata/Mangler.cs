@@ -413,6 +413,15 @@ namespace metadata
             /* Get method name */
             AppendStringWithLength(sb, mname);
 
+            /* Generic method params */
+            if(gmparams != null)
+            {
+                sb.Append("_g");
+                sb.Append(gmparams.Length.ToString());
+                foreach (var gmp in gmparams)
+                    MangleType(gmp, sb, ms);
+            }
+
             if (is_spec)
                 sb.Append("_MS");
 

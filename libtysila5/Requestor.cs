@@ -77,6 +77,14 @@ namespace libtysila5
         }
 #endif
 
+#if DEBUG
+        void CheckGMInstantiated(Layout.MethodSpecWithEhdr t)
+        {
+            if (t.ms.IsGeneric && t.ms.IsGenericTemplate)
+                throw new Exception();
+        }
+#endif
+
         public CachingRequestor(MetadataStream mstream = null)
         {
             m = new CachingIndividualRequestor<layout.Layout.MethodSpecWithEhdr>(mstream);
@@ -88,6 +96,7 @@ namespace libtysila5
 
 #if DEBUG
             d.DebugCheck = CheckInstatiated;
+            m.DebugCheck = CheckGMInstantiated;
 #endif
         }
 
