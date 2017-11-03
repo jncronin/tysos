@@ -504,7 +504,7 @@ namespace libsupcs
         [MethodAlias("_ZW6System4Type_11op_Equality_Rb_P2V4TypeV4Type")]
         [MethodAlias("_ZW6System4Type_14EqualsInternal_Rb_P2u1tV4Type")]
         [AlwaysCompile]
-        static unsafe bool EqualsInternal(TysosType a, TysosType b)
+        static internal unsafe bool EqualsInternal(TysosType a, TysosType b)
         {
             void* a_vtbl = *(void**)((byte*)CastOperations.ReinterpretAsPointer(a) + ClassOperations.GetSystemTypeImplOffset());
             void* b_vtbl = *(void**)((byte*)CastOperations.ReinterpretAsPointer(b) + ClassOperations.GetSystemTypeImplOffset());

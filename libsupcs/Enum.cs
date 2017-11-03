@@ -165,6 +165,25 @@ namespace libsupcs
             info = ret;
         }
 
+        [WeakLinkage]
+        [MethodAlias("`_ZW6System4Enum_6Equals_Rb_P2u1tu1O")]
+        [AlwaysCompile]
+        static unsafe bool Equals(void *a, void *b)
+        {
+            /* a is guaranteed to be a System.Enum, therefore just ensuring b
+             * is the same type ensures b is an enum */
+            void* avtbl = *(void**)a;
+            void* bvtbl = *(void**)b;
+
+            if (avtbl != bvtbl)
+                return false;
+
+            var a_obj = get_value(a);
+            var b_obj = get_value(b);
+
+            return CastOperations.ReinterpretAsObject(a).Equals(CastOperations.ReinterpretAsObject(b));
+        }
+
         [MethodAlias("_ZW6System4Enum_8ToObject_Ru1O_P2V4Typeu1O")]
         [AlwaysCompile]
         static unsafe object to_object(TysosType enum_type, object value)
