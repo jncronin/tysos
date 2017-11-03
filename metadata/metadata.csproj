@@ -38,6 +38,7 @@
     <Compile Include="EqualityComparer.cs" />
     <Compile Include="ExceptionHeader.cs" />
     <Compile Include="Mangler.cs" />
+    <Compile Include="MdImport.cs" />
     <Compile Include="MetadataStream.cs" />
     <Compile Include="MethodSpec.cs" />
     <Compile Include="PEFile.cs" />
