@@ -166,7 +166,7 @@ namespace libsupcs
         }
 
         [WeakLinkage]
-        [MethodAlias("`_ZW6System4Enum_6Equals_Rb_P2u1tu1O")]
+        [MethodAlias("_ZW6System4Enum_6Equals_Rb_P2u1tu1O")]
         [AlwaysCompile]
         static unsafe bool Equals(void *a, void *b)
         {
