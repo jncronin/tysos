@@ -77,6 +77,19 @@ namespace libsupcs
             return *(enum_ti + 1);
         }
 
+        [MethodAlias("_ZW6System4Enum_25InternalGetCorElementType_RU19System#2EReflection14CorElementType_P1u1t")]
+        [AlwaysCompile]
+        static unsafe byte InternalGetCorElementType(void *enum_obj)
+        {
+            var enum_type = GetUnderlyingEnumTypeVtbl(**(void***)enum_obj);
+
+            if (enum_type == OtherOperations.GetStaticObjectAddress("_Zi"))
+                return (byte)metadata.CorElementType.I4;
+            else if (enum_type == OtherOperations.GetStaticObjectAddress("_Zx"))
+                return (byte)metadata.CorElementType.I8;
+
+            throw new NotImplementedException();
+        }
 
         [WeakLinkage]
         [MethodAlias("_ZW6System12MonoEnumInfo_13get_enum_info_Rv_P2V4TypeRV12MonoEnumInfo")]
