@@ -567,6 +567,15 @@ namespace metadata
 
             // Get module, type name
             string mod = EncodeString(GetStringEntry(tid_Module, 1, 1));
+            if(mod == "CommonLanguageRuntimeLibrary")
+            {
+                /* This is the framework-agnostic .netstandard 2.0 way of referring to
+                 * either mscorlib.dll or System.Private.CoreLib.dll
+                 * 
+                 * We rename the latter to the former in the build script, so do the
+                 * same here */
+                mod = "mscorlib#2Edll";
+            }
 
             // Get namespace of outermost enclosing type
             int outermost = td_idx;
