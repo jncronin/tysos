@@ -696,6 +696,16 @@ namespace libsupcs
 
         [AlwaysCompile]
         [WeakLinkage]
+        [MethodAlias("_Zu1L_11GetHashCode_Ri_P1u1t")]
+        private static unsafe int ValueType_GetHashCode(void **o)
+        {
+            void* f;
+            return ValueType_InternalGetHashCode(o, out f);
+        }
+
+
+        [AlwaysCompile]
+        [WeakLinkage]
         [MethodAlias("_Zu1L_19InternalGetHashCode_Ri_P2u1ORu1Zu1O")]
         private static unsafe int ValueType_InternalGetHashCode(void** o, out void* fields)
         {
