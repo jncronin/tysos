@@ -34,10 +34,12 @@ namespace tysos
             env_vars = new Dictionary<string,string>(new Program.MyGenericEqualityComparer<string>());
         }
 
+#if false
         [libsupcs.MethodAlias("_ZW6System11Environment_11get_NewLine_Ru1S_P0")]
         [libsupcs.AlwaysCompile]
         static string Environment_GetNewLine()
         { return "\n"; }
+#endif
 
         [libsupcs.MethodAlias("_ZW6System11Environment_30internalGetEnvironmentVariable_Ru1S_P1u1S")]
         [libsupcs.AlwaysCompile]

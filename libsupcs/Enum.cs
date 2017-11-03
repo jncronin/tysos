@@ -184,6 +184,7 @@ namespace libsupcs
             return CastOperations.ReinterpretAsObject(a).Equals(CastOperations.ReinterpretAsObject(b));
         }
 
+#if false
         [MethodAlias("_ZW6System4Enum_8ToObject_Ru1O_P2V4Typeu1O")]
         [AlwaysCompile]
         static unsafe object to_object(TysosType enum_type, object value)
@@ -215,5 +216,6 @@ namespace libsupcs
 
             return CastOperations.ReinterpretAsObject(ret_obj);
         }
+#endif
     }
 }

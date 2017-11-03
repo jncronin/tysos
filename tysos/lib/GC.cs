@@ -27,6 +27,7 @@ namespace tysos.lib
 {
     class GC
     {
+#if false
         [libsupcs.MethodAlias("_ZW6System2GC_16SuppressFinalize_Rv_P1u1O")]
         [libsupcs.AlwaysCompile]
         static void SuppressFinalize(object o)
@@ -39,6 +40,7 @@ namespace tysos.lib
         {
             return 0;
         }
+#endif
 
         [libsupcs.MethodAlias("_ZW6System2GC_15InternalCollect_Rv_P1i")]
         [libsupcs.AlwaysCompile]
