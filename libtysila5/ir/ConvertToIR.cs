@@ -244,7 +244,9 @@ namespace libtysila5.ir
             foreach(var ehdr in n.try_starts)
                 ehdr_trycatch_start(n, c, stack_before, ehdr.EhdrIdx);
             foreach (var ehdr in n.handler_starts)
-                ehdr_trycatch_start(n, c, stack_before, ehdr.EhdrIdx, true);
+            {
+                ehdr_trycatch_start(n, c, stack_before, ehdr.EhdrIdx, true, n.is_filter_start);
+            }
 
             switch (n.opcode.opcode1)
             {
@@ -1193,13 +1195,16 @@ namespace libtysila5.ir
         }
 
         private static Stack<StackItem> ehdr_trycatch_start(CilNode n, Code c, Stack<StackItem> stack_before, int ehdrIdx,
-            bool is_catch = false)
+            bool is_catch = false, bool is_filter = false)
         {
 
             if (is_catch)
             {
-                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_enter_handler, imm_l = ehdrIdx, stack_after = stack_before, stack_before = stack_before });
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_enter_handler, imm_l = ehdrIdx, imm_ul = is_filter ? 1UL : 0UL, stack_after = stack_before, stack_before = stack_before });
             }
+
+            if (is_filter)
+                return new Stack<StackItem>(stack_before);
 
             var stack_after = ldlab(n, c, stack_before, c.ms.m.MangleMethod(c.ms) + "EH",
                 ehdrIdx * layout.Layout.GetEhdrSize(c.t));

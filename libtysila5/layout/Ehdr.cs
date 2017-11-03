@@ -104,6 +104,20 @@ namespace libtysila5.layout
 
                     t.r.VTableRequestor.Request(ehdr.ClassToken);
                 }
+                else if(ehdr.EType == ExceptionHeader.ExceptionHeaderType.Filter)
+                {
+                    var filt_sym = of.CreateSymbol();
+                    filt_sym.Name = ms.ms.MangleMethod() + "EHF" + ehdr.EhdrIdx.ToString();
+                    filt_sym.DefinedIn = null;
+
+                    var filt_reloc = of.CreateRelocation();
+                    filt_reloc.Addend = 0;
+                    filt_reloc.DefinedIn = os;
+                    filt_reloc.Offset = (ulong)d.Count;
+                    filt_reloc.References = filt_sym;
+                    filt_reloc.Type = t.GetDataToCodeReloc();
+                    of.AddRelocation(filt_reloc);
+                }
                 for (int i = 0; i < t.GetPointerSize(); i++)
                     d.Add(0);
             }

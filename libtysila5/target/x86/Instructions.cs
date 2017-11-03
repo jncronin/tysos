@@ -2519,7 +2519,12 @@ namespace libtysila5.target.x86
         {
             var n = nodes[start];
             var r = new List<MCInst>();
-            r.Add(inst(Generic.g_label, c.ms.MangleMethod() + "EH" + n.imm_l.ToString(), n));
+
+            string eh_str = "EH";
+            if (n.imm_ul == 1UL)
+                eh_str = "EHF";     // filter block
+
+            r.Add(inst(Generic.g_label, c.ms.MangleMethod() + eh_str + n.imm_l.ToString(), n));
 
             // store current frame pointer (we need to restore it at the
             //  end in order to return properly to the exception handling
