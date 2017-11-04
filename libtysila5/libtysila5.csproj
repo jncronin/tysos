@@ -60,6 +60,7 @@
     <Compile Include="libtysila.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Requestor.cs" />
+    <Compile Include="SignatureTable.cs" />
     <Compile Include="StringTable.cs" />
     <Compile Include="target\AllocateLocalVarsArgs.cs" />
     <Compile Include="target\ChooseInstructions.cs" />

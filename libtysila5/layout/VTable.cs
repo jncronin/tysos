@@ -47,11 +47,15 @@ namespace libtysila5.layout
         public static void OutputVTable(TypeSpec ts,
             target.Target t, binary_library.IBinaryFile of,
             MetadataStream base_m = null,
-            ISection os = null)
+            ISection os = null,
+            ISection data_sect = null)
         {
             // Don't compile if not for this architecture
             if (!t.IsTypeValid(ts))
                 return;
+
+            /* New signature table */
+            t.sigt = new SignatureTable(ts.MangleType());
 
             // If its a delegate type we also need to output its methods
             if (ts.IsDelegate && !ts.IsGenericTemplate)
@@ -72,13 +76,12 @@ namespace libtysila5.layout
             sym.ObjectType = binary_library.SymbolObjectType.Object;
             sym.Offset = offset;
             sym.Type = binary_library.SymbolType.Global;
-            os.AddSymbol(sym);
 
             if (base_m != null && ts.m != base_m)
                 sym.Type = SymbolType.Weak;
 
             /* TIPtr */
-            var tiptr_offset = t.st.GetSignatureAddress(ts.Signature, t);
+            var tiptr_offset = t.sigt.GetSignatureAddress(ts.Signature, t);
 
             var ti_reloc = of.CreateRelocation();
             ti_reloc.Addend = tiptr_offset;
@@ -204,6 +207,11 @@ namespace libtysila5.layout
             }
 
             sym.Size = (long)(offset - sym.Offset);
+
+            /* Output signature table if any */
+            if (data_sect == null)
+                data_sect = of.GetDataSection();
+            t.sigt.WriteToOutput(of, base_m, t, data_sect);
         }
 
         private static void OutputInterface(TypeSpec impl_ts,

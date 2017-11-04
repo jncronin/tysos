@@ -414,7 +414,6 @@ namespace libtysila5.layout
                 sym.Offset = offset;
                 sym.Type = binary_library.SymbolType.Global;
                 sym.ObjectType = binary_library.SymbolObjectType.Object;
-                os.AddSymbol(sym);
 
                 sym.Size = os.Data.Count - (int)offset;
 

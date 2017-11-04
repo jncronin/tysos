@@ -34,7 +34,8 @@ namespace libtysila5
             StringBuilder debug_passes = null,
             MetadataStream base_m = null,
             Code code_override = null,
-            binary_library.ISection ts = null)
+            binary_library.ISection ts = null,
+            binary_library.ISection data_sect = null)
         {
             if (ms.is_boxed)
             {
@@ -60,6 +61,9 @@ namespace libtysila5
             // Get method RVA, don't compile if no body
             var rva = m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
                 mdef, 0);
+
+            // New signature table
+            t.sigt = new SignatureTable(ms.MangleMethod());
 
             /* Is this an array method? */
             if (rva == 0 &&
@@ -153,7 +157,6 @@ namespace libtysila5
                 ts.AddSymbol(alias_sym);
                 meth_syms.Add(alias_sym);
             }
-
 
             if (ms.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs20WeakLinkageAttribute_7#2Ector_Rv_P1u1t"))
                 sym_st = binary_library.SymbolType.Weak;
@@ -285,11 +288,15 @@ namespace libtysila5
                 esym.ObjectType = binary_library.SymbolObjectType.Function;
                 esym.Offset = (ulong)extra_sym.Offset;
                 esym.Type = sym_st;
-                ts.AddSymbol(esym);
             }
 
             /* Dump debug */
             DumpDebug(debug_passes, meth_syms, cil);
+
+            /* Signature table */
+            if (data_sect == null)
+                data_sect = bf.GetDataSection();
+            t.sigt.WriteToOutput(bf, ms.m, t, data_sect);
 
             return true;
         }

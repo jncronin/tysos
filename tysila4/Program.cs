@@ -292,11 +292,15 @@ namespace tysila4
                         var ms = t.r.MethodRequestor.GetNext();
 
                         ISection tsect = null;
+                        ISection datasect = null;
                         if (func_sects && !ms.ms.AlwaysCompile)
+                        {
                             tsect = get_decorated_section(bf, bf.GetTextSection(), "." + ms.ms.MangleMethod());
+                            datasect = get_decorated_section(bf, bf.GetDataSection(), "." + ms.ms.MangleMethod() + "_SignatureTable");
+                        }
 
                         libtysila5.libtysila.AssembleMethod(ms.ms,
-                            bf, t, debug, m, ms.c, tsect);
+                            bf, t, debug, m, ms.c, tsect, datasect);
                         if (!quiet)
                             Console.WriteLine(ms.ms.m.MangleMethod(ms.ms));
                     }
@@ -331,11 +335,15 @@ namespace tysila4
                         var vt = t.r.VTableRequestor.GetNext();
 
                         ISection tsect = null;
+                        ISection data_sect = null;
                         if (data_sects && !vt.AlwaysCompile)
+                        {
                             tsect = get_decorated_section(bf, bf.GetRDataSection(), "." + vt.MangleType());
+                            data_sect = get_decorated_section(bf, bf.GetDataSection(), "." + vt.MangleType() + "_SignatureTable");
+                        }
 
                         libtysila5.layout.Layout.OutputVTable(vt,
-                            t, bf, m, tsect);
+                            t, bf, m, tsect, data_sect);
                         if (!quiet)
                             Console.WriteLine(vt.MangleType());
                     }
@@ -384,7 +392,6 @@ namespace tysila4
                 mdsym.Type = binary_library.SymbolType.Global;
                 var len = m.file.GetLength();
                 mdsym.Size = len;
-                rdata.AddSymbol(mdsym);
 
                 for (int i = 0; i < len; i++)
                     rdata.Data.Add(m.file.ReadByte(i));
@@ -396,7 +403,6 @@ namespace tysila4
                 mdsymend.Offset = (ulong)rdata.Data.Count;
                 mdsymend.Type = binary_library.SymbolType.Global;
                 mdsymend.Size = 0;
-                rdata.AddSymbol(mdsymend);
 
                 /* Write output file */
                 bf.Filename = output_file;

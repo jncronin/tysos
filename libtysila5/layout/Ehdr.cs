@@ -62,7 +62,6 @@ namespace libtysila5.layout
             sym.ObjectType = binary_library.SymbolObjectType.Object;
             sym.Offset = (ulong)d.Count;
             sym.Type = binary_library.SymbolType.Global;
-            os.AddSymbol(sym);
 
             if (base_m != null && ms.ms.m != base_m)
                 sym.Type = binary_library.SymbolType.Weak;

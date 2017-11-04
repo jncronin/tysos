@@ -1333,7 +1333,8 @@ namespace libtysila5.ir
                     push_ts = ms.m.SystemRuntimeMethodHandle;
                 sig_val = ms.Signature;
 
-                int sig_offset = c.t.st.GetSignatureAddress(sig_val, c.t);
+
+                int sig_offset = c.t.sigt.GetSignatureAddress(sig_val, c.t);
 
                 // build the object
                 stack_after = ldlab(n, c, stack_before, c.t.st.GetStringTableName(), sig_offset);

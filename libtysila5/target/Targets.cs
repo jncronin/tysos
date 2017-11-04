@@ -154,6 +154,7 @@ namespace libtysila5.target
         public binary_library.IBinaryFile bf;
         public binary_library.ISection text_section;
         public StringTable st;
+        public SignatureTable sigt;
         public Requestor r;
 
         protected internal virtual bool NeedsMregLiveness(MCInst i)
