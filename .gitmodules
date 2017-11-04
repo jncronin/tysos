@@ -2,8 +2,10 @@
 	path = coreclr
 	url = https://github.com/dotnet/coreclr.git
 	branch = release/2.0.0
+	ignore = all
 
 [submodule "corefx"]
 	path = corefx
 	url = https://github.com/dotnet/corefx.git
 	branch = release/2.0.0
+	ignore = all
