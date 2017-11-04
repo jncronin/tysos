@@ -146,7 +146,7 @@ function tobjfromexe(string exe)
 }
 
 TYPROJECT_EXTRADEPENDS = [ THIS ];
-
+LDFLAGS = "$LDFLAGS -Wl,--gc-sections";
 
 /* coreclr corlib is distributed amongst several assemblies */
 DOTNETCORLIB = typroject(ROOT + "/coreclr/src/mscorlib/System.Private.CoreLib.csproj", "Release", "4.6.1", 1, [], [], 0);
