@@ -159,13 +159,31 @@ namespace libsupcs
             return *(int*)((byte*)arr + ArrayOperations.GetRankOffset());
         }
 
-        [MethodAlias("_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_15InitializeArray_Rv_P2U6System5Arrayu1I")]
+        [MethodAlias("_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_15InitializeArray_Rv_P2U6System5ArrayV18RuntimeFieldHandle")]
         [WeakLinkage]
         [AlwaysCompile]
-        static unsafe void InitializeArray(void* arr, void* fld_handle)
+        static unsafe void InitializeArray(void *arr, void *fld_handle)
         {
-            System.Diagnostics.Debugger.Break();
+            void* dst = *(void**)((byte*)arr + ArrayOperations.GetInnerArrayOffset());
+
+            /* Get total number of elements, and hence data size */
+            int* sizes = *(int**)((byte*)arr + ArrayOperations.GetSizesOffset());
+            int rank = *(int*)((byte*)arr + ArrayOperations.GetRankOffset());
+            if (rank == 0)
+                return;
+
+            int size = sizes[0];
+            for (int i = 1; i < rank; i++)
+                size *= sizes[i];
+
+            int len = size * *(int*)((byte*)arr + ArrayOperations.GetElemSizeOffset());
+
+            /* Field Typeinfos hava a pointer to the stored data as their third element */
+            void* src = ((void**)fld_handle)[2];
+
+            MemoryOperations.MemCpy(dst, src, len);
         }
+
 
         [WeakLinkage]
         [MethodAlias("_ZW6System5Array_20InternalGetReference_Rv_P4u1tPviPi")]
