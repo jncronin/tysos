@@ -340,7 +340,8 @@ namespace libtysila5.layout
 
         public static void OutputStaticFields(metadata.TypeSpec ts,
             target.Target t, binary_library.IBinaryFile of,
-            MetadataStream base_m = null)
+            MetadataStream base_m = null,
+            binary_library.ISection os = null)
         {
             // Don't compile if not for this architecture
             if (!t.IsTypeValid(ts))
@@ -350,7 +351,8 @@ namespace libtysila5.layout
             if (ts.SimpleType == 0)
                 align = GetTypeAlignment(ts, t, true);
 
-            var os = of.GetDataSection();
+            if(os == null)
+                os = of.GetDataSection();
             os.Align(align);
 
             ulong offset = (ulong)os.Data.Count;

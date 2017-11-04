@@ -37,6 +37,8 @@ namespace metadata
         public abstract bool IsArray { get; }
         public abstract string Name { get; }
 
+        public virtual bool AlwaysCompile { get; set; }
+
         /**<summary>Defines a run-time signature where all module references
          * are referenced by memory address</summary> */
         public class FullySpecSignature

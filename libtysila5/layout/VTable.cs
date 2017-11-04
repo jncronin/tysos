@@ -46,7 +46,8 @@ namespace libtysila5.layout
 
         public static void OutputVTable(TypeSpec ts,
             target.Target t, binary_library.IBinaryFile of,
-            MetadataStream base_m = null)
+            MetadataStream base_m = null,
+            ISection os = null)
         {
             // Don't compile if not for this architecture
             if (!t.IsTypeValid(ts))
@@ -56,7 +57,8 @@ namespace libtysila5.layout
             if (ts.IsDelegate && !ts.IsGenericTemplate)
                 t.r.DelegateRequestor.Request(ts);
 
-            var os = of.GetRDataSection();
+            if(os == null)
+                os = of.GetRDataSection();
             var d = os.Data;
             var ptr_size = t.GetCTSize(ir.Opcode.ct_object);
             os.Align(ptr_size);

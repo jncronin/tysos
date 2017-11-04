@@ -43,13 +43,15 @@ namespace libtysila5.layout
 
         public static void OutputEHdr(MethodSpecWithEhdr ms,
             Target t, binary_library.IBinaryFile of,
-            MetadataStream base_m = null)
+            MetadataStream base_m = null,
+            binary_library.ISection os = null)
         {
             // Don't compile if not for this architecture
             if (!t.IsMethodValid(ms.ms))
                 return;
 
-            var os = of.GetRDataSection();
+            if(os == null)
+                os = of.GetRDataSection();
             os.Align(t.GetPointerSize());
             var d = os.Data;
 

@@ -913,8 +913,12 @@ namespace binary_library.elf
                                 s.DefinedIn = sections[s.st_shndx];
                         }
 
-                        if(!symbols.Contains(s))
+                        if (!sym_map.ContainsKey(s.Name))
+                        {
                             symbols.Add(s);
+                            sym_map[s.Name] = s;
+                        }
+
                         ((ElfSymbolSection)sect).elf_syms[cur_sym++] = s;
                     }
                 }

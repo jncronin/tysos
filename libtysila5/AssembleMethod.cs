@@ -33,14 +33,18 @@ namespace libtysila5
             binary_library.IBinaryFile bf, target.Target t,
             StringBuilder debug_passes = null,
             MetadataStream base_m = null,
-            Code code_override = null)
+            Code code_override = null,
+            binary_library.ISection ts = null)
         {
             if (ms.is_boxed)
             {
                 throw new Exception("AssembleMethod called for boxed method - use AssembleBoxedMethod instead");
             }
 
-            var ts = bf.GetTextSection();
+            if (ts == null)
+            {
+                ts = bf.GetTextSection();
+            }
             t.bf = bf;
             t.text_section = ts;
             binary_library.SymbolType sym_st = binary_library.SymbolType.Global;
@@ -397,9 +401,11 @@ namespace libtysila5
 
         public static bool AssembleBoxedMethod(metadata.MethodSpec ms,
             binary_library.IBinaryFile bf, target.Target t,
-            StringBuilder debug_passes = null)
+            StringBuilder debug_passes = null,
+            binary_library.ISection ts = null)
         {
-            var ts = bf.GetTextSection();
+            if(ts == null)
+                ts = bf.GetTextSection();
             t.bf = bf;
             t.text_section = ts;
 

@@ -23,6 +23,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using binary_library;
+using binary_library.elf;
+using XGetoptCS;
 
 namespace tysila4
 {
@@ -46,6 +49,9 @@ namespace tysila4
             Path.GetDirectoryName(System.Reflection.Assembly.GetAssembly(typeof(Program)).Location),
             DirectoryDelimiter
         };
+
+        static bool func_sects = false;
+        static bool data_sects = false;
 
         public static string DirectoryDelimiter
         {
@@ -73,6 +79,7 @@ namespace tysila4
             bool quiet = false;
             bool require_metadata_version_match = true;
             Dictionary<string, object> opts = new Dictionary<string, object>();
+
             while((c = go.Getopt(argc, args, arg_str)) != '\0')
             {
                 switch(c)
@@ -103,6 +110,9 @@ namespace tysila4
                         break;
                     case 'H':
                         hfile = go.Optarg;
+                        break;
+                    case 'f':
+                        parse_f_option(go);
                         break;
                     case 'm':
                         {
@@ -233,6 +243,8 @@ namespace tysila4
 
                             mflags = 6;
                             tflags = 1;
+
+                            ms.AlwaysCompile = true;
                         }
                     }
 
@@ -242,6 +254,8 @@ namespace tysila4
                     {
                         mflags = 6;
                         tflags = 1;
+
+                        ms.AlwaysCompile = true;
                     }
 
                     ms.msig = (int)m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
@@ -276,32 +290,52 @@ namespace tysila4
                     if (!t.r.MethodRequestor.Empty)
                     {
                         var ms = t.r.MethodRequestor.GetNext();
+
+                        ISection tsect = null;
+                        if (func_sects && !ms.ms.AlwaysCompile)
+                            tsect = get_decorated_section(bf, bf.GetTextSection(), "." + ms.ms.MangleMethod());
+
                         libtysila5.libtysila.AssembleMethod(ms.ms,
-                            bf, t, debug, m, ms.c);
+                            bf, t, debug, m, ms.c, tsect);
                         if (!quiet)
                             Console.WriteLine(ms.ms.m.MangleMethod(ms.ms));
                     }
                     else if (!t.r.StaticFieldRequestor.Empty)
                     {
                         var sf = t.r.StaticFieldRequestor.GetNext();
+
+                        ISection tsect = null;
+                        if (data_sects && !sf.AlwaysCompile)
+                            tsect = get_decorated_section(bf, bf.GetDataSection(), "." + sf.MangleType() + "S");
+
                         libtysila5.layout.Layout.OutputStaticFields(sf,
-                            t, bf, m);
+                            t, bf, m, tsect);
                         if (!quiet)
                             Console.WriteLine(sf.MangleType() + "S");
                     }
                     else if (!t.r.EHRequestor.Empty)
                     {
                         var eh = t.r.EHRequestor.GetNext();
+
+                        ISection tsect = null;
+                        if (func_sects && !eh.ms.AlwaysCompile)
+                            tsect = get_decorated_section(bf, bf.GetRDataSection(), "." + eh.ms.MangleMethod() + "EH");
+
                         libtysila5.layout.Layout.OutputEHdr(eh,
-                            t, bf, m);
+                            t, bf, m, tsect);
                         if (!quiet)
                             Console.WriteLine(eh.ms.MangleMethod() + "EH");
                     }
                     else if (!t.r.VTableRequestor.Empty)
                     {
                         var vt = t.r.VTableRequestor.GetNext();
+
+                        ISection tsect = null;
+                        if (data_sects && !vt.AlwaysCompile)
+                            tsect = get_decorated_section(bf, bf.GetRDataSection(), "." + vt.MangleType());
+
                         libtysila5.layout.Layout.OutputVTable(vt,
-                            t, bf, m);
+                            t, bf, m, tsect);
                         if (!quiet)
                             Console.WriteLine(vt.MangleType());
                     }
@@ -315,8 +349,13 @@ namespace tysila4
                     else if(!t.r.BoxedMethodRequestor.Empty)
                     {
                         var bm = t.r.BoxedMethodRequestor.GetNext();
+
+                        ISection tsect = null;
+                        if (data_sects && !bm.ms.AlwaysCompile)
+                            tsect = get_decorated_section(bf, bf.GetTextSection(), "." + bm.ms.MangleMethod());
+
                         libtysila5.libtysila.AssembleBoxedMethod(bm.ms,
-                            bf, t, debug);
+                            bf, t, debug, tsect);
                         if (!quiet)
                             Console.WriteLine(bm.ms.MangleMethod());
                     }
@@ -368,6 +407,28 @@ namespace tysila4
             {
                 COutput.WriteHeader(m, t, hfile, cfile);
             }
+        }
+
+        private static ISection get_decorated_section(ElfFile bf, ISection section, string add_to_name)
+        {
+            var decorated_name = section.Name + add_to_name;
+            var sect = bf.FindSection(decorated_name);
+            if(sect == null)
+            {
+                sect = bf.CopySectionType(section);
+                sect.Name = decorated_name;
+            }
+            return sect;
+        }
+
+        private static void parse_f_option(XGetopt go)
+        {
+            if (go.Optarg == "function-sections")
+                func_sects = true;
+            else if (go.Optarg == "data-sections")
+                data_sects = true;
+            else
+                throw new NotImplementedException();
         }
     }
 }

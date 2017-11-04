@@ -37,6 +37,9 @@ namespace binary_library
         protected List<ISymbol> symbols = new List<ISymbol>();
         protected List<IRelocation> relocs = new List<IRelocation>();
 
+        protected Dictionary<string, ISection> sect_map = new Dictionary<string, ISection>();
+        protected Dictionary<string, ISymbol> sym_map = new Dictionary<string, ISymbol>();
+
         protected ISection text, data, rdata, bss;
 
         public abstract Bitness Bitness { get; set; }
@@ -145,6 +148,8 @@ namespace binary_library
             sections.Clear();
             symbols.Clear();
             relocs.Clear();
+            sect_map.Clear();
+            sym_map.Clear();
             System.IO.BinaryReader r = new System.IO.BinaryReader(new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read));
             Read(r);
             r.Close();
@@ -155,12 +160,12 @@ namespace binary_library
 
         public virtual int GetSectionCount() { return sections.Count; }
         public virtual ISection GetSection(int idx) { return sections[idx]; }
-        public virtual int AddSection(ISection section) { sections.Add(section); return sections.Count - 1; }
-        public virtual void RemoveSection(int idx) { sections.RemoveAt(idx); }
+        public virtual int AddSection(ISection section) { sections.Add(section); sect_map[section.Name] = section; return sections.Count - 1; }
+        public virtual void RemoveSection(int idx) { sect_map.Remove(sections[idx].Name); sections.RemoveAt(idx); }
         public virtual int GetSymbolCount() { return symbols.Count; }
         public virtual ISymbol GetSymbol(int idx)  { return symbols[idx]; }
-        public virtual int AddSymbol(ISymbol symbol) { symbols.Add(symbol); return symbols.Count - 1; }
-        public virtual void RemoveSymbol(int idx) { symbols.RemoveAt(idx); }
+        public virtual int AddSymbol(ISymbol symbol) { symbols.Add(symbol); sym_map[symbol.Name] = symbol; return symbols.Count - 1; }
+        public virtual void RemoveSymbol(int idx) { sym_map.Remove(symbols[idx].Name); symbols.RemoveAt(idx); }
         public virtual int GetRelocationCount() { return relocs.Count; }
         public virtual IRelocation GetRelocation(int idx) { return relocs[idx]; }
         public virtual int AddRelocation(IRelocation reloc) { relocs.Add(reloc); return relocs.Count - 1; }
@@ -169,22 +174,18 @@ namespace binary_library
 
         public virtual ISymbol FindSymbol(string name)
         {
-            foreach (ISymbol sym in symbols)
-            {
-                if (sym.Name == name)
-                    return sym;
-            }
-            return null;
+            if (sym_map.TryGetValue(name, out ISymbol val))
+                return val;
+            else
+                return null;
         }
 
         public virtual ISection FindSection(string name)
         {
-            foreach (ISection sect in sections)
-            {
-                if ((sect != null) && (sect.Name == name))
-                    return sect;
-            }
-            return null;
+            if (sect_map.TryGetValue(name, out ISection val))
+                return val;
+            else
+                return null;
         }
 
 #if HAVE_SYSTEM
@@ -201,7 +202,11 @@ namespace binary_library
 
         public virtual bool ContainsSymbol(ISymbol symbol)
         {
-            return symbols.Contains(symbol);
+            ISymbol test;
+            if (sym_map.TryGetValue(symbol.Name, out test))
+                return test == symbol;
+            else
+                return false;
         }
 
         public virtual void Init()
@@ -273,6 +278,8 @@ namespace binary_library
             return text;
         }
 
+        
+
         public virtual ISection GetDataSection()
         {
             if (data == null)
@@ -304,6 +311,28 @@ namespace binary_library
         public virtual ISection GetBSSSection()
         {
             return null;
+        }
+
+        public virtual ISection CopySectionType(ISection tmpl)
+        {
+            ISection ret;
+            if (tmpl is ContentsSection)
+                ret = new ContentsSection(this);
+            else if (tmpl is BssSection)
+                ret = new BssSection(this);
+            else
+                throw new NotImplementedException();
+
+            ret.AddrAlign = tmpl.AddrAlign;
+            ret.IsAlloc = tmpl.IsAlloc;
+            ret.IsExecutable = tmpl.IsExecutable;
+            ret.IsWriteable = tmpl.IsWriteable;
+            ret.LoadAddress = tmpl.LoadAddress;
+            ret.Name = tmpl.Name;
+
+            AddSection(ret);
+
+            return ret;
         }
     }
 }
