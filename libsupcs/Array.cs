@@ -184,6 +184,31 @@ namespace libsupcs
             MemoryOperations.MemCpy(dst, src, len);
         }
 
+        [WeakLinkage]
+        [MethodAlias("_ZW34System#2ERuntime#2EInteropServices7Marshal_13CopyToManaged_Rv_P4u1Iu1Oii")]
+        [AlwaysCompile]
+        static unsafe void CopyToManaged(void *src, void *dstArr, int startIndex, int length)
+        {
+            var esize = *(int*)((byte*)dstArr + ArrayOperations.GetElemSizeOffset());
+            int* lovals = *(int**)((byte*)dstArr + ArrayOperations.GetLoboundsOffset());
+
+            var dst = *(byte**)((byte*)dstArr + ArrayOperations.GetInnerArrayOffset()) + (startIndex - lovals[0]) * esize;
+
+            MemoryOperations.MemCpy(dst, src, length * esize);
+        }
+
+        [WeakLinkage]
+        [MethodAlias("_ZW34System#2ERuntime#2EInteropServices7Marshal_12CopyToNative_Rv_P4u1Oiu1Ii")]
+        [AlwaysCompile]
+        static unsafe void CopyToNative(void *srcArr, int startIndex, void *dst, int length)
+        {
+            var esize = *(int*)((byte*)srcArr + ArrayOperations.GetElemSizeOffset());
+            int* lovals = *(int**)((byte*)srcArr + ArrayOperations.GetLoboundsOffset());
+
+            var src = *(byte**)((byte*)srcArr + ArrayOperations.GetInnerArrayOffset()) + (startIndex - lovals[0]) * esize;
+
+            MemoryOperations.MemCpy(dst, src, length * esize);
+        }
 
         [WeakLinkage]
         [MethodAlias("_ZW6System5Array_20InternalGetReference_Rv_P4u1tPviPi")]
