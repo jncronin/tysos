@@ -519,6 +519,14 @@ namespace libsupcs
             return (void**)(tp + ClassOperations.GetSystemTypeImplOffset());
         }
 
+        [WeakLinkage]
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System4Type_13op_Inequality_Rb_P2V4TypeV4Type")]
+        static internal unsafe bool NotEqualsInternal(TysosType a, TysosType b)
+        {
+            return !EqualsInternal(a, b);
+        }
+
         [MethodAlias("_ZW6System4Type_11op_Equality_Rb_P2V4TypeV4Type")]
         [MethodAlias("_ZW6System4Type_14EqualsInternal_Rb_P2u1tV4Type")]
         [AlwaysCompile]
