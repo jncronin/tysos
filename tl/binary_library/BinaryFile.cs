@@ -155,6 +155,12 @@ namespace binary_library
             r.Close();
         }
 
+        public virtual void Read(System.IO.Stream stream)
+        {
+            var r = new System.IO.BinaryReader(stream);
+            Read(r);
+        }
+
         protected virtual void Write(System.IO.BinaryWriter w) { throw new NotImplementedException(); }
         protected virtual void Read(System.IO.BinaryReader r) { throw new NotImplementedException(); }
 

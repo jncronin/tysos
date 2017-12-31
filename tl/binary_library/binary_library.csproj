@@ -45,6 +45,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="archive\archive.cs" />
     <Compile Include="BinaryFile.cs" />
     <Compile Include="binary\binary.cs" />
     <Compile Include="binary\hex.cs" />

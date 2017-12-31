@@ -113,7 +113,7 @@ namespace binary_library.elf
 
         public string[] GetSupportedFileTypes()
         {
-            return new string[] { "elf", "elf32", "elf64" };
+            return new string[] { "elf", "elf32", "elf64", ".o", ".obj" };
         }
 
         public override IProgramHeader ProgramHeader

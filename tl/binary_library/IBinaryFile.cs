@@ -45,6 +45,7 @@ namespace binary_library
         void Init();
         void Write();
         void Read();
+        void Read(System.IO.Stream s);
 
         ISection GetTextSection();
         ISection GetDataSection();
@@ -88,5 +89,14 @@ namespace binary_library
     public interface IBinaryFileTypeName
     {
         string[] GetSupportedFileTypes();
+    }
+
+    /** <summary>Implement this if this binary file is actually a collection of other binary files</summary>
+     */
+    public interface IBinaryFileCollection
+    {
+        int GetBinaryFileCount();
+        IBinaryFile GetBinaryFile(int idx);
+        IBinaryFile FindBinaryFile(string name);
     }
 }
