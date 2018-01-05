@@ -164,7 +164,7 @@ namespace typroject
             }
 
             Project p;
-            if (fname.EndsWith(".csproj"))
+            if (fname.EndsWith(".csproj") || fname.EndsWith(".proj"))
                 p = Project.xml_read(proj_file.OpenRead(), config, proj_file.DirectoryName, cur_dir);
             else if (fname.EndsWith(".cs"))
                 p = Project.src_read(sources, cur_dir, Project.OutputType.Exe);
@@ -692,7 +692,8 @@ namespace typroject
             else
                 ret.tools_ver = n.SelectSingleNode("@ToolsVersion", nm).Value;
 
-            ret.Guid = new Guid(props["ProjectGuid"]);
+            if(props.ContainsKey("ProjectGuid"))
+                ret.Guid = new Guid(props["ProjectGuid"]);
             string otype = props["OutputType"];
             if(otype == "Library")
                 ret.output_type = OutputType.Library;
@@ -887,6 +888,27 @@ namespace typroject
                     var rname = process_string(n.SelectSingleNode("@Include", nm).Value, props, ret.items);
                     ret.References.Add(rname);
                 }
+                else if(n.Name == "ReferencePath")
+                {
+                    var inc_path = n.SelectSingleNode("@Include", nm);
+                    if(inc_path != null)
+                    {
+                        foreach (var fpath in ParseReferencePath(process_string(inc_path.Value, props, ret.items)))
+                        {
+                            if (!ret.References.Contains(fpath))
+                                ret.References.Add(fpath);
+                        }
+                    }
+                    var exc_path = n.SelectSingleNode("@Exclude", nm);
+                    if (exc_path != null)
+                    {
+                        foreach (var fpath in ParseReferencePath(process_string(exc_path.Value, props, ret.items)))
+                        {
+                            if (ret.References.Contains(fpath))
+                                ret.References.Remove(fpath);
+                        }
+                    }
+                }
                 else
                 {
                     // Silently ignore
@@ -902,6 +924,29 @@ namespace typroject
                 if (!items.Contains(str))
                     items.Add(str);
             }
+        }
+
+        private static IEnumerable<string> ParseReferencePath(string v)
+        {
+            List<string> ret = new List<string>();
+            var v2 = v.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach(var v3 in v2)
+            {
+                var dir_end = v3.LastIndexOfAny(new char[] { '/', '\\' });
+                string dir;
+                if (dir_end == -1)
+                    dir = ".";
+                else
+                    dir = v3.Substring(0, dir_end);
+                string file = v3.Substring(dir_end + 1);
+                var di = new DirectoryInfo(dir);
+                if (di.Exists)
+                {
+                    di.GetFiles(file);
+                }
+                System.IO.FileInfo fi = new FileInfo(v3);
+            }
+            throw new NotImplementedException();
         }
 
         private static void process_propertygroup(XPathNavigator n, Project ret, Dictionary<string, string> props, XmlNamespaceManager nm)
@@ -1161,6 +1206,8 @@ namespace typroject
                 create_directory(new DirectoryInfo(properties["OutputPath"]));
             if (properties.ContainsKey("IntermediateOutputPath"))
                 create_directory(new DirectoryInfo(properties["IntermediateOutputPath"]));
+            if (properties.ContainsKey("RuntimePath"))
+                create_directory(new DirectoryInfo(properties["RuntimePath"]));
 
             /* Run any PrepareForBuild target */
             if (targets.ContainsKey("PrepareForBuild"))
