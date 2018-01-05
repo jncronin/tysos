@@ -27,7 +27,7 @@ using System.IO;
 
 namespace tysila4
 {
-    class FileSystemFileLoader : FileLoader
+    public class FileSystemFileLoader : FileLoader
     {
         public override FileLoader.FileLoadResults LoadFile(string filename)
         {

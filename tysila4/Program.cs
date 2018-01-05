@@ -29,7 +29,7 @@ using XGetoptCS;
 
 namespace tysila4
 {
-    class Program
+    public class Program
     {
         /* Boiler plate */
         const string year = "2009 - 2017";
@@ -169,6 +169,16 @@ namespace tysila4
 
             libtysila5.libtysila.AssemblyLoader al = new libtysila5.libtysila.AssemblyLoader(
                 new FileSystemFileLoader());
+
+            /* Load up type forwarders */
+            string typeforwarders = @"D:\tysos\corefx\lib\typeforwards.txt";
+            var tfr = new System.IO.StreamReader(typeforwarders);
+            while(!tfr.EndOfStream)
+            {
+                var tfr_line = tfr.ReadLine();
+                var tfr_lsplit = tfr_line.Split('=');
+                al.TypeForwarders[tfr_lsplit[0]] = tfr_lsplit[1];
+            }
 
             //search_dirs.Add(@"..\mono\corlib");
             al.RequireVersionMatch = require_metadata_version_match;
