@@ -43,9 +43,17 @@
       <Project>{82697295-1aff-4174-97bc-6562732305f3}</Project>
       <Name>libtysila5</Name>
     </ProjectReference>
+    <ProjectReference Include="..\metadata\metadata.csproj">
+      <Project>{577c93b9-acd1-4ec2-83f5-c0ff3246feba}</Project>
+      <Name>metadata</Name>
+    </ProjectReference>
     <ProjectReference Include="..\tl\binary_library\binary_library.csproj">
       <Project>{7d57589d-4c6c-4c24-945e-5a9cf736227e}</Project>
       <Name>binary_library</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\tysila4\tysila4.csproj">
+      <Project>{62d134e0-864f-4100-bba0-44a78948647a}</Project>
+      <Name>tysila4</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
