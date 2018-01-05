@@ -27,7 +27,7 @@ using metadata;
 
 namespace libtysila5.ir
 {
-    internal class SpecialMethods : metadata.MetadataStream
+    public class SpecialMethods : metadata.MetadataStream
     {
         public int gcmalloc;
         public int castclassex;
@@ -170,12 +170,12 @@ namespace libtysila5.ir
             };
         }
 
-        internal int CreateMethodSignature(TypeSpec rettype, TypeSpec[] ps, bool has_this = false, TypeSpec[] gmparams = null)
+        public int CreateMethodSignature(TypeSpec rettype, TypeSpec[] ps, bool has_this = false, TypeSpec[] gmparams = null)
         {
             return CreateMethodSignature(b, rettype, ps, has_this, gmparams);
         }
 
-        int CreateMethodSignature(List<byte> b, TypeSpec rettype, TypeSpec[] ps, bool has_this = false, TypeSpec[] gmparams = null)
+        public int CreateMethodSignature(List<byte> b, TypeSpec rettype, TypeSpec[] ps, bool has_this = false, TypeSpec[] gmparams = null)
         {
             List<byte> tmp = new List<byte>();
 

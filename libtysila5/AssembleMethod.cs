@@ -67,6 +67,7 @@ namespace libtysila5
 
             /* Is this an array method? */
             if (rva == 0 &&
+                ms.type != null &&
                 ms.type.stype == TypeSpec.SpecialType.Array &&
                 code_override == null)
             {
@@ -98,6 +99,7 @@ namespace libtysila5
 
             /* Is this a vector method? */
             if (rva == 0 &&
+                ms.type != null &&
                 ms.type.stype == TypeSpec.SpecialType.SzArray &&
                 code_override == null)
             {

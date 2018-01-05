@@ -352,6 +352,9 @@ namespace metadata
                         yield return alias;
                 }
 
+                if (m.md_custom_attrs == null)
+                    yield break;
+
                 int cur_ca = m.md_custom_attrs[mdrow];
 
                 while(cur_ca != 0)

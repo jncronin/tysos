@@ -157,7 +157,8 @@ build(DOTNETCORLIB);
 /* Copy dotnet corlib output to MSCORLIB */
 MSCORLIB = ROOT + "/coreclr/mscorlib.dll";
 MSCORLIBOBJ = objfromexe(MSCORLIB);
-MSCORLIBDIR = "\"" + typroject_refdir("4.6.1") + "\"";
+// MSCORLIBDIR = "\"" + typroject_refdir("4.6.1") + "\"";
+MSCORLIBDIR = dir(MSCORLIB);
 
 rulefor(MSCORLIB, [ DOTNETCORLIB ], [ THIS ], function()
 {
@@ -218,11 +219,22 @@ function build_corefx(string name)
 build(build_corefx("System.Console"));
 build(build_corefx("System.IO.FileSystem"));
 
-/* Build a list of reference assemblies to include in all projects (in future we will do this more cleverly) */
+/* Build a list of reference assemblies to include in all projects, and add .obj files to the link
+	(in future we will do this more cleverly) */
 COREFX_REFS = "";
+COREFX_OBJS = [];
 foreach(ref in files(COREFX_LIB))
 {
-	COREFX_REFS = COREFX_REFS + ";" + basefname(ref);
+	if(ext(ref) == ".dll")
+	{
+		COREFX_REFS = COREFX_REFS + ";" + basefname(ref);
+		COREFX_OBJS.add(COREFX_LIB + "/" + basefname(ref) + ".obj");
+	}
+}
+
+/* Assemble all corefx assemblies */
+foreach(ref in files(COREFX_LIB))
+{
 }
 
 /* Make all run-time assemblies depend on the dotnet corlib and this file */
@@ -305,11 +317,11 @@ rulefor(ROOT + "/tysos/lib/UnicodeData.cs", [ US_OUTPUT ], [], function()
 /* Rules for assembling CLR binaries */
 rulefor("%.obj", [ "%.exe" ], [ TYSILA, MSCORLIB, THIS ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIB -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 rulefor("%.obj", [ "%.dll" ], [ TYSILA, MSCORLIB, THIS ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIB -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 /*rulefor "%.to" inputs { "%.obj" } depends { TL, THIS } {
 	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
@@ -321,7 +333,7 @@ rulefor("%.to", [ "%.obj" ], [ THIS ], function() {
 /* Rule for linking the kernel */
 rulefor(KERNEL, [ TYSOSOBJ, MSCORLIBOBJ,
 	tycobj("undefined.o"),
-	TYSOS_CPU_OBJ, LIBSUPCSA, METADATAOBJ ], [],
+	TYSOS_CPU_OBJ, LIBSUPCSA, METADATAOBJ, COREFX_OBJS ], [ ],
 	function()
 {
 	shellcmd("$XCC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");
@@ -511,7 +523,7 @@ if(USE_UEFI)
 
 rulefor(ROOT + "/efiloader/tloadkif.c", [ TYSOS ], [ TYSILA, MSCORLIB ], function()
 {
-	shellcmd("$TYSILA -t $TYSILAARCH -q -L$MSCORLIBDIR -L$LIBSUPCSDIR -H $ROOT/efiloader/tloadkif.h -C $ROOT/efiloader/tloadkif.c $TYSOS");
+	shellcmd("$TYSILA -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIB -L$LIBSUPCSDIR -H $ROOT/efiloader/tloadkif.h -C $ROOT/efiloader/tloadkif.c $TYSOS");
 });
 
 

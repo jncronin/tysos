@@ -103,7 +103,7 @@ namespace libtysila5
 
         private string Label;
 
-        public StringTable(string mod_name, libtysila.AssemblyLoader al,
+        public StringTable(string mod_name, metadata.AssemblyLoader al,
             target.Target t)
         {
             Label = mod_name + "_StringTable";

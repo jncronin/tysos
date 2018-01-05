@@ -109,6 +109,35 @@ namespace metadata
 
             public static implicit operator TypeSpec(BuiltInType b) { return b.Type; }
         }
+
+        public void LoadBuiltinTypes()
+        {
+            SystemObject = GetBuiltin("Object");
+            SystemString = GetBuiltin("String");
+            SystemInt8 = GetBuiltin("SByte");
+            SystemInt16 = GetBuiltin("Int16");
+            SystemChar = GetBuiltin("Char");
+            SystemInt32 = GetBuiltin("Int32");
+            SystemInt64 = GetBuiltin("Int64");
+            SystemIntPtr = GetBuiltin("IntPtr");
+            SystemRuntimeTypeHandle = GetBuiltin("RuntimeTypeHandle");
+            SystemRuntimeMethodHandle = GetBuiltin("RuntimeMethodHandle");
+            SystemRuntimeFieldHandle = GetBuiltin("RuntimeFieldHandle");
+            SystemEnum = GetBuiltin("Enum");
+            SystemValueType = GetBuiltin("ValueType");
+            SystemVoid = GetBuiltin("Void");
+            SystemArray = GetBuiltin("Array");
+            SystemByte = GetBuiltin("Byte");
+            SystemUInt16 = GetBuiltin("UInt16");
+            SystemUInt32 = GetBuiltin("UInt32");
+            SystemUInt64 = GetBuiltin("UInt64");
+            SystemDelegate = GetBuiltin("Delegate");
+            SystemTypedByRef = GetBuiltin("TypedReference");
+            SystemDouble = GetBuiltin("Double");
+            SystemSingle = GetBuiltin("Single");
+            SystemBool = GetBuiltin("Bool");
+        }
+
         internal BuiltInType GetBuiltin(string name, string nspace = "System", string mod = "mscorlib")
         { return new BuiltInType { mod = mod, name = name, nspace = nspace, al = al }; }
 
@@ -132,6 +161,10 @@ namespace metadata
         public BuiltInType SystemUInt32;
         public BuiltInType SystemUInt64;
         public BuiltInType SystemDelegate;
+        public BuiltInType SystemTypedByRef;
+        public BuiltInType SystemBool;
+        public BuiltInType SystemDouble;
+        public BuiltInType SystemSingle;
 
         /* Consts for fast table indexing */
         public const int tid_Assembly = 0x20;
@@ -652,6 +685,11 @@ namespace metadata
                     {
                         var ass_name = GetStringEntry(rs_tableid, rs_row, 6);
                         var other_ass = al.GetAssembly(ass_name);
+
+                        var tforward_key = other_ass.AssemblyName + "!" + typenamespace + "." + typename;
+                        if (al.TypeForwarders.ContainsKey(tforward_key))
+                            other_ass = al.GetAssembly(al.TypeForwarders[tforward_key]);
+
                         ts = other_ass.GetTypeSpec(typenamespace, typename);
 
                         return true;
@@ -857,7 +895,7 @@ namespace metadata
                                             {
                                                 ms = new MethodSpec
                                                 {
-                                                    m = newts.m,
+                                                    m = this,
                                                     msig = (int)sig,
                                                     name_override = name,
                                                     type = newts
@@ -950,6 +988,11 @@ namespace metadata
                         {
                             case tid_AssemblyRef:
                                 var other_m = referenced_assemblies[rs_row - 1];
+
+                                /* Is there a typeforwarder for this? */
+                                var tforward_key = other_m.AssemblyName + "!" + other_namespace + "." + other_name;
+                                if (al.TypeForwarders.ContainsKey(tforward_key))
+                                    other_m = al.GetAssembly(al.TypeForwarders[tforward_key]);
                                 var other_ts = other_m.GetTypeSpec(other_namespace, other_name);
                                 return other_ts;
 

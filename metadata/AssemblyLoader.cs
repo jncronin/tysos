@@ -31,6 +31,10 @@ namespace metadata
             new Dictionary<string, MetadataStream>(
                 new GenericEqualityComparer<string>());
 
+        public Dictionary<string, string> TypeForwarders =
+            new Dictionary<string, string>(
+                new GenericEqualityComparer<string>());
+
         bool require_version_match = true;
 
         /**<summary>Is the version required to match when loading an assembly?</summary>
@@ -127,7 +131,9 @@ namespace metadata
 
         protected virtual string StripExtension(string name)
         {
-            var li = name.LastIndexOf('.');
+            var li = name.LastIndexOf(".exe");
+            if (li == -1)
+                li = name.LastIndexOf(".dll");
             if (li == -1)
                 return name;
             else

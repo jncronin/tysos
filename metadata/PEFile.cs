@@ -299,26 +299,7 @@ namespace metadata
             m.PatchNestedTypes();
             m.PatchCustomAttrs();
 
-            m.SystemObject = m.GetBuiltin("Object");
-            m.SystemString = m.GetBuiltin("String");
-            m.SystemInt8 = m.GetBuiltin("SByte");
-            m.SystemInt16 = m.GetBuiltin("Int16");
-            m.SystemChar = m.GetBuiltin("Char");
-            m.SystemInt32 = m.GetBuiltin("Int32");
-            m.SystemInt64 = m.GetBuiltin("Int64");
-            m.SystemIntPtr = m.GetBuiltin("IntPtr");
-            m.SystemRuntimeTypeHandle = m.GetBuiltin("RuntimeTypeHandle");
-            m.SystemRuntimeMethodHandle = m.GetBuiltin("RuntimeMethodHandle");
-            m.SystemRuntimeFieldHandle = m.GetBuiltin("RuntimeFieldHandle");
-            m.SystemEnum = m.GetBuiltin("Enum");
-            m.SystemValueType = m.GetBuiltin("ValueType");
-            m.SystemVoid = m.GetBuiltin("Void");
-            m.SystemArray = m.GetBuiltin("Array");
-            m.SystemByte = m.GetBuiltin("Byte");
-            m.SystemUInt16 = m.GetBuiltin("UInt16");
-            m.SystemUInt32 = m.GetBuiltin("UInt32");
-            m.SystemUInt64 = m.GetBuiltin("UInt64");
-            m.SystemDelegate = m.GetBuiltin("Delegate");
+            m.LoadBuiltinTypes();
 
             System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: parsing complete");
             

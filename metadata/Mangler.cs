@@ -147,6 +147,77 @@ namespace metadata
             return DemangleType(s, ref i, ms);
         }
 
+        /** <summary>Returns true if the provided string is a mangled method, false if a type and an exception otherwise</summary> */
+        public bool IsMangledMethod(string s)
+        {
+            ManglerState ms = new ManglerState();
+
+            int i = 0;
+            if (!Munch(s, ref i, "_Z"))
+                throw new ArgumentException();
+
+            if (s == "_ZW20System#2ECollections9ArrayList_7#2Ector_Rv_P1u1t")
+                System.Diagnostics.Debugger.Break();
+            var ts = DemangleType(s, ref i, ms);
+
+            var ret = Munch(s, ref i, "_");
+            if (!ret && i < s.Length)
+                throw new Exception();
+            return Munch(s, ref i, "_");
+        }
+
+        private MethodSpec DemangleMethod(string s, ref int i, ManglerState ms, TypeSpec ts, string mangled_name)
+        {
+            MethodSpec ret = new MethodSpec();
+            ret.m = ts.m;
+            ret.type = ts;
+            ret.mangle_override = mangled_name;
+
+            ret.name_override = MunchString(s, ref i);
+
+            if(Munch(s, ref i, "_g"))
+            {
+                var gm_count = MunchNumber(s, ref i);
+                ret.gmparams = new TypeSpec[gm_count];
+                for(int idx = 0; idx < gm_count; idx++)
+                {
+                    ret.gmparams[idx] = DemangleType(s, ref i, ms);
+                }
+            }
+
+            if (!Munch(s, ref i, "_R"))
+                throw new ArgumentException();
+
+            var rettype = DemangleType(s, ref i, ms);
+
+            if (!Munch(s, ref i, "_P"))
+                throw new ArgumentException();
+
+            var pcount = MunchNumber(s, ref i);
+            var ps = new TypeSpec[pcount];
+            for(int idx = 0; idx < pcount; idx++)
+            {
+                ps[idx] = DemangleType(s, ref i, ms);
+            }
+            return ret;
+        }
+
+        public Spec DemangleObject(string s)
+        {
+            ManglerState ms = new ManglerState();
+
+            int i = 0;
+            if (!Munch(s, ref i, "_Z"))
+                throw new ArgumentException();
+
+            var ts = DemangleType(s, ref i, ms);
+
+            if (!Munch(s, ref i, "_"))
+                return ts;
+
+            return DemangleMethod(s, ref i, ms, ts, s);
+        }
+
         private TypeSpec DemangleType(string s, ref int i, ManglerState ms)
         {
             string module = ms.cur_module, nspace = ms.cur_nspace, name;
@@ -215,33 +286,37 @@ namespace metadata
                 return SystemObject;
             else if (Munch(s, ref i, "u1L"))
                 return SystemValueType;
-            else if(Munch(s, ref i, "N"))
+            else if (Munch(s, ref i, "u1T"))
+                return SystemTypedByRef;
+            else if (Munch(s, ref i, "N"))
             {
                 module = MunchString(s, ref i);
                 nspace = MunchString(s, ref i);
                 name = MunchString(s, ref i);
             }
-            else if(Munch(s, ref i, "U"))
+            else if (Munch(s, ref i, "U"))
             {
                 nspace = MunchString(s, ref i);
                 name = MunchString(s, ref i);
             }
-            else if(Munch(s, ref i, "V"))
+            else if (Munch(s, ref i, "V"))
             {
                 name = MunchString(s, ref i);
             }
-            else if(Munch(s, ref i, "W"))
+            else if (Munch(s, ref i, "W"))
             {
                 module = "mscorlib";
                 nspace = MunchString(s, ref i);
                 name = MunchString(s, ref i);
             }
-            else if(Munch(s, ref i, "X"))
+            else if (Munch(s, ref i, "X"))
             {
                 module = "libsupcs";
                 nspace = "libsupcs";
                 name = MunchString(s, ref i);
             }
+            else if (Munch(s, ref i, "u1t"))
+                return null;
             else
                 throw new NotImplementedException();
 
@@ -252,11 +327,24 @@ namespace metadata
             ms.cur_nspace = nspace;
 
             var mod = al.GetAssembly(module);
+            if (mod == null)
+                throw new DllNotFoundException(module);
             return mod.GetTypeSpec(nspace, name);
         }
 
-        private string MunchString(string s, ref int i)
+        private int MunchNumber(string s, ref int i)
         {
+            /* Special case '0' as it may be prefixed onto another number, e.g. 01s is an
+             *  empty string followed by a string of length 1, rather than a single string
+             *  of length 01 */
+            if (i == s.Length)
+                return 0;
+            if (s[i] == '0')
+            {
+                i++;
+                return 0;
+            }
+
             int digit_count = 0;
             while ((i + digit_count < s.Length) && (char.IsDigit(s[i + digit_count])))
                 digit_count++;
@@ -264,8 +352,12 @@ namespace metadata
             int digits = int.Parse(s.Substring(i, digit_count));
             i += digit_count;
 
-            if (i + digits > s.Length)
-                throw new ArgumentException();
+            return digits;
+        }
+
+        private string MunchString(string s, ref int i)
+        {
+            var digits = MunchNumber(s, ref i);
 
             var ret = s.Substring(i, digits);
             i += digits;
@@ -637,7 +729,7 @@ namespace metadata
             }
         }
 
-        private void AppendEnclosingType(int td_idx, StringBuilder name_sb)
+        internal void AppendEnclosingType(int td_idx, StringBuilder name_sb)
         {
             if(nested_parent[td_idx] != 0)
             {

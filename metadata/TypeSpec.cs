@@ -714,7 +714,11 @@ namespace metadata
             if (stype != other.stype)
                 return false;
 
-            if (!m.Equals(other.m))
+            if (m == null && other.m != null)
+                return false;
+            if (m != null && other.m == null)
+                return false;
+            if (m != null && !m.Equals(other.m))
                 return false;
 
             switch(stype)
@@ -940,8 +944,20 @@ namespace metadata
         {
             get
             {
-                return m.GetStringEntry(MetadataStream.tid_TypeDef,
-                    tdrow, 1);
+                StringBuilder sb = new StringBuilder();
+                m.AppendEnclosingType(tdrow, sb);
+                return sb.ToString();
+            }
+        }
+
+        public string Namespace
+        {
+            get
+            {
+                int outermost = tdrow;
+                while (m.nested_parent[outermost] != 0)
+                    outermost = m.nested_parent[outermost];
+                return m.GetStringEntry(MetadataStream.tid_TypeDef, outermost, 2);
             }
         }
     }

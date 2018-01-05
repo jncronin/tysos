@@ -626,6 +626,9 @@ namespace libtysila5.target
 
         public virtual bool IsTypeValid(metadata.TypeSpec ts)
         {
+            if (ts == null)
+                return true;
+
             if (ts.HasCustomAttribute("_ZN14libsupcs#2Edll8libsupcs19Bits32OnlyAttribute_7#2Ector_Rv_P1u1t") &&
                 GetPointerSize() != 4)
                 return false;

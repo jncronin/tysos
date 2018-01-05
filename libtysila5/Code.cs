@@ -67,7 +67,7 @@ namespace libtysila5
         static ir.SpecialMethods _special = null;
         internal List<ExceptionHeader> ehdrs;
 
-        internal ir.SpecialMethods special_meths
+        public ir.SpecialMethods special_meths
         {
             get
             {

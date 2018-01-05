@@ -2516,7 +2516,7 @@ namespace libtysila5.ir
             }
         }
 
-        internal static Stack<StackItem> call(CilNode n, Code c, Stack<StackItem> stack_before, bool is_calli = false, string override_name = null, MetadataStream override_m = null, int override_msig = 0,
+        public static Stack<StackItem> call(CilNode n, Code c, Stack<StackItem> stack_before, bool is_calli = false, string override_name = null, MetadataStream override_m = null, int override_msig = 0,
             int calli_ftn = 0)
         {
             if (calli_ftn != 0)
@@ -2638,7 +2638,7 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        internal static Stack<StackItem> ldstr(CilNode n, Code c, Stack<StackItem> stack_before,
+        public static Stack<StackItem> ldstr(CilNode n, Code c, Stack<StackItem> stack_before,
             string str = null)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
