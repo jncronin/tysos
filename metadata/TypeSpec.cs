@@ -718,7 +718,7 @@ namespace metadata
                 return false;
             if (m != null && other.m == null)
                 return false;
-            if (m != null && !m.Equals(other.m))
+            if (m != null && !m.Equals(other.m) && stype == SpecialType.None)
                 return false;
 
             switch(stype)
