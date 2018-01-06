@@ -67,6 +67,7 @@ namespace tymake_lib
             new DirectoryFunction { name = "basefname" }.Execute(s);
             new DirectoryFunction { name = "ext" }.Execute(s);
             new DirectoryFunction { name = "files" }.Execute(s);
+            new DirectoryFunction(2) { name = "files" }.Execute(s);
             new DirectoryFunction { name = "dirs" }.Execute(s);
             new DownloadFunction(false).Execute(s);
             new DownloadFunction(true).Execute(s);
@@ -919,9 +920,11 @@ namespace tymake_lib
 
     class DirectoryFunction : FunctionStatement
     {
-        public DirectoryFunction()
+        public DirectoryFunction(int pcount = 1)
         {
-            args = new List<FunctionArg> { new FunctionArg { name = "fname", argtype = Expression.EvalResult.ResultType.String } };
+            args = new List<FunctionArg>();
+            for (int i = 0; i < pcount; i++)
+                args.Add(new FunctionArg { name = "fname", argtype = Expression.EvalResult.ResultType.String });
         }
 
         public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
@@ -948,9 +951,19 @@ namespace tymake_lib
                 List<Expression.EvalResult> ret = new List<Expression.EvalResult>();
                 if(di.Exists)
                 {
-                    foreach(var f in di.GetFiles())
+                    if (passed_args.Count == 2)
                     {
-                        ret.Add(new  Expression.EvalResult(f.FullName));
+                        foreach (var f in di.GetFiles(passed_args[1].strval))
+                        {
+                            ret.Add(new Expression.EvalResult(f.FullName));
+                        }
+                    }
+                    else
+                    {
+                        foreach (var f in di.GetFiles())
+                        {
+                            ret.Add(new Expression.EvalResult(f.FullName));
+                        }
                     }
                 }
 
