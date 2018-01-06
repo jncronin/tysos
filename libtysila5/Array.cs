@@ -154,7 +154,42 @@ namespace libtysila5.ir
         internal static Code CreateArraySet(MethodSpec ms,
            Target t)
         {
-            throw new NotImplementedException();
+            Code c = new Code { t = t, ms = ms };
+            t.AllocateLocalVarsArgs(c);
+            cil.CilNode n = new cil.CilNode(ms, 0);
+
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+
+            // Returns void
+            c.ret_ts = ms.m.SystemVoid;
+
+            // Get array item type
+            var given_type = c.la_types[c.la_types.Length - 1];
+
+            if (!given_type.Equals(ms.type.other))
+            {
+                throw new Exception("Array Set given type not the same as element type");
+            }
+
+            // Enter
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_enter, stack_before = stack_before, stack_after = stack_before });
+
+            // Get offset to the data item
+            stack_before = ArrayGetDataItemPtr(n, c, stack_before, ms);
+
+            // Load given value and store to the address
+            stack_before = ldarg(n, c, stack_before, c.la_types.Length - 1);
+            stack_before = stind(n, c, stack_before, t.GetSize(given_type));
+
+            // Ret
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, ct = ir.Opcode.ct_unknown, stack_before = stack_before, stack_after = stack_before });
+
+            c.cil = new List<cil.CilNode> { n };
+            c.ir = n.irnodes;
+
+            c.starts = new List<cil.CilNode> { n };
+
+            return c;
         }
 
         internal static Code CreateArrayGet(MethodSpec ms,
