@@ -625,6 +625,19 @@ namespace tysos
             }
         }
 
+        [libsupcs.MethodAlias("missing_function")]
+        [libsupcs.AlwaysCompile]
+        static void MissingFunction(string name)
+        {
+            if(arch.DebugOutput != null)
+            {
+                Formatter.Write("Undefined function called: ", arch.DebugOutput);
+                Formatter.Write(name, arch.DebugOutput);
+                Formatter.WriteLine(arch.DebugOutput);
+            }
+            throw new Exception("Undefined function");
+        }
+
         [libsupcs.MethodAlias("__undefined_func")]
         [libsupcs.AlwaysCompile]
         static void UndefinedFunc(ulong addr)
