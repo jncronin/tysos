@@ -3816,6 +3816,59 @@ namespace libtysila5.target.x86
                     else
                         return t.handle_external(t, nodes, start, count, c, "__moddi3");
                 case ir.Opcode.ct_float:
+                    {
+                        // (a - b * floor(a / b))
+
+                        // 1) do work in xmm7
+                        List<MCInst> r = new List<MCInst>();
+                        handle_move(r_xmm7, srca, r, n, c);
+
+                        // 2) xmm7 <- a/b
+                        r.Add(inst(x86_divsd_xmm_xmmm64, r_xmm7, srcb, n));
+
+                        // 3) xmm 7 <- floor(a/b)
+                        if ((bool)t.Options["sse4_1"] == true)
+                        {
+                            r.Add(inst(x86_roundsd_xmm_xmmm64_imm8, r_xmm7, r_xmm7, 3, n));
+                        }
+                        else
+                        {
+                            int pl = 0;
+                            handle_push(r_xmm7, ref pl, r, n, c);
+                            r.AddRange(handle_call(n, c,
+                                c.special_meths.GetMethodSpec(c.special_meths.rint),
+                                new ir.Param[] { r_xmm7 }, dest, "floor"));
+                            handle_pop(r_xmm7, ref pl, r, n, c);
+                        }
+
+                        // 4) xmm7 <- b * floor(a/b)
+                        r.Add(inst(x86_mulsd_xmm_xmmm64, r_xmm7, srcb, n));
+
+                        if (!(dest is ContentsReg))
+                        {
+                            // 5) dest <- a
+                            handle_move(dest, srca, r, n, c);
+
+                            // 6) dest <- a - xmm7
+                            r.Add(inst(x86_subsd_xmm_xmmm64, dest, r_xmm7, n));
+                        }
+                        else
+                        {
+                            // 5) dest <- xmm7 - a
+                            r.Add(inst(x86_subsd_xmm_xmmm64, r_xmm7, srca, n));
+                            handle_move(dest, r_xmm7, r, n, c);
+
+                            // 6) xmm7 <- 0
+                            r.Add(inst(x86_xorpd_xmm_xmmm128, r_xmm7, r_xmm7, n));
+
+                            // 7) xmm7 <- -(dest)
+                            r.Add(inst(x86_subsd_xmm_xmmm64, r_xmm7, dest, n));
+
+                            // 8) dest <- -dest
+                            handle_move(dest, r_xmm7, r, n, c);
+                        }
+                        return r;
+                    }
                     return t.handle_external(t, nodes, start, count, c, "fmod");
             }
 

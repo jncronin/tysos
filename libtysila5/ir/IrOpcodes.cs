@@ -1,8 +1,8 @@
-/* D:\tysos\branches\tysila3\libtysila5\ir\IrOpcodes.cs
+/* D:\tysos\libtysila5\ir\IrOpcodes.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 17:27:21 on 16 October 2017
- * from D:\tysos\branches\tysila3\libtysila5\ir\IrOpcodes.td
+ * It was generated at 18:05:08 on 07 January 2018
+ * from D:\tysos\libtysila5\ir\IrOpcodes.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
  */

@@ -35,9 +35,9 @@ namespace TableMap
 
             var files = new string[]
             {
-                @"D:\tysos\branches\tysila3\libtysila5\ir\IrMappings.td",
-                @"D:\tysos\branches\tysila3\libtysila5\ir\IrOpcodes.td",
-                @"D:\tysos\branches\tysila3\libtysila5\target\Target.td",
+                @"D:\tysos\libtysila5\ir\IrMappings.td",
+                @"D:\tysos\libtysila5\ir\IrOpcodes.td",
+                @"D:\tysos\libtysila5\target\Target.td",
             };
 
             foreach(var file in files)

@@ -277,7 +277,8 @@ LIBSUPCS_COMPILER_RT = [
 	ROOT + "/libsupcs/compiler_rt/negdi2.$TARGET.o",
 	ROOT + "/libsupcs/compiler_rt/udivmoddi4.$TARGET.o",
 
-	ROOT + "/libsupcs/netlib/s_rint.$TARGET.o"
+	ROOT + "/libsupcs/netlib/s_rint.$TARGET.o",
+	ROOT + "/libsupcs/netlib/s_floor.$TARGET.o",
 ];
 
 KERNEL = ROOT + "/tysos.bin";

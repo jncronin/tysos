@@ -848,6 +848,14 @@ namespace libtysila5.target.x86
                         Code.Add(0xcc);
                         break;
 
+                    case x86_xorpd_xmm_xmmm128:
+                        Code.Add(0x66);
+                        Code.Add(0x0f);
+                        AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
+                        Code.Add(0x57);
+                        Code.AddRange(ModRMSIB(I.p[1].mreg, I.p[2].mreg));
+                        break;
+
                     case x86_movsd_xmmm64_xmm:
                         Code.Add(0xf2);
                         AddRex(Code, Rex(I.p[0].v, I.p[2].mreg, I.p[1].mreg));
