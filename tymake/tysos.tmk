@@ -140,6 +140,15 @@ function objfromexe(string exe)
 {
 	return dir(exe) + "/" + basefname(exe) + ".obj";
 }
+function objfromexe(array exe)
+{
+	ret = [];
+	foreach(e in exe)
+	{
+		ret.add(objfromexe(e));
+	}
+	return ret;
+}
 function tobjfromexe(string exe)
 {
 	return dir(exe) + "/" + basefname(exe) + ".to";
@@ -168,8 +177,8 @@ build(MSCORLIB);
 
 
 /* function to build a constituent assembly */
-COREFX_LIB = "corefx/lib";		// place results here
-autodir(COREFX_LIB);
+COREFX_LIBDIR = "corefx/lib";		// place results here
+autodir(COREFX_LIBDIR);
 corefx_projs = [=];
 
 function build_corefx(string name)
@@ -185,7 +194,7 @@ function build_corefx(string name)
 		return corefx_projs.get(name);
 	}
 
-	_p = _typroject(name, "Release", "4.6.1", 1, [], [ "mscorlib=$MSCORLIB" ], COREFX_LIB);
+	_p = _typroject(name, "Release", "4.6.1", 1, [], [ "mscorlib=$MSCORLIB" ], COREFX_LIBDIR);
 
 	_depends = [];
 	foreach(dep in _p.ProjectReferences)
@@ -196,7 +205,7 @@ function build_corefx(string name)
 	{
 		_depends.add(build_corefx("corefx/src/" + dep + "/src/" + dep + ".csproj"));
 	}
-	_depends.add(COREFX_LIB);
+	_depends.add(COREFX_LIBDIR);
 	_depends.add(THIS);
 
 	rulefor(_p.OutputFile, _p.Sources, _depends, function()
@@ -204,7 +213,7 @@ function build_corefx(string name)
 		_p.Build();
 	});
 
-	_o = COREFX_LIB + "/" + basefname(name) + ".dll";
+	_o = COREFX_LIBDIR + "/" + basefname(name) + ".dll";
 	rulefor(_o, [ _p.OutputFile ], [], function()
 	{
 		cp(_RULE_INPUT, _RULE_OUTPUT);
@@ -215,7 +224,7 @@ function build_corefx(string name)
 	return _o;
 }
 
-/* Build some common ones (pulls in others) - see COREFX_LIB for assemblies produced */
+/* Build some common ones (pulls in others) - see COREFX_LIBDIR for assemblies produced */
 build(build_corefx("System.Console"));
 build(build_corefx("System.IO.FileSystem"));
 
@@ -223,24 +232,20 @@ build(build_corefx("System.IO.FileSystem"));
 	(in future we will do this more cleverly) */
 COREFX_REFS = "";
 COREFX_OBJS = [];
-foreach(ref in files(COREFX_LIB))
+COREFX_LIB = COREFX_LIBDIR + "/corefx.a";
+
+foreach(ref in files(COREFX_LIBDIR))
 {
 	if(ext(ref) == ".dll")
 	{
 		COREFX_REFS = COREFX_REFS + ";" + basefname(ref);
-		COREFX_OBJS.add(COREFX_LIB + "/" + basefname(ref) + ".obj");
+		COREFX_OBJS.add(COREFX_LIBDIR + "/" + basefname(ref) + ".obj");
 	}
 }
 
-/* Assemble all corefx assemblies */
-foreach(ref in files(COREFX_LIB))
-{
-}
-
 /* Make all run-time assemblies depend on the dotnet corlib and this file */
-//TYPROJECT_LIBDIR = COREFX_LIB;
+//TYPROJECT_LIBDIR = COREFX_LIBDIR;
 REF_OVERRIDES = [ ];
-
 
 TYSILAPROJ = ROOT + "/tysila4/tysila4.csproj";
 TYSILA = typroject(TYSILAPROJ, "Release", "4.6.1", 1, [], REF_OVERRIDES);
@@ -317,11 +322,11 @@ rulefor(ROOT + "/tysos/lib/UnicodeData.cs", [ US_OUTPUT ], [], function()
 /* Rules for assembling CLR binaries */
 rulefor("%.obj", [ "%.exe" ], [ TYSILA, MSCORLIB, THIS ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIB -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 rulefor("%.obj", [ "%.dll" ], [ TYSILA, MSCORLIB, THIS ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIB -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 /*rulefor "%.to" inputs { "%.obj" } depends { TL, THIS } {
 	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
@@ -330,10 +335,25 @@ rulefor("%.to", [ "%.obj" ], [ THIS ], function() {
 	cp(_RULE_INPUT, _RULE_OUTPUT);
 });
 
+/* Assemble all corefx assemblies */
+rulefor(COREFX_LIB, objfromexe(files(COREFX_LIBDIR, "*.dll")), [], function()
+{
+	shellcmd("$XAR -cru $_RULE_OUTPUT $_RULE_INPUTS");
+	shellcmd("$XRANLIB $_RULE_OUTPUT");
+});
+build(COREFX_LIB);
+
+/* Generate missing function stubs */
+TYSOS_OBJS = [ TYSOSOBJ, MSCORLIBOBJ, TYSOS_CPU_OBJ, LIBSUPCSA, METADATAOBJ, COREFX_LIB ];
+GENMISSING_PROG = typroject("$ROOT/genmissing/genmissing.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
+MISSING_OBJ = ROOT + "/tysos/missing.o";
+rulefor(MISSING_OBJ, TYSOS_OBJS, [ GENMISSING_PROG ], function()
+{
+	shellcmd("$GENMISSING_PROG -o $_RULE_OUTPUT -t$TYSILAARCH -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$TYSOSDIR $_RULE_INPUTS");
+});
+
 /* Rule for linking the kernel */
-rulefor(KERNEL, [ TYSOSOBJ, MSCORLIBOBJ,
-	tycobj("undefined.o"),
-	TYSOS_CPU_OBJ, LIBSUPCSA, METADATAOBJ, COREFX_OBJS ], [ ],
+rulefor(KERNEL, [ TYSOS_OBJS, MISSING_OBJ ], [ ],
 	function()
 {
 	shellcmd("$XCC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");
@@ -523,7 +543,7 @@ if(USE_UEFI)
 
 rulefor(ROOT + "/efiloader/tloadkif.c", [ TYSOS ], [ TYSILA, MSCORLIB ], function()
 {
-	shellcmd("$TYSILA -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIB -L$LIBSUPCSDIR -H $ROOT/efiloader/tloadkif.h -C $ROOT/efiloader/tloadkif.c $TYSOS");
+	shellcmd("$TYSILA -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$LIBSUPCSDIR -H $ROOT/efiloader/tloadkif.h -C $ROOT/efiloader/tloadkif.c $TYSOS");
 });
 
 
