@@ -55,6 +55,22 @@ namespace libsupcs
             return wcs;
         }
 
+        [libsupcs.MethodAlias("wcslen")]
+        [libsupcs.WeakLinkage]
+        [libsupcs.AlwaysCompile]
+        unsafe internal static int wcslen(char* s)
+        {
+            int length = 0;
+
+            while (*s != 0x00)
+            {
+                length++;
+                s++;
+            }
+
+            return length;
+        }
+
         [libsupcs.MethodAlias("memset")]
         [libsupcs.WeakLinkage]
         [libsupcs.AlwaysCompile]
