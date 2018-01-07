@@ -28,28 +28,46 @@ namespace genmissing
 {
     class Program
     {
-        static string[] input_files = new string[]
-        {
-            @"D:\tysos\libsupcs\bin\Release/libsupcs.a",
-            @"D:\tysos\tysos\bin\Release/tysos.obj",
-            @"D:\tysos\coreclr/mscorlib.obj",
-            @"./tysos/x86_64/cpu.o",
-            @"./tysos/x86_64/halt.o",
-            @"./tysos/x86_64/exceptions.o",
-            @"./tysos/x86_64/switcher.o",
-            @"D:\tysos\metadata\bin\Release/metadata.obj",
-        };
-
-        static string[] lib_paths = new string[]
-        {
-
-        };
-
+        static List<string> input_files = new List<string>();
         static string arch = "x86_64";
-        static string output_name = "output.o";        
+        static string output_name = "missing.o";
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
+            /* Parse args */
+            var argc = args.Length;
+            char c;
+            var go = new XGetoptCS.XGetopt();
+            var arg_str = "t:L:o:";
+
+            while ((c = go.Getopt(argc, args, arg_str)) != '\0')
+            {
+                switch (c)
+                {
+                    case 't':
+                        arch = go.Optarg;
+                        break;
+                    case 'L':
+                        tysila4.Program.search_dirs.Add(go.Optarg);
+                        break;
+                    case 'o':
+                        output_name = go.Optarg;
+                        break;
+                    case '?':
+                        dump_opts();
+                        return -1;
+                }
+            }
+            var curopt = go.Optind;
+            while (curopt < argc)
+                input_files.Add(args[curopt++]);
+            if(input_files.Count == 0)
+            {
+                System.Console.WriteLine("No input files specified");
+                dump_opts();
+                return -1;
+            }
+            
             /* Load up each input file in turn */
             var ifiles = new List<binary_library.IBinaryFile>();
             foreach(var ifname in input_files)
@@ -83,7 +101,7 @@ namespace genmissing
                 for(int i = 0; i < sym_count; i++)
                 {
                     var sym = file.GetSymbol(i);
-                    if (sym.DefinedIn != null)
+                    if (sym.DefinedIn != null && sym.Type != binary_library.SymbolType.Undefined)
                         def_syms[sym.Name] = sym;
                 }
             }
@@ -97,21 +115,23 @@ namespace genmissing
                 {
                     var reloc = file.GetRelocation(i);
                     if (reloc.References != null && !def_syms.ContainsKey(reloc.References.Name))
+                    {
+                        if (reloc.References.Name == "_Zu1O_7#2Ector_Rv_P1u1t")
+                            System.Diagnostics.Debugger.Break();
                         missing[reloc.References.Name] = reloc.References;
+                    }
                 }
             }
 
             /* Generate an output object */
             var o = new binary_library.elf.ElfFile(ifiles[0].Bitness);
             o.Init();
-
+            o.Architecture = arch;
             o.Filename = output_name;
 
-            tysila4.Program.search_dirs.Add(@"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1");
-            tysila4.Program.search_dirs.Add(@"D:\tysos\tysos\bin\Release");
-
             /* Generate dummy module */
-            var ms = new metadata.MetadataStream();
+            var ofi = new System.IO.FileInfo(output_name);
+            var ms = new metadata.MetadataStream(ofi.Name.Substring(0, ofi.Name.Length - ofi.Extension.Length));
             ms.al = new libtysila5.libtysila.AssemblyLoader(new tysila4.FileSystemFileLoader());
             ms.LoadBuiltinTypes();
 
@@ -138,13 +158,35 @@ namespace genmissing
                         GenerateMissingMethod(str, ms, t, missing_msig, o);
                     }
                     else
+                    {
+                        ms.IsMangledMethod(str);
                         missing_types.Add(str);
+                    }
                 }
                 catch(ArgumentException)
                 {
                     other_missing.Add(str);
                 }
             }
+
+            /* Write out */
+            t.st.WriteToOutput(o, ms, t);
+            o.Write();
+
+            /* Dump missing types */
+            if (missing_types.Count > 0)
+            {
+                Console.WriteLine("Warning: the following missing types were also found:");
+                foreach (var mt in missing_types)
+                    Console.WriteLine("  " + mt);
+            }
+
+            return 0;
+        }
+
+        private static void dump_opts()
+        {
+            Console.WriteLine("Usage: genmissing [-t architecture] [-o output_file] [-L library_path] <input_file_1> [extra_input_files]");
         }
 
         private static void GenerateMissingMethod(string str, metadata.MetadataStream m, libtysila5.target.Target t, int missing_msig, ElfFile o)
