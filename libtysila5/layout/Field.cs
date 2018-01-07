@@ -410,10 +410,10 @@ namespace libtysila5.layout
 
                 var sym = of.CreateSymbol();
                 sym.Name = ts.m.MangleType(ts) + "S";
-                sym.DefinedIn = os;
                 sym.Offset = offset;
                 sym.Type = binary_library.SymbolType.Global;
                 sym.ObjectType = binary_library.SymbolObjectType.Object;
+                os.AddSymbol(sym);
 
                 sym.Size = os.Data.Count - (int)offset;
 

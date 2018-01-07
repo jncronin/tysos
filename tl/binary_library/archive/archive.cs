@@ -60,11 +60,6 @@ namespace binary_library.archive
             throw new NotImplementedException();
         }
 
-        public override int AddSymbol(ISymbol symbol)
-        {
-            throw new NotImplementedException();
-        }
-
         public override bool ContainsSymbol(ISymbol symbol)
         {
             foreach (var file in files)
@@ -227,11 +222,6 @@ namespace binary_library.archive
         }
 
         public override void RemoveSection(int idx)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void RemoveSymbol(int idx)
         {
             throw new NotImplementedException();
         }

@@ -205,13 +205,13 @@ namespace binary_library.elf
             Dictionary<string, int> sym_str_map = new Dictionary<string, int>();
 
             // Add local symbols first
-            foreach (var sym in symbols)
-            {
+            foreach(var sym in GetSymbols())
+            { 
                 if (sym.Type == SymbolType.Local)
                     AddSymbol(sym, strtab, osyms, sym_map, sym_str_map, osect_map);
             }
             int last_local = osyms.Count;
-            foreach(var sym in symbols)
+            foreach(var sym in GetSymbols())
             {
                 if (sym.Type != SymbolType.Local)
                     AddSymbol(sym, strtab, osyms, sym_map, sym_str_map, osect_map);
@@ -262,7 +262,7 @@ namespace binary_library.elf
                     // Create a new undefined symbol for the relocation
                     var ext_sym = new Symbol {
                         Name = reloc.References.Name,
-                        DefinedIn = null,
+                        definedin = null,
                         ObjectType = SymbolObjectType.Unknown,
                         Type = SymbolType.Global,
                         Offset = reloc.References.Offset,
@@ -896,27 +896,23 @@ namespace binary_library.elf
                             // DefinedIn
                             if (s.st_shndx == 0)
                             {
-                                s.DefinedIn = null;
+                                s.definedin = null;
                                 s.Type = SymbolType.Undefined;
                             }
                             else if (s.st_shndx == -15)
                             {
                                 // SHN_ABS
-                                s.DefinedIn = AbsSection;
+                                AbsSection.AddSymbol(s);
                             }
                             else if (s.st_shndx == -14)
                             {
                                 // SHN_COMMON
-                                s.DefinedIn = CommonSection;
+                                CommonSection.AddSymbol(s);
                             }
                             else
-                                s.DefinedIn = sections[s.st_shndx];
-                        }
-
-                        if (!sym_map.ContainsKey(s.Name))
-                        {
-                            symbols.Add(s);
-                            sym_map[s.Name] = s;
+                            {
+                                sections[s.st_shndx].AddSymbol(s);
+                            }
                         }
 
                         ((ElfSymbolSection)sect).elf_syms[cur_sym++] = s;

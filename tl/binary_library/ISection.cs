@@ -41,7 +41,10 @@ namespace binary_library
         int AddSymbol(ISymbol sym);
         int GetSymbolCount();
         ISymbol GetSymbol(int idx);
+        ISymbol FindSymbol(string name);
+        bool ContainsSymbol(ISymbol sym);
         void RemoveSymbol(int idx);
+        IEnumerable<ISymbol> GetSymbols();
 
         void Align(int aval);
     }

@@ -28,37 +28,21 @@ namespace binary_library
     class Symbol : ISymbol
     {
         string name = "";
-        ISection definedin = null;
+        internal ISection definedin = null;
+        internal int index = -1;
         SymbolType type = SymbolType.Undefined;
         SymbolObjectType obj_type = SymbolObjectType.Unknown;
         ulong offset = 0;
         long size = 0;
+
+        public virtual int Index { get { return index; } }
 
         public override string ToString()
         {
             return name;
         }
 
-        public ISection DefinedIn
-        {
-            get
-            {
-                return definedin;
-            }
-            set
-            {
-                if (value == null)
-                {
-                    type = SymbolType.Undefined;
-                    definedin = null;
-                }
-                else
-                {
-                    definedin = value;
-                    definedin.AddSymbol(this);
-                }
-            }
-        }
+        public ISection DefinedIn { get { return definedin; } }
 
         public SymbolType Type
         {

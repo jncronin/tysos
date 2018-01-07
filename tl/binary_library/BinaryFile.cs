@@ -34,11 +34,9 @@ namespace binary_library
         protected string epoint = "";
         protected bool is_exec = false;
         protected List<ISection> sections = new List<ISection>();
-        protected List<ISymbol> symbols = new List<ISymbol>();
         protected List<IRelocation> relocs = new List<IRelocation>();
 
         protected Dictionary<string, ISection> sect_map = new Dictionary<string, ISection>();
-        protected Dictionary<string, ISymbol> sym_map = new Dictionary<string, ISymbol>();
 
         protected ISection text, data, rdata, bss;
 
@@ -146,10 +144,8 @@ namespace binary_library
         public virtual void Read()
         {
             sections.Clear();
-            symbols.Clear();
             relocs.Clear();
             sect_map.Clear();
-            sym_map.Clear();
             System.IO.BinaryReader r = new System.IO.BinaryReader(new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read));
             Read(r);
             r.Close();
@@ -168,10 +164,37 @@ namespace binary_library
         public virtual ISection GetSection(int idx) { return sections[idx]; }
         public virtual int AddSection(ISection section) { sections.Add(section); sect_map[section.Name] = section; return sections.Count - 1; }
         public virtual void RemoveSection(int idx) { sect_map.Remove(sections[idx].Name); sections.RemoveAt(idx); }
-        public virtual int GetSymbolCount() { return symbols.Count; }
-        public virtual ISymbol GetSymbol(int idx)  { return symbols[idx]; }
-        public virtual int AddSymbol(ISymbol symbol) { symbols.Add(symbol); sym_map[symbol.Name] = symbol; return symbols.Count - 1; }
-        public virtual void RemoveSymbol(int idx) { sym_map.Remove(symbols[idx].Name); symbols.RemoveAt(idx); }
+        public virtual int GetSymbolCount() {
+            int ret = 0;
+            foreach (var sect in sections)
+            {
+                if (sect == null)
+                    continue;
+                ret += sect.GetSymbolCount();
+            }
+            return ret;
+        }
+        public virtual ISymbol GetSymbol(int idx)  {
+            foreach(var sect in sections)
+            {
+                if (sect == null)
+                    continue;
+                if (idx < sect.GetSymbolCount())
+                    return sect.GetSymbol(idx);
+                idx -= sect.GetSymbolCount();
+            }
+            return null;
+        }
+        public virtual IEnumerable<ISymbol> GetSymbols()
+        {
+            foreach(var sect in sections)
+            {
+                if (sect == null)
+                    continue;
+                foreach (var sym in sect.GetSymbols())
+                    yield return sym;
+            }
+        }
         public virtual int GetRelocationCount() { return relocs.Count; }
         public virtual IRelocation GetRelocation(int idx) { return relocs[idx]; }
         public virtual int AddRelocation(IRelocation reloc) { relocs.Add(reloc); return relocs.Count - 1; }
@@ -180,10 +203,15 @@ namespace binary_library
 
         public virtual ISymbol FindSymbol(string name)
         {
-            if (sym_map.TryGetValue(name, out ISymbol val))
-                return val;
-            else
-                return null;
+            foreach(var sect in sections)
+            {
+                if (sect == null)
+                    continue;
+                var sym = sect.FindSymbol(name);
+                if (sym != null)
+                    return sym;
+            }
+            return null;
         }
 
         public virtual ISection FindSection(string name)
@@ -208,11 +236,12 @@ namespace binary_library
 
         public virtual bool ContainsSymbol(ISymbol symbol)
         {
-            ISymbol test;
-            if (sym_map.TryGetValue(symbol.Name, out test))
-                return test == symbol;
-            else
-                return false;
+            foreach(var sect in sections)
+            {
+                if (sect.ContainsSymbol(symbol))
+                    return true;
+            }
+            return false;
         }
 
         public virtual void Init()

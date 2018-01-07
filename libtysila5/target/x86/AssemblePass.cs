@@ -149,7 +149,6 @@ namespace libtysila5.target.x86
                                 reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
                                 reloc.Addend = I.p[2].v;
                                 reloc.References = bf.CreateSymbol();
-                                reloc.References.DefinedIn = null;
                                 reloc.References.Name = I.p[2].str;
                                 reloc.Offset = (ulong)Code.Count;
                                 bf.AddRelocation(reloc);
@@ -183,7 +182,6 @@ namespace libtysila5.target.x86
                                 reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
                                 reloc.Addend = I.p[2].v;
                                 reloc.References = bf.CreateSymbol();
-                                reloc.References.DefinedIn = null;
                                 reloc.References.Name = I.p[2].str;
                                 reloc.Offset = (ulong)Code.Count;
                                 bf.AddRelocation(reloc);
@@ -323,7 +321,6 @@ namespace libtysila5.target.x86
                             reloc.Type = new binary_library.elf.ElfFile.Rel_386_PC32();
                             reloc.Addend = -4;
                             reloc.References = bf.CreateSymbol();
-                            reloc.References.DefinedIn = null;
                             reloc.References.Name = I.p[1].str;
                             reloc.References.ObjectType = binary_library.SymbolObjectType.Function;
                             reloc.Offset = (ulong)Code.Count;
@@ -553,7 +550,6 @@ namespace libtysila5.target.x86
                                 reloc.Type = new binary_library.elf.ElfFile.Rel_x86_64_pc32();
                             reloc.Addend = -4;
                             reloc.References = bf.CreateSymbol();
-                            reloc.References.DefinedIn = null;
                             reloc.References.Name = I.p[1].str;
                             reloc.References.ObjectType = binary_library.SymbolObjectType.Function;
                             reloc.Offset = (ulong)Code.Count;
@@ -575,7 +571,6 @@ namespace libtysila5.target.x86
                             reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
                             reloc.Addend = I.p[2].v;
                             reloc.References = bf.CreateSymbol();
-                            reloc.References.DefinedIn = null;
                             reloc.References.Name = I.p[2].str;
                             reloc.References.ObjectType = binary_library.SymbolObjectType.Function;
                             reloc.Offset = (ulong)Code.Count;
@@ -593,7 +588,6 @@ namespace libtysila5.target.x86
                             reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
                             reloc.Addend = I.p[2].v;
                             reloc.References = bf.CreateSymbol();
-                            reloc.References.DefinedIn = null;
                             reloc.References.Name = I.p[2].str;
                             reloc.References.ObjectType = binary_library.SymbolObjectType.Object;
                             reloc.Offset = (ulong)Code.Count;
@@ -611,7 +605,6 @@ namespace libtysila5.target.x86
                             reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
                             reloc.Addend = I.p[1].v;
                             reloc.References = bf.CreateSymbol();
-                            reloc.References.DefinedIn = null;
                             reloc.References.Name = I.p[1].str;
                             reloc.References.ObjectType = binary_library.SymbolObjectType.Object;
                             reloc.Offset = (ulong)Code.Count;

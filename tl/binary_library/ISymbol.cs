@@ -30,7 +30,8 @@ namespace binary_library
     
     public interface ISymbol
     {
-        ISection DefinedIn { get; set; }
+        ISection DefinedIn { get; }
+        int Index { get; }
         SymbolType Type { get; set; }
         SymbolObjectType ObjectType { get; set; }
         ulong Offset { get; set; }

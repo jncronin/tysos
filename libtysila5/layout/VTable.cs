@@ -71,11 +71,11 @@ namespace libtysila5.layout
 
             /* Symbol */
             var sym = of.CreateSymbol();
-            sym.DefinedIn = os;
             sym.Name = ts.MangleType();
             sym.ObjectType = binary_library.SymbolObjectType.Object;
             sym.Offset = offset;
             sym.Type = binary_library.SymbolType.Global;
+            os.AddSymbol(sym);
 
             if (base_m != null && ts.m != base_m)
                 sym.Type = SymbolType.Weak;
@@ -120,7 +120,6 @@ namespace libtysila5.layout
                 ext_reloc.Type = t.GetDataToDataReloc();
 
                 var ext_sym = of.CreateSymbol();
-                ext_sym.DefinedIn = null;
                 ext_sym.Name = ts_extends.MangleType();
 
                 ext_reloc.References = ext_sym;
@@ -174,7 +173,6 @@ namespace libtysila5.layout
                 {
                     // list is pointer to interface declaration, then implementation
                     var id_ptr_sym = of.CreateSymbol();
-                    id_ptr_sym.DefinedIn = null;
                     id_ptr_sym.Name = ii[i].MangleType();
 
                     var id_ptr_reloc = of.CreateRelocation();
@@ -304,7 +302,6 @@ namespace libtysila5.layout
                 string impl_target = (impl_ms == null) ? "__cxa_pure_virtual" : impl_ms.MangleMethod();
 
                 var impl_sym = of.CreateSymbol();
-                impl_sym.DefinedIn = null;
                 impl_sym.Name = impl_target;
                 impl_sym.ObjectType = SymbolObjectType.Function;
 
@@ -334,7 +331,6 @@ namespace libtysila5.layout
                 string impl_target = (impl_ms == null) ? "__cxa_pure_virtual" : impl_ms.MangleMethod();
 
                 var impl_sym = of.CreateSymbol();
-                impl_sym.DefinedIn = null;
                 impl_sym.Name = impl_target;
                 impl_sym.ObjectType = SymbolObjectType.Function;
 

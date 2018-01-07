@@ -125,11 +125,11 @@ namespace libtysila5
             rd.Align(t.GetCTSize(ir.Opcode.ct_object));
 
             var stab_lab = GetStringTableSymbol(of);
-            stab_lab.DefinedIn = rd;
             stab_lab.Name = Label;
             stab_lab.ObjectType = binary_library.SymbolObjectType.Object;
             stab_lab.Offset = (ulong)rd.Data.Count;
             stab_lab.Type = binary_library.SymbolType.Global;
+            rd.AddSymbol(stab_lab);
 
             int stab_base = rd.Data.Count;
 
@@ -137,7 +137,6 @@ namespace libtysila5
                 rd.Data.Add(b);
 
             var str_lab = of.CreateSymbol();
-            str_lab.DefinedIn = null;
             str_lab.Name = StringObject.m.MangleType(StringObject);
             str_lab.ObjectType = binary_library.SymbolObjectType.Object;
 

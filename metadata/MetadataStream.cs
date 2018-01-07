@@ -1444,8 +1444,10 @@ namespace metadata
         public Dictionary<TableId, int> TableIDs = new Dictionary<TableId, int>(
             new GenericEqualityComparerEnum<TableId>());
 
-        public MetadataStream()
+        public MetadataStream(string name = null)
         {
+            assemblyName = name;
+
             TableIDs[TableId.NotUsed] = -1;
             TableIDs[TableId.Assembly] = 0x20;
             TableIDs[TableId.AssemblyOS] = 0x22;

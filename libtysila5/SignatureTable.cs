@@ -208,11 +208,11 @@ namespace libtysila5
             rd.Align(t.GetCTSize(ir.Opcode.ct_object));
 
             var stab_lab = of.CreateSymbol();
-            stab_lab.DefinedIn = rd;
             stab_lab.Name = Label;
             stab_lab.ObjectType = binary_library.SymbolObjectType.Object;
             stab_lab.Offset = (ulong)rd.Data.Count;
             stab_lab.Type = binary_library.SymbolType.Weak;
+            rd.AddSymbol(stab_lab);
 
             int stab_base = rd.Data.Count;
 
@@ -230,7 +230,6 @@ namespace libtysila5
                     reloc.Addend = sig_metadata_addends[kvp.Key];
 
                 var md_lab = of.CreateSymbol();
-                md_lab.DefinedIn = null;
                 md_lab.Name = kvp.Value;
                 md_lab.ObjectType = binary_library.SymbolObjectType.Object;
 

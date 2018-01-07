@@ -37,12 +37,30 @@ namespace binary_library
         protected IBinaryFile file;
 
         protected List<ISymbol> symbols = new List<ISymbol>();
+        protected Dictionary<string, ISymbol> sym_map = new Dictionary<string, ISymbol>();
 
         public BaseSection(IBinaryFile binary_file) { if (binary_file == null) throw new ArgumentNullException(); file = binary_file; }
+        
+        public virtual IEnumerable<ISymbol> GetSymbols() { return symbols; }
 
         public override string ToString()
         {
             return name;
+        }
+
+        public virtual ISymbol FindSymbol(string name)
+        {
+            if (sym_map.TryGetValue(name, out var ret))
+                return ret;
+            else
+                return null;
+        }
+
+        public virtual bool ContainsSymbol(ISymbol sym)
+        {
+            if (sym.DefinedIn != this)
+                return false;
+            return sym_map.ContainsKey(sym.Name);
         }
 
         public virtual string Name
@@ -146,12 +164,16 @@ namespace binary_library
 
         public virtual int AddSymbol(ISymbol sym)
         {
-            if(!symbols.Contains(sym))
-                symbols.Add(sym);
-            if (sym.DefinedIn != this)
-                sym.DefinedIn = this;
-            if (!file.ContainsSymbol(sym))
-                file.AddSymbol(sym);
+            if (sym.DefinedIn == this)
+                return sym.Index;
+
+            if (sym.DefinedIn != null && sym.DefinedIn != this)
+                sym.DefinedIn.RemoveSymbol(sym.Index);
+
+            var s = sym as Symbol;
+            s.definedin = this;
+            sym_map[s.Name] = s;
+            symbols.Add(s);
             return symbols.Count - 1;
         }
 

@@ -285,11 +285,11 @@ namespace libtysila5
             foreach (var extra_sym in cil.extra_labels)
             {
                 var esym = bf.CreateSymbol();
-                esym.DefinedIn = ts;
                 esym.Name = extra_sym.Name;
                 esym.ObjectType = binary_library.SymbolObjectType.Function;
                 esym.Offset = (ulong)extra_sym.Offset;
                 esym.Type = sym_st;
+                ts.AddSymbol(esym);
             }
 
             /* Dump debug */

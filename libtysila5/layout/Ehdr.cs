@@ -57,11 +57,11 @@ namespace libtysila5.layout
 
             /* Symbol */
             var sym = of.CreateSymbol();
-            sym.DefinedIn = os;
             sym.Name = ms.ms.MangleMethod() + "EH";
             sym.ObjectType = binary_library.SymbolObjectType.Object;
             sym.Offset = (ulong)d.Count;
             sym.Type = binary_library.SymbolType.Global;
+            os.AddSymbol(sym);
 
             if (base_m != null && ms.ms.m != base_m)
                 sym.Type = binary_library.SymbolType.Weak;
@@ -75,7 +75,6 @@ namespace libtysila5.layout
                 /* Handler */
                 var hand_sym = of.CreateSymbol();
                 hand_sym.Name = ms.ms.MangleMethod() + "EH" + ehdr.EhdrIdx.ToString();
-                hand_sym.DefinedIn = null;
 
                 var hand_reloc = of.CreateRelocation();
                 hand_reloc.Addend = 0;
@@ -93,7 +92,6 @@ namespace libtysila5.layout
                 {
                     var catch_sym = of.CreateSymbol();
                     catch_sym.Name = ehdr.ClassToken.MangleType();
-                    catch_sym.DefinedIn = null;
 
                     var catch_reloc = of.CreateRelocation();
                     catch_reloc.Addend = 0;
@@ -109,7 +107,6 @@ namespace libtysila5.layout
                 {
                     var filt_sym = of.CreateSymbol();
                     filt_sym.Name = ms.ms.MangleMethod() + "EHF" + ehdr.EhdrIdx.ToString();
-                    filt_sym.DefinedIn = null;
 
                     var filt_reloc = of.CreateRelocation();
                     filt_reloc.Addend = 0;

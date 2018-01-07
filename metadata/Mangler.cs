@@ -156,14 +156,17 @@ namespace metadata
             if (!Munch(s, ref i, "_Z"))
                 throw new ArgumentException();
 
-            if (s == "_ZW20System#2ECollections9ArrayList_7#2Ector_Rv_P1u1t")
-                System.Diagnostics.Debugger.Break();
-            var ts = DemangleType(s, ref i, ms);
+            try
+            {
+                var ts = DemangleType(s, ref i, ms);
+            }
+            catch(Exception)
+            {
+                return false;
+            }
 
             var ret = Munch(s, ref i, "_");
-            if (!ret && i < s.Length)
-                throw new Exception();
-            return Munch(s, ref i, "_");
+            return ret;
         }
 
         private MethodSpec DemangleMethod(string s, ref int i, ManglerState ms, TypeSpec ts, string mangled_name)
