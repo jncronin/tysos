@@ -629,7 +629,7 @@ namespace tysos
         [libsupcs.AlwaysCompile]
         static void MissingFunction(string name)
         {
-            if(arch.DebugOutput != null)
+            if(arch != null && arch.DebugOutput != null)
             {
                 Formatter.Write("Undefined function called: ", arch.DebugOutput);
                 Formatter.Write(name, arch.DebugOutput);
