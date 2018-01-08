@@ -88,7 +88,8 @@ namespace libtysila5.layout
             ti_reloc.DefinedIn = os;
             ti_reloc.Offset = offset;
             ti_reloc.Type = t.GetDataToDataReloc();
-            ti_reloc.References = t.st.GetStringTableSymbol(of);
+            ti_reloc.References = of.CreateSymbol();
+            ti_reloc.References.Name = t.sigt.GetStringTableName();
             of.AddRelocation(ti_reloc);
 
             for (int i = 0; i < ptr_size; i++, offset++)

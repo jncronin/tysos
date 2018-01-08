@@ -611,7 +611,6 @@ namespace libsupcs
                 }
             }
 
-            while (true) ;
             return null;
         }
 
