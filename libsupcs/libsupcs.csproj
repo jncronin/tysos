@@ -69,6 +69,7 @@
     <Compile Include="exceptions.cs" />
     <Compile Include="Locale.cs" />
     <Compile Include="Metadata.cs" />
+    <Compile Include="Monitor.cs" />
     <Compile Include="String.cs" />
     <Compile Include="ConstructorInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

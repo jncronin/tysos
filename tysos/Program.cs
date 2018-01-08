@@ -710,12 +710,15 @@ namespace tysos
                 return arch.CurrentCpu.CurrentThread.thread_id;
         }
 
-        [libsupcs.MethodAlias("_ZW18System#2EThreading6Thread_22CurrentThread_internal_RV6Thread_P0")]
+        [libsupcs.MethodAlias("_ZW18System#2EThreading6Thread_22GetCurrentThreadNative_RV6Thread_P0")]
         [libsupcs.AlwaysCompile]
         static unsafe System.Threading.Thread GetCurThread()
         {
+            if(arch == null || arch.CurrentCpu == null || arch.CurrentCpu.CurrentThread == null)
+                return StartupThread;
+
             return StartupThread;
-            /* Create a new System.Threading.Thread object */
+            /* TODO: Create a new System.Threading.Thread object */
             /*libsupcs.TysosType thread_type = libsupcs.TysosType.ReinterpretAsType(typeof(System.Threading.Thread));
             object t = libsupcs.MemoryOperations.GcMalloc(new IntPtr(thread_type.GetClassSize()));
             UIntPtr addr = libsupcs.CastOperations.ReinterpretAsUIntPtr(t);
