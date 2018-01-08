@@ -792,7 +792,6 @@ namespace libsupcs
 
         [AlwaysCompile]
         [WeakLinkage]
-        [MethodAlias("_ZW6System4Type_20internal_from_handle_RV4Type_P1u1I")]
         [MethodAlias("_ZW6System4Type_17GetTypeFromHandle_RV4Type_P1V17RuntimeTypeHandle")]
         static internal unsafe TysosType internal_from_handle(void *vtbl)
         {

@@ -359,6 +359,14 @@ namespace libtysila5.target.x86
             return new ContentsReg { basereg = r_ebp, disp = cur_stack - c.lv_total_size, size = size };
         }
 
+        protected internal override int GetCTFromTypeForCC(TypeSpec t)
+        {
+            if (t.Equals(t.m.SystemRuntimeTypeHandle) || t.Equals(t.m.SystemRuntimeMethodHandle) ||
+                t.Equals(t.m.SystemRuntimeFieldHandle))
+                return ir.Opcode.ct_int32;
+            return base.GetCTFromTypeForCC(t);
+        }
+
         protected internal override Code AssembleBoxedMethod(MethodSpec ms)
         {
             /* To unbox, we simply add the size of system.object to 
@@ -406,6 +414,16 @@ namespace libtysila5.target.x86_64
             }
 
             return base.GetCCClassFromCT(ct, size, ts, cc);
+        }
+
+        /* runtime handles are void* pointers - we use the following to ensure they are passed in
+         * registers rather than on the stack */
+        protected internal override int GetCTFromTypeForCC(TypeSpec t)
+        {
+            if (t.Equals(t.m.SystemRuntimeTypeHandle) || t.Equals(t.m.SystemRuntimeMethodHandle) ||
+                t.Equals(t.m.SystemRuntimeFieldHandle))
+                return ir.Opcode.ct_int64;
+            return base.GetCTFromTypeForCC(t);
         }
 
         protected override Reg GetRegLoc(Param csite, ref int stack_loc, int cc_next, int ct, TypeSpec ts, string cc)

@@ -85,6 +85,8 @@ namespace libtysila5.target
         protected internal abstract Code AssembleBoxedMethod(metadata.MethodSpec ms);
         protected internal abstract void AssemblePass(Code c);
 
+        protected internal virtual int GetCTFromTypeForCC(metadata.TypeSpec t) { return ir.Opcode.GetCTFromType(t); }
+
         public virtual void InitIntcalls() { }
 
         TargetOptions opts = new TargetOptions();
@@ -542,7 +544,7 @@ namespace libtysila5.target
                 var size = GetSize(v);
                 la_sizes[i] = size;
 
-                var ct = ir.Opcode.GetCTFromType(v);
+                var ct = GetCTFromTypeForCC(v); ir.Opcode.GetCTFromType(v);
                 if (cc_classmap.ContainsKey(ct))
                     ct = cc_classmap[ct];
                 else
