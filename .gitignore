@@ -24,6 +24,8 @@ serial.txt
 char-conversions.cs
 UnicodeData.cs
 category-dump
+tloadkif.h
+tloadkif.c
 
 corlib.dll.ty.sources
 

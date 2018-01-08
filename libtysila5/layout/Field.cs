@@ -190,6 +190,22 @@ namespace libtysila5.layout
             {
                 /* System.String has a special layout in dotnet clr because the fields
                  * length and firstchar are reversed */
+
+                if(field_names != null)
+                {
+                    field_names.Add("__vtbl");
+                    field_names.Add("__mutex_lock");
+                    field_names.Add("m_stringLength");
+                    field_names.Add("m_firstChar");
+                }
+                if(field_types != null)
+                {
+                    field_types.Add(ts.m.SystemIntPtr);
+                    field_types.Add(ts.m.SystemInt64);
+                    field_types.Add(ts.m.SystemInt32);
+                    field_types.Add(ts.m.SystemChar);
+                }
+
                 if(fname == null)
                 {
                     // size = sizeof(Object) + sizeof(int length), aligned to pointer size

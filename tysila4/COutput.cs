@@ -385,8 +385,8 @@ namespace tysila4
             HexFile.writeStr(cmsw, "    *obj = (struct System_String *)malloc(sizeof(struct System_String) + l * sizeof(" +
                 ass.GetCType(tdr.m.SystemChar) + "));");
             HexFile.writeStr(cmsw, "    Init_System_String(*obj);");
-            HexFile.writeStr(cmsw, "    (*obj)->length = l;");
-            HexFile.writeStr(cmsw, "    p = &((*obj)->start_char);");
+            HexFile.writeStr(cmsw, "    (*obj)->m_stringLength = l;");
+            HexFile.writeStr(cmsw, "    p = &((*obj)->m_firstChar);");
             //HexFile.writeStr(cmsw, "    p = (" + ass.GetCType(BaseType_Type.Char) +
             //    " *)(*obj + sizeof(struct System_String));");
             HexFile.writeStr(cmsw, "    for(i = 0; i < l; i++)");
