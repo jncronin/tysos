@@ -109,6 +109,9 @@ clear_pipe:
 	movq	%rbx, %rdi
 	movq	%rsi, %rbx
 
+	/* BOCHS magic break */
+	xchgw	%bx, %bx
+
 	callq	*%rdx
 	callq	*%rbx
 
