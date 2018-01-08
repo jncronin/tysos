@@ -72,6 +72,7 @@
     <Compile Include="String.cs" />
     <Compile Include="ConstructorInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Thread.cs" />
     <Compile Include="TysosAssembly.cs" />
     <Compile Include="TysosField.cs" />
     <Compile Include="TysosMethod.cs" />
