@@ -816,7 +816,15 @@ namespace tysos
             Formatter.Write("] ", arch.DebugOutput);
             Formatter.Write(category, arch.DebugOutput);
             Formatter.Write(": ", arch.DebugOutput);
-            Formatter.WriteLine(message, arch.DebugOutput);
+            Formatter.Write(message, arch.DebugOutput);
+            if (level == 0)
+                Formatter.WriteLine(arch.DebugOutput);
+            else
+            {
+                Formatter.Write(" (", arch.DebugOutput);
+                Formatter.Write((ulong)level, arch.DebugOutput);
+                Formatter.WriteLine(")", arch.DebugOutput);
+            }
         }
     }
 }

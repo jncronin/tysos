@@ -156,8 +156,10 @@ namespace libsupcs
                             }
                             if(is_negative)
                             {
-                                if (nfi != null)
+                                if (nfi != null && nfi.NegativeSign != null)
                                     append_string(ret, nfi.NegativeSign, ref cur_ret, MAX_STR);
+                                else
+                                    append_string(ret, "-", ref cur_ret, MAX_STR);
                             }
 
                             /* build a string before the decimal point */
@@ -198,7 +200,7 @@ namespace libsupcs
 
                             if(p > 0)
                             {
-                                /* Add .0000 after string */
+                                /* Add .0000... after string */
                                 if (nfi != null && nfi.NumberDecimalSeparator != null)
                                     append_string(ret, nfi.NumberDecimalSeparator, ref cur_ret, MAX_STR);
                                 else
@@ -259,7 +261,7 @@ namespace libsupcs
         private static void append_string(char* ret, string s, ref int cur_ret, int mAX_STR)
         {
             int s_idx = 0;
-            while(cur_ret < mAX_STR)
+            while(cur_ret < mAX_STR && s_idx < s.Length)
             {
                 ret[cur_ret++] = s[s_idx++];
             }

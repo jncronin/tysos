@@ -115,7 +115,7 @@ namespace libsupcs
         [AlwaysCompile]
         static unsafe void StringCtor(byte* str, char* value, int startIndex, int length)
         {
-            void* src = value + length;
+            void* src = value + startIndex;
             int len = length * sizeof(char);
             void* dst = str + StringOperations.GetDataOffset();
 
