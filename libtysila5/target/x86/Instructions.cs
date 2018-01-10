@@ -3972,14 +3972,22 @@ namespace libtysila5.target.x86
                     else
                         oc2 = t.psize == 4 ? x86_movzxbd : x86_movzxbq;
                     break;
+                case 4:
+                    oc = x86_lock_cmpxchg_rm32_r32;
+                    oc2 = 0;
+                    break;
+                case 8:
+                    oc = x86_lock_cmpxchg_rm64_r64;
+                    oc2 = 0;
+                    break;
                 default:
                     throw new NotImplementedException();
             }
 
-            var ptr = n.stack_before.Peek(2).reg;
-            var oldval = n.stack_before.Peek(1).reg;
-            var newval = n.stack_before.Peek(0).reg;
-            var dest = n.stack_after.Peek(0).reg;
+            var ptr = n.stack_before.Peek(n.arg_c).reg;
+            var oldval = n.stack_before.Peek(n.arg_b).reg;
+            var newval = n.stack_before.Peek(n.arg_a).reg;
+            var dest = n.stack_after.Peek(n.res_a).reg;
 
             // lock cmpxchg takes the old value in rax,
             //  ptr in first argument and new val in second
@@ -4007,12 +4015,14 @@ namespace libtysila5.target.x86
 
             if (dest is ContentsReg)
             {
-                r.Add(inst(oc2, r_eax, r_eax, n));
+                if (oc2 != 0)
+                    r.Add(inst(oc2, r_eax, r_eax, n));
                 handle_move(dest, r_eax, r, n, c);
             }
-            else
+            else if (oc2 != 0)
                 r.Add(inst(oc2, dest, r_eax, n));
-            
+            else
+                handle_move(dest, r_eax, r, n, c);            
 
             return r;
         }

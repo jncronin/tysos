@@ -381,6 +381,14 @@ namespace libtysila5.target.x86
                         Code.Add(0xb0);
                         Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
                         break;
+                    case x86_lock_cmpxchg_rm32_r32:
+                    case x86_lock_cmpxchg_rm64_r64:
+                        Code.Add(0xf0); // lock before rex
+                        AddRex(Code, Rex(I.p[0].v, I.p[2].mreg, I.p[1].mreg));
+                        Code.Add(0x0f);
+                        Code.Add(0xb1);
+                        Code.AddRange(ModRMSIB(I.p[2].mreg, I.p[1].mreg));
+                        break;
                     case x86_pause:
                         Code.Add(0xf3);
                         Code.Add(0x90);

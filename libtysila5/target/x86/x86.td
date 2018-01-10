@@ -83,6 +83,7 @@ x86_instrs = [
 	"cmp_rm32_imm8",
 	"cmp_rm8_imm8",
 	"lock_cmpxchg_rm8_r8",
+	"lock_cmpxchg_rm32_r32",
 	"pause",
 	"set_rm32",
 	"movsxbd", 	"movsxwd", 	"movzxbd", 	"movzxwd",
@@ -219,6 +220,7 @@ x86_instrs = [
 	"movsxdq_r64_rm32sibscaledisp",
 	"mov_r64_rm64sibscaledisp",
 	"iretq",
+	"lock_cmpxchg_rm64_r64",
 ];
 
 intmap(nspace, assembler, name, "insts", "init_instrs", x86_instrs);

@@ -2126,7 +2126,7 @@ namespace libtysila5.ir
             return stack_after;
         }
 
-        internal static Stack<StackItem> ldind(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts, int src = -1, bool check_type = true)
+        internal static Stack<StackItem> ldind(CilNode n, Code c, Stack<StackItem> stack_before, TypeSpec ts, int src = -1, bool check_type = true, int res = -1)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
 
@@ -2139,7 +2139,13 @@ namespace libtysila5.ir
             else
                 st_src = stack_after.Peek(src);
 
-            stack_after.Push(new StackItem { ts = ts });
+            if (res == -1)
+            {
+                stack_after.Push(new StackItem { ts = ts });
+                res = 0;
+            }
+            else
+                stack_after[stack_after.Count - 1 - res] = new StackItem { ts = ts };
 
             var ct_src = st_src.ct;
 
@@ -2155,7 +2161,7 @@ namespace libtysila5.ir
                 }
             }
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldind, ct = Opcode.GetCTFromType(ts), vt_size = c.t.GetSize(ts), imm_l = ts.IsSigned ? 1 : 0, stack_before = stack_before, stack_after = stack_after, arg_a = src });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldind, ct = Opcode.GetCTFromType(ts), vt_size = c.t.GetSize(ts), imm_l = ts.IsSigned ? 1 : 0, stack_before = stack_before, stack_after = stack_after, arg_a = src, res_a = res });
 
             return stack_after;
         }

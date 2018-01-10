@@ -100,6 +100,38 @@ namespace libtysila5.ir
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_28GetTypedReferenceValueOffset_Ri_P0"] = typedref_ValueOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_27GetTypedReferenceTypeOffset_Ri_P0"] = typedref_TypeOffset;
+
+            intcalls["_ZW18System#2EThreading11Interlocked_16_CompareExchange_Rv_P3u1Tu1Tu1O"] = threading_CompareExchange_TypedRef;
+        }
+
+        private static Stack<StackItem> threading_CompareExchange_TypedRef(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            /* _CompareExchange(TypedReference location1, TypedReference Value, object comparand) */
+
+            // Convert in-place location1 to its ptr
+            stack_before = typedref_ValueOffset(n, c, stack_before);
+            stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, ir.Opcode.ct_intptr, 3, -1, 2);
+            stack_before = ldind(n, c, stack_before, c.ms.m.SystemIntPtr, 2, false, 2);
+
+            // Convert in-place Value to its ptr then dereference
+            stack_before = typedref_ValueOffset(n, c, stack_before);
+            stack_before = binnumop(n, c, stack_before, cil.Opcode.SingleOpcodes.add, ir.Opcode.ct_intptr, 2, -1, 1);
+            stack_before = ldind(n, c, stack_before, c.ms.m.SystemIntPtr, 1, false, 1);
+            stack_before = ldind(n, c, stack_before, c.ms.m.SystemObject, 1, false, 1);
+
+            // Do synchronized instruction (arga = value, argb = comparand, argc = location, res = new)
+            var stack_after = new Stack<StackItem>(stack_before);
+            stack_after.Pop();
+            stack_after.Pop();
+            stack_after.Push(new StackItem { ts = c.ms.m.SystemObject });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_syncvalcompareandswap,
+                imm_l = c.t.GetPointerSize(), imm_ul = 0, stack_before = stack_before, stack_after = stack_after, 
+                arg_a = 1, arg_b = 0, arg_c = 2, res_a = 0 });
+
+            // store res back to *location1
+            stack_after = stind(n, c, stack_after, c.t.GetPointerSize());
+
+            return stack_after;
         }
 
         private static Stack<StackItem> typedref_ValueOffset(CilNode n, Code c, Stack<StackItem> stack_before)
