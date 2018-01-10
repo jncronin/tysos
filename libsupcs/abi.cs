@@ -495,5 +495,11 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static unsafe extern int GetDataOffset();
+
+        internal static unsafe char* GetChars(string s)
+        {
+            byte* s2 = (byte*)CastOperations.ReinterpretAsPointer(s);
+            return (char*)(s2 + GetDataOffset());
+        }
     }
 }
