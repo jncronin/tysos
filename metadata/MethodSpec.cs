@@ -169,14 +169,32 @@ namespace metadata
         public override string ToString()
         {
             if (m == null)
-                return "MethodSpec";
-            return m.MangleMethod(this);
+                return is_field ? "FieldSpec" : "MethodSpec";
+            return MangleMethod();
         }
 
         public string MangleMethod()
         {
             if (mangle_override != null)
                 return mangle_override;
+            if(is_field)
+            {
+                StringBuilder sb = new StringBuilder();
+                if(type != null)
+                {
+                    sb.Append(type.MangleType());
+                    sb.Append(".");
+                }
+                if (name_override != null)
+                    sb.Append(name_override);
+                else if (m == null)
+                    sb.Append("field");
+                else
+                {
+                    sb.Append(m.GetStringEntry(MetadataStream.tid_Field, mdrow, 1));
+                }
+                return sb.ToString();
+            }
             return m.MangleMethod(this);
         }
 

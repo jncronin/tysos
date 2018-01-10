@@ -95,7 +95,7 @@ namespace libtysila5.layout
             metadata.MethodSpec fs, target.Target t, bool is_static = false)
         {
             int align = 1;
-            if(ts.SimpleType == 0)
+            if(ts.SimpleType == 0 || ts.SimpleType == 0xe)      // class or string
                 align = GetTypeAlignment(ts, t, is_static);
 
             /* Iterate through methods looking for requested
@@ -183,8 +183,10 @@ namespace libtysila5.layout
             List<TypeSpec> field_types = null, List<string> field_names = null)
         {
             int align = 1;
-            if (ts.SimpleType == 0)
+            if (ts.SimpleType == 0) // class
                 align = GetTypeAlignment(ts, t, is_static);
+            if (ts.SimpleType == 0xe && !is_static) // string
+                align = t.GetPointerSize();
 
             if(ts.Equals(ts.m.SystemString) && !is_static)
             {
