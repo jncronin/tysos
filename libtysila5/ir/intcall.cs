@@ -39,6 +39,7 @@ namespace libtysila5.ir
             intcalls["_Zu1S_9get_Chars_Rc_P2u1ti"] = string_getChars;
             intcalls["_Zu1S_10get_Length_Ri_P1u1t"] = string_getLength;
             intcalls["_Zu1S_19InternalAllocateStr_Ru1S_P1i"] = string_InternalAllocate;
+            intcalls["_Zu1S_18FastAllocateString_Ru1S_P1i"] = string_InternalAllocate;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_3Add_Ru1I_P2u1Iu1I"] = intptr_Add;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_3Mul_Ru1I_P2u1Iu1I"] = intptr_Mul;
