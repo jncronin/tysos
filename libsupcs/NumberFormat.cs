@@ -42,6 +42,35 @@ namespace libsupcs
             return FormatInteger(v2, false, 4, fmt, nfi);
         }
 
+        [WeakLinkage]
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System6Number_11FormatInt32_Ru1S_P3iu1SU22System#2EGlobalization16NumberFormatInfo")]
+        static string FormatInt32(int v, string fmt, NumberFormatInfo nfi)
+        {
+            byte* v2 = stackalloc byte[8];
+            *(long*)v2 = v;
+            return FormatInteger(v2, true, 4, fmt, nfi);
+        }
+
+        [WeakLinkage]
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System6Number_12FormatUInt64_Ru1S_P3yu1SU22System#2EGlobalization16NumberFormatInfo")]
+        static string FormatUInt64(ulong v, string fmt, NumberFormatInfo nfi)
+        {
+            byte* v2 = stackalloc byte[8];
+            *(ulong*)v2 = v;
+            return FormatInteger(v2, false, 8, fmt, nfi);
+        }
+
+        [WeakLinkage]
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System6Number_11FormatInt64_Ru1S_P3xu1SU22System#2EGlobalization16NumberFormatInfo")]
+        static string FormatInt64(long v, string fmt, NumberFormatInfo nfi)
+        {
+            byte* v2 = stackalloc byte[8];
+            *(long*)v2 = v;
+            return FormatInteger(v2, true, 8, fmt, nfi);
+        }
 
         /* The main format function */
         static string FormatInteger(byte *v, bool is_signed, int blen, string fmt, NumberFormatInfo nfi)
@@ -185,7 +214,7 @@ namespace libsupcs
                     case 'H':
                     case 'h':
                         {
-                            int dcount = get_number_from_fmt_string(f, cur_fmt, l_fmt, out cur_fmt);
+                            int dcount = get_number_from_fmt_string(f, cur_fmt + 1, l_fmt, out cur_fmt);
                             if (dcount == -1)
                                 dcount = blen * 2;
                             string digits;
@@ -239,7 +268,7 @@ namespace libsupcs
         private static int get_exponent_u(ulong us)
         {
             int ret = 0;
-            while(us < 10)
+            while(us >= 10)
             {
                 us /= 10;
                 ret++;
