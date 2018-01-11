@@ -121,5 +121,13 @@ namespace libsupcs
 
             MemoryOperations.MemCpy(dst, src, len);
         }
+
+        [MethodAlias("_Zu1S_28InternalUseRandomizedHashing_Rb_P0")]
+        [AlwaysCompile]
+        [WeakLinkage]
+        static bool InternalUseRandomizedHashing()
+        {
+            return false;
+        }
     }
 }
