@@ -213,18 +213,18 @@ namespace libsupcs
                         }
                         break;
 
-                    case 'H':
-                    case 'h':
+                    case 'X':
+                    case 'x':
                         {
                             int dcount = get_number_from_fmt_string(f, cur_fmt + 1, l_fmt, out cur_fmt);
                             if (dcount == -1)
                                 dcount = blen * 2;
                             string digits;
-                            if (c_f == 'H')
+                            if (c_f == 'X')
                                 digits = uppercaseDigits;
                             else
                                 digits = lowercaseDigits;
-                            for(int i = 0; i < dcount; i++)
+                            for(int i = dcount - 1; i >= 0; i--)
                             {
                                 if(i > (blen * 2))
                                 {
@@ -233,9 +233,9 @@ namespace libsupcs
                                 }
                                 else
                                 {
-                                    byte b = v[i * 2];
+                                    byte b = v[i / 2];
                                     if ((i % 2) == 1)
-                                        b <<= 4;
+                                        b >>= 4;
                                     else
                                         b &= 0xf;
                                     if (cur_ret < MAX_STR)
