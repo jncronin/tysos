@@ -114,11 +114,11 @@ namespace libsupcs
             // Get number of metadata references and pointers to each
             var ti_ptr = (void**)ptr;
 
-            // skip over enum underlying type field and tysos type pointer
-            ti_ptr += 2;
+            // skip over type, enum underlying type field, tysos type pointer and cctor
+            ti_ptr += 4;
 
-            var mdref_count = *(int*)(ti_ptr + 1);
-            var mdref_arr = ti_ptr + 2;
+            var mdref_count = *(int*)(ti_ptr);
+            var mdref_arr = ti_ptr + 1;
             var sig_ptr = (byte*)(mdref_arr + mdref_count);
 
             System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: found " + mdref_count.ToString() + " metadata references");

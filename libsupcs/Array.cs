@@ -164,6 +164,7 @@ namespace libsupcs
         [AlwaysCompile]
         static unsafe void InitializeArray(void *arr, void *fld_handle)
         {
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "InitializeArray: arr: " + ((ulong)arr).ToString("X16") + ", fld_handle: " + ((ulong)fld_handle).ToString("X16"));
             void* dst = *(void**)((byte*)arr + ArrayOperations.GetInnerArrayOffset());
 
             /* Get total number of elements, and hence data size */

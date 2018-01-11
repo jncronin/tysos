@@ -95,7 +95,7 @@ namespace libtysila5
 
         private void AddTypeSpecFields(TypeSpec ts, List<byte> str_tab, Target t)
         {
-            /* For types we add two special fields:
+            /* For types we add three special fields:
              * 
              * First: If this is an enum, its a pointer to the vtable for the underlying type
              * If it is a zero-based array, its a pointer to the vtable for the element type
@@ -104,6 +104,9 @@ namespace libtysila5
              * 
              * Second special field is initialized to zero, and is used at runtime
              * to hold the pointer to the System.Type instance
+             * 
+             * Third is a pointer to the static class constructor (.cctor) if any - this is
+             * used to implement System.Runtime.CompilerServices.RunClassConstructor(vtbl)
              */
 
             if (ts.Unbox.IsEnum)
@@ -131,10 +134,22 @@ namespace libtysila5
                     str_tab.Add(0);
             }
 
+            // 2nd field
             for (int i = 0; i < t.psize; i++)
                 str_tab.Add(0);
-            /*for (int i = 0; i < t.psize; i++)
-                str_tab.Add(0);*/
+
+            // 3rd field
+            if(ts.stype == TypeSpec.SpecialType.None && !ts.IsGenericTemplate)
+            {
+                var cctor = ts.m.GetMethodSpec(ts, ".cctor", 0, null, false);
+                if (cctor != null)
+                {
+                    sig_metadata_addrs[str_tab.Count] = cctor.MangleMethod();
+                    t.r.MethodRequestor.Request(cctor);
+                }
+            }
+            for (int i = 0; i < t.psize; i++)
+                str_tab.Add(0);
         }
 
         private void AddFieldSpecFields(MethodSpec fs, List<byte> str_tab, target.Target t)

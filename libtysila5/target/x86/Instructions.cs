@@ -636,22 +636,32 @@ namespace libtysila5.target.x86
                  * Get return eip
                  *      mov_r32_rm32/64 rcx, [rsp]
                  *      
+                 * Is this cctor was called by a direct call (i.e. [rcx-6] == 0xe8) then:
+                 * 
                  * Overwrite the preceeding 5 bytes with nops
                  *      mov_rm32_imm32 [rcx - 5], 0x00401f0f ; 4 byte nop
                  *      mov_rm8_imm8 [rcx - 1], 0x90 ; 1 byte nop
+                 *      
+                 * Else skip to here (this is the case where we were called indirectly from
+                 *  System.Runtime.CompilerServices._RunClassConstructor())
                  */
+                
                 r.Add(inst(x86_mov_rm32_imm32, r_ecx, new ir.Param { t = ir.Opcode.vl_str, str = c.ms.type.MangleType() + "S" }, n));
                 r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, 0, 2, n));
                 r.Add(inst(t.psize == 4 ? x86_mov_r32_rm32 : x86_mov_r64_rm64, r_ecx, new ContentsReg { basereg = r_esp }, n));
+                r.Add(inst(x86_cmp_rm8_imm8, new ContentsReg { basereg = r_ecx, disp = -6, size = 1 }, 0xe8, n));
+                int end_lab = c.next_mclabel--;
+                r.Add(inst_jmp(x86_jcc_rel32, end_lab, ir.Opcode.cc_ne, n));
                 //r.Add(inst(x86_mov_rm32disp_imm32, r_ecx, -5, 0x00401f0f, n));
                 r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -1, 0x90, n));
                 r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -2, 0x90, n));
                 r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -3, 0x90, n));
                 r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -4, 0x90, n));
                 r.Add(inst(x86_mov_rm8disp_imm32, r_ecx, -5, 0x90, n));
+                r.Add(inst(Generic.g_mclabel, new ir.Param { t = ir.Opcode.vl_br_target, v = end_lab }, n));
             }
 
-            if(c.ms.CallingConvention == "isrec")
+            if (c.ms.CallingConvention == "isrec")
             {
                 // pop error code from stack
                 r.Add(inst(t.psize == 4 ? x86_add_rm32_imm8 : x86_add_rm64_imm8,

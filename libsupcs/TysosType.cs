@@ -86,6 +86,11 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [ReinterpretAsMethod]
+        public static unsafe extern RuntimeTypeHandle ReinterpretAsTypeHandle(void* obj);
+
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
         public static unsafe extern TysosMethod ReinterpretAsMethodInfo(void* obj);
 
         public virtual int GetClassSize() { throw new NotImplementedException(); }
@@ -452,6 +457,15 @@ namespace libsupcs
             throw new InvalidOperationException();
         }
 
+        public unsafe override RuntimeTypeHandle TypeHandle
+        {
+            get
+            {
+                var vtbl = *GetImplOffset();
+                return ReinterpretAsTypeHandle(vtbl);
+            }
+        }
+
         public bool IsUnmanagedPointer { get { return tspec.stype == metadata.TypeSpec.SpecialType.Ptr; } }
         public bool IsZeroBasedArray { get { return tspec.stype == metadata.TypeSpec.SpecialType.SzArray; } }
         public bool IsManagedPointer { get { return tspec.stype == metadata.TypeSpec.SpecialType.MPtr; } }
@@ -521,6 +535,46 @@ namespace libsupcs
             void* vtbl = *obj;
 
             return internal_from_handle(vtbl);
+        }
+
+        [MethodAlias("_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_20_RunClassConstructor_Rv_P1U6System11RuntimeType")]
+        [AlwaysCompile]
+        static unsafe void RuntimeHelpers__RunClassConstructor(void *vtbl)
+        {
+            // Ensure ptr is valid
+            if (vtbl == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "RuntimeHelpers._RunClassConstructor: called with null pointer");
+                throw new Exception("Invalid type handle");
+            }
+
+            // dereference vtbl pointer to get ti ptr
+            var ptr = *((void**)vtbl);
+            if (ptr == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "RuntimeHelpers._RunClassConstructor: called with null pointer");
+                throw new Exception("Invalid type handle");
+            }
+
+            if ((*((int*)ptr) & 0xf) != 0)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "RuntimeHelpers._RunClassConstructor: called with invalid runtimehandle: " +
+                    (*((int*)ptr)).ToString() + " at " + ((ulong)ptr).ToString("X16"));
+                System.Diagnostics.Debugger.Break();
+                throw new Exception("Invalid type handle");
+            }
+
+            var ti_ptr = (void**)ptr;
+
+            var cctor_addr = ti_ptr[3];
+            if(cctor_addr != null)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "RuntimeHelpers._RunClassConstructor: running static constructor at " +
+                    ((ulong)cctor_addr).ToString("X16"));
+                OtherOperations.CallI(cctor_addr);
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "RuntimeHelpers._RunClassConstructor: finished running static constructor at " +
+                    ((ulong)cctor_addr).ToString("X16"));
+            }
         }
 
         internal unsafe void** GetImplOffset()
