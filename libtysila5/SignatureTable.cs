@@ -95,9 +95,9 @@ namespace libtysila5
 
         private void AddTypeSpecFields(TypeSpec ts, List<byte> str_tab, Target t)
         {
-            /* For types we add one special field:
+            /* For types we add two special fields:
              * 
-             * If this is an enum, its a pointer to the vtable for the underlying type
+             * First: If this is an enum, its a pointer to the vtable for the underlying type
              * If it is a zero-based array, its a pointer to the vtable for the element type
              * If its a boxed value type, its the size of the value type
              * Else zero
@@ -133,8 +133,8 @@ namespace libtysila5
 
             for (int i = 0; i < t.psize; i++)
                 str_tab.Add(0);
-            for (int i = 0; i < t.psize; i++)
-                str_tab.Add(0);
+            /*for (int i = 0; i < t.psize; i++)
+                str_tab.Add(0);*/
         }
 
         private void AddFieldSpecFields(MethodSpec fs, List<byte> str_tab, target.Target t)

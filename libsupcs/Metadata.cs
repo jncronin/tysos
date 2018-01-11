@@ -87,6 +87,7 @@ namespace libsupcs
 
         internal static unsafe metadata.TypeSpec GetTypeSpec(void* ptr)
         {
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: called with vtbl " + ((ulong)ptr).ToString("X16"));
             // Ensure ptr is valid
             if (ptr == null)
             {
@@ -121,7 +122,7 @@ namespace libsupcs
             var sig_ptr = (byte*)(mdref_arr + mdref_count);
 
             System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: found " + mdref_count.ToString() + " metadata references");
-            System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: parsing signature at " + ((ulong)sig_ptr).ToString());
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "Metadata.GetTypeSpec: parsing signature at " + ((ulong)sig_ptr).ToString("X16"));
 
             // Parse the actual signature
             return ParseTypeSpecSignature(ref sig_ptr, mdref_count, mdref_arr, null, null);
