@@ -323,8 +323,13 @@ namespace libsupcs
                     return nspace;
 
                 var ts = tspec;
-                nspace = ts.m.GetStringEntry(metadata.MetadataStream.tid_TypeDef,
-                    ts.tdrow, 2);
+                if (ts == null)
+                    nspace = "System";
+                else
+                {
+                    nspace = ts.m.GetStringEntry(metadata.MetadataStream.tid_TypeDef,
+                        ts.tdrow, 2);
+                }
 
                 return nspace;
             }
@@ -358,8 +363,13 @@ namespace libsupcs
                     return name;
 
                 var ts = tspec;
-                name = ts.m.GetStringEntry(metadata.MetadataStream.tid_TypeDef,
-                    ts.tdrow, 1);
+                if (ts == null)
+                    name = "Void";
+                else
+                {
+                    name = ts.m.GetStringEntry(metadata.MetadataStream.tid_TypeDef,
+                        ts.tdrow, 1);
+                }
 
                 return name;
             }
