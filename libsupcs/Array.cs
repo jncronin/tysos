@@ -28,6 +28,80 @@ namespace libsupcs
 {
     class Array
     {
+        [MethodAlias("_ZW6System5Array_4Copy_Rv_P6V5ArrayiV5Arrayiib")]
+        [WeakLinkage]
+        [AlwaysCompile]
+        static unsafe void Copy(void* srcArr, int srcIndex, void* dstArr, int dstIndex, int length,
+            bool reliable)
+        {
+            /* Ensure arrays are valid */
+            if (srcArr == null || dstArr == null)
+                throw new ArgumentNullException();
+
+            /* Ensure length is valid */
+            if (length < 0)
+                throw new ArgumentOutOfRangeException();
+
+            /* Ensure both arrays are of the same rank */
+            var srcRank = *(int*)((byte*)srcArr + ArrayOperations.GetRankOffset());
+            var dstRank = *(int*)((byte*)dstArr + ArrayOperations.GetRankOffset());
+            if (srcRank != dstRank)
+                throw new RankException();
+
+            /* Get source and dest element types */
+            var srcET = *(void**)((byte*)srcArr + ArrayOperations.GetElemTypeOffset());
+            var dstET = *(void**)((byte*)dstArr + ArrayOperations.GetElemTypeOffset());
+
+            /* See if we can do a quick copy */
+            bool can_quick_copy = false;
+            if (srcET == dstET)
+                can_quick_copy = true;
+            else if (TysosType.CanCast(srcET, dstET))
+                can_quick_copy = true;
+            else if (reliable)
+                throw new ArrayTypeMismatchException();   /* ConstrainedCopy requires types to be the same or derived */
+            else
+                can_quick_copy = false;
+
+            /* For now we don't handle arrays with lobounds != 0 */
+            var srcLobounds = *(int**)((byte*)srcArr + ArrayOperations.GetLoboundsOffset());
+            var dstLobounds = *(int**)((byte*)dstArr + ArrayOperations.GetLoboundsOffset());
+
+            for (int i = 0; i < srcRank; i++)
+            {
+                if (srcLobounds[i] != 0)
+                    throw new NotImplementedException();
+                if (dstLobounds[i] != 0)
+                    throw new NotImplementedException();
+            }
+            if (srcIndex < 0 || dstIndex < 0)
+                throw new ArgumentOutOfRangeException();
+
+            /* Ensure we don't overflow */
+            var src_len = GetLength(srcArr);
+            if (srcIndex + length > src_len)
+                throw new ArgumentOutOfRangeException();
+            var dst_len = GetLength(dstArr);
+            if (dstIndex + length > dst_len)
+                throw new ArgumentOutOfRangeException();
+
+            if (can_quick_copy)
+            {
+                /* Elem size of both arrays is guaranteed to be the same and we can do a shallow copy */
+                var e_size = *(int*)((byte*)srcArr + ArrayOperations.GetElemSizeOffset());
+
+                var src_ia = *(byte**)((byte*)srcArr + ArrayOperations.GetInnerArrayOffset());
+                var dst_ia = *(byte**)((byte*)dstArr + ArrayOperations.GetInnerArrayOffset());
+
+                MemoryOperations.MemMove(dst_ia + dstIndex * e_size, src_ia + srcIndex * e_size, length * e_size);
+            }
+            else
+            {
+                /* TODO: implement as per System.Array.Copy() semantics */
+                throw new NotImplementedException();
+            }
+        }
+
         [MethodAlias("_ZW6System5Array_8FastCopy_Rb_P5V5ArrayiV5Arrayii")]
         [WeakLinkage]
         [AlwaysCompile]

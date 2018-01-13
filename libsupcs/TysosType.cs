@@ -607,6 +607,67 @@ namespace libsupcs
             return a.tspec.Equals(b.tspec);
         }
 
+        internal static unsafe bool CanCast(void *from_vtbl, void *to_vtbl)
+        {
+            void* from_type;
+            void* to_type;
+
+            if (from_vtbl == null)
+                throw new InvalidCastException("CastClassEx: from_vtbl is null");
+            from_type = *(void**)from_vtbl;
+            to_type = *(void**)to_vtbl;
+
+            if (from_type == to_type)
+                return true;
+
+            /* If both are arrays with non-null elem types, do an array-element-compatible-with
+             *  (CIL I:8.7.1) comparison */
+            void* from_extends = *(void**)((byte*)from_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            void* to_extends = *(void**)((byte*)to_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            if (from_extends == OtherOperations.GetStaticObjectAddress("_ZW6System5Array") &&
+                from_extends == to_extends)
+            {
+                void* from_et = *(((void**)from_type) + 1);
+                void* to_et = *(((void**)to_type) + 1);
+
+                if (from_et != null && to_et != null)
+                {
+                    from_et = get_array_element_compatible_with_vt(from_et);
+                    to_et = get_array_element_compatible_with_vt(to_et);
+
+                    if (from_et == to_et)
+                        return true;
+                    else
+                        return false;
+                }
+            }
+
+            /* Check whether we extend the type */
+            void* cur_extends_vtbl = *(void**)((byte*)from_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            while (cur_extends_vtbl != null)
+            {
+                if (cur_extends_vtbl == to_vtbl)
+                    return true;
+                cur_extends_vtbl = *(void**)((byte*)cur_extends_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+            }
+
+            /* Check whether we implement the type as an interface */
+            void** cur_iface_ptr = *(void***)((byte*)from_vtbl + ClassOperations.GetVtblInterfacesPtrOffset());
+
+            if (cur_iface_ptr != null)
+            {
+                while (*cur_iface_ptr != null)
+                {
+                    if (*cur_iface_ptr == to_type)
+                        return true;
+
+                    cur_iface_ptr += 2;
+                }
+            }
+
+            return false;
+        }
+
         [AlwaysCompile]
         [MethodAlias("castclassex")]
         internal static unsafe void *CastClassEx(void *from_obj, void *to_vtbl)
@@ -619,65 +680,11 @@ namespace libsupcs
             if (to_vtbl == null)
                 throw new InvalidCastException("CastClassEx: to_vtbl is null");
 
-            void* from_type;
-            void* from_vtbl;
-            void* to_type;
-
-            from_vtbl = *(void**)from_obj;
-            if (from_vtbl == null)
-                throw new InvalidCastException("CastClassEx: from_vtbl is null");
-            from_type = *(void**)from_vtbl;
-            to_type = *(void**)to_vtbl;
-
-            if (from_type == to_type)
+            var from_vtbl = *(void**)from_obj;
+            if (CanCast(from_vtbl, to_vtbl))
                 return from_obj;
-
-            /* If both are arrays with non-null elem types, do an array-element-compatible-with
-             *  (CIL I:8.7.1) comparison */
-            void* from_extends = *(void**)((byte*)from_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
-            void* to_extends = *(void**)((byte*)to_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
-            if(from_extends == OtherOperations.GetStaticObjectAddress("_ZW6System5Array") &&
-                from_extends == to_extends)
-            {
-                void* from_et = *(((void**)from_type) + 1);
-                void* to_et = *(((void**)to_type) + 1);
-
-                if(from_et != null && to_et != null)
-                {
-                    from_et = get_array_element_compatible_with_vt(from_et);
-                    to_et = get_array_element_compatible_with_vt(to_et);
-
-                    if (from_et == to_et)
-                        return from_obj;
-                    else
-                        return null;
-                }
-            }
-
-            /* Check whether we extend the type */
-            void* cur_extends_vtbl = *(void**)((byte*)from_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
-            while (cur_extends_vtbl != null)
-            {
-                if (cur_extends_vtbl == to_vtbl)
-                    return from_obj;
-                cur_extends_vtbl = *(void**)((byte*)cur_extends_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
-            }
-
-            /* Check whether we implement the type as an interface */
-            void** cur_iface_ptr = *(void***)((byte*)from_vtbl + ClassOperations.GetVtblInterfacesPtrOffset());
-
-            if (cur_iface_ptr != null)
-            {
-                while (*cur_iface_ptr != null)
-                {
-                    if (*cur_iface_ptr == to_type)
-                        return from_obj;
-
-                    cur_iface_ptr += 2;
-                }
-            }
-
-            return null;
+            else
+                return null;
         }
 
         private static unsafe void* get_array_element_compatible_with_vt(void* et)
