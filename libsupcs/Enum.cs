@@ -62,19 +62,14 @@ namespace libsupcs
 
         static internal unsafe TysosType GetUnderlyingEnumType(TysosType enum_type)
         {
-            return GetUnderlyingEnumType(CastOperations.ReinterpretAsPointer(enum_type));
+            void* e_type_vtbl = *enum_type.GetImplOffset();
+
+            return TysosType.internal_from_handle(GetUnderlyingEnumTypeVtbl(*(void**)e_type_vtbl));
         }
 
-        static internal unsafe TysosType GetUnderlyingEnumType(void *enum_type)
+        static internal unsafe void* GetUnderlyingEnumTypeVtbl(void* enum_ti)
         {
-            return TysosType.internal_from_handle(GetUnderlyingEnumTypeVtbl(enum_type));
-        }
-
-        static internal unsafe void* GetUnderlyingEnumTypeVtbl(void* enum_type)
-        {
-            void* enum_vtbl = *(void**)((byte*)enum_type + ClassOperations.GetSystemTypeImplOffset());
-            void** enum_ti = *(void***)enum_vtbl;
-            return *(enum_ti + 1);
+            return *((void**)enum_ti + 1);
         }
 
         [MethodAlias("_ZW6System4Enum_25InternalGetCorElementType_RU19System#2EReflection14CorElementType_P1u1t")]
@@ -96,11 +91,9 @@ namespace libsupcs
         [AlwaysCompile]
         static unsafe void get_enum_info(TysosType enumType, out MonoEnumInfo info)
         {
-            void* et_obj = CastOperations.ReinterpretAsPointer(enumType);
-
             MonoEnumInfo ret = new MonoEnumInfo();
 
-            ret.utype = GetUnderlyingEnumType(et_obj);
+            ret.utype = GetUnderlyingEnumType(enumType);
 
             if (!ret.utype.Equals(typeof(int)))
             {

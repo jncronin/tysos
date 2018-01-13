@@ -36,6 +36,8 @@ namespace libsupcs
     public unsafe class TysosType : System.Type
     {
         metadata.TypeSpec ts = null;
+
+        /** <summary>holds a pointer to the vtbl represented by this type</summary> */
         void* _impl;
 
         internal metadata.TypeSpec tspec
