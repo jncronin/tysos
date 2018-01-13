@@ -2569,7 +2569,15 @@ namespace libtysila5.ir
                 {
                     intcall_delegate intcall;
 
-                    if (is_calli == false && intcalls.TryGetValue(mangled_meth, out intcall))
+                    /* mangle a non-generic version of the function to support generic method intcalls */
+                    string ic_mangled_meth = mangled_meth;
+                    if(ms.IsInstantiatedGenericMethod)
+                    {
+                        var non_g_ms = new metadata.MethodSpec { type = ms.type, gmparams = null, m = ms.m, mdrow = ms.mdrow, msig = ms.msig };
+                        ic_mangled_meth = non_g_ms.m.MangleMethod(non_g_ms);
+                    }
+
+                    if (is_calli == false && intcalls.TryGetValue(ic_mangled_meth, out intcall))
                     {
                         var r = intcall(n, c, stack_before);
                         if (r != null)
