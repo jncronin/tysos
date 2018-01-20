@@ -31,9 +31,10 @@ using System.Runtime.CompilerServices;
 
 namespace libsupcs
 {
+    [ExtendsOverride("_ZW6System11RuntimeType")]
     [VTableAlias("__tysos_type_vt")]
     [SpecialType]
-    public unsafe class TysosType : System.Type
+    public unsafe class TysosType : Type
     {
         metadata.TypeSpec ts = null;
 
@@ -44,7 +45,7 @@ namespace libsupcs
         {
             get
             {
-                if(ts == null)
+                if (ts == null)
                 {
                     ts = Metadata.GetTypeSpec(this);
                 }
@@ -222,6 +223,34 @@ namespace libsupcs
             throw new NotImplementedException();
         }
 
+        [MethodReferenceAlias("_ZW6System11RuntimeType_15MakeGenericType_RV4Type_P2u1tu1ZV4Type")]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        static extern Type RT_MakeGenericType(object _this, object _args);
+
+        public unsafe override Type MakeGenericType(params Type[] typeArguments)
+        {
+            /* We can provide fast implementations for some well-known types */
+            void* this_vtbl = *(void**)((byte*)CastOperations.ReinterpretAsPointer(this) + ClassOperations.GetSystemTypeImplOffset());
+            int arg_count = typeArguments.Length;
+            void* arg1 = null;
+            if (arg_count >= 1)
+                arg1 = *(void**)((byte*)CastOperations.ReinterpretAsPointer(typeArguments[0]) + ClassOperations.GetSystemTypeImplOffset());
+
+            // IEquatable<string>
+            if (this_vtbl == OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1") && arg_count == 1 &&
+                arg1 == OtherOperations.GetStaticObjectAddress("_Zu1S"))
+            {
+                return internal_from_handle(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1u1S"));
+            }
+
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "MakeGenericType: no fast implementation for");
+            System.Diagnostics.Debugger.Log((int)this_vtbl, "libsupcs", "this_vtbl");
+            System.Diagnostics.Debugger.Log(arg_count, "libsupcs", "arg_count");
+            System.Diagnostics.Debugger.Log((int)arg1, "libsupcs", "arg1");
+
+            return RT_MakeGenericType(this, typeArguments);
+        }
+
         private bool MatchBindingFlags(System.Reflection.MethodInfo mi, System.Reflection.BindingFlags bindingAttr)
         {
             bool match = false;
@@ -384,8 +413,20 @@ namespace libsupcs
 
         public virtual TysosType UnboxedType { get { throw new NotImplementedException(); } }
 
-        public override bool IsGenericType { get { throw new NotImplementedException(); } }
-        public override bool IsGenericTypeDefinition { get { throw new NotImplementedException(); } }
+        public override bool IsGenericType
+        {
+            get
+            {
+                void* ti = **(void***)((byte*)CastOperations.ReinterpretAsPointer(this) + ClassOperations.GetSystemTypeImplOffset());
+                return *(int*)((void**)ti + 1) != 0;        // IsGenericType is true for instantiated and non-instantiated generic types
+            }
+        }
+        public unsafe override bool IsGenericTypeDefinition {
+            get {
+                void* ti = **(void***)((byte*)CastOperations.ReinterpretAsPointer(this) + ClassOperations.GetSystemTypeImplOffset());
+                return *(int*)((void**)ti + 1) == 1;
+            }
+        }
 
         [MethodAlias("_ZW6System4Type_18type_is_subtype_of_Rb_P3V4TypeV4Typeb")]
         [AlwaysCompile]
@@ -396,7 +437,7 @@ namespace libsupcs
 
             var cur_sub_vt = *(void**)((byte*)sub_vt + ClassOperations.GetVtblExtendsVtblPtrOffset());
 
-            while(cur_sub_vt != null)
+            while (cur_sub_vt != null)
             {
                 if (cur_sub_vt == super_vt)
                     return true;
@@ -404,7 +445,7 @@ namespace libsupcs
                 cur_sub_vt = *(void**)((byte*)cur_sub_vt + ClassOperations.GetVtblExtendsVtblPtrOffset());
             }
 
-            if(check_interfaces)
+            if (check_interfaces)
                 throw new NotImplementedException();
 
             return false;
@@ -422,7 +463,7 @@ namespace libsupcs
 
             // check extends chain
             var cur_from_vtbl = from_vtbl;
-            while(cur_from_vtbl != null)
+            while (cur_from_vtbl != null)
             {
                 if (cur_from_vtbl == cur_vtbl)
                     return true;
@@ -431,7 +472,7 @@ namespace libsupcs
 
             // check interfaces
             var cur_from_iface_ptr = *(void***)((byte*)cur_vtbl + ClassOperations.GetVtblInterfacesPtrOffset());
-            while(*cur_from_iface_ptr != null)
+            while (*cur_from_iface_ptr != null)
             {
                 if (*cur_from_iface_ptr == cur_vtbl)
                     return true;
@@ -442,7 +483,7 @@ namespace libsupcs
             var cur_ts = cur_type.tspec;
             var from_ts = cur_type.tspec;
 
-            if(cur_ts.stype == metadata.TypeSpec.SpecialType.SzArray &&
+            if (cur_ts.stype == metadata.TypeSpec.SpecialType.SzArray &&
                 from_ts.stype == metadata.TypeSpec.SpecialType.SzArray)
             {
                 if (cur_ts.other.Equals(from_ts.other))
@@ -479,7 +520,7 @@ namespace libsupcs
         public int UgtpIdx { get { throw new NotImplementedException(); } }
         public int UgmpIdx { get { throw new NotImplementedException(); } }
 
-        internal unsafe static int GetValueTypeSize(void *boxed_vtbl)
+        internal unsafe static int GetValueTypeSize(void* boxed_vtbl)
         {
             /* Boxed value types (that aren't enums) store their size in the
              * typeinfo.  Enums store the underlying type there, so we have
@@ -489,7 +530,7 @@ namespace libsupcs
             void* extends = *(void**)((byte*)boxed_vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
             if (extends == OtherOperations.GetStaticObjectAddress("_ZW6System4Enum"))
             {
-                void *underlying_type = *((void**)ti + 1);
+                void* underlying_type = *((void**)ti + 1);
                 return GetValueTypeSize(underlying_type);
             }
 
@@ -519,7 +560,7 @@ namespace libsupcs
 
         internal unsafe object Create()
         {
-            byte* ret = (byte *)MemoryOperations.GcMalloc(GetClassSize());
+            byte* ret = (byte*)MemoryOperations.GcMalloc(GetClassSize());
             void* vtbl = *(void**)((byte*)CastOperations.ReinterpretAsPointer(this) + ClassOperations.GetSystemTypeImplOffset());
 
             *(void**)(ret + ClassOperations.GetVtblFieldOffset()) = vtbl;
@@ -532,7 +573,7 @@ namespace libsupcs
 
         [MethodAlias("_Zu1O_7GetType_RW6System4Type_P1u1t")]
         [AlwaysCompile]
-        static unsafe TysosType Object_GetType(void **obj)
+        static unsafe TysosType Object_GetType(void** obj)
         {
             void* vtbl = *obj;
 
@@ -541,7 +582,7 @@ namespace libsupcs
 
         [MethodAlias("_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_20_RunClassConstructor_Rv_P1U6System11RuntimeType")]
         [AlwaysCompile]
-        static unsafe void RuntimeHelpers__RunClassConstructor(void *vtbl)
+        static unsafe void RuntimeHelpers__RunClassConstructor(void* vtbl)
         {
             // Ensure ptr is valid
             if (vtbl == null)
@@ -569,7 +610,7 @@ namespace libsupcs
             var ti_ptr = (void**)ptr;
 
             var cctor_addr = ti_ptr[3];
-            if(cctor_addr != null)
+            if (cctor_addr != null)
             {
                 System.Diagnostics.Debugger.Log(0, "libsupcs", "RuntimeHelpers._RunClassConstructor: running static constructor at " +
                     ((ulong)cctor_addr).ToString("X16"));
@@ -598,13 +639,34 @@ namespace libsupcs
         [AlwaysCompile]
         static internal unsafe bool EqualsInternal(TysosType a, TysosType b)
         {
+            if (CastOperations.ReinterpretAsPointer(a) == CastOperations.ReinterpretAsPointer(b))
+                return true;
+            if (CastOperations.ReinterpretAsPointer(a) == null)
+                return false;
+            if (CastOperations.ReinterpretAsPointer(b) == null)
+                return false;
+
             void* a_vtbl = *(void**)((byte*)CastOperations.ReinterpretAsPointer(a) + ClassOperations.GetSystemTypeImplOffset());
             void* b_vtbl = *(void**)((byte*)CastOperations.ReinterpretAsPointer(b) + ClassOperations.GetSystemTypeImplOffset());
 
             if ((a_vtbl != null) && (a_vtbl == b_vtbl))
                 return true;
 
+            void* a_ti = *(void**)a_vtbl;
+            void* b_ti = *(void**)b_vtbl;
+            // if either is non-generic, then the equality is false at this point
+            if (*(int*)((void**)a_ti + 1) != 2 || *(int*)((void**)b_ti + 1) != 2)
+                return false;
+
             return a.tspec.Equals(b.tspec);
+        }
+
+        [MethodAlias("_ZW6System17RuntimeTypeHandle_9CanCastTo_Rb_P2V11RuntimeTypeV11RuntimeType")]
+        [AlwaysCompile]
+        unsafe static bool CanCastTo(byte* from_type, byte* to_type)
+        {
+            return CanCast(*(void**)(from_type + ClassOperations.GetSystemTypeImplOffset()),
+                *(void**)(to_type + ClassOperations.GetSystemTypeImplOffset()));
         }
 
         internal static unsafe bool CanCast(void *from_vtbl, void *to_vtbl)
@@ -684,7 +746,12 @@ namespace libsupcs
             if (CanCast(from_vtbl, to_vtbl))
                 return from_obj;
             else
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "CastClassEx failing");
+                System.Diagnostics.Debugger.Log((int)from_obj, "libsupcs", "from_obj");
+                System.Diagnostics.Debugger.Log((int)to_vtbl, "libsupcs", "to_vtbl");
                 return null;
+            }
         }
 
         private static unsafe void* get_array_element_compatible_with_vt(void* et)

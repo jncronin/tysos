@@ -80,6 +80,7 @@ namespace tysos
             switch (mboot.machine_major_type)
             {
                 case (uint)Multiboot.MachineMajorType.x86_64:
+                    //libsupcs.OtherOperations.AsmBreakpoint();
                     arch = new tysos.x86_64.Arch();
                     break;
             }
@@ -804,6 +805,9 @@ namespace tysos
         [libsupcs.Uninterruptible]
         static void Log(int level, string category, string message)
         {
+            if (arch == null || arch.DebugOutput == null)
+                return;
+
             if (category == null && arch.CurrentCpu != null && arch.CurrentCpu.CurrentProcess != null)
                 category = arch.CurrentCpu.CurrentProcess.name;
             if (category == null && arch.CurrentCpu != null && arch.CurrentCpu.CurrentThread != null)
