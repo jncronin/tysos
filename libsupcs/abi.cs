@@ -398,7 +398,7 @@ namespace libsupcs
         public unsafe extern static void CallI(void *address);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public unsafe extern static void CallI(void* address, void* obj);
+        public unsafe extern static void CallI(void* obj, void* address);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [IgnoreImplementation]

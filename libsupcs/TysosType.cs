@@ -96,7 +96,9 @@ namespace libsupcs
         [ReinterpretAsMethod]
         public static unsafe extern TysosMethod ReinterpretAsMethodInfo(void* obj);
 
-        public virtual int GetClassSize() { throw new NotImplementedException(); }
+        public unsafe virtual int GetClassSize() {
+            return *(int *)((byte*)_impl + ClassOperations.GetVtblTypeSizeOffset());
+        }
 
         public override System.Reflection.Assembly Assembly
         {
@@ -234,6 +236,38 @@ namespace libsupcs
         protected override System.Reflection.MethodInfo GetMethodImpl(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder binder, System.Reflection.CallingConventions callConvention, Type[] types, System.Reflection.ParameterModifier[] modifiers)
         {
             throw new NotImplementedException();
+        }
+
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System17RuntimeTypeHandle_40CreateInstanceForAnotherGenericParameter_Ru1O_P2V11RuntimeTypeV11RuntimeType")]
+        static unsafe internal object RTH_CreateInstanceForAnotherGenericParameter(TysosType template, TysosType newtype)
+        {
+            void* t_vtbl = template._impl;
+            void* n_vtbl = newtype._impl;
+
+            /* Special case a few generic types that are required before the JIT can start */
+            if(t_vtbl == OtherOperations.GetStaticObjectAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1i"))
+            {
+                if(n_vtbl == OtherOperations.GetStaticObjectAddress("_Zu1S"))
+                {
+                    var vtbl = OtherOperations.GetStaticObjectAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1u1S");
+                    var ntype = internal_from_handle(vtbl);
+                    var obj = ntype.Create();
+
+                    OtherOperations.CallI(CastOperations.ReinterpretAsPointer(obj),
+                        OtherOperations.GetFunctionAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1u1S_7#2Ector_Rv_P1u1t"));
+
+                    return obj;
+                }
+            }
+
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "CreateInstanceForAnotherGenericParameter:");
+            System.Diagnostics.Debugger.Log((int)t_vtbl, "libsupcs", "template");
+            System.Diagnostics.Debugger.Log((int)n_vtbl, "libsupcs", "newtype");
+
+            while (true) ;
+
+            return null;
         }
 
         [MethodReferenceAlias("_ZW6System11RuntimeType_15MakeGenericType_RV4Type_P2u1tu1ZV4Type")]
@@ -733,7 +767,7 @@ namespace libsupcs
             {
                 while (*cur_iface_ptr != null)
                 {
-                    if (*cur_iface_ptr == to_type)
+                    if (*cur_iface_ptr == to_vtbl)
                         return true;
 
                     cur_iface_ptr += 2;
@@ -932,7 +966,7 @@ namespace libsupcs
         static unsafe void* MemberwiseClone(void *obj)
         {
             void* vtbl = *((void**)obj);
-            int class_size = *((byte*)vtbl + ClassOperations.GetVtblTypeSizeOffset());
+            int class_size = *(int*)((byte*)vtbl + ClassOperations.GetVtblTypeSizeOffset());
 
             void* ret = MemoryOperations.GcMalloc(class_size);
             MemoryOperations.MemCpy(ret, obj, class_size);

@@ -50,7 +50,7 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_5CallI_Rv_P1Pv"] = calli;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_5CallI_Rv_P2PvPv"] = calli_pvpv;
 
-            intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_18GetFunctionAddress_Ru1I_P1u1S"] = get_func_address;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_18GetFunctionAddress_RPv_P1u1S"] = get_func_address;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_22GetStaticObjectAddress_RPv_P1u1S"] = get_static_obj_address;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_14GetPointerSize_Ri_P0"] = get_pointer_size;
 
