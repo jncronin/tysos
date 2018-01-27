@@ -930,6 +930,17 @@ namespace libsupcs
             return ret;
         }
 
+        // all instatiated types will return false.  Later we will subclass TysosType to return true
+        //  for generic parameters types which we construct on the fly for generic type definitions
+        public override bool IsGenericParameter { get { return false; } }
+
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System17RuntimeTypeHandle_17IsGenericVariable_Rb_P1V11RuntimeType")]
+        static internal unsafe bool RTH_IsGenericVariable(TysosType t)
+        {
+            return t.IsGenericParameter;
+        }
+
         [AlwaysCompile]
         [MethodAlias("_ZW6System17RuntimeTypeHandle_11IsInterface_Rb_P1V11RuntimeType")]
         static internal unsafe bool RTH_IsInterface(void *vtbl)
