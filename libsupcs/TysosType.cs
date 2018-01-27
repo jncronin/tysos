@@ -111,9 +111,22 @@ namespace libsupcs
             }
         }
 
-        public override Type BaseType
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System17RuntimeTypeHandle_11GetBaseType_RV11RuntimeType_P1V11RuntimeType")]
+        internal static Type RTH_GetBaseType(TysosType t)
         {
-            get { throw new NotImplementedException(); }
+            return t.BaseType;
+        }
+
+        public unsafe override Type BaseType
+        {
+            get {
+                void* vtbl = _impl;
+                void* extends_vtbl = *(void**)((byte*)vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+                if (extends_vtbl == null)
+                    return null;
+                return internal_from_handle(extends_vtbl);
+            }
         }
 
         public override string FullName
