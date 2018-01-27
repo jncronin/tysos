@@ -814,6 +814,8 @@ namespace tysos
                 category = arch.CurrentCpu.CurrentThread.name;
             if (category == null)
                 category = "unknown";
+            if (message == null)
+                message = "<null>";
 
             Formatter.Write("[", arch.DebugOutput);
             Formatter.Write(arch.GetMonotonicCount, arch.DebugOutput);

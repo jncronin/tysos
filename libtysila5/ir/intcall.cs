@@ -74,6 +74,7 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_18GetMutexLockOffset_Ri_P0"] = class_getMutexLockOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_23GetSystemTypeImplOffset_Ri_P0"] = class_getSystemTypeImplOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_14GetFieldOffset_Ri_P2u1Su1S"] = class_getFieldOffset;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_20GetStaticFieldOffset_Ri_P2u1Su1S"] = class_getStaticFieldOffset;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU1_Rh_P1u1U"] = peek_Byte;
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU2_Rt_P1u1U"] = peek_Ushort;
@@ -493,6 +494,25 @@ namespace libtysila5.ir
 
             var ts = c.ms.m.DemangleType(type);
             var offset = layout.Layout.GetFieldOffset(ts, field, c.t);
+
+            stack_after = ldc(n, c, stack_after, offset);
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> class_getStaticFieldOffset(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var stack_after = new Stack<StackItem>(stack_before);
+            var field = stack_after.Pop().str_val;
+            var type = stack_after.Pop().str_val;
+
+            if (field == null || type == null)
+            {
+                throw new Exception("getStaticFieldOffset with null arguments");
+            }
+
+            var ts = c.ms.m.DemangleType(type);
+            var offset = layout.Layout.GetFieldOffset(ts, field, c.t, true);
 
             stack_after = ldc(n, c, stack_after, offset);
 

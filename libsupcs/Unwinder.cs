@@ -58,5 +58,30 @@ namespace libsupcs
 
             return ret.ToArray();
         }
+
+        [AlwaysCompile]
+        [WeakLinkage]
+        [MethodAlias("_ZW20System#2EDiagnostics10StackTrace_22GetStackFramesInternal_Rv_P4V16StackFrameHelperibU6System9Exception")]
+        internal static unsafe void StackTrace_GetStackFramesInternal(void *sfh, int iSkip, bool fNeedFileInfo, Exception e)
+        {
+            /* We set the 'reentrant' member of the stack frame helper here to prevent InitializeSourceInfo running further and set
+             * iFrameCount to zero to prevent stack traces occuring via CoreCLR */
+            *(int*)((byte*)OtherOperations.GetStaticObjectAddress("_ZW20System#2EDiagnostics16StackFrameHelperS")
+                + ClassOperations.GetStaticFieldOffset("_ZW20System#2EDiagnostics16StackFrameHelper", "t_reentrancy")) = 1;
+            *(int*)((byte*)sfh + ClassOperations.GetFieldOffset("_ZW20System#2EDiagnostics16StackFrameHelper", "iFrameCount")) = 0;
+        }
+
+        [AlwaysCompile]
+        [WeakLinkage]
+        [MethodAlias("_ZW20System#2EDiagnostics6Assert_23ShowDefaultAssertDialog_Ri_P4u1Su1Su1Su1S")]
+        internal static int Assert_ShowDefaultAssertDialog(string conditionString, string message, string stackTrace, string windowTitle)
+        {
+            System.Diagnostics.Debugger.Log(0, "Assert", windowTitle);
+            System.Diagnostics.Debugger.Log(0, "Assert", conditionString);
+            System.Diagnostics.Debugger.Log(0, "Assert", message);
+            System.Diagnostics.Debugger.Log(0, "Assert", stackTrace);
+
+            while (true) ;
+        }
     }
 }
