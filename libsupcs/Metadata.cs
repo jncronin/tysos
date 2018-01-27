@@ -114,8 +114,8 @@ namespace libsupcs
             // Get number of metadata references and pointers to each
             var ti_ptr = (void**)ptr;
 
-            // skip over type, enum underlying type field, tysos type pointer and cctor
-            ti_ptr += 4;
+            // skip over type, enum underlying type field, tysos type pointer, cctor and flags
+            ti_ptr += 5;
 
             var mdref_count = *(int*)(ti_ptr);
             var mdref_arr = ti_ptr + 1;

@@ -95,7 +95,7 @@ namespace libtysila5
 
         private void AddTypeSpecFields(TypeSpec ts, List<byte> str_tab, Target t)
         {
-            /* For types we add three special fields:
+            /* For types we add four special fields:
              * 
              * First: If this is an enum, its a pointer to the vtable for the underlying type
              * If it is a zero-based array, its a pointer to the vtable for the element type
@@ -107,6 +107,8 @@ namespace libtysila5
              * 
              * Third is a pointer to the static class constructor (.cctor) if any - this is
              * used to implement System.Runtime.CompilerServices.RunClassConstructor(vtbl)
+             * 
+             * Fourth is a flag field (TypeAttributes from metadata)
              */
 
             if (ts.Unbox.IsEnum)
@@ -158,6 +160,10 @@ namespace libtysila5
             }
             for (int i = 0; i < t.psize; i++)
                 str_tab.Add(0);
+
+            // 4th field - flags
+            var flags = ts.m.GetIntEntry(MetadataStream.tid_TypeDef, ts.tdrow, 0);
+            str_tab.AddRange(t.IntPtrArray(BitConverter.GetBytes(flags)));
         }
 
         private void AddFieldSpecFields(MethodSpec fs, List<byte> str_tab, target.Target t)

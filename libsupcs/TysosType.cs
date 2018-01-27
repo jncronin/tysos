@@ -931,6 +931,15 @@ namespace libsupcs
         }
 
         [AlwaysCompile]
+        [MethodAlias("_ZW6System17RuntimeTypeHandle_11IsInterface_Rb_P1V11RuntimeType")]
+        static internal unsafe bool RTH_IsInterface(void *vtbl)
+        {
+            void** ti = *(void***)vtbl;
+            var flags = *(int*)(ti + 4);    // 4th special field is flags
+            return ((flags & 0x20) == 0x20);
+        }
+
+        [AlwaysCompile]
         [WeakLinkage]
         [MethodAlias("_ZW6System4Type_17GetTypeFromHandle_RV4Type_P1V17RuntimeTypeHandle")]
         static internal unsafe TysosType internal_from_handle(void *vtbl)
