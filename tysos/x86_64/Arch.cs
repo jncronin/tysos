@@ -525,7 +525,6 @@ namespace tysos.x86_64
             List<Pmem.FreeRegion> free_regions = new List<Pmem.FreeRegion>();
 
             Formatter.WriteLine("x86_64: Multiboot memory map:", Program.arch.DebugOutput);
-            libsupcs.OtherOperations.AsmBreakpoint();
             foreach (Multiboot.MemoryMap mmap in mboot.mmap)
             {
                 if (IsUefiFreeMemory(mmap.type))

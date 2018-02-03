@@ -72,6 +72,75 @@ namespace libsupcs
             return FormatInteger(v2, true, 8, fmt, nfi);
         }
 
+        [WeakLinkage]
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System6Number_12FormatDouble_Ru1S_P3du1SU22System#2EGlobalization16NumberFormatInfo")]
+        static string FormatDouble(double v, string fmt, NumberFormatInfo nfi)
+        {
+            // we do not currently support doubles longer than int64 or other than fixed point
+            // no more than 9 decimal places
+            if (double.IsNegativeInfinity(v))
+            {
+                return nfi != null ? (nfi.NegativeInfinitySymbol ?? ((nfi.NegativeSign ?? "-") + "Inf")) : "-Inf";
+            }
+            if (double.IsPositiveInfinity(v))
+            {
+                return nfi != null ? (nfi.PositiveInfinitySymbol ?? "Inf") : "Inf";
+            }
+            if (double.IsNaN(v))
+            {
+                return nfi != null ? (nfi.NaNSymbol ?? "NaN") : "NaN";
+            }
+
+            // get integral portion
+            if (v < long.MinValue || v > long.MaxValue)
+                return "<too large>";
+
+            var integral = (long)v;
+            var istr = FormatInt64(integral, null, nfi);
+
+            // get decimal portion
+            const int MAX_DEC = 9;
+            const int MAX_DEC_P10 = 10 ^ MAX_DEC;
+            var d = (long)((v - integral) * MAX_DEC_P10);
+            var dstr = FormatInt64(d, null, nfi);
+
+            // append them together
+            const int MAX_STR = 256;
+
+            char* ret = stackalloc char[MAX_STR];
+            int cur_ret = 0;
+            foreach (var c in istr)
+                ret[cur_ret++] = c;
+
+            if (dstr.Length != 1 || dstr[0] != '0')
+            {
+                // There is a fractional part of the number
+                var dec_pt = nfi != null ? (nfi.NumberDecimalSeparator ?? ".") : ".";
+                foreach (var c in dec_pt)
+                    ret[cur_ret++] = c;
+
+                // pad with zeros until significant part is reached
+                for (int i = 0; i < (dstr.Length - MAX_DEC); i++)
+                    ret[cur_ret++] = '0';
+
+                // determine how much of the actual value to print e.g. if it is 0.123456 we only print 6
+                //  digits, but dstr is "123456000"
+                int to_trim = 0;
+                for(int i = dstr.Length - 1; i >= 0; i--)
+                {
+                    if (dstr[i] == '0')
+                        to_trim++;
+                    else
+                        break;
+                }
+                for (int i = 0; i < dstr.Length - to_trim; i++)
+                    ret[cur_ret++] = dstr[i];
+            }
+
+            return new string(ret, 0, cur_ret);
+        }
+
         /* The main format function */
         static string FormatInteger(byte *v, bool is_signed, int blen, string fmt, NumberFormatInfo nfi)
         {
