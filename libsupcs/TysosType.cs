@@ -849,6 +849,23 @@ namespace libsupcs
 
         [AlwaysCompile]
         [WeakLinkage]
+        [MethodAlias("_Zu1L_14CanCompareBits_Rb_P1u1O")]
+        private static unsafe bool ValueType_CanCompareBits(void *o)
+        {
+            /* See InternalEquals for caveats */
+            return true;
+        }
+
+        [AlwaysCompile]
+        [WeakLinkage]
+        [MethodAlias("_Zu1L_15FastEqualsCheck_Rb_P2u1Ou1O")]
+        private static unsafe bool ValueType_FastEqualsCheck(void **o1, void **o2)
+        {
+            return ValueType_InternalEquals(o1, o2, out var fields);
+        }
+
+        [AlwaysCompile]
+        [WeakLinkage]
         [MethodAlias("_Zu1L_14InternalEquals_Rb_P3u1Ou1ORu1Zu1O")]
         private static unsafe bool ValueType_InternalEquals(void** o1, void** o2, out void* fields)
         {
