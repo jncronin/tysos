@@ -849,6 +849,22 @@ namespace libsupcs
 
         [AlwaysCompile]
         [WeakLinkage]
+        [MethodAlias("_ZW34System#2ERuntime#2EInteropServices8GCHandle_11InternalGet_Ru1O_P1u1I")]
+        private static object InteropServices_GCHandle_InternalGet(IntPtr v)
+        {
+            return CastOperations.ReinterpretAsObject(CastOperations.ReinterpretAsPointer(v));
+        }
+
+        [AlwaysCompile]
+        [WeakLinkage]
+        [MethodAlias("_ZW6System17RuntimeTypeHandle_11GetGCHandle_Ru1I_P2V17RuntimeTypeHandleU34System#2ERuntime#2EInteropServices12GCHandleType")]
+        private static IntPtr RTH_GetGCHandle(void *obj, int gch_type)
+        {
+            return CastOperations.ReinterpretAsIntPtr(CastOperations.ReinterpretAsObject(obj));
+        }
+
+        [AlwaysCompile]
+        [WeakLinkage]
         [MethodAlias("_Zu1L_14CanCompareBits_Rb_P1u1O")]
         private static unsafe bool ValueType_CanCompareBits(void *o)
         {
