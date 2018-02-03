@@ -174,7 +174,7 @@ namespace libsupcs
             var a_obj = get_value(a);
             var b_obj = get_value(b);
 
-            return CastOperations.ReinterpretAsObject(a).Equals(CastOperations.ReinterpretAsObject(b));
+            return CastOperations.ReinterpretAsObject(a_obj).Equals(CastOperations.ReinterpretAsObject(b_obj));
         }
 
 #if false
