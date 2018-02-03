@@ -194,9 +194,10 @@ namespace libsupcs
         [AlwaysCompile]
         static unsafe int GetLength(void *arr)
         {
-            int ret = 0;
             int arrRank = *(int*)((byte*)arr + ArrayOperations.GetRankOffset());
             int* szPtr = *(int**)((byte*)arr + ArrayOperations.GetSizesOffset());
+
+            int ret = 1;
 
             for (int i = 0; i < arrRank; i++)
                 ret = ret * *(szPtr + i);
