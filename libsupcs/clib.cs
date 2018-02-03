@@ -118,8 +118,12 @@ namespace libsupcs
             if (d > s)
             {
                 /* Perform a backwards copy */
+                d += n;
+                s += n;
                 while (n-- > 0)
+                {
                     *--d = *--s;
+                }
             }
             else
             {

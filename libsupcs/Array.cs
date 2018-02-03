@@ -79,11 +79,24 @@ namespace libsupcs
 
             /* Ensure we don't overflow */
             var src_len = GetLength(srcArr);
-            if (srcIndex + length > src_len)
-                throw new ArgumentOutOfRangeException();
             var dst_len = GetLength(dstArr);
-            if (dstIndex + length > dst_len)
+
+            if (srcIndex + length > src_len)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "Array.Copy srcIndex/length out of range");
+                System.Diagnostics.Debugger.Log(length, "libsupcs", "length");
+                System.Diagnostics.Debugger.Log(srcIndex, "libsupcs", "srcIndex");
+                System.Diagnostics.Debugger.Log(src_len, "libsupcs", "src_len");
                 throw new ArgumentOutOfRangeException();
+            }
+            if (dstIndex + length > dst_len)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "Array.Copy dstIndex/length out of range");
+                System.Diagnostics.Debugger.Log(length, "libsupcs", "length");
+                System.Diagnostics.Debugger.Log(dstIndex, "libsupcs", "dstIndex");
+                System.Diagnostics.Debugger.Log(dst_len, "libsupcs", "dst_len");
+                throw new ArgumentOutOfRangeException();
+            }
 
             if (can_quick_copy)
             {
