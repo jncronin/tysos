@@ -104,7 +104,73 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_28GetTypedReferenceValueOffset_Ri_P0"] = typedref_ValueOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_27GetTypedReferenceTypeOffset_Ri_P0"] = typedref_TypeOffset;
 
+
+            intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ru1I_P3Ru1Iu1Iu1I"] = threading_CompareExchange_IntPtr;
+            intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ri_P3Riii"] = threading_CompareExchange_int;
+            intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Rx_P3Rxxx"] = threading_CompareExchange_long;
             intcalls["_ZW18System#2EThreading11Interlocked_16_CompareExchange_Rv_P3u1Tu1Tu1O"] = threading_CompareExchange_TypedRef;
+        }
+
+        private static Stack<StackItem> threading_CompareExchange_int(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            /* CompareExchange(ref int location1, int value, int comparand) */
+            var stack_after = new Stack<StackItem>(stack_before);
+            stack_after.Pop();
+            stack_after.Pop();
+            stack_after.Pop();
+            stack_after.Push(new StackItem { ts = c.ms.m.SystemInt32 });
+
+            // Do synchronized instruction (arga = value, argb = comparand, argc = location, res = new)
+            n.irnodes.Add(new CilNode.IRNode
+            {
+                parent = n,
+                opcode = Opcode.oc_syncvalcompareandswap,
+                imm_l = 4,
+                imm_ul = 0,
+                stack_before = stack_before,
+                stack_after = stack_after,
+                arg_a = 1,
+                arg_b = 0,
+                arg_c = 2,
+                res_a = 0
+            });
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> threading_CompareExchange_long(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            /* CompareExchange(ref int location1, int value, int comparand) */
+            var stack_after = new Stack<StackItem>(stack_before);
+            stack_after.Pop();
+            stack_after.Pop();
+            stack_after.Pop();
+            stack_after.Push(new StackItem { ts = c.ms.m.SystemInt64 });
+
+            // Do synchronized instruction (arga = value, argb = comparand, argc = location, res = new)
+            n.irnodes.Add(new CilNode.IRNode
+            {
+                parent = n,
+                opcode = Opcode.oc_syncvalcompareandswap,
+                imm_l = 8,
+                imm_ul = 0,
+                stack_before = stack_before,
+                stack_after = stack_after,
+                arg_a = 1,
+                arg_b = 0,
+                arg_c = 2,
+                res_a = 0
+            });
+
+            return stack_after;
+        }
+
+        private static Stack<StackItem> threading_CompareExchange_IntPtr(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            if (c.t.GetPointerSize() == 4)
+                return threading_CompareExchange_int(n, c, stack_before);
+            else
+                return threading_CompareExchange_long(n, c, stack_before);
         }
 
         private static Stack<StackItem> threading_CompareExchange_TypedRef(CilNode n, Code c, Stack<StackItem> stack_before)
