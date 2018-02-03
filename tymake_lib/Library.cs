@@ -1234,13 +1234,20 @@ namespace tymake_lib
                 // using cache
                 di = new DirectoryInfo(passed_args[0].strval + ".extcache");
                 if (di.Exists)
-                    return new Expression.EvalResult(di.FullName);
+                {
+                    // check it is newer than the source archive
+                    var src_fi = new FileInfo(passed_args[0].strval);
 
+                    if (src_fi.LastWriteTime <= di.LastWriteTime)
+                        return new Expression.EvalResult(di.FullName);
+                    else
+                        di.Delete(true);
+                }
                 try
                 {
                     di.Create();
                 }
-                catch(Exception)
+                catch (Exception)
                 {
                     di = null;
                 }
