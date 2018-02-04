@@ -102,6 +102,11 @@ namespace tysos
             // Say hi
             Formatter.WriteLine("Tysos v0.2.0", arch.BootInfoOutput);
             Formatter.WriteLine("Tysos v0.2.0", arch.DebugOutput);
+            Formatter.Write("mboot @ ", arch.DebugOutput);
+            Formatter.Write(libsupcs.CastOperations.ReinterpretAsUlong(mboot), "X", arch.DebugOutput);
+            Formatter.WriteLine(arch.DebugOutput);
+            Formatter.Write("Loaded by ", arch.DebugOutput);
+            Formatter.WriteLine(mboot.loader_name, arch.DebugOutput);
             Formatter.Write("Command line: ", arch.DebugOutput);
             Formatter.WriteLine(mboot.cmdline, arch.DebugOutput);
             bool do_debug = false;

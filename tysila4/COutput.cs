@@ -50,6 +50,7 @@ namespace tysila4
                 HexFile.writeStr(oci, "#include <string.h>", true);
                 HexFile.writeStr(oci, "#include <stdlib.h>", true);
                 HexFile.writeStr(oci, "#include <stdint.h>", true);
+                HexFile.writeStr(oci, "#include <stddef.h>", true);
                 HexFile.writeStr(oci, "", true);
                 HexFile.writeStr(oci, "INTPTR Get_Symbol_Addr(const char *name);", true);
                 HexFile.writeStr(oci, "", true);
@@ -379,8 +380,8 @@ namespace tysila4
 
             HexFile.writeStr(cmsw, init_func);
             HexFile.writeStr(cmsw, "{");
-            HexFile.writeStr(cmsw, "    int l = strlen(s);");
             HexFile.writeStr(cmsw, "    int i;");
+            HexFile.writeStr(cmsw, "    int l = s == NULL ? 0 : strlen(s);");
             HexFile.writeStr(cmsw, "    " + ass.GetCType(tdr.m.SystemChar) + " *p;");
             HexFile.writeStr(cmsw, "    *obj = (struct System_String *)malloc(sizeof(struct System_String) + l * sizeof(" +
                 ass.GetCType(tdr.m.SystemChar) + "));");
