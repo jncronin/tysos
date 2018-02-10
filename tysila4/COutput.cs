@@ -361,7 +361,7 @@ namespace tysila4
             HexFile.writeStr(cmsw, "    (*arr_obj)->elemtype = Get_Symbol_Addr(\"" + ts.MangleType() + "\");");
             HexFile.writeStr(cmsw, "    (*arr_obj)->lobounds = (INTPTR)(intptr_t)malloc(sizeof(int32_t));");
             HexFile.writeStr(cmsw, "    (*arr_obj)->sizes = (INTPTR)(intptr_t)malloc(sizeof(int32_t));");
-            HexFile.writeStr(cmsw, "    (*arr_obj)->inner_array = (INTPTR)(intptr_t)malloc(length * sizeof(int32_t));");
+            HexFile.writeStr(cmsw, "    (*arr_obj)->inner_array = (INTPTR)(intptr_t)malloc(length * sizeof(" + typestr + "));");
             HexFile.writeStr(cmsw, "    *(int32_t *)(intptr_t)((*arr_obj)->lobounds) = 0;");
             HexFile.writeStr(cmsw, "    *(int32_t *)(intptr_t)((*arr_obj)->sizes) = length;");
             HexFile.writeStr(cmsw, "    return((void *)(intptr_t)((*arr_obj)->inner_array));");

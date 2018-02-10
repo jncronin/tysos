@@ -336,23 +336,24 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	struct cfg_module *mod;
 	int mod_count = cfg_get_modcount();
 	struct __array *mod_array;
-	struct Multiboot_Module **mod_ia =
-		(struct Multiboot_Module **)Create_Ref_Array(&mod_array, mod_count);
-	(*mod_ia)->__vtbl += mb_adjust;
+	UINTPTR *mod_ia =
+		(UINTPTR *)Create_Ref_Array(&mod_array, mod_count);
+	mod_array->__vtbl += mb_adjust;
 	int cur_mod_idx = 0;
-	while ((mod = cfg_iterate_modules()))
+	while (mod = cfg_iterate_modules())
 	{
 		UINTPTR mod_addr, mod_len;
-		mod_ia[cur_mod_idx] = (struct Multiboot_Module *)kmalloc(sizeof(struct Multiboot_Module));
-		load_module(mod->path, &mod_addr, (size_t *)&mod_len, (EFI_PHYSICAL_ADDRESS *)&mod_ia[cur_mod_idx]->base_addr);
-		Init_Multiboot_Module(mod_ia[cur_mod_idx]);
-		mod_ia[cur_mod_idx]->virt_base_addr = mod_addr;
-		mod_ia[cur_mod_idx]->length = mod_len;
-		mod_ia[cur_mod_idx]->__vtbl += mb_adjust;
+		struct Multiboot_Module **cur_mod = (struct Multiboot_Module **)(uintptr_t)&mod_ia[cur_mod_idx];
+		*cur_mod = (struct Multiboot_Module *)kmalloc(sizeof(struct Multiboot_Module));
+		load_module(mod->path, &mod_addr, (size_t *)&mod_len, (EFI_PHYSICAL_ADDRESS *)&(*cur_mod)->base_addr);
+		Init_Multiboot_Module(*cur_mod);
+		(*cur_mod)->virt_base_addr = mod_addr;
+		(*cur_mod)->length = mod_len;
+		(*cur_mod)->__vtbl += mb_adjust;
 
-		CreateString((struct System_String **)&(mod_ia[cur_mod_idx]->name), mod->name);
-		(*(struct System_String **)&(mod_ia[cur_mod_idx]->name))->__vtbl += mb_adjust;
-		mod_ia[cur_mod_idx]->name += mb_adjust;
+		CreateString((struct System_String **)&((*cur_mod)->name), mod->name);
+		(*(struct System_String **)&((*cur_mod)->name))->__vtbl += mb_adjust;
+		(*cur_mod)->name += mb_adjust;
 
 		printf("module: %s at %x\n", mod->name, mod_addr);
 		cur_mod_idx++;
@@ -473,7 +474,7 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	struct __array *mmap_array;
 	struct Multiboot_MemoryMap **mmap_ia =
 		(struct Multiboot_MemoryMap **)Create_Ref_Array(&mmap_array, map_entries + cur_pmem_ptr);
-	(*mmap_ia)->__vtbl += mb_adjust;
+	mmap_array->__vtbl += mb_adjust;
 	mbheader->mmap = (uint64_t)(uintptr_t)mmap_array + mb_adjust;
 
 	grub_mmap_iterate(mmap_iter, &mmap_ia);
