@@ -21,12 +21,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace tysos
 {
     class ElfReader
     {
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Elf64_Ehdr
         {
             public UInt64 e_ident_1;
@@ -49,6 +51,7 @@ namespace tysos
             public ulong e_shstrndx { get { return (ulong)((e_shnum_shstrndx >> 16) & 0xffff); } }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Elf64_Shdr
         {
             public UInt32 sh_name;
@@ -63,6 +66,7 @@ namespace tysos
             public UInt64 sh_entsize;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Elf64_Sym
         {
             public UInt32 st_name;
@@ -73,6 +77,7 @@ namespace tysos
             public uint st_shndx { get { return st_info_other_shndx >> 16; } }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Elf64_Phdr
         {
             public UInt32 p_type;
@@ -85,6 +90,7 @@ namespace tysos
             public UInt64 p_align;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Elf64_Dyn
         {
             public Int64 d_tag;
@@ -103,6 +109,7 @@ namespace tysos
             public const Int64 DT_JMPREL = 23;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Elf64_Rela
         {
             public UInt64 r_offset;
@@ -114,6 +121,7 @@ namespace tysos
             public const UInt32 R_X86_64_JUMP_SLOT = 7;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal class Elf64_DynamicEntries
         {
             internal ulong dyn_sym_vaddr = 0;
