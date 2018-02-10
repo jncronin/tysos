@@ -31,6 +31,15 @@ namespace libtysila5.layout
         public static int GetTypeAlignment(metadata.TypeSpec ts,
             target.Target t, bool is_static)
         {
+            if(ts.m.classlayouts[ts.tdrow] != 0 && ts.IsGeneric == false && ts.IsGenericTemplate == false)
+            {
+                // see if there is a packing specified
+                var pack = ts.m.GetIntEntry(metadata.MetadataStream.tid_ClassLayout,
+                            ts.m.classlayouts[ts.tdrow],
+                            0);
+                if (pack != 0)
+                    return (int)pack;
+            }
             if (ts.stype != TypeSpec.SpecialType.None)
                 return t.psize;
 
@@ -338,7 +347,8 @@ namespace libtysila5.layout
                         var size = ts.m.GetIntEntry(metadata.MetadataStream.tid_ClassLayout,
                             ts.m.classlayouts[ts.tdrow],
                             1);
-                        return (int)size;
+                        if(size != 0)
+                            return (int)size;
                     }
                     return GetFieldOffset(ts, (string)null, t, is_static);
                 case TypeSpec.SpecialType.SzArray:
