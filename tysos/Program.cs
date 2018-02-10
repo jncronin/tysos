@@ -136,6 +136,7 @@ namespace tysos
             if (do_debug)
             {
                 Formatter.WriteLine("Synchronizing with debugger...", arch.BootInfoOutput);
+                Formatter.WriteLine("Synchronizing with debugger...", arch.DebugOutput);
                 System.Diagnostics.Debugger.Break();
             }
 
