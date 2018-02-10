@@ -92,6 +92,7 @@ namespace libtysila5.ir
 
             intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_15InitializeArray_Rv_P2U6System5Arrayu1I"] = runtimeHelpers_initializeArray;
             intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_22get_OffsetToStringData_Ri_P0"] = runtimeHelpers_getOffsetToStringData;
+            intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_31IsReferenceOrContainsReferences_Rb_P0"] = runtimeHelpers_isReferenceOrContainsReferences;
             intcalls["_ZW35System#2ERuntime#2ECompilerServices10JitHelpers_10UnsafeCast_Ru1p0_P1u1O"] = jitHelpers_unsafeCast;
 
             intcalls["_ZW20System#2EDiagnostics8Debugger_3Log_Rv_P3iu1Su1S"] = debugger_Log;
@@ -109,6 +110,37 @@ namespace libtysila5.ir
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ri_P3Riii"] = threading_CompareExchange_int;
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Rx_P3Rxxx"] = threading_CompareExchange_long;
             intcalls["_ZW18System#2EThreading11Interlocked_16_CompareExchange_Rv_P3u1Tu1Tu1O"] = threading_CompareExchange_TypedRef;
+        }
+
+        private static Stack<StackItem> runtimeHelpers_isReferenceOrContainsReferences(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var c_ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
+
+            bool ret = isRefOrContainsRef(c_ms.gmparams[0], c);
+            if (ret)
+                return ldc(n, c, stack_before, -1, (int)CorElementType.I4);
+            else
+                return ldc(n, c, stack_before, 0, (int)CorElementType.I4);
+        }
+
+        private static bool isRefOrContainsRef(TypeSpec ts, Code c)
+        {
+            var ct = Opcode.GetCTFromType(ts);
+            if (ct == Opcode.ct_object)
+                return true;
+            else if (ct == Opcode.ct_vt)
+            {
+                System.Collections.Generic.List<TypeSpec> fld_types = new System.Collections.Generic.List<TypeSpec>();
+                layout.Layout.GetFieldOffset(ts, null, c.t, false, fld_types);
+                foreach(var fld_type in fld_types)
+                {
+                    if (isRefOrContainsRef(fld_type, c))
+                        return true;
+                }
+                return false;
+            }
+            else
+                return false;
         }
 
         private static Stack<StackItem> threading_CompareExchange_int(CilNode n, Code c, Stack<StackItem> stack_before)
