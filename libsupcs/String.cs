@@ -137,7 +137,7 @@ namespace libsupcs
         {
             int len = strlen((byte*)value);
             void* dst = str + StringOperations.GetDataOffset();
-            mbstowcs((char*)dst, str, len);
+            mbstowcs((char*)dst, (byte*)value, len);
         }
 
         [MethodAlias("_Zu1S_28InternalUseRandomizedHashing_Rb_P0")]
