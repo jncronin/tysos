@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 /* System.String internal calls */
 
@@ -28,6 +29,14 @@ namespace libsupcs
 {
     class String
     {
+        [MethodReferenceAlias("strlen")]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        static unsafe extern int strlen(byte* s);
+
+        [MethodReferenceAlias("mbstowcs")]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        static unsafe extern int mbstowcs(char* dest, byte* src, int n);
+
         [WeakLinkage]
         [AlwaysCompile]
         [MethodAlias("_Zu1S_14InternalStrcpy_Rv_P5u1Siu1Sii")]
@@ -120,6 +129,15 @@ namespace libsupcs
             void* dst = str + StringOperations.GetDataOffset();
 
             MemoryOperations.MemCpy(dst, src, len);
+        }
+
+        [MethodAlias("_Zu1S_7#2Ector_Rv_P2u1tPa")]
+        [AlwaysCompile]
+        static unsafe void StringCtor(byte *str, sbyte *value)
+        {
+            int len = strlen((byte*)value);
+            void* dst = str + StringOperations.GetDataOffset();
+            mbstowcs((char*)dst, str, len);
         }
 
         [MethodAlias("_Zu1S_28InternalUseRandomizedHashing_Rb_P0")]
