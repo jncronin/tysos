@@ -381,6 +381,7 @@ namespace libtysila5.layout
 
             if(os == null)
                 os = of.GetDataSection();
+            os.Align(t.GetPointerSize());
             os.Align(align);
 
             ulong offset = (ulong)os.Data.Count;

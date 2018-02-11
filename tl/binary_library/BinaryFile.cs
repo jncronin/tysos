@@ -308,6 +308,7 @@ namespace binary_library
                 text.IsAlloc = true;
                 text.IsWriteable = false;
                 text.IsExecutable = true;
+                text.AddrAlign = (int)Bitness / 4;
                 AddSection(text);
             }
             return text;
@@ -324,6 +325,7 @@ namespace binary_library
                 data.IsAlloc = true;
                 data.IsWriteable = true;
                 data.IsExecutable = false;
+                data.AddrAlign = (int)Bitness / 4;
                 AddSection(data);
             }
             return data;
@@ -338,6 +340,7 @@ namespace binary_library
                 rdata.IsAlloc = true;
                 rdata.IsWriteable = false;
                 rdata.IsExecutable = false;
+                rdata.AddrAlign = (int)Bitness / 4;
                 AddSection(rdata);
             }
             return rdata;
