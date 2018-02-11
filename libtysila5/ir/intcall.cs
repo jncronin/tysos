@@ -93,6 +93,7 @@ namespace libtysila5.ir
             intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_15InitializeArray_Rv_P2U6System5Arrayu1I"] = runtimeHelpers_initializeArray;
             intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_22get_OffsetToStringData_Ri_P0"] = runtimeHelpers_getOffsetToStringData;
             intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_31IsReferenceOrContainsReferences_Rb_P0"] = runtimeHelpers_isReferenceOrContainsReferences;
+            intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_6Equals_Rb_P2u1Ou1O"] = runtimeHelpers_Equals;
             intcalls["_ZW35System#2ERuntime#2ECompilerServices10JitHelpers_10UnsafeCast_Ru1p0_P1u1O"] = jitHelpers_unsafeCast;
 
             intcalls["_ZW20System#2EDiagnostics8Debugger_3Log_Rv_P3iu1Su1S"] = debugger_Log;
@@ -112,6 +113,11 @@ namespace libtysila5.ir
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Rx_P3Rxxx"] = threading_CompareExchange_long;
             intcalls["_ZW18System#2EThreading11Interlocked_16_CompareExchange_Rv_P3u1Tu1Tu1O"] = threading_CompareExchange_TypedRef;
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ru1p0_P3Ru1p0u1p0u1p0"] = threading_CompareExchange_Generic;
+        }
+
+        private static Stack<StackItem> runtimeHelpers_Equals(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            return cmp(n, c, stack_before, Opcode.cc_eq);
         }
 
         private static Stack<StackItem> runtimeHelpers_isReferenceOrContainsReferences(CilNode n, Code c, Stack<StackItem> stack_before)
