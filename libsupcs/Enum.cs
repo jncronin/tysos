@@ -171,10 +171,18 @@ namespace libsupcs
             if (avtbl != bvtbl)
                 return false;
 
-            var a_obj = get_value(a);
-            var b_obj = get_value(b);
+            /* Get size of data to compare */
+            var tsize = *(int*)((byte*)avtbl + ClassOperations.GetVtblTypeSizeOffset()) - ClassOperations.GetBoxedTypeDataOffset();
+            int* adata = (int*)((byte*)a + ClassOperations.GetBoxedTypeDataOffset());
+            int* bdata = (int*)((byte*)b + ClassOperations.GetBoxedTypeDataOffset());
 
-            return CastOperations.ReinterpretAsObject(a_obj).Equals(CastOperations.ReinterpretAsObject(b_obj));
+            /* Use lowest common denominator of int32s for comparison (most enums are int32s) */
+            for(int i = 0; i < tsize; i+=4, adata++, bdata++)
+            {
+                if (*adata != *bdata)
+                    return false;
+            }
+            return true;
         }
 
 #if false
