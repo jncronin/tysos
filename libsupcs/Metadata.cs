@@ -328,9 +328,9 @@ namespace libsupcs
             }
         }
 
-        unsafe class BinaryInterface : metadata.DataInterface
+        unsafe internal class BinaryInterface : metadata.DataInterface
         {
-            byte* b;
+            internal byte* b;
 
             public BinaryInterface(void *ptr)
             {

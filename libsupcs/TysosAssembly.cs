@@ -60,10 +60,11 @@ namespace libsupcs
         public override string FullName => assemblyName;
     }
 
-    [ExtendsOverride("_ZW19System#2EReflection6Module")]
     [VTableAlias("__tysos_module_vt")]
-    public class TysosModule
+    [ExtendsOverride("_ZW19System#2EReflection13RuntimeModule")]
+    public unsafe class TysosModule
     {
+        internal void* aptr;    /* pointer to assembly */
         long compile_time;
         public DateTime CompileTime { get { return new DateTime(compile_time); } }
 
