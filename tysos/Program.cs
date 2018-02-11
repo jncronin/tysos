@@ -185,14 +185,17 @@ namespace tysos
             }
 
             /* Start the scheduler */
+            Formatter.Write("Starting scheduler... ", arch.DebugOutput);
             arch.CurrentCpu.CurrentScheduler = new Scheduler();
             if(GetCmdLine("ignore_timer") == false)
                 arch.SchedulerTimer.Callback = new Timer.TimerCallback(Scheduler.TimerProc);
+            Formatter.WriteLine("done", arch.DebugOutput);
 
             /* Store the process info */
             running_processes = new Dictionary<string, Process>(new MyGenericEqualityComparer<string>());
 
             /* Add in threads for GC collections */
+            Formatter.Write("Starting GC collection threads... ", arch.DebugOutput);
             Thread t_max = Thread.Create("gc_max_alloc", new System.Threading.ThreadStart(gc.gengc.MaxAllocCollectThreadProc),
                 new object[] { });
             t_max.priority = 10;
@@ -202,11 +205,13 @@ namespace tysos
                 new object[] { });
             t_min.priority = 0;
             arch.CurrentCpu.CurrentScheduler.Reschedule(t_min);
+            Formatter.WriteLine("done", arch.DebugOutput);
 
             /* Init vfs signatures */
             lib.File.InitSigs();
 
             /* Build a list of available modules */
+            Formatter.Write("Building module list... ", arch.DebugOutput);
             List<tysos.lib.File.Property> mods = new List<tysos.lib.File.Property>();
             foreach (Multiboot.Module mod in mboot.modules)
             {
@@ -216,8 +221,10 @@ namespace tysos
             List<tysos.lib.File.Property> modfs_props = new List<lib.File.Property>();
             modfs_props.Add(new lib.File.Property { Name = "driver", Value = "modfs" });
             modfs_props.Add(new lib.File.Property { Name = "mods", Value = mods });
+            Formatter.WriteLine("done", arch.DebugOutput);
 
             /* Load the logger */
+            Formatter.Write("Starting logger... ", arch.DebugOutput);
             Process logger = LoadELFModule("logger", mboot, stab, running_processes, 0x8000,
                 new object[] { });
 
@@ -226,18 +233,25 @@ namespace tysos
 
             logger.Start();
             //debugprint.Start();
+            Formatter.WriteLine("done", arch.DebugOutput);
 
             /* Load the vfs */
+            Formatter.Write("Starting vfs... ", arch.DebugOutput);
             Process vfs = LoadELFModule("vfs", mboot, stab, running_processes, 0x8000, new object[] { });
             vfs.Start();
+            Formatter.WriteLine("done", arch.DebugOutput);
 
             /* Load the gui */
+            Formatter.Write("Starting gui... ", arch.DebugOutput);
             Process gui = LoadELFModule("gui", mboot, stab, running_processes, 0x8000, new object[] { });
             gui.Start();
+            Formatter.WriteLine("done", arch.DebugOutput);
 
             /* Load the network subsystem */
+            Formatter.Write("Starting net... ", arch.DebugOutput);
             Process net = LoadELFModule("net", mboot, stab, running_processes, 0x8000, new object[] { });
             net.Start();
+            Formatter.WriteLine("done", arch.DebugOutput);
 
             /* Load and mount the root fs */
             List<lib.File.Property> system_props = arch.SystemProperties;
