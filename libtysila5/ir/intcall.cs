@@ -107,9 +107,11 @@ namespace libtysila5.ir
 
 
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ru1I_P3Ru1Iu1Iu1I"] = threading_CompareExchange_IntPtr;
+            intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ru1O_P3Ru1Ou1Ou1O"] = threading_CompareExchange_Object;
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ri_P3Riii"] = threading_CompareExchange_int;
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Rx_P3Rxxx"] = threading_CompareExchange_long;
             intcalls["_ZW18System#2EThreading11Interlocked_16_CompareExchange_Rv_P3u1Tu1Tu1O"] = threading_CompareExchange_TypedRef;
+            intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ru1p0_P3Ru1p0u1p0u1p0"] = threading_CompareExchange_Generic;
         }
 
         private static Stack<StackItem> runtimeHelpers_isReferenceOrContainsReferences(CilNode n, Code c, Stack<StackItem> stack_before)
@@ -197,12 +199,37 @@ namespace libtysila5.ir
             return stack_after;
         }
 
+        private static Stack<StackItem> threading_CompareExchange_Generic(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var c_ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
+
+            /* Sanity check T is a reference type */
+            var T = c_ms.gmparams[0];
+            if(T.IsValueType)
+                throw new InvalidOperationException("CompareExchange<T> with value type (" + T.ToString()+ ")");
+
+            var ret = threading_CompareExchange_IntPtr(n, c, stack_before);
+            ret.Peek().ts = T;
+            return ret;
+        }
+
+        private static Stack<StackItem> threading_CompareExchange_Object(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var ret = threading_CompareExchange_IntPtr(n, c, stack_before);
+            ret.Peek().ts = c.ms.m.SystemObject;
+            return ret;
+        }
+
         private static Stack<StackItem> threading_CompareExchange_IntPtr(CilNode n, Code c, Stack<StackItem> stack_before)
         {
+            Stack<StackItem> ret;
             if (c.t.GetPointerSize() == 4)
-                return threading_CompareExchange_int(n, c, stack_before);
+                ret = threading_CompareExchange_int(n, c, stack_before);
             else
-                return threading_CompareExchange_long(n, c, stack_before);
+                ret = threading_CompareExchange_long(n, c, stack_before);
+
+            ret.Peek().ts = c.ms.m.SystemIntPtr;
+            return ret;
         }
 
         private static Stack<StackItem> threading_CompareExchange_TypedRef(CilNode n, Code c, Stack<StackItem> stack_before)
