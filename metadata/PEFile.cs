@@ -262,6 +262,18 @@ namespace metadata
             m.pef = this;
             m.file = file;
 
+            /* Get this assembly name */
+            if (m.table_rows[MetadataStream.tid_Assembly] == 1)
+            {
+                m.assemblyName = m.GetStringEntry(MetadataStream.tid_Assembly, 1, 7);
+
+                // Handle dotnet coreclr mscorlib having a different name
+                if (m.assemblyName == "System.Private.CoreLib")
+                    m.assemblyName = "mscorlib";
+
+                System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: current assembly is " + m.assemblyName);
+            }
+
             /* Load up all referenced assemblies */
             m.referenced_assemblies = new MetadataStream[m.table_rows[MetadataStream.tid_AssemblyRef]];
             for(int i = 1; i <= m.table_rows[MetadataStream.tid_AssemblyRef]; i++)
@@ -271,6 +283,8 @@ namespace metadata
                 var min = (int)m.GetIntEntry(MetadataStream.tid_AssemblyRef, i, 1);
                 var build = (int)m.GetIntEntry(MetadataStream.tid_AssemblyRef, i, 2);
                 var rev = (int)m.GetIntEntry(MetadataStream.tid_AssemblyRef, i, 3);
+
+                System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: loading referenced assembly " + ass_name);
 
                 if ((m.referenced_assemblies[i - 1] = al.GetAssembly(ass_name, maj, min, build, rev)) == null)
                     throw new Exception("Cannot load referenced assembly: " +
@@ -283,14 +297,6 @@ namespace metadata
             m.PatchClassLayouts();
             m.PatchFieldConstants();
             m.PatchGTypes();
-            if (m.table_rows[MetadataStream.tid_Assembly] == 1)
-            {
-                m.assemblyName = m.GetStringEntry(MetadataStream.tid_Assembly, 1, 7);
-
-                // Handle dotnet coreclr mscorlib having a different name
-                if (m.assemblyName == "System.Private.CoreLib")
-                    m.assemblyName = "mscorlib";
-            }
             if (m.assemblyName == "mscorlib")
             {
                 m.is_corlib = true;
