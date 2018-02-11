@@ -215,8 +215,11 @@ namespace tysos
             List<tysos.lib.File.Property> mods = new List<tysos.lib.File.Property>();
             foreach (Multiboot.Module mod in mboot.modules)
             {
-                ulong vaddr = map_in(mod);
-                mods.Add(new tysos.lib.File.Property { Name = mod.name, Value = new VirtualMemoryResource64(vaddr, mod.length) });
+                if (mod.length != 0)
+                {
+                    ulong vaddr = map_in(mod);
+                    mods.Add(new tysos.lib.File.Property { Name = mod.name, Value = new VirtualMemoryResource64(vaddr, mod.length) });
+                }
             }
             List<tysos.lib.File.Property> modfs_props = new List<lib.File.Property>();
             modfs_props.Add(new lib.File.Property { Name = "driver", Value = "modfs" });
@@ -470,7 +473,7 @@ namespace tysos
             object[] parameters)
         {
             Multiboot.Module mod = find_module(mboot.modules, name);
-            if (mod == null)
+            if (mod == null || mod.length == 0)
                 throw new Exception("Module: " + name + " not found");
             ulong mod_vaddr = map_in(mod);
             return LoadELFModule(mod_vaddr, mod.length, name, mboot, stab, running_processes, stack_size, parameters);
