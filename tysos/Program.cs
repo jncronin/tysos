@@ -819,7 +819,9 @@ namespace tysos
         [libsupcs.MethodAlias("jit_addrof")]
         static System.IntPtr GetAddressOfObject(string name)
         {
-            throw new Exception("Request for address of " + name + ": not yet supported");
+            var ret = stab.GetAddress(name);
+            System.Diagnostics.Debugger.Log(0, "jit_addrof", "Request for " + name + ": returning " + ret.ToString("X"));
+            return (IntPtr)ret;
         }
 
         static object log_lock;

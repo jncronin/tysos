@@ -53,6 +53,12 @@ namespace libsupcs
             }
         }
 
+        public static implicit operator TysosType(metadata.TypeSpec ts)
+        {
+            var vtbl = JitOperations.GetAddressOfObject(ts.MangleType());
+            return new TysosType { ts = ts, _impl = vtbl };
+        }
+
         [MethodImpl(MethodImplOptions.InternalCall)]
         [ReinterpretAsMethod]
         public static extern TysosField ReinterpretAsFieldInfo(IntPtr addr);

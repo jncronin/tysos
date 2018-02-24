@@ -750,6 +750,9 @@ namespace metadata
 
         private static string EncodeString(string p)
         {
+            if (p == null)
+                return "";
+
             /* Many tools cannot deal with +, - and . characters in labels.
              * 
              * Therefore we encode them to # followed by the hex value (in capitals) of the ascii code of the character

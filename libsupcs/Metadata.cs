@@ -34,7 +34,7 @@ namespace libsupcs
         static metadata.MetadataStream mscorlib = null;
         static BinaryAssemblyLoader bal = null;
 
-        static BinaryAssemblyLoader BAL
+        internal static BinaryAssemblyLoader BAL
         {
             get
             {
@@ -281,7 +281,7 @@ namespace libsupcs
                 ((uint)b3 << 8) | b4;
         }
 
-        class BinaryAssemblyLoader : metadata.AssemblyLoader
+        internal class BinaryAssemblyLoader : metadata.AssemblyLoader
         {
             internal static Dictionary<ulong, metadata.MetadataStream> ptr_cache =
                 new Dictionary<ulong, metadata.MetadataStream>(

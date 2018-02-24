@@ -71,5 +71,16 @@ namespace libsupcs
         [MethodImpl(MethodImplOptions.InternalCall)]
         [ReinterpretAsMethod]
         public static extern TysosModule ReinterpretAsTysosModule(System.Reflection.Module module);
+
+        internal metadata.MetadataStream m { get { return Metadata.BAL.GetAssembly(aptr); } }
+
+        [MethodAlias("_ZW6System12ModuleHandle_13GetModuleType_Rv_P2U19System#2EReflection13RuntimeModuleU35System#2ERuntime#2ECompilerServices19ObjectHandleOnStack")]
+        [AlwaysCompile]
+        static void ModuleHandle_GetModuleType(TysosModule mod, ref TysosType GlobalType)
+        {
+            // Get the <Module> type name for the current module.  This is always defined as tdrow 1.
+            var ts = mod.m.GetTypeSpec(metadata.MetadataStream.tid_TypeDef, 1);
+            GlobalType = ts;
+        }
     }
 }

@@ -367,15 +367,15 @@ namespace libsupcs
         public extern static int GetStaticFieldOffset(string typename, string field);
     }
 
-    public class JitOperations
+    public unsafe class JitOperations
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
         [MethodReferenceAlias("jit_tm")]
-        public static extern System.IntPtr JitCompile(TysosMethod m);
+        public static extern void* JitCompile(TysosMethod m);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [MethodReferenceAlias("jit_addrof")]
-        public static extern System.IntPtr GetAddressOfObject(string name);
+        public static extern void* GetAddressOfObject(string name);
     }
 
     public class OtherOperations
