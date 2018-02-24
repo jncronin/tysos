@@ -95,6 +95,7 @@ namespace libtysila5.ir
             intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_31IsReferenceOrContainsReferences_Rb_P0"] = runtimeHelpers_isReferenceOrContainsReferences;
             intcalls["_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_6Equals_Rb_P2u1Ou1O"] = runtimeHelpers_Equals;
             intcalls["_ZW35System#2ERuntime#2ECompilerServices10JitHelpers_10UnsafeCast_Ru1p0_P1u1O"] = jitHelpers_unsafeCast;
+            intcalls["_ZW35System#2ERuntime#2ECompilerServices10JitHelpers_24UnsafeCastToStackPointer_Ru1I_P1Ru1p0"] = jitHelpers_unsafeCastToStackPointer;
 
             intcalls["_ZW20System#2EDiagnostics8Debugger_3Log_Rv_P3iu1Su1S"] = debugger_Log;
 
@@ -325,6 +326,24 @@ namespace libtysila5.ir
             stack_after[stack_after.Count - 1] = new StackItem { ts = c_ms.gmparams[0] };
             return stack_after;
         }
+
+        private static Stack<StackItem> jitHelpers_unsafeCastToStackPointer(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var c_ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
+
+            /* TODO: limit usage to trusted code */
+
+            /* Ensure the stack contains a valid reference to T */
+            var from_obj = stack_before.Peek();
+            if (from_obj.ts.stype != TypeSpec.SpecialType.MPtr || !from_obj.ts.other.Equals(c_ms.gmparams[0]))
+                throw new Exception("Invalid type passed to JitHelpers.UnsafeCast: " + from_obj.ts);
+
+            /* Convert to the 'to' type */
+            var stack_after = new Stack<StackItem>(stack_before);
+            stack_after[stack_after.Count - 1] = new StackItem { ts = c.ms.m.SystemIntPtr };
+            return stack_after;
+        }
+
 
         private static Stack<StackItem> string_InternalAllocate(CilNode n, Code c, Stack<StackItem> stack_before)
         {
