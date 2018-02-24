@@ -1648,6 +1648,19 @@ namespace libtysila5.ir
                 c.t.r.MethodRequestor.Request(ctor);
             var stack_after = new Stack<StackItem>(stack_before);
 
+            if(objtype.Equals(c.ms.m.SystemRuntimeTypeHandle) && ctor.MangleMethod() == "_ZW6System17RuntimeTypeHandle_7#2Ector_Rv_P2u1tV11RuntimeType")
+            {
+                // Special case this to save the _impl member of TysosType as the value
+                var tt = c.ms.m.al.GetAssembly("libsupcs").GetTypeSpec("libsupcs", "TysosType");
+                var foffset = layout.Layout.GetFieldOffset(tt, "_impl", c.t);
+
+                stack_after = ldc(n, c, stack_before, foffset);
+                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
+                stack_after = ldind(n, c, stack_after, c.ms.m.SystemRuntimeTypeHandle);
+
+                return stack_after;
+            }
+
             int vt_adjust = 0;
 
             /* is this a value type? */
