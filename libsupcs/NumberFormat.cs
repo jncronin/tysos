@@ -170,7 +170,8 @@ namespace libsupcs
             int cur_fmt = 0;
             int l_fmt = fmt.Length;
 
-            char c_f = *f;
+            char c_f = *f;      // Current formatting character
+            int p = -1;         // Current precision (used if 'G' is converted to 'F')
 
             while(cur_fmt < l_fmt)
             {
@@ -201,6 +202,7 @@ namespace libsupcs
                             if(exp < sig_digits && exp >= -4)
                             {
                                 c_f = 'F';
+                                p = 0;
                             }
                             else
                             {
@@ -217,11 +219,16 @@ namespace libsupcs
                     case 'N':
                     case 'n':
                         {
-                            int p = get_number_from_fmt_string(f, cur_fmt + 1, l_fmt, out cur_fmt);
+                            if (p == -1)
+                                p = get_number_from_fmt_string(f, cur_fmt + 1, l_fmt, out cur_fmt);
+                            else
+                                get_number_from_fmt_string(f, cur_fmt + 1, l_fmt, out cur_fmt);     // ignore p in the string (this is a 'G' converted to 'F')
                             if(p == -1)
                             {
                                 if (nfi != null)
                                     p = nfi.NumberDecimalDigits;
+                                else
+                                    p = 2;
                             }
                             if(is_negative)
                             {
@@ -279,6 +286,8 @@ namespace libsupcs
                                 while (p-- > 0)
                                     append_string(ret, "0", ref cur_ret, MAX_STR);
                             }
+
+                            p = -1;     // reset precision so that we look for it again in the next formatting operation - if 'G' then it will be set to zero again
                         }
                         break;
 
