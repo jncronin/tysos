@@ -38,8 +38,24 @@ namespace libsupcs
     {
         metadata.TypeSpec ts = null;
 
+
         /** <summary>holds a pointer to the vtbl represented by this type</summary> */
         void* _impl;
+
+        internal TysosType(void *vtbl)
+        {
+            _impl = vtbl;
+
+            // m_handle = this;
+            *(void**)((byte*)CastOperations.ReinterpretAsPointer(this) + ClassOperations.GetFieldOffset("_ZW6System11RuntimeType", "m_handle")) =
+                CastOperations.ReinterpretAsPointer(this);
+        }
+
+        internal TysosType(void* vtbl, metadata.TypeSpec typeSpec) : this(vtbl)
+        {
+            ts = typeSpec;
+        }
+
 
         internal metadata.TypeSpec tspec
         {
@@ -56,7 +72,7 @@ namespace libsupcs
         public static implicit operator TysosType(metadata.TypeSpec ts)
         {
             var vtbl = JitOperations.GetAddressOfObject(ts.MangleType());
-            return new TysosType { ts = ts, _impl = vtbl };
+            return new TysosType(vtbl, ts);
         }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -129,11 +145,10 @@ namespace libsupcs
         public unsafe override Type BaseType
         {
             get {
-                void* vtbl = _impl;
-                void* extends_vtbl = *(void**)((byte*)vtbl + ClassOperations.GetVtblExtendsVtblPtrOffset());
+                void* extends_vtbl = *(void**)((byte*)_impl + ClassOperations.GetVtblExtendsVtblPtrOffset());
                 if (extends_vtbl == null)
                     return null;
-                return internal_from_handle(extends_vtbl);
+                return internal_from_vtbl(extends_vtbl);
             }
         }
 
@@ -257,7 +272,7 @@ namespace libsupcs
                 if(n_vtbl == OtherOperations.GetStaticObjectAddress("_Zu1S"))
                 {
                     var vtbl = OtherOperations.GetStaticObjectAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1u1S");
-                    var ntype = internal_from_handle(vtbl);
+                    var ntype = internal_from_vtbl(vtbl);
                     var obj = ntype.Create();
 
                     OtherOperations.CallI(CastOperations.ReinterpretAsPointer(obj),
@@ -293,7 +308,7 @@ namespace libsupcs
             if (this_vtbl == OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1") && arg_count == 1 &&
                 arg1 == OtherOperations.GetStaticObjectAddress("_Zu1S"))
             {
-                return internal_from_handle(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1u1S"));
+                return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1u1S"));
             }
 
             System.Diagnostics.Debugger.Log(0, "libsupcs", "MakeGenericType: no fast implementation for");
@@ -630,7 +645,7 @@ namespace libsupcs
         {
             void* vtbl = *obj;
 
-            return internal_from_handle(vtbl);
+            return internal_from_vtbl(vtbl);
         }
 
         [MethodAlias("_ZW35System#2ERuntime#2ECompilerServices14RuntimeHelpers_20_RunClassConstructor_Rv_P1U6System11RuntimeType")]
@@ -864,9 +879,9 @@ namespace libsupcs
         [AlwaysCompile]
         [WeakLinkage]
         [MethodAlias("_ZW6System17RuntimeTypeHandle_11GetGCHandle_Ru1I_P2V17RuntimeTypeHandleU34System#2ERuntime#2EInteropServices12GCHandleType")]
-        private static TysosType RTH_GetGCHandle(void *obj, int gch_type)
+        private static TysosType RTH_GetGCHandle(RuntimeTypeHandle rth, int gch_type)
         {
-            return internal_from_handle(obj);
+            return ReinterpretAsType(rth.Value);
         }
 
         [AlwaysCompile]
@@ -1057,10 +1072,16 @@ namespace libsupcs
             }
         }
 
-        [AlwaysCompile]
-        [WeakLinkage]
         [MethodAlias("_ZW6System4Type_17GetTypeFromHandle_RV4Type_P1V17RuntimeTypeHandle")]
-        static internal unsafe TysosType internal_from_handle(void *vtbl)
+        [AlwaysCompile]
+        static internal unsafe TysosType Type_GetTypeFromHandle(RuntimeTypeHandle rth)
+        {
+            return ReinterpretAsType(rth.Value);
+        }
+
+        [AlwaysCompile]
+        [MethodAlias("__type_from_vtbl")]
+        static internal unsafe TysosType internal_from_vtbl(void *vtbl)
         {
             /* The default value for a type info is:
              * 
@@ -1102,10 +1123,8 @@ namespace libsupcs
                 OtherOperations.SpinlockHint();
             }
 
-            var ret = new TysosType();
-
+            var ret = new TysosType(vtbl);
             var ret_obj = CastOperations.ReinterpretAsPointer(ret);
-            *(void**)((byte*)ret_obj + ClassOperations.GetSystemTypeImplOffset()) = vtbl;
 
             *((void**)ti + 2) = ret_obj;
 
@@ -1140,9 +1159,9 @@ namespace libsupcs
 
         [MethodAlias("_ZW6System17RuntimeTypeHandle_13ConstructName_Rv_P3V17RuntimeTypeHandleV19TypeNameFormatFlagsU35System#2ERuntime#2ECompilerServices19StringHandleOnStack")]
         [AlwaysCompile]
-        static void ConstructName(void *vtbl, TypeNameFormatFlags formatFlags, ref string ret)
+        static void ConstructName(RuntimeTypeHandle rth, TypeNameFormatFlags formatFlags, ref string ret)
         {
-            var tt = internal_from_handle(vtbl);
+            var tt = ReinterpretAsType(rth.Value);
             ret = tt.ConstructName(formatFlags);
         }
 

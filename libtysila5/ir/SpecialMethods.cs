@@ -55,6 +55,8 @@ namespace libtysila5.ir
         public int string_PaiiEncoding;
         public int string_Paii;
 
+        public int type_from_vtbl;
+
         public int rint;
 
         MetadataStream corlib;
@@ -129,6 +131,8 @@ namespace libtysila5.ir
                 new TypeSpec[] { Pa, i, i, corlib.GetTypeSpec("System.Text", "Encoding") }, true);
             string_Paii = CreateMethodSignature(null,
                 new TypeSpec[] { Pa, i, i }, true);
+
+            type_from_vtbl = CreateMethodSignature(o, new TypeSpec[] { I });
 
             debugger_Log = CreateMethodSignature(null,
                 new TypeSpec[] { i, s, s });

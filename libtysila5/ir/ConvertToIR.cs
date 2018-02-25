@@ -990,11 +990,9 @@ namespace libtysila5.ir
             // extract the 'Type' member as a RuntimeTypeHandle
             var typed_ref = c.ms.m.al.GetAssembly("mscorlib").GetTypeSpec("System", "TypedReference");
 
-
             var stack_after = ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typed_ref, "Type", c.t), 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
-            stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
-            stack_after[stack_after.Count - 1] = new StackItem { ts = typed_ref };
+            stack_after = ldind(n, c, stack_after, c.ms.m.SystemRuntimeTypeHandle);
 
             return stack_after;
         }
@@ -1021,7 +1019,8 @@ namespace libtysila5.ir
             stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(typed_ref, "Type", c.t), 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_after = ldlab(n, c, stack_after, ts.MangleType());
-            stack_after = stind(n, c, stack_after, c.t.psize);
+            stack_after = call(n, c, stack_after, false, "__type_from_vtbl", c.special_meths, c.special_meths.type_from_vtbl);
+            stack_after = stind(n, c, stack_after, c.t.GetPointerSize());
 
             // Save the 'Value' member
             stack_after = copy_to_front(n, c, stack_after);
@@ -1320,9 +1319,8 @@ namespace libtysila5.ir
                 sig_val = ts.Signature;
                 c.t.r.VTableRequestor.Request(ts.Box);
 
-                // Runtime type handles point to the vtable, rather than the typeinfo
-                // build the object
                 stack_after = ldlab(n, c, stack_before, ts.MangleType());
+                stack_after = call(n, c, stack_after, false, "__type_from_vtbl", c.special_meths, c.special_meths.type_from_vtbl);
             }
             else if (ms != null)
             {
@@ -1647,19 +1645,6 @@ namespace libtysila5.ir
             if(ctor != null)
                 c.t.r.MethodRequestor.Request(ctor);
             var stack_after = new Stack<StackItem>(stack_before);
-
-            if(objtype.Equals(c.ms.m.SystemRuntimeTypeHandle) && ctor.MangleMethod() == "_ZW6System17RuntimeTypeHandle_7#2Ector_Rv_P2u1tV11RuntimeType")
-            {
-                // Special case this to save the _impl member of TysosType as the value
-                var tt = c.ms.m.al.GetAssembly("libsupcs").GetTypeSpec("libsupcs", "TysosType");
-                var foffset = layout.Layout.GetFieldOffset(tt, "_impl", c.t);
-
-                stack_after = ldc(n, c, stack_before, foffset);
-                stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
-                stack_after = ldind(n, c, stack_after, c.ms.m.SystemRuntimeTypeHandle);
-
-                return stack_after;
-            }
 
             int vt_adjust = 0;
 

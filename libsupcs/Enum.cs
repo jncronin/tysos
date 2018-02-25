@@ -64,7 +64,7 @@ namespace libsupcs
         {
             void* e_type_vtbl = *enum_type.GetImplOffset();
 
-            return TysosType.internal_from_handle(GetUnderlyingEnumTypeVtbl(*(void**)e_type_vtbl));
+            return TysosType.internal_from_vtbl(GetUnderlyingEnumTypeVtbl(*(void**)e_type_vtbl));
         }
 
         static internal unsafe void* GetUnderlyingEnumTypeVtbl(void* enum_ti)
