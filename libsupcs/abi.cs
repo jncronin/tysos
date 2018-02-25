@@ -376,6 +376,10 @@ namespace libsupcs
         [MethodImpl(MethodImplOptions.InternalCall)]
         [MethodReferenceAlias("jit_addrof")]
         public static extern void* GetAddressOfObject(string name);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [MethodReferenceAlias("jit_nameof")]
+        public static extern string GetNameOfAddress(void* addr, out void* offset);
     }
 
     public class OtherOperations

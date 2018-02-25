@@ -43,19 +43,14 @@ namespace tysos
                     Formatter.Write((ulong)ue.ProgramCounter, "X", output);
                     Formatter.Write(": ", output);
 
-                    if (ue.Method != null)
+                    if (ue.Symbol != null)
                     {
-                        Formatter.Write(ue.Method.DeclaringType.Namespace, output);
-                        Formatter.Write(".", output);
-                        Formatter.Write(ue.Method.DeclaringType.Name, output);
-                        Formatter.Write(".", output);
-                        Formatter.Write(ue.Method.Name, output);
-                        Formatter.Write("()", output);
+                        Formatter.Write(ue.Symbol, output);
 
-                        if ((ulong)ue.Method.MethodAddress != 0)
+                        if ((ulong)ue.Offset != 0)
                         {
                             Formatter.Write(" + ", output);
-                            Formatter.Write((ulong)ue.ProgramCounter - (ulong)ue.Method.MethodAddress, "x", output);
+                            Formatter.Write((ulong)ue.Offset, "x", output);
                         }
 
                         Formatter.WriteLine(output);

@@ -809,6 +809,16 @@ namespace tysos
         }
 
         [libsupcs.AlwaysCompile]
+        [libsupcs.MethodAlias("jit_nameof")]
+        unsafe static string GetNameOfAddress(void *addr, out void *offset)
+        {
+            ulong o;
+            var ret = stab.GetSymbolAndOffset((ulong)addr, out o);
+            offset = (void*)o;
+            return ret;
+        }
+
+        [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("jit_tm")]
         static IntPtr JitCompile(libsupcs.TysosMethod meth)
         {

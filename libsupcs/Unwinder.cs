@@ -39,22 +39,21 @@ namespace libsupcs
         public class UnwinderEntry
         {
             public UIntPtr ProgramCounter;
-            public TysosMethod Method;
+            public string Symbol;
+            public UIntPtr Offset;
         }
 
-        internal static object[] DoUnwind(Unwinder u, UIntPtr exit_address)
+        internal static unsafe object[] DoUnwind(Unwinder u, UIntPtr exit_address)
         {
             System.Collections.ArrayList ret = new System.Collections.ArrayList();
+            UIntPtr pc;
 
-            while (u.CanContinue() && (u.GetInstructionPointer() != exit_address))
+            while (u.CanContinue() && ((pc = u.GetInstructionPointer()) != exit_address))
             {
-                //TysosMethod meth = u.GetMethodInfo();
-                TysosMethod meth = null;
-                ret.Add(new UnwinderEntry { ProgramCounter = u.GetInstructionPointer(), Method = meth });
-                if (meth == null)
-                    u.UnwindOne();
-                else
-                    u.UnwindOne(meth);
+                void* offset;
+                var sym = JitOperations.GetNameOfAddress((void*)pc, out offset);
+                ret.Add(new UnwinderEntry { ProgramCounter = pc, Symbol = sym, Offset = (UIntPtr)offset });
+                u.UnwindOne();
             }
 
             return ret.ToArray();
