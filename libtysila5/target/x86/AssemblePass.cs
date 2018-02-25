@@ -1031,9 +1031,18 @@ namespace libtysila5.target.x86
                 }
             }
 
-            // Patch up references
+            // Handle cil instructions which encode to nothing (e.g. nop) but may still be branch targets - point them to the next instruction
+            int cur_il_start = -1;
+            for (int i = 0; i < max_il; i++)
+            {
+                if (il_starts[i] == -1)
+                    il_starts[i] = cur_il_start;
+                else
+                    cur_il_start = il_starts[i];
+            }
 
-            for(int i = 0; i < rel_srcs.Count; i++)
+            // Patch up references
+            for (int i = 0; i < rel_srcs.Count; i++)
             {
                 var src = rel_srcs[i];
                 var dest = rel_dests[i];
