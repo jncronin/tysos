@@ -89,8 +89,6 @@ next_instr:
 	movl	$(clear_pipe - next_instr), %eax
 	addl	%ecx, %eax
 
-	push	$0x10
-	push	%edi
 	push	$0x2
 	push	$0x8
 	push	%eax
@@ -105,6 +103,8 @@ clear_pipe:
 
 		kernel is in edx
 	*/
+
+	movl	%edi, %esp
 
 	movq	%rbx, %rdi
 	movq	%rsi, %rbx
