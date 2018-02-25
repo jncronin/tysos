@@ -28,6 +28,7 @@ namespace libsupcs
     public abstract class Unwinder
     {
         public abstract UIntPtr GetInstructionPointer();
+        public abstract UIntPtr GetFramePointer();
         public abstract Unwinder UnwindOne();
         public abstract Unwinder UnwindOne(libsupcs.TysosMethod cur_method);
         public abstract libsupcs.TysosMethod GetMethodInfo();

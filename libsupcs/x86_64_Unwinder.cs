@@ -65,6 +65,11 @@ namespace libsupcs.x86_64
             }
         }
 
+        public override UIntPtr GetFramePointer()
+        {
+            return (UIntPtr)cur_rbp;
+        }
+
         public override libsupcs.Unwinder UnwindOne()
         {
             unsafe
