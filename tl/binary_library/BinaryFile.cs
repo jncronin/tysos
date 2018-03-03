@@ -237,10 +237,9 @@ namespace binary_library
             else if(name != "")
             {
                 // match wildcards
-                var wc = name.Split(new char[] { '*' }, StringSplitOptions.None);
-
                 if(name.Contains("*"))
                 {
+                    var wc = name.Split(new char[] { '*' }, StringSplitOptions.None);
                     foreach(var sn in sect_map.Keys)
                     {
                         int cur_idx = 0;
@@ -254,6 +253,7 @@ namespace binary_library
                             {
                                 // try and match first time after current index
                                 int idx = sn.IndexOf(wce, cur_idx);
+                                found_locs.Add(idx);
                                 if (idx != -1)
                                     cur_idx += sn.Length;
                                 else

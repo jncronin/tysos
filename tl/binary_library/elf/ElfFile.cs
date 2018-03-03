@@ -827,7 +827,7 @@ namespace binary_library.elf
                             sect.Data[(int)l] = r.ReadByte();
                     }
 
-
+                    sect_map[name] = sect;
                 }
                 sections.Add(sect);
             }
