@@ -56,6 +56,7 @@ namespace binary_library
         ISection GetSection(int idx);
         int AddSection(ISection section);
         void RemoveSection(int idx);
+
         ISection CopySectionType(ISection tmpl);
         ISection GetGlobalSection();
         ISection GetCommonSection();
@@ -72,6 +73,7 @@ namespace binary_library
         ISymbol FindSymbol(string name);
         ISymbol CreateSymbol();
         IEnumerable<ISymbol> GetSymbols();
+        void RemoveSymbol(int idx);
 
         bool ContainsSymbol(ISymbol symbol);
 

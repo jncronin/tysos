@@ -185,6 +185,20 @@ namespace binary_library
             }
             return null;
         }
+        public virtual void RemoveSymbol(int idx)
+        {
+            foreach(var sect in sections)
+            {
+                if (sect == null)
+                    continue;
+                if(idx < sect.GetSymbolCount())
+                {
+                    sect.RemoveSymbol(idx);
+                    return;
+                }
+                idx -= sect.GetSymbolCount();
+            }
+        }
         public virtual IEnumerable<ISymbol> GetSymbols()
         {
             foreach(var sect in sections)
@@ -216,10 +230,54 @@ namespace binary_library
 
         public virtual ISection FindSection(string name)
         {
+            if (name == null)
+                return null;
             if (sect_map.TryGetValue(name, out ISection val))
                 return val;
-            else
-                return null;
+            else if(name != "")
+            {
+                // match wildcards
+                var wc = name.Split(new char[] { '*' }, StringSplitOptions.None);
+
+                if(name.Contains("*"))
+                {
+                    foreach(var sn in sect_map.Keys)
+                    {
+                        int cur_idx = 0;
+                        List<int> found_locs = new List<int>();
+                        bool cont = true;
+                        foreach(var wce in wc)
+                        {
+                            if (wce == "")
+                                found_locs.Add(cur_idx);
+                            else
+                            {
+                                // try and match first time after current index
+                                int idx = sn.IndexOf(wce, cur_idx);
+                                if (idx != -1)
+                                    cur_idx += sn.Length;
+                                else
+                                {
+                                    cont = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (cont == false)
+                            continue;
+
+                        // Now ensure that if the string starts or ends with a non-wildcard character these are at position 0 and end respectively
+                        if (wc[0] != "" && found_locs[0] != 0)
+                            continue;
+                        if (wc[wc.Length - 1] != "" && found_locs[wc.Length - 1] != sn.Length - wc[wc.Length - 1].Length)
+                            continue;
+
+                        return sect_map[sn];
+                    }
+                }
+            }
+            return null;
         }
 
 #if HAVE_SYSTEM
