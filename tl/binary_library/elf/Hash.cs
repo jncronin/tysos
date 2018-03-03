@@ -83,13 +83,13 @@ namespace binary_library.elf
         }
 
         // Write out the hash table
-        void WriteHash(BinaryWriter s, List<ElfSymbol> syms, int endian, int bitness)
+        void WriteHash(BinaryWriter s, List<ElfSymbol> syms, ElfClass ec)
         {
             // Build hash table
             long hash_table_start = s.BaseStream.Position;
             List<int>[] ht = BuildHashTable(syms);
-            WriteIntPtr(s, ht.Length, bitness);
-            WriteIntPtr(s, syms.Count, bitness);
+            WriteIntPtr(s, ht.Length, ec);
+            WriteIntPtr(s, syms.Count, ec);
 
             // Build arrays to contain the bucket and chains
             long[] buckets = new long[ht.Length];
@@ -120,24 +120,24 @@ namespace binary_library.elf
 
             // Write out
             foreach (long b in buckets)
-                WriteIntPtr(s, b, bitness);
+                WriteIntPtr(s, b, ec);
             foreach (long c in chains)
-                WriteIntPtr(s, c, bitness);
+                WriteIntPtr(s, c, ec);
         }
 
-        void WriteIntPtr(BinaryWriter s, long val, int bitness)
+        void WriteIntPtr(BinaryWriter s, long val, ElfClass ec)
         {
-            /*switch (bitness)
+            switch(ec)
             {
-                case 0: */
+                case ElfClass.ELFCLASS32:
                     s.Write((int)val);
-                    /*break;
-                case 1:
+                    break;
+                case ElfClass.ELFCLASS64:
                     s.Write((long)val);
                     break;
                 default:
-                    throw new Exception("Unsupported bitness value: " + bitness.ToString());
-            }*/
+                    throw new Exception("Unsupported elf class value: " + ec.ToString());
+            }
         }
     }
 }

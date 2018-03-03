@@ -333,7 +333,7 @@ namespace binary_library.elf
 
                 if (sh == sh_hash)
                 {
-                    WriteHash(w, osyms, 0, 0);
+                    WriteHash(w, osyms, ec);
                     sh.sh_size = w.BaseStream.Position - sh.sh_offset;
                     //WriteHashTable(sh_hash, osyms, w);
                 }
