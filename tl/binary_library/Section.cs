@@ -179,7 +179,12 @@ namespace binary_library
 
         public virtual void RemoveSymbol(int idx)
         {
-            throw new NotImplementedException();
+            if (idx < 0 || idx >= symbols.Count)
+                throw new ArgumentOutOfRangeException("idx");
+
+            var s = symbols[idx] as Symbol;
+            s.definedin = null;
+            symbols.RemoveAt(idx);
         }
 
         public virtual void Align(int aval)
