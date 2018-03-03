@@ -252,10 +252,10 @@ namespace tl
                         new_reloc.Offset = isl.OutputSectionOffset + reloc.Offset;
                         new_reloc.Addend = reloc.Addend;
                         new_reloc.References = output.CreateSymbol();
-                        new_reloc.References.DefinedIn = target_section;
                         new_reloc.References.Offset = target_section_offset;
                         new_reloc.References.Size = reloc_target.Size;
                         new_reloc.References.Name = reloc_target.Name;
+                        target_section.AddSymbol(new_reloc.References);
                         new_reloc.Type = reloc.Type;
                         
                         // Evaluate the relocation
@@ -439,14 +439,8 @@ namespace tl
                 binary_library.ISymbol sym = output.CreateSymbol();
                 sym.Name = name;
                 sym.Type = binary_library.SymbolType.Global;
-                sym.DefinedIn = state.cur_section;
-                if (sym.DefinedIn == null)
-                {
-                    output.AddSymbol(sym);
-                    sym.Offset = state.cur_offset;
-                }
-                else
-                    sym.Offset = state.cur_sect_offset;
+                sym.Offset = state.cur_sect_offset;
+                state.cur_section.AddSymbol(sym);
             }
         }
 
@@ -612,24 +606,23 @@ namespace tl
                 // Generate a list of sections to include
                 IList<binary_library.ISection> sections = null;
 
-                Regex r = new Regex(WildcardToRegex(input_section));
-
                 switch (selection)
                 {
                     case InputFileSelection.All:
                         sections = new List<binary_library.ISection>();
                         foreach (binary_library.IBinaryFile ifile in inputs)
                         {
-                            binary_library.ISection sect = ifile.FindSection(r);
+                            binary_library.ISection sect = ifile.FindSection(input_section);
                             if (sect != null)
                                 sections.Add(sect);
                         }
+
                         break;
                     case InputFileSelection.AllNotSpecified:
                         sections = new List<binary_library.ISection>();
                         foreach (binary_library.IBinaryFile ifile in inputs)
                         {
-                            binary_library.ISection sect = ifile.FindSection(r);
+                            binary_library.ISection sect = ifile.FindSection(input_section);
                             if ((sect != null) && (!state.included_sections.Contains(sect)))
                                 sections.Add(sect);
                         }
@@ -641,7 +634,7 @@ namespace tl
                             System.IO.FileInfo fi = new System.IO.FileInfo(ifile.Filename);
                             if (fi.Exists && (fi.Name == input_file))
                             {
-                                binary_library.ISection sect = ifile.FindSection(r);
+                                binary_library.ISection sect = ifile.FindSection(input_section);
                                 if ((sect != null) && (!state.included_sections.Contains(sect)))
                                     sections.Add(sect);
                             }
@@ -677,7 +670,6 @@ namespace tl
                         ISymbol sym = sect.GetSymbol(i);
                         ISymbol new_sym = output.CreateSymbol();
                         new_sym.Name = sym.Name;
-                        new_sym.DefinedIn = osect;
                         new_sym.Offset = state.cur_sect_offset + sym.Offset;
                         new_sym.Size = sym.Size;
                         new_sym.Type = sym.Type;
