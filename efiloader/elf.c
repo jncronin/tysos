@@ -114,25 +114,28 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 
 			/* Now allocate the rest of the segment */
 			EFI_PHYSICAL_ADDRESS next_paddr;
-			Status = alloc_code(v_length, &next_paddr);
-			if(Status != EFI_SUCCESS)
+			if (v_length)
 			{
-				printf("error allocating pages for segment: %i\n", Status);
-				return Status;
-			}
-			Status = allocate_fixed(next_page_vaddr, v_length, next_paddr);
-			if(Status != EFI_SUCCESS)
-			{
-				printf("error allocating virtual space for segment: %i\n", Status);
-				return Status;
-			}
+				Status = alloc_code(v_length, &next_paddr);
+				if (Status != EFI_SUCCESS)
+				{
+					printf("error allocating pages for segment: %i\n", Status);
+					return Status;
+				}
+				Status = allocate_fixed(next_page_vaddr, v_length, next_paddr);
+				if (Status != EFI_SUCCESS)
+				{
+					printf("error allocating virtual space for segment: %i\n", Status);
+					return Status;
+				}
 
-			size_t rest_to_load = phdr->p_filesz - seg_offset;
-			EFI_PHYSICAL_ADDRESS cur_paddr = next_paddr + page_offset;
-			fread_func(fobj, (void *)(uintptr_t)cur_paddr, rest_to_load);
-			cur_paddr += rest_to_load;
-			size_t rest_to_zero = phdr->p_memsz - phdr->p_filesz;
-			memset((void *)(uintptr_t)cur_paddr, 0, rest_to_zero);
+				size_t rest_to_load = phdr->p_filesz - seg_offset;
+				EFI_PHYSICAL_ADDRESS cur_paddr = next_paddr + page_offset;
+				fread_func(fobj, (void *)(uintptr_t)cur_paddr, rest_to_load);
+				cur_paddr += rest_to_load;
+				size_t rest_to_zero = phdr->p_memsz - phdr->p_filesz;
+				memset((void *)(uintptr_t)cur_paddr, 0, rest_to_zero);
+			}
 
 			/* Find all writeable sections - we need to add them as GC roots */
 			if ((phdr->p_flags & PF_W) != 0)

@@ -118,7 +118,7 @@ else
 	print("Unknown architecture: " + TARGET + "\n");
 	exit();
 }
-TL ?= find("tl", "Tysos linker", TL);
+//TL ?= find("tl", "Tysos linker", TL);
 
 if(USE_UEFI)
 {
@@ -249,6 +249,8 @@ REF_OVERRIDES = [ ];
 
 TYSILAPROJ = ROOT + "/tysila4/tysila4.csproj";
 TYSILA = typroject(TYSILAPROJ, "Release", "4.6.1", 1, [], REF_OVERRIDES);
+TL = typroject(ROOT + "/tl/tl/tl.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
+ELFHASH = typroject(ROOT + "/elfhash/elfhash.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
 TYSOS = typroject(ROOT + "/tysos/tysos.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
 TYSOSOBJ = objfromexe(TYSOS);
 LIBSUPCS = typroject(ROOT + "/libsupcs/libsupcs.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
@@ -282,6 +284,7 @@ LIBSUPCS_COMPILER_RT = [
 ];
 
 KERNEL = ROOT + "/tysos.bin";
+KERNELTO = ROOT + "/tysos.to";
 
 /* Rules for char-conversions */
 CC_DIR = ROOT + "/unicode_support/char-conversions";
@@ -329,11 +332,11 @@ rulefor("%.obj", [ "%.dll" ], [ TYSILA, MSCORLIB, THIS ], function()
 {
 	shellcmd("$TYSILA -o $_RULE_OUTPUT -mno-sse4_1 $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$TYSOSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
-/*rulefor "%.to" inputs { "%.obj" } depends { TL, THIS } {
+rulefor("%.to", [ "%.obj" ], [ TL, THIS ], function() {
 	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
-}*/
-rulefor("%.to", [ "%.obj" ], [ THIS ], function() {
-	cp(_RULE_INPUT, _RULE_OUTPUT);
+});
+rulefor("%.to", [ "%.bin" ], [ ELFHASH, THIS ], function() {
+	shellcmd("$ELFHASH -o $_RULE_OUTPUT -e $_RULE_INPUT");
 });
 
 /* Assemble all corefx assemblies */
@@ -609,10 +612,10 @@ if(defined(USE_GRUB))
 	GRUBCFG = ROOT + "/grub-loader/iso/boot/grub/grub.cfg";
 	autodir(GRUB_MOD_DIR);
 
-	rulefor(ISOIMAGE, [ KERNEL, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU ],
+	rulefor(ISOIMAGE, [ KERNELTO, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU ],
 		[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT, GRUB_MOD_DIR ], function()
 	{
-		cp(KERNEL, ISODIR);
+		cp(KERNELTO, ISODIR);
 		cp(GRUBCFG, GRUBDIR);
 		cp(LIBSUPCS, ISODIR);
 		cp(MSCORLIB, ISODIR);
@@ -620,7 +623,7 @@ if(defined(USE_GRUB))
 		cp(BOOT_MNU, BOOTDIR);
 
 		// Compress kernel
-		shellcmd("$GZIP -f $ISODIR/tysos.bin");
+		shellcmd("$GZIP -f $ISODIR/tysos.to");
 
 		foreach(proc in PROCESSES)
 		{
@@ -664,11 +667,11 @@ else if(defined(USE_UEFI))
 	autodir(IMGDIR + "/EFI/BOOT");
 	autodir(IMGDIR + "/boot");
 
-	rulefor(ISOIMAGE, [ KERNEL, LIBSUPCS, MSCORLIB, EFILOADER, BOOT_MNU ] + PROCESSES,
+	rulefor(ISOIMAGE, [ KERNELTO, LIBSUPCS, MSCORLIB, EFILOADER, BOOT_MNU ] + PROCESSES,
 		[ IMGDIR, IMGDIR + "/EFI/BOOT", IMGDIR + "/boot", ISODIR ],
 		function()
 	{
-		cp(KERNEL, IMGDIR);
+		cp(KERNELTO, IMGDIR);
 		cp(LIBSUPCS, IMGDIR);
 		cp(MSCORLIB, IMGDIR);
 		cp(BOOT_MNU, IMGDIR + "/boot");
@@ -679,7 +682,7 @@ else if(defined(USE_UEFI))
 		}
 
 		// Compress kernel
-		shellcmd("$GZIP -f $IMGDIR/tysos.bin");
+		shellcmd("$GZIP -f $IMGDIR/tysos.to");
 
 		cp(EFILOADER, IMGDIR + "/EFI/BOOT/BOOTX64.EFI");
 
@@ -701,7 +704,7 @@ if(MAKE_ISO == "y")
 }
 else
 {
-	if(build(KERNEL) || build(PROCESSES))
+	if(build(KERNELTO) || build(PROCESSES))
 	{
 		setoutputcolor(["red"]);
 		print("--------------------------------\n");

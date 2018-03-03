@@ -1,6 +1,6 @@
 kernel
 {
-	path = "/tysos.bin.gz"
+	path = "/tysos.to.gz"
 	cmdline = ""
 }
 

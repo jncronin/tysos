@@ -37,6 +37,7 @@ namespace tl
 
         internal static bool is_reloc = false;
         internal static bool gen_hash = false;
+        internal static bool gen_ph = false;
 
         const string nl = "\n";
         internal static string comment = nl + "tl" + nl;

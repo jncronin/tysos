@@ -36,6 +36,8 @@ namespace binary_library
         protected bool is_executable = false;
         protected IBinaryFile file;
 
+        protected internal long file_offset = 0;
+
         protected List<ISymbol> symbols = new List<ISymbol>();
         protected Dictionary<string, ISymbol> sym_map = new Dictionary<string, ISymbol>();
 

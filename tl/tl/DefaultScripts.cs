@@ -34,6 +34,7 @@ namespace tl
         {
             InitElf();
             InitElfTyObj();
+            InitElfTyKObj();
             InitElfJCA();
             InitElfJCAProg();
         }
@@ -157,6 +158,60 @@ namespace tl
 
             Scripts["elf-tyobj"] = elf32_tyobj;
         }
+
+        private static void InitElfTyKObj()
+        {
+            // TyKObj is a relocatable format for the tysos kernel containing a elf hash and a text address of 0x40000000
+            LinkerScript elf32_tykobj = new LinkerScript("elf-tykobj");
+            elf32_tykobj.Script.Add(new LinkerScript.SetExecutable(false));
+            elf32_tykobj.Script.Add(new LinkerScript.GenerateELFHash());
+
+            elf32_tykobj.Script.Add(new LinkerScript.UpdateOffset(LinkerScript.UpdateOffset.UpdateType.Set, 0x40000000));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSection(LinkerScript.DefineSection.StandardSection.Text));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSymbol("__text"));
+            elf32_tykobj.Script.Add(new LinkerScript.InputFileSection(".text*"));
+            elf32_tykobj.Script.Add(new LinkerScript.EndSection());
+
+            elf32_tykobj.Script.Add(new LinkerScript.UpdateOffset(LinkerScript.UpdateOffset.UpdateType.Align, 16));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSection(LinkerScript.DefineSection.StandardSection.Data));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSymbol("__data"));
+            elf32_tykobj.Script.Add(new LinkerScript.InputFileSection(".data*"));
+            elf32_tykobj.Script.Add(new LinkerScript.EndSection());
+
+            elf32_tykobj.Script.Add(new LinkerScript.UpdateOffset(LinkerScript.UpdateOffset.UpdateType.Align, 16));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSection(LinkerScript.DefineSection.StandardSection.Rodata));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSymbol("__rodata"));
+            elf32_tykobj.Script.Add(new LinkerScript.InputFileSection(".rodata*"));
+            elf32_tykobj.Script.Add(new LinkerScript.EndSection());
+
+            elf32_tykobj.Script.Add(new LinkerScript.UpdateOffset(LinkerScript.UpdateOffset.UpdateType.Align, 16));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSection(LinkerScript.DefineSection.StandardSection.Bss));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSymbol("__bss"));
+            elf32_tykobj.Script.Add(new LinkerScript.InputFileSection(".bss*"));
+            elf32_tykobj.Script.Add(new LinkerScript.EndSection());
+
+            elf32_tykobj.Script.Add(new LinkerScript.UpdateOffset(LinkerScript.UpdateOffset.UpdateType.Set, 0));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSection(".comment", 0, false, false, false, true));
+            elf32_tykobj.Script.Add(new LinkerScript.InputFileSection(".comment*"));
+            elf32_tykobj.Script.Add(new LinkerScript.AddComment());
+            elf32_tykobj.Script.Add(new LinkerScript.EndSection());
+
+            elf32_tykobj.Script.Add(new LinkerScript.UpdateOffset(LinkerScript.UpdateOffset.UpdateType.Set, 0));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSection(LinkerScript.DefineSection.StandardSection.ElfDynamic));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSymbol("_DYNAMIC"));
+            elf32_tykobj.Script.Add(new LinkerScript.ElfDynamicSection());
+            elf32_tykobj.Script.Add(new LinkerScript.EndSection());
+
+            elf32_tykobj.Script.Add(new LinkerScript.UpdateOffset(LinkerScript.UpdateOffset.UpdateType.Set, 0));
+            elf32_tykobj.Script.Add(new LinkerScript.DefineSection(LinkerScript.DefineSection.StandardSection.ElfHash));
+            elf32_tykobj.Script.Add(new LinkerScript.ElfHashSection());
+            elf32_tykobj.Script.Add(new LinkerScript.EndSection());
+
+            elf32_tykobj.Script.Add(new LinkerScript.GenerateELFProgramHeaders());
+
+            Scripts["elf-tykobj"] = elf32_tykobj;
+        }
+
 
         private static void InitElfJCA()
         {

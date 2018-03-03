@@ -74,12 +74,32 @@ namespace elfhash
                         return;
                 }
             }
-            
+
             // Write the output file
-            Hash h = new Hash();
-            System.IO.FileStream fs = new System.IO.FileStream(output, System.IO.FileMode.Create);
-            System.IO.BinaryWriter bw = new System.IO.BinaryWriter(fs);
-            h.Write(bw, f, ver, 0, bitness);
+            if (ver == 2)
+            {
+                // output copy of the original ELF file with a .hash section
+                var hs = f.CreateSection();
+                hs.Name = ".hash";
+                hs.AddrAlign = 0;
+                hs.IsAlloc = true;
+                hs.IsWriteable = false;
+                hs.IsExecutable = false;
+                hs.HasData = true;
+                f.AddSection(hs);
+
+                f.Filename = output;
+                ((binary_library.elf.ElfFile)f).CreateHashSection = true;
+                f.Write();
+            }
+            else
+            {
+                // generate a separate hash file
+                Hash h = new Hash();
+                System.IO.FileStream fs = new System.IO.FileStream(output, System.IO.FileMode.Create);
+                System.IO.BinaryWriter bw = new System.IO.BinaryWriter(fs);
+                h.Write(bw, f, ver, 0, bitness);
+            }
         }
 
         private static bool ParseArgs(string[] args)
@@ -102,6 +122,8 @@ namespace elfhash
                     ver = 0;
                 else if (arg.Equals("-v1"))
                     ver = 1;
+                else if (arg.Equals("-e"))
+                    ver = 2;
                 else if (arg.Equals("-o"))
                 {
                     if (i == args.Length - 1)
@@ -135,6 +157,7 @@ namespace elfhash
             Console.WriteLine("  -64                    enforce 64-bit hash file");
             Console.WriteLine("  -v0                    enforce version 0 (ELF-style) hash file without header");
             Console.WriteLine("  -v1                    enforce version 1 (tysos) hash file with header");
+            Console.WriteLine("  -e                     embed in output ELF file");
             Console.WriteLine();
             Console.WriteLine();
         }

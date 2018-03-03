@@ -142,6 +142,8 @@ namespace binary_library.elf
 
             foreach(var sect in sections)
             {
+                if (sect == null || sect.Name == ".strtab" || sect.Name == ".shstrtab" || sect.Name == ".symtab")
+                    continue;
                 SectionHeader sh = new SectionHeader();
                 if (sect.Name == ".dynamic")
                 {
@@ -318,6 +320,8 @@ namespace binary_library.elf
             // Now write out the section data
             foreach(var s in sections)
             {
+                if (s == null)
+                    continue;
                 // align up to addralign
                 int sect_idx;
                 if (!osect_map.TryGetValue(s, out sect_idx))
@@ -328,6 +332,11 @@ namespace binary_library.elf
                     while ((w.BaseStream.Position % sh.sh_addralign) != 0)
                         w.Write((byte)0);
                 }
+
+                // align up to a specified alignment if requested
+                var spec_align = ((BaseSection)s).file_offset;
+                while (w.BaseStream.Position < spec_align)
+                    w.Write((byte)0);
 
                 sh.sh_offset = w.BaseStream.Position;
 
@@ -451,6 +460,8 @@ namespace binary_library.elf
                 e_phoff = w.BaseStream.Position;
                 foreach (var sect in sections)
                 {
+                    if (sect == null || sect.IsAlloc == false)
+                        continue;
                     ElfProgramHeader ph = new ElfProgramHeader();
                     ph.p_type = ElfProgramHeader.PT_LOAD;
                     ph.p_offset = (ulong)osects[osect_map[sect]].sh_offset;
@@ -491,16 +502,16 @@ namespace binary_library.elf
             else
                 e_type = 1;
 
-            if(EntryPoint != null && IsExecutable)
+            if (EntryPoint != null && IsExecutable)
             {
                 var s = FindSymbol(EntryPoint);
                 if (s != null && s.DefinedIn != null)
-                    e_entry = s.Offset + s.DefinedIn.LoadAddress;
+                    e_entry = s.Offset;
                 else
                 {
                     // default to offset 0x0 in text
                     var sect = FindSection(".text");
-                    if(sect == null)
+                    if (sect == null)
                     {
                         // default to 0x0
 #if HAVE_SYSTEM
@@ -520,6 +531,8 @@ namespace binary_library.elf
                     }
                 }
             }
+            else
+                e_entry = 0;
 
             int cur_pos = (int)w.BaseStream.Position;
             w.Seek(fh_start, System.IO.SeekOrigin.Begin);
@@ -555,8 +568,8 @@ namespace binary_library.elf
             esym.st_name = AllocateString(sym.Name, strtab);
             esym.st_value = sym.Offset;
 
-            if (IsExecutable && sym.DefinedIn != null)
-                esym.st_value += sym.DefinedIn.LoadAddress;
+            //if (IsExecutable && sym.DefinedIn != null)
+            //    esym.st_value += sym.DefinedIn.LoadAddress;
 
             esym.st_size = sym.Size;
             esym.st_bind = 0;
@@ -733,6 +746,8 @@ namespace binary_library.elf
             os = "none";
             binary_type = BinaryTypes[ec];
             architecture = MachineTypes[e_machine];
+            if (e_type == 0x2)
+                IsExecutable = true;
 
             // First iterate through and identify the offsets of each section
             List<long> sect_offsets = new List<long>();
@@ -817,6 +832,8 @@ namespace binary_library.elf
                     sect.LoadAddress = sh.sh_addr;
                     sect.Name = name;
                     sect.AddrAlign = sh.sh_addralign;
+
+                    ((BaseSection)sect).file_offset = sh.sh_offset;
 
                     // Load the contents if it has any
                     sect.Length = sh.sh_size;
@@ -913,6 +930,9 @@ namespace binary_library.elf
                             {
                                 sections[s.st_shndx].AddSymbol(s);
                             }
+
+                            if (e_entry != 0 && e_entry == s.Offset)
+                                EntryPoint = s.Name;
                         }
 
                         ((ElfSymbolSection)sect).elf_syms[cur_sym++] = s;
@@ -1343,7 +1363,14 @@ namespace binary_library.elf
 
         private void WriteElf64Segment(ElfProgramHeader ph, System.IO.BinaryWriter w)
         {
-            throw new NotImplementedException();
+            w.Write((uint)ph.p_type);
+            w.Write((uint)ph.p_flags);
+            w.Write((ulong)ph.p_offset);
+            w.Write((ulong)ph.p_vaddr);
+            w.Write((ulong)ph.p_paddr);
+            w.Write((ulong)ph.p_filesz);
+            w.Write((ulong)ph.p_memsz);
+            w.Write((ulong)ph.p_align);
         }
 
         private void WriteElf32Section(SectionHeader sect, System.IO.BinaryWriter w)

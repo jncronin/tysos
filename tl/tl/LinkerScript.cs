@@ -364,6 +364,14 @@ namespace tl
             }
         }
 
+        public class GenerateELFProgramHeaders : ScriptEntry
+        {
+            public override void DoCommand(IBinaryFile output, IList<IBinaryFile> inputs, LinkerScriptState state)
+            {
+                Program.gen_ph = true;
+            }
+        }
+
         public class AddData : ScriptEntry
         {
             IEnumerable<byte> d;
