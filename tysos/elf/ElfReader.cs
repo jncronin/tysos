@@ -171,6 +171,27 @@ namespace tysos
             throw new Exception("Shdr type " + type.ToString() + " not found.");
         }
 
+        /* Get a shdr of a particular name */
+        private static unsafe Elf64_Shdr* GetShdr(Elf64_Ehdr* ehdr, string name)
+        {
+            ulong sect_header = (ulong)ehdr + ehdr->e_shoff;
+
+            for (uint i = 0; i < ehdr->e_shnum; i++)
+            {
+                Elf64_Shdr* shdr = (Elf64_Shdr*)sect_header;
+
+                ulong name_addr = ((Elf64_Shdr*)((ulong)ehdr + ehdr->e_shoff + ehdr->e_shentsize * ehdr->e_shstrndx))->sh_offset + shdr->sh_name + (ulong)ehdr;
+                string sect_name = new string((sbyte*)name_addr);
+
+                if (name.Equals(sect_name))
+                    return shdr;
+
+                sect_header += ehdr->e_shentsize;
+            }
+            return null;
+        }
+
+
         /* Load up the dynamic section */
         private static unsafe Elf64_DynamicEntries GetDynEntries(Elf64_Ehdr* ehdr, ulong load_address)
         {
@@ -327,6 +348,8 @@ namespace tysos
                 ulong sym_tab = 0;
                 ulong sym_entsize = 0;
                 ulong sym_strtab = 0;
+                uint sym_shinfo = 0;
+                ulong sym_shsize = 0;
 
                 for (uint i = 0; i < e_shnum; i++)
                 {
@@ -340,6 +363,8 @@ namespace tysos
 
                         Elf64_Shdr* sym_strtab_sh = (Elf64_Shdr*)(binary + ehdr->e_shoff + e_shentsize * cur_shdr->sh_link);
                         sym_strtab = binary + sym_strtab_sh->sh_offset;
+                        sym_shinfo = cur_shdr->sh_info;
+                        sym_shsize = cur_shdr->sh_size;
 
                         break;
                     }
@@ -355,7 +380,7 @@ namespace tysos
                         Program.arch.DebugOutput);
 
                     ElfHashTable h = new ElfHashTable(hash_addr, 
-                        sym_tab, sym_entsize, sym_strtab, sect_map);
+                        sym_tab, sym_entsize, sym_strtab, sect_map, (int)sym_shinfo);
                     stab.symbol_providers.Add(h);
 
                     start = h.GetAddress("_start");
@@ -923,6 +948,18 @@ namespace tysos
             Elf64_DynamicEntries dyn_entries = GetDynEntries(ehdr, symbol_adjust);
             if (dyn_entries == null)
             {
+                /* See if there is a .hash section */
+                var hashsect = GetShdr(ehdr, ".hash");
+                if(hashsect != null)
+                {
+                    // map it in
+                    ulong hash_vaddr = Program.map_in(binary + hashsect->sh_offset, hashsect->sh_size, ".hash section");
+
+                    var hr = new ElfHashTable(hash_vaddr, (ulong)ehdr + sym_tab->sh_offset, sym_tab->sh_entsize, (ulong)ehdr + str_tab->sh_offset,
+                        null, (int)sym_tab->sh_info, sym_tab->sh_size);
+                    stab.symbol_providers.Add(hr);
+                    return;
+                }
                 /* No dynamic table, we have to use our own dictionary instead */
                 LoadSymbols2(stab, binary, symbol_adjust);
                 return;
@@ -1041,14 +1078,20 @@ namespace tysos
             ulong sym_tab_start;
             ulong sym_tab_entsize;
             ulong sym_name_tab_start;
+            ulong sym_sh_size;
+            ulong sym_count;
             Dictionary<uint, ulong> symbol_adjust;
 
+            int fglob_sym = 0;
+
             public ElfHashTable(ulong elfhash_addr, ulong _sym_tab_start,
-                ulong _sym_tab_entsize, ulong _sym_tab_name_start, Dictionary<uint, ulong> _symbol_adjust)
+                ulong _sym_tab_entsize, ulong _sym_tab_name_start, Dictionary<uint, ulong> _symbol_adjust = null, int first_glob_sym = -1, ulong _sym_shsize = 0)
             {
                 sym_tab_start = _sym_tab_start;
                 sym_tab_entsize = _sym_tab_entsize;
                 sym_name_tab_start = _sym_tab_name_start;
+                sym_sh_size = _sym_shsize;
+                sym_count = sym_sh_size / sym_tab_entsize;
                 symbol_adjust = _symbol_adjust;
 
                 nbucket = *(uint*)(elfhash_addr);
@@ -1073,7 +1116,7 @@ namespace tysos
                         var shndx = cur_sym->st_shndx;
                         if (shndx == 0)  // undefined symbol
                             return 0;
-                        var ret = cur_sym->st_value + symbol_adjust[cur_sym->st_shndx];
+                        ulong ret = (symbol_adjust != null) ? cur_sym->st_value + symbol_adjust[cur_sym->st_shndx] : cur_sym->st_value;
                         /*Formatter.WriteLine("elfhash: symbol: " + s +
                             " found at 0x" + ret.ToString("X"),
                             Program.arch.DebugOutput);*/
@@ -1086,13 +1129,48 @@ namespace tysos
                 return 0;
             }
 
+            internal ulong GetIndexBelow(ulong address)
+            {
+                ulong lo = (ulong)fglob_sym, hi = sym_count;
+                while(lo < hi)
+                {
+                    var mid = (lo + hi) / 2;
+                    Elf64_Sym* cur_sym = (Elf64_Sym*)(sym_tab_start + mid * sym_tab_entsize);
+                    if (cur_sym->st_value > address) hi = mid; else lo = mid + 1;
+                }
+                return lo - 1;
+            }
+
             protected internal override string GetSymbol(ulong address)
             {
+                var idx = GetIndexBelow(address);
+                if(idx <= sym_count)
+                {
+                    Elf64_Sym* cur_sym = (Elf64_Sym*)(sym_tab_start + idx * sym_tab_entsize);
+                    if(cur_sym->st_value == address)
+                    {
+                        ulong name_addr = sym_name_tab_start + cur_sym->st_name;
+                        string sym_name = new string((sbyte*)name_addr);
+                        return sym_name;
+                    }
+                }
                 return null;
             }
 
             protected internal override string GetSymbolAndOffset(ulong address, out ulong offset)
             {
+                var idx = GetIndexBelow(address);
+                if (idx <= sym_count)
+                {
+                    Elf64_Sym* cur_sym = (Elf64_Sym*)(sym_tab_start + idx * sym_tab_entsize);
+                    if (address >= cur_sym->st_value && address < (cur_sym->st_value + cur_sym->st_size))
+                    {
+                        ulong name_addr = sym_name_tab_start + cur_sym->st_name;
+                        string sym_name = new string((sbyte*)name_addr);
+                        offset = address - cur_sym->st_size;
+                        return sym_name;
+                    }
+                }
                 offset = 0;
                 return null;
             }

@@ -159,19 +159,7 @@ namespace tysos
                 Formatter.Write(tysos_vaddr, "X", arch.DebugOutput);
                 Formatter.WriteLine(arch.DebugOutput);
 
-                /* Look for a hash file */
-                Multiboot.Module khash = find_module(mboot.modules, "tysos.hash");
-                ulong khash_addr = 0;
-                if (khash != null)
-                {
-                    khash_addr = map_in(khash);
-                    Formatter.Write("Kernel hash table found, mapped to address: ", arch.DebugOutput);
-                    Formatter.Write(khash_addr, "X", arch.DebugOutput);
-                    Formatter.WriteLine(arch.DebugOutput);
-                    throw new NotImplementedException();
-                }
-
-                ElfReader.LoadSymbols(stab, mboot);
+                ElfReader.LoadSymbols(stab, tysos_vaddr, 0);
                 //ElfReader.LoadSymbols(stab, tysos_vaddr, mboot.tysos_virtaddr, khash_addr);
                 Formatter.WriteLine("done", arch.BootInfoOutput);
             }

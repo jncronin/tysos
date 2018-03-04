@@ -130,10 +130,8 @@ namespace binary_library.elf
             switch(ec)
             {
                 case ElfClass.ELFCLASS32:
-                    s.Write((int)val);
-                    break;
                 case ElfClass.ELFCLASS64:
-                    s.Write((long)val);
+                    s.Write((int)val);
                     break;
                 default:
                     throw new Exception("Unsupported elf class value: " + ec.ToString());
