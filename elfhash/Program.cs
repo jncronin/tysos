@@ -90,6 +90,7 @@ namespace elfhash
 
                 f.Filename = output;
                 ((binary_library.elf.ElfFile)f).CreateHashSection = true;
+                ((binary_library.elf.ElfFile)f).SortSymbols = true;
                 f.Write();
             }
             else
