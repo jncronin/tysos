@@ -19,6 +19,7 @@
 *.gz
 *.a
 *.img
+*.to
 
 serial.txt
 char-conversions.cs
