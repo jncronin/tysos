@@ -39,7 +39,7 @@ namespace binary_library
 
         public override string ToString()
         {
-            return name;
+            return offset.ToString("X") + ": " + name;
         }
 
         public ISection DefinedIn { get { return definedin; } }

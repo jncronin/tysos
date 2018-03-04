@@ -33,6 +33,7 @@ namespace binary_library.elf
 
         public bool CreateHashSection = false;
         public bool CreateDynamicSection = false;
+        public bool SortSymbols = false;
 
         bool use_rela = true;
 
@@ -121,6 +122,16 @@ namespace binary_library.elf
             get { throw new NotImplementedException(); }
         }
 
+        static int sym_compare(ISymbol a, ISymbol b)
+        {
+            if (a.Offset < b.Offset)
+                return -1;
+            else if (a.Offset > b.Offset)
+                return 1;
+            else
+                return 0;
+        }
+
         protected override void Write(System.IO.BinaryWriter w)
         {
             Init();
@@ -206,19 +217,45 @@ namespace binary_library.elf
             Dictionary<ISymbol, int> sym_map = new Dictionary<ISymbol, int>();
             Dictionary<string, int> sym_str_map = new Dictionary<string, int>();
 
-            // Add local symbols first
-            foreach(var sym in GetSymbols())
-            { 
-                if (sym.Type == SymbolType.Local)
-                    AddSymbol(sym, strtab, osyms, sym_map, sym_str_map, osect_map);
-            }
-            int last_local = osyms.Count;
-            foreach(var sym in GetSymbols())
+            // Add local symbols first then global
+            //  Split SortSymbols into a separate code path as adding all to a list is slow
+            if (SortSymbols && IsExecutable)
             {
-                if (sym.Type != SymbolType.Local)
+                List<ISymbol> loc_syms = new List<ISymbol>();
+                List<ISymbol> glob_syms = new List<ISymbol>();
+
+                foreach(var sym in GetSymbols())
+                {
+                    if (sym.Type == SymbolType.Local)
+                        loc_syms.Add(sym);
+                    else
+                        glob_syms.Add(sym);
+                }
+
+                loc_syms.Sort(sym_compare);
+                glob_syms.Sort(sym_compare);
+
+                foreach (var sym in loc_syms)
                     AddSymbol(sym, strtab, osyms, sym_map, sym_str_map, osect_map);
+                foreach (var sym in glob_syms)
+                    AddSymbol(sym, strtab, osyms, sym_map, sym_str_map, osect_map);
+                symtab.sh_info = loc_syms.Count;
             }
-            symtab.sh_info = last_local;
+            else
+            {
+                foreach (var sym in GetSymbols())
+                {
+                    if (sym.Type == SymbolType.Local)
+                        AddSymbol(sym, strtab, osyms, sym_map, sym_str_map, osect_map);
+                }
+                int last_local = osyms.Count;
+                foreach (var sym in GetSymbols())
+                {
+                    if (sym.Type != SymbolType.Local)
+                        AddSymbol(sym, strtab, osyms, sym_map, sym_str_map, osect_map);
+                }
+                symtab.sh_info = last_local;
+            }
 
             // Write out relocations into the appropriate sections
             Dictionary<ISection, SectionHeader> reloc_sections = new Dictionary<ISection, SectionHeader>();
