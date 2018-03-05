@@ -31,6 +31,7 @@ namespace binary_library
         long Length { get; set; }
         long AddrAlign { get; set; }
         ulong LoadAddress { get; set; }
+        long FileOffset { get; set; }
         bool IsAlloc { get; set; }
         bool IsWriteable { get; set; }
         bool IsExecutable { get; set; }

@@ -381,6 +381,7 @@ namespace binary_library.elf
                 {
                     WriteHash(w, osyms, ec);
                     sh.sh_size = w.BaseStream.Position - sh.sh_offset;
+                    s.Length = sh.sh_size;
                     //WriteHashTable(sh_hash, osyms, w);
                 }
                 else if (sh == sh_dyn)
@@ -504,7 +505,7 @@ namespace binary_library.elf
                     ph.p_offset = (ulong)osects[osect_map[sect]].sh_offset;
                     ph.p_vaddr = sect.LoadAddress;
                     ph.p_paddr = 0;
-                    ph.p_filesz = sect.HasData ? (ulong)sect.Data.Count : 0UL;
+                    ph.p_filesz = (ulong)sect.Length;
                     ph.p_memsz = (ulong)sect.Length;
                     ph.p_flags = 0;
                     if (sect.IsExecutable)

@@ -45,6 +45,8 @@ namespace binary_library
         
         public virtual IEnumerable<ISymbol> GetSymbols() { return symbols; }
 
+        public virtual long FileOffset { get { return file_offset; } set { file_offset = value; } }
+
         public override string ToString()
         {
             return name;

@@ -81,11 +81,45 @@ namespace elfhash
                 // output copy of the original ELF file with a .hash section
                 var hs = f.CreateSection();
                 hs.Name = ".hash";
-                hs.AddrAlign = 0;
+                hs.AddrAlign = 0x1000;
                 hs.IsAlloc = true;
                 hs.IsWriteable = false;
                 hs.IsExecutable = false;
                 hs.HasData = true;
+
+                // locate it somewhere after the last offset and virtual address in the file
+                if (f.IsExecutable)
+                {
+                    long last_offset = 0;
+                    ulong last_vaddr = 0;
+                    for (int i = 0; i < f.GetSectionCount(); i++)
+                    {
+                        var s = f.GetSection(i);
+                        if(s != null && s.IsAlloc)
+                        {
+                            if (s.LoadAddress + (ulong)s.Length > last_vaddr)
+                                last_vaddr = s.LoadAddress + (ulong)s.Length;
+                            if (s.FileOffset + s.Length > last_offset)
+                                last_offset = s.FileOffset + s.Length;
+                        }
+                    }
+
+                    if ((last_vaddr & 0xfff) != 0)
+                        last_vaddr = (last_vaddr + 0x1000UL) & ~0xfffUL;
+                    if ((last_offset & 0xfff) != 0)
+                        last_offset = (last_offset + 0x1000L) & ~0xfffL;
+
+                    hs.LoadAddress = last_vaddr;
+                    hs.FileOffset = last_offset;
+
+                    // Create start symbol
+                    var hss = f.CreateSymbol();
+                    hss.Name = "_hash_start";
+                    hss.Type = binary_library.SymbolType.Global;
+                    hss.ObjectType = binary_library.SymbolObjectType.Object;
+                    hs.AddSymbol(hss);
+                }
+
                 f.AddSection(hs);
 
                 f.Filename = output;
