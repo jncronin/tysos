@@ -31,51 +31,110 @@ namespace isomake
 
             voldescs.Add(new VolumeDescriptorSetTerminator());
 
-            // Load up all directory infos - this becomes the path table
-            List<PathTableEntry> ptes = new List<PathTableEntry>();
+            // Generate directory tree
+            List<AnnotatedFSO> files, dirs;
+            var afso = AnnotatedFSO.BuildAFSOTree(d, out dirs, out files);
 
-            List<PathTableEntry> cur_level = new List<PathTableEntry>();
-            cur_level.Add(new PathTableEntry { di = d, parent_idx = 0 });
+            // Allocate space for files + directories
+            int cur_lba = 0x10 + voldescs.Count;
 
-            Dictionary<DirectoryInfo, int> di_map = new Dictionary<DirectoryInfo, int>();
-            di_map[d] = 0;
-
-            // We are required to sort the path table in ascening order of directory level and alphabetically within each level
-            while(true)
+            List<AnnotatedFSO> output_order = new List<AnnotatedFSO>();
+            foreach(var file in files)
             {
-                cur_level.Sort(DiSorter);
+                var fi = file.fsi as FileInfo;
+                var l = align(fi.Length);
+                var lbal = l / 2048;
 
-                List<PathTableEntry> next_level = new List<PathTableEntry>();
+                file.lba = cur_lba;
+                cur_lba += (int)lbal;
 
-                foreach(var cl in cur_level)
-                {
-                    di_map[cl.di] = ptes.Count;
-                    cl.cur_idx = ptes.Count;
-                    ptes.Add(cl);
-
-                    foreach(var child in cl.di.GetDirectories())
-                    {
-                        next_level.Add(new PathTableEntry { di = child, parent_idx = cl.cur_idx });
-                    }
-                }
-
-                if (next_level.Count == 0)
-                    break;
-                else
-                    cur_level = next_level;
+                output_order.Add(file);
             }
+            foreach(var dir in dirs)
+            {
+                dir.lba = cur_lba++;
+                output_order.Add(dir);
+            }
+
+            // create path table
+            var path_table_l_lba = cur_lba;
+            byte[] path_table_l = build_path_table(afso, false);
+            var path_table_b_lba = path_table_l_lba + (int)align(path_table_l.Length) / 2048;
+            byte[] path_table_b = build_path_table(afso, true);
+
+            cur_lba = path_table_b_lba + (int)align(path_table_b.Length) / 2048;
+
+            // Set pvd entries
+            pvd.WriteString("VolumeIdentifier", "UNNAMED");
+            pvd.WriteInt("VolumeSpaceSize", cur_lba);
+            pvd.WriteInt("VolumeSetSize", 1);
+            pvd.WriteInt("VolumeSequenceNumber", 0);
+            pvd.WriteInt("LogicalBlockSize", 2048);
+            pvd.WriteInt("PathTableSize", path_table_l.Length);
+            pvd.WriteInt("LocTypeLPathTable", path_table_l_lba);
+            pvd.WriteInt("LocTypeMPathTable", path_table_b_lba);
         }
 
-        static int DiSorter(PathTableEntry a, PathTableEntry b)
+        private static byte[] build_path_table(List<AnnotatedFSO>[] afso, bool lsb)
         {
-            return a.di.Name.CompareTo(b.di.Name);
+            List<byte> ret = new List<byte>();
+
+            for(int i = 0; i < afso.Length; i++)
+            {
+                var cur_afsol = afso[i];
+                foreach (var cur_afso in cur_afsol)
+                    build_path_table(cur_afso, ret, lsb);
+            }
+
+            return ret.ToArray();
         }
 
-        class PathTableEntry
+        private static void build_path_table(AnnotatedFSO afso, List<byte> ret, bool lsb)
         {
-            public DirectoryInfo di;
-            public int parent_idx;
-            public int cur_idx;
+            var id_len = afso.Identifier.Length;
+            ret.Add((byte)(8 + id_len));
+            ret.Add(0);
+
+            ret.AddRange(ToByteArray(afso.lba, 4, lsb));
+            ret.AddRange(ToByteArray(afso.Parent == null ? 0 : afso.Parent.dir_idx, 2, lsb));
+
+            foreach (var c in afso.Identifier)
+                ret.Add((byte)c);
+
+            if ((id_len % 1) != 0)
+                ret.Add(0);
+        }
+
+        private static IEnumerable<byte> ToByteArray(int v, int bc, bool lsb)
+        {
+            byte[] ret = new byte[bc];
+
+            if(lsb)
+            {
+                for (int i = 0; i < bc; i++)
+                {
+                    ret[i] = (byte)(v & 0xff);
+                    v >>= 8;
+                }
+            }
+            else
+            {
+                for(int i = (bc - 1); i >= 0; i--)
+                {
+                    ret[i] = (byte)(v & 0xff);
+                    v >>= 8;
+                }
+            }
+            return ret;
+        }
+
+        static long align(long v, long align=2048)
+        {
+            var r = v % align;
+            if (r == 0)
+                return v;
+            else
+                return v + (align - r);
         }
     }
 }
