@@ -1,8 +1,10 @@
 ﻿export DEFAULTS=1;
 
-export PATH=PATH + PATH_SPLIT + "D:\\cygwin64\\home\\jncro\\opt\\cross\\bin" + 
-					PATH_SPLIT + "D:\\cygwin64\\bin" +
-					PATH_SPLIT + "D:\\cygwin64\\usr\\local\\bin";
-export NASM="D:\\cygwin64\\bin\\yasm.exe";
+#export PATH=PATH + PATH_SPLIT + "D:\\cygwin64\\home\\jncro\\opt\\cross\\bin" + 
+#					PATH_SPLIT + "D:\\cygwin64\\bin" +
+#					PATH_SPLIT + "D:\\cygwin64\\usr\\local\\bin";
+#export NASM="D:\\cygwin64\\bin\\yasm.exe";
+
+export PATH=PATH + PATH_SPLIT + "c:/xgcc32/bin";
 
 export USE_GRUB=1;
