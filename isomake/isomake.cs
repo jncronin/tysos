@@ -147,7 +147,7 @@ namespace isomake
 
             // Add "." and ".." entries, store their location for future patching up
             parent_dir_map[dir_tree.Count] = cur_afso;
-            var b1 = build_dir_entry("\0", 0, 0);
+            var b1 = build_dir_entry("\0", 0, 0, null, cur_afso.Parent == null);
             add_dir_entry(b1, dir_tree);
             parent_dir_map[dir_tree.Count] = cur_afso.Parent ?? cur_afso;
             var b2 = build_dir_entry("\u0001", 0, 0);
@@ -181,12 +181,58 @@ namespace isomake
             dir_tree.AddRange(b);
         }
 
-        private static List<byte> build_dir_entry(string id, int lba, int len, FileSystemInfo fsi = null)
+        private static List<byte> build_dir_entry(string id, int lba, int len, FileSystemInfo fsi = null, bool is_root_dot = false)
         {
             var ret = new List<byte>();
 
             var id_len = id.Length;
             var dr_len = align(33 + id_len, 2);
+
+            // build RockRidge extra data here, then paste at the end
+            List<byte> rr = new List<byte>();
+            if(is_root_dot)
+            {
+                // Add SUSP SP field
+                rr.Add(0x53); rr.Add(0x50); // "SP"
+                rr.Add(0x7);                // length
+                rr.Add(1);                  // version
+                rr.Add(0xbe); rr.Add(0xef); // check bytes
+                rr.Add(0);                  // len_skp
+            }
+            // Add RR PX field
+            rr.Add(0x50); rr.Add(0x58);     // "PX"
+            rr.Add(44);                     // length
+            rr.Add(1);                      // version
+            int posix_attrs = 0x1ff;        // permissions
+            if (fsi == null || fsi is DirectoryInfo)
+                posix_attrs |= 0x4000;     // dir
+            else
+                posix_attrs |= 0x8000;    // regular
+            rr.AddRange(int_lsb_msb(posix_attrs));
+            rr.AddRange(int_lsb_msb(0));    // links
+            rr.AddRange(int_lsb_msb(0));    // uid
+            rr.AddRange(int_lsb_msb(0));    // gid
+            rr.AddRange(int_lsb_msb(0));    // serial num
+            // Add RR NM entry
+            if (!id.Equals("\0") && !id.Equals("\u0001"))
+            {
+                rr.Add(0x4e); rr.Add(0x4d);     // "NM"
+                                                // get name len
+                var rr_name_len = (id.Equals("\0") || id.Equals("\u0001") ? 0 : fsi.Name.Length);
+                rr.Add((byte)(5 + rr_name_len));    // length
+                rr.Add(1);                      // version
+                int nm_flags = 0;
+                if (id.Equals("\0")) nm_flags |= 0x2;
+                if (id.Equals("\u0001")) nm_flags |= 0x3;
+                rr.Add((byte)nm_flags);
+                if (rr_name_len > 0) rr.AddRange(Encoding.ASCII.GetBytes(fsi.Name));
+            }
+            // Add SUSP ST
+            //rr.Add(0x53); rr.Add(0x54);     // "ST"
+            //rr.Add(4);                      // length
+            //rr.Add(1);                      // ver
+
+            dr_len += rr.Count;
 
             if (dr_len > 255)
                 throw new NotSupportedException();
@@ -211,6 +257,8 @@ namespace isomake
             ret.AddRange(Encoding.ASCII.GetBytes(id));
 
             align(ret, 2);
+
+            ret.AddRange(rr);
 
             return ret;
         }
