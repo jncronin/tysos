@@ -154,6 +154,12 @@ namespace isomake
         public void WriteString(string tag, string s) { WriteString(entries[tag].Offset, entries[tag].Length, s); }
         public void WriteInt(string tag, int v) { WriteInt(entries[tag].Offset, entries[tag].Code, v); }
         public void WriteDateTime(string tag, DateTime d) { WriteDateTime(entries[tag].Offset, d); }
+        public void WriteBytes(string tag, IList<byte> b)
+        {
+            int len = Math.Min(entries[tag].Length, b.Count);
+            for (int i = 0; i < len; i++)
+                d[entries[tag].Offset + i] = b[i];
+        }
 
         protected void AddIntEntry(string tag, VDType.VDTypeCode c, int default_val)
         {
@@ -267,8 +273,8 @@ namespace isomake
             AddIntEntry("PathTableSize", VDType.VDTypeCode.int32_LSB_MSB);
             AddIntEntry("LocTypeLPathTable", VDType.VDTypeCode.int32_LSB);
             AddIntEntry("LocOptTypeLPathTable", VDType.VDTypeCode.int32_LSB);
-            AddIntEntry("LocTypeMPathTable", VDType.VDTypeCode.int32_LSB);
-            AddIntEntry("LocOptTypeMPathTable", VDType.VDTypeCode.int32_LSB);
+            AddIntEntry("LocTypeMPathTable", VDType.VDTypeCode.int32_MSB);
+            AddIntEntry("LocOptTypeMPathTable", VDType.VDTypeCode.int32_MSB);
 
             // TODO
             AddStringEntry("RootDir", 34);
@@ -280,8 +286,8 @@ namespace isomake
             AddStringEntry("CopyrightFileIdentifier", 38, "");
             AddStringEntry("AbstractFileIdentifier", 36, "");
             AddStringEntry("BibliographicFileIdentifier", 37, "");
-            AddDateTimeEntry("CreationDateTime", DateTime.Now);
-            AddDateTimeEntry("ModificationDateTime", DateTime.Now);
+            AddDateTimeEntry("CreationDateTime", DateTime.UtcNow);
+            AddDateTimeEntry("ModificationDateTime", DateTime.UtcNow);
             AddDateTimeEntry("ExpirationDateTime");
             AddDateTimeEntry("EffectiveDateTime");
             AddIntEntry("FileStructureVersion", VDType.VDTypeCode.int8, 0x01);

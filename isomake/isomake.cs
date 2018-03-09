@@ -46,21 +46,46 @@ namespace isomake
                 var lbal = l / 2048;
 
                 file.lba = cur_lba;
+                file.len = (int)fi.Length;
                 cur_lba += (int)lbal;
 
                 output_order.Add(file);
             }
-            foreach(var dir in dirs)
+
+            // build directory tree from most deeply nested to most shallow, so that we automatically patch up
+            //  the appropriate child lbas as we go
+            List<byte> dir_tree = new List<byte>();
+            var dt_lba = cur_lba;
+            Dictionary<int, AnnotatedFSO> parent_dir_map = new Dictionary<int, AnnotatedFSO>();
+            for(int i = 7; i >= 0; i--)
             {
-                dir.lba = cur_lba++;
-                output_order.Add(dir);
+                var afso_level = afso[i];
+                foreach (var cur_afso in afso_level)
+                    build_dir_tree(cur_afso, dir_tree, dt_lba, parent_dir_map);
             }
+            
+            // patch up parent lbas
+            foreach(var kvp in parent_dir_map)
+            {
+                var lba = kvp.Value.lba;
+                var len = kvp.Value.len;
+
+                var lba_b = int_lsb_msb(lba);
+                var len_b = int_lsb_msb(len);
+
+                insert_bytes(lba_b, kvp.Key + 2, dir_tree);
+                insert_bytes(len_b, kvp.Key + 10, dir_tree);
+            }
+
+            // And root directory entry
+            var root_entry = build_dir_entry("\0", afso[0][0].lba, afso[0][0].len, d);
+            cur_lba += dir_tree.Count / 2048;
 
             // create path table
             var path_table_l_lba = cur_lba;
-            byte[] path_table_l = build_path_table(afso, false);
+            byte[] path_table_l = build_path_table(afso, true);
             var path_table_b_lba = path_table_l_lba + (int)align(path_table_l.Length) / 2048;
-            byte[] path_table_b = build_path_table(afso, true);
+            byte[] path_table_b = build_path_table(afso, false);
 
             cur_lba = path_table_b_lba + (int)align(path_table_b.Length) / 2048;
 
@@ -73,6 +98,175 @@ namespace isomake
             pvd.WriteInt("PathTableSize", path_table_l.Length);
             pvd.WriteInt("LocTypeLPathTable", path_table_l_lba);
             pvd.WriteInt("LocTypeMPathTable", path_table_b_lba);
+            pvd.WriteBytes("RootDir", root_entry);
+
+
+            // Write out volume descriptors
+            foreach (var vd in voldescs)
+                vd.Write(o);
+
+            // files
+            foreach(var f in output_order)
+            {
+                o.Seek(f.lba * 2048, SeekOrigin.Begin);
+                var fin = new BinaryReader(((FileInfo)f.fsi).OpenRead());
+                var b = fin.ReadBytes(f.len);
+                o.Write(b, 0, f.len);
+            }
+
+            // directory records
+            o.Seek(dt_lba * 2048, SeekOrigin.Begin);
+            o.Write(dir_tree.ToArray(), 0, dir_tree.Count);
+
+            // path tables
+            o.Seek(path_table_l_lba * 2048, SeekOrigin.Begin);
+            o.Write(path_table_l, 0, path_table_l.Length);
+            o.Seek(path_table_b_lba * 2048, SeekOrigin.Begin);
+            o.Write(path_table_b, 0, path_table_b.Length);
+
+            // Align to sector size
+            while ((o.BaseStream.Position % 2048) != 0)
+                o.Write((byte)0);
+
+            o.Close();
+        }
+
+        private static void insert_bytes(byte[] src, int doffset, List<byte> dest)
+        {
+            for (int i = 0; i < src.Length; i++)
+                dest[doffset + i] = src[i];
+        }
+
+        private static void build_dir_tree(AnnotatedFSO cur_afso, List<byte> dir_tree, int base_lba,
+            Dictionary<int, AnnotatedFSO> parent_dir_map)
+        {
+            int cur_lba = base_lba + dir_tree.Count / 2048;
+            cur_afso.lba = cur_lba;
+
+            int cur_count = dir_tree.Count;
+
+            // Add "." and ".." entries, store their location for future patching up
+            parent_dir_map[dir_tree.Count] = cur_afso;
+            var b1 = build_dir_entry("\0", 0, 0);
+            add_dir_entry(b1, dir_tree);
+            parent_dir_map[dir_tree.Count] = cur_afso.Parent ?? cur_afso;
+            var b2 = build_dir_entry("\u0001", 0, 0);
+            add_dir_entry(b2, dir_tree);
+
+            cur_afso.Children.Sort(dir_sorter);
+
+            foreach(var c in cur_afso.Children)
+            {
+                if (c.fsi is FileInfo)
+                    add_dir_entry(build_dir_entry(c.Identifier, c.lba, (int)((FileInfo)c.fsi).Length, c.fsi), dir_tree);
+                else
+                    add_dir_entry(build_dir_entry(c.Identifier, c.lba, c.len, c.fsi), dir_tree);
+            }
+
+            cur_afso.len = dir_tree.Count - cur_count;
+
+            align(dir_tree);
+        }
+
+        private static void add_dir_entry(List<byte> b, List<byte> dir_tree)
+        {
+            // get the size left in the current sector
+            var space_left = 2048 - (dir_tree.Count % 2048);
+            if (b.Count > 2048)
+                throw new NotSupportedException();
+
+            if (b.Count > space_left)
+                align(dir_tree);
+
+            dir_tree.AddRange(b);
+        }
+
+        private static List<byte> build_dir_entry(string id, int lba, int len, FileSystemInfo fsi = null)
+        {
+            var ret = new List<byte>();
+
+            var id_len = id.Length;
+            var dr_len = align(33 + id_len, 2);
+
+            if (dr_len > 255)
+                throw new NotSupportedException();
+
+            ret.Add((byte)dr_len);
+            ret.Add(0);
+
+            ret.AddRange(int_lsb_msb(lba));
+            ret.AddRange(int_lsb_msb(len));
+
+            ret.AddRange(dr_date((fsi == null) ? DateTime.UtcNow : fsi.LastWriteTimeUtc));
+            int flags = 0;
+            if (fsi == null || fsi is DirectoryInfo)
+                flags |= 0x2;
+            ret.Add((byte)flags);
+
+            ret.Add(0);
+            ret.Add(0);
+            ret.AddRange(short_lsb_msb(0));
+
+            ret.Add((byte)id_len);
+            ret.AddRange(Encoding.ASCII.GetBytes(id));
+
+            align(ret, 2);
+
+            return ret;
+        }
+
+        private static byte[] dr_date(DateTime d)
+        {
+            var ret = new byte[7];
+            ret[0] = (byte)(d.Year - 1900);
+            ret[1] = (byte)d.Month;
+            ret[2] = (byte)d.Day;
+            ret[3] = (byte)d.Hour;
+            ret[4] = (byte)d.Minute;
+            ret[5] = (byte)d.Second;
+            ret[6] = 0;
+            return ret;
+        }
+
+        private static byte[] int_lsb_msb(int v)
+        {
+            var d = new byte[8];
+            d[0] = (byte)(v & 0xff);
+            d[1] = (byte)((v >> 8) & 0xff);
+            d[2] = (byte)((v >> 16) & 0xff);
+            d[3] = (byte)((v >> 24) & 0xff);
+            d[4] = (byte)((v >> 24) & 0xff);
+            d[5] = (byte)((v >> 16) & 0xff);
+            d[6] = (byte)((v >> 8) & 0xff);
+            d[7] = (byte)(v & 0xff);
+            return d;
+        }
+
+        private static byte[] short_lsb_msb(int v)
+        {
+            var d = new byte[4];
+            d[0] = (byte)(v & 0xff);
+            d[1] = (byte)((v >> 8) & 0xff);
+            d[2] = (byte)((v >> 8) & 0xff);
+            d[3] = (byte)(v & 0xff);
+            return d;
+        }
+
+        static int dir_sorter(AnnotatedFSO a, AnnotatedFSO b)
+        {
+            var fname_len = Math.Max(a.FName.Length, b.FName.Length);
+            var afn = a.FName.PadRight(fname_len);
+            var bfn = b.FName.PadRight(fname_len);
+
+            var fn_cmp = afn.CompareTo(bfn);
+            if (fn_cmp != 0)
+                return fn_cmp;
+
+            var ext_len = Math.Max(a.Ext == null ? 0 : a.Ext.Length, b.Ext == null ? 0 : b.Ext.Length);
+            var aext = (a.Ext ?? "").PadRight(ext_len);
+            var bext = (b.Ext ?? "").PadRight(ext_len);
+
+            return aext.CompareTo(bext);
         }
 
         private static byte[] build_path_table(List<AnnotatedFSO>[] afso, bool lsb)
@@ -92,16 +286,19 @@ namespace isomake
         private static void build_path_table(AnnotatedFSO afso, List<byte> ret, bool lsb)
         {
             var id_len = afso.Identifier.Length;
-            ret.Add((byte)(8 + id_len));
+            var pt_len = align(8 + id_len, 2);
+
+            int cur_idx = ret.Count;
+            ret.Add((byte)id_len);
             ret.Add(0);
 
             ret.AddRange(ToByteArray(afso.lba, 4, lsb));
-            ret.AddRange(ToByteArray(afso.Parent == null ? 0 : afso.Parent.dir_idx, 2, lsb));
+            ret.AddRange(ToByteArray(afso.Parent == null ? 1 : afso.Parent.dir_idx, 2, lsb));
 
             foreach (var c in afso.Identifier)
                 ret.Add((byte)c);
 
-            if ((id_len % 1) != 0)
+            while (ret.Count < (cur_idx + pt_len))
                 ret.Add(0);
         }
 
@@ -126,6 +323,12 @@ namespace isomake
                 }
             }
             return ret;
+        }
+
+        static void align(List<byte> v, long align = 2048)
+        {
+            while ((v.Count % align) != 0)
+                v.Add(0);
         }
 
         static long align(long v, long align=2048)

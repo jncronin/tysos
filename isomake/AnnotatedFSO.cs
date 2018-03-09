@@ -19,7 +19,7 @@ namespace isomake
 
         public int dir_idx;
 
-        public int lba;
+        public int lba, len;
 
         public override string ToString()
         {
