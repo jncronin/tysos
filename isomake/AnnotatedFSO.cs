@@ -21,6 +21,8 @@ namespace isomake
 
         public int lba, len;
 
+        public bool is_boot_file = false;
+
         public override string ToString()
         {
             if (Parent != null)

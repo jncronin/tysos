@@ -247,7 +247,7 @@ namespace isomake
         {
             WriteInt("Type", 0);
 
-            AddStringEntry("BootSystemIdentifier", 32, "EL TORITO SPECIFICATION");
+            AddStringEntry("BootSystemIdentifier", 32, "EL TORITO SPECIFICATION\0\0\0\0\0\0\0\0\0");
             AddStringEntry("BootIdentifier", 32);
             AddIntEntry("BootCatalogAddress", VDType.VDTypeCode.int32_LSB);
         }

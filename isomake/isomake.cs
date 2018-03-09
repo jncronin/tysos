@@ -10,6 +10,10 @@ namespace isomake
     class Program
     {
         static bool do_rr = true;
+        static string boot_file = "boot/grub/eltorito.img";
+        static bool no_emul_boot = true;
+        static int boot_load_size = 4;
+        static bool boot_info_table = true;
 
         static void Main(string[] args)
         {
@@ -31,6 +35,13 @@ namespace isomake
             var pvd = new PrimaryVolumeDescriptor();
             voldescs.Add(pvd);
 
+            ElToritoBootDescriptor bvd = null;
+            if (boot_file != null)
+            {
+                bvd = new ElToritoBootDescriptor();
+                voldescs.Add(bvd);
+            }
+
             voldescs.Add(new VolumeDescriptorSetTerminator());
 
             // Generate directory tree
@@ -41,6 +52,7 @@ namespace isomake
             int cur_lba = 0x10 + voldescs.Count;
 
             List<AnnotatedFSO> output_order = new List<AnnotatedFSO>();
+            AnnotatedFSO afso_boot_file = null;
             foreach(var file in files)
             {
                 var fi = file.fsi as FileInfo;
@@ -52,8 +64,13 @@ namespace isomake
                 cur_lba += (int)lbal;
 
                 output_order.Add(file);
-            }
 
+                if (boot_file != null && Path.GetFullPath(Path.Combine(d.FullName, boot_file)) == fi.FullName)
+                {
+                    file.is_boot_file = true;
+                    afso_boot_file = file;
+                }
+            }
             // build directory tree from most deeply nested to most shallow, so that we automatically patch up
             //  the appropriate child lbas as we go
             List<byte> dir_tree = new List<byte>();
@@ -91,17 +108,58 @@ namespace isomake
 
             cur_lba = path_table_b_lba + (int)align(path_table_b.Length) / 2048;
 
+            // create boot catalog
+            List<byte> bc = new List<byte>();
+            var bc_lba = cur_lba;
+            if(boot_file != null)
+            {
+
+                // Validation entry
+                List<byte> val_ent = new List<byte>();
+                val_ent.Add(0x01);
+                val_ent.Add(0);
+                val_ent.Add(0);
+                val_ent.Add(0);
+                val_ent.AddRange(Encoding.ASCII.GetBytes("isomake".PadRight(24)));
+                var cs = elt_checksum(val_ent, 0xaa55);
+                val_ent.Add((byte)(cs & 0xff));
+                val_ent.Add((byte)((cs >> 8) & 0xff));
+                val_ent.Add(0x55);
+                val_ent.Add(0xaa);
+                bc.AddRange(val_ent);
+
+                // default entry
+                List<byte> def_ent = new List<byte>();
+                def_ent.Add(0x88);
+                if (no_emul_boot)
+                    def_ent.Add(0x0);
+                else
+                    throw new NotImplementedException();
+                def_ent.Add(0x0);
+                def_ent.Add(0x0);
+                def_ent.Add(0x0);
+                def_ent.Add(0x0);
+                def_ent.Add((byte)(boot_load_size & 0xff));
+                def_ent.Add((byte)((boot_load_size >> 8) & 0xff));
+                def_ent.AddRange(BitConverter.GetBytes(afso_boot_file.lba));
+                for (int i = 0; i < 20; i++)
+                    def_ent.Add(0);
+                bc.AddRange(def_ent);
+            }
+
             // Set pvd entries
             pvd.WriteString("VolumeIdentifier", "UNNAMED");
             pvd.WriteInt("VolumeSpaceSize", cur_lba);
             pvd.WriteInt("VolumeSetSize", 1);
-            pvd.WriteInt("VolumeSequenceNumber", 0);
+            pvd.WriteInt("VolumeSequenceNumber", 1);
             pvd.WriteInt("LogicalBlockSize", 2048);
             pvd.WriteInt("PathTableSize", path_table_l.Length);
             pvd.WriteInt("LocTypeLPathTable", path_table_l_lba);
             pvd.WriteInt("LocTypeMPathTable", path_table_b_lba);
             pvd.WriteBytes("RootDir", root_entry);
 
+            if (boot_file != null)
+                bvd.BootCatalogAddress = bc_lba;
 
             // Write out volume descriptors
             foreach (var vd in voldescs)
@@ -112,7 +170,21 @@ namespace isomake
             {
                 o.Seek(f.lba * 2048, SeekOrigin.Begin);
                 var fin = new BinaryReader(((FileInfo)f.fsi).OpenRead());
+
                 var b = fin.ReadBytes(f.len);
+
+                if(boot_info_table && f.is_boot_file)
+                {
+                    // patch in the eltorito boot info table to offset 8
+
+                    // first get 32 bit checksum from offset 64 onwards
+                    uint csum = elt_checksum32(b, 64);
+                    insert_bytes(BitConverter.GetBytes((int)0x10), 8, b);
+                    insert_bytes(BitConverter.GetBytes((int)f.lba), 12, b);
+                    insert_bytes(BitConverter.GetBytes((int)f.len), 16, b);
+                    insert_bytes(BitConverter.GetBytes(csum), 20, b);
+                }
+
                 o.Write(b, 0, f.len);
             }
 
@@ -126,6 +198,14 @@ namespace isomake
             o.Seek(path_table_b_lba * 2048, SeekOrigin.Begin);
             o.Write(path_table_b, 0, path_table_b.Length);
 
+            // boot catalog
+            if(boot_file != null)
+            {
+                o.Seek(bc_lba * 2048, SeekOrigin.Begin);
+
+                o.Write(bc.ToArray(), 0, bc.Count);
+            }
+
             // Align to sector size
             while ((o.BaseStream.Position % 2048) != 0)
                 o.Write((byte)0);
@@ -133,7 +213,52 @@ namespace isomake
             o.Close();
         }
 
-        private static void insert_bytes(byte[] src, int doffset, List<byte> dest)
+        private static uint elt_checksum32(IList<byte> v, int offset)
+        {
+            uint val = 0;
+
+            unchecked
+            {
+                for(int i = offset; i < v.Count; i += 4)
+                {
+                    uint cv = v[i];
+                    if (i + 1 < v.Count)
+                        cv |= (uint)v[i + 1] << 8;
+                    if (i + 2 < v.Count)
+                        cv |= (uint)v[i + 2] << 16;
+                    if (i + 3 < v.Count)
+                        cv |= (uint)v[i + 3] << 24;
+
+                    val += cv;
+                }
+            }
+
+            return (uint)((0L - val) & 0xffffffff);
+        }
+
+        private static ushort elt_checksum(List<byte> v, params ushort[] extra)
+        {
+            if ((v.Count % 2) == 1)
+                throw new NotSupportedException();
+
+            ushort val = 0;
+
+            unchecked
+            {
+                for (int i = 0; i < v.Count; i += 2)
+                {
+                    var cv = v[i] + (v[i + 1] << 8);
+                    val += (ushort)cv;
+                }
+
+                foreach (var e in extra)
+                    val += e;
+            }
+
+            return (ushort)((0 - val) & 0xffff);
+        }
+
+        private static void insert_bytes(byte[] src, int doffset, IList<byte> dest)
         {
             for (int i = 0; i < src.Length; i++)
                 dest[doffset + i] = src[i];
@@ -165,7 +290,7 @@ namespace isomake
                     add_dir_entry(build_dir_entry(c.Identifier, c.lba, c.len, c.fsi), dir_tree);
             }
 
-            cur_afso.len = dir_tree.Count - cur_count;
+            cur_afso.len = (int)align(dir_tree.Count - cur_count);
 
             align(dir_tree);
         }
@@ -256,7 +381,7 @@ namespace isomake
 
             ret.Add(0);
             ret.Add(0);
-            ret.AddRange(short_lsb_msb(0));
+            ret.AddRange(short_lsb_msb(1));     // volume sequence number
 
             ret.Add((byte)id_len);
             ret.AddRange(Encoding.ASCII.GetBytes(id));
