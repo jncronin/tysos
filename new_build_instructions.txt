@@ -1,0 +1,19 @@
+New build instructions
+
+Clone repository with submodules:
+
+git clone --recurse-submodules https://www.github.com/jncronin/tysos
+
+
+Get .NET build tools:
+
+cd tysos/coreclr
+./init-tools.cmd
+cd ../corefx
+./init-tools.cmd
+
+
+Build tymake
+
+cd ../tymake
+../coreclr/Tools/msbuild.cmd /p:Configuration=Release
