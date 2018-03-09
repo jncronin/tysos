@@ -26,7 +26,7 @@ namespace isomake
             if (Parent != null)
                 return Parent.ToString() + "/" + Identifier;
             else
-                return Identifier;
+                return "";
         }
 
         internal static List<AnnotatedFSO>[] BuildAFSOTree(DirectoryInfo rootdir, out List<AnnotatedFSO> dirs, out List<AnnotatedFSO> files)
@@ -49,24 +49,28 @@ namespace isomake
                 for(int i = 0; i < contents.Count; i++)
                 {
                     var ci = contents[i];
-                    ci.Identifier = key;
                     if (needs_mangling)
                     {
                         string mn = i.ToString("D2");
                         if (contents.Count >= 10)
                         {
-                            ci.Identifier = key.Substring(0, 6) + mn + key.Substring(8);
+                            ci.FName = ci.FName.Substring(0, Math.Min(6, ci.FName.Length)).PadRight(6) + mn;
                         }
                         else
                         {
-                            ci.Identifier = key.Substring(0, 7) + mn[1] + key.Substring(8);
+                            ci.FName = ci.FName.Substring(0, Math.Min(7, ci.FName.Length)).PadRight(7) + mn[1];
                         }
+                        if (ci.fsi is FileInfo)
+                            ci.Identifier = ci.FName + "." + ci.Ext;
+                        else
+                            ci.Identifier = ci.FName;
                     }
                     else
                         ci.Identifier = key;
 
-                    // add version
-                    ci.Identifier = ci.Identifier + ";1";
+                    // add version to files
+                    if(ci.fsi is FileInfo)
+                        ci.Identifier = ci.Identifier + ";1";
 
                     if (ci.fsi is DirectoryInfo)
                         dirs.Add(ci);
@@ -122,8 +126,7 @@ namespace isomake
 
         private static AnnotatedFSO doscache_add(FileSystemInfo d, AnnotatedFSO parent, Dictionary<string, List<AnnotatedFSO>> doscache, bool is_root = false)
         {
-            var dosname = build_dosname(d, is_root);
-            var dn2 = string.Join(".", dosname);
+            var dosname = build_dosname(d, is_root, out var dn2);
             if(!doscache.TryGetValue(dn2, out var dcl))
             {
                 dcl = new List<AnnotatedFSO>();
@@ -153,10 +156,13 @@ namespace isomake
             return new_afso;
         }
 
-        private static string[] build_dosname(FileSystemInfo d, bool is_root)
+        private static string[] build_dosname(FileSystemInfo d, bool is_root, out string id)
         {
             if (is_root)
-                return new string[] { "       ", "" };
+            {
+                id = "\0";
+                return new string[] { "\0", null };
+            }
 
             // Split so that the first, rather than last, period defines the extension
             var wn = d.Name + "." + d.Extension + " ";
@@ -170,16 +176,19 @@ namespace isomake
             if(d is DirectoryInfo)
             {
                 var di = d as DirectoryInfo;
-                ret = new string[] { trim_str(n, 8), "" };
+                ret = new string[] { trim_str(n, 8), null };
+                ret[0] = dosify(ret[0]);
+                id = ret[0];
             }
             else
             {
                 var fi = d as FileInfo;
                 ret = new string[] { trim_str(n, 8), trim_str(e, 3) };
+                ret[0] = dosify(ret[0]);
+                ret[1] = dosify(ret[1]);
+                id = ret[0] + "." + ret[1];
             }
 
-            ret[0] = dosify(ret[0]);
-            ret[1] = dosify(ret[1]);
             return ret;
         }
 
@@ -200,12 +209,12 @@ namespace isomake
 
         private static string trim_str(string name, int v)
         {
-            if (name.Length == v)
+            if (name.Length <= v)
                 return name;
-            else if (name.Length > v)
-                return name.Substring(0, v);
             else
-                return name.PadRight(v);
+                return name.Substring(0, v);
+            //else
+            //    return name.PadRight(v);
         }
     }
 
