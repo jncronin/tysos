@@ -9,6 +9,8 @@ namespace isomake
 {
     class Program
     {
+        static bool do_rr = true;
+
         static void Main(string[] args)
         {
             var ofname = "test.iso";
@@ -190,47 +192,50 @@ namespace isomake
 
             // build RockRidge extra data here, then paste at the end
             List<byte> rr = new List<byte>();
-            if(is_root_dot)
+            if (do_rr)
             {
-                // Add SUSP SP field
-                rr.Add(0x53); rr.Add(0x50); // "SP"
-                rr.Add(0x7);                // length
-                rr.Add(1);                  // version
-                rr.Add(0xbe); rr.Add(0xef); // check bytes
-                rr.Add(0);                  // len_skp
-            }
-            // Add RR PX field
-            rr.Add(0x50); rr.Add(0x58);     // "PX"
-            rr.Add(44);                     // length
-            rr.Add(1);                      // version
-            int posix_attrs = 0x1ff;        // permissions
-            if (fsi == null || fsi is DirectoryInfo)
-                posix_attrs |= 0x4000;     // dir
-            else
-                posix_attrs |= 0x8000;    // regular
-            rr.AddRange(int_lsb_msb(posix_attrs));
-            rr.AddRange(int_lsb_msb(0));    // links
-            rr.AddRange(int_lsb_msb(0));    // uid
-            rr.AddRange(int_lsb_msb(0));    // gid
-            rr.AddRange(int_lsb_msb(0));    // serial num
-            // Add RR NM entry
-            if (!id.Equals("\0") && !id.Equals("\u0001"))
-            {
-                rr.Add(0x4e); rr.Add(0x4d);     // "NM"
-                                                // get name len
-                var rr_name_len = (id.Equals("\0") || id.Equals("\u0001") ? 0 : fsi.Name.Length);
-                rr.Add((byte)(5 + rr_name_len));    // length
+                if (is_root_dot)
+                {
+                    // Add SUSP SP field
+                    rr.Add(0x53); rr.Add(0x50); // "SP"
+                    rr.Add(0x7);                // length
+                    rr.Add(1);                  // version
+                    rr.Add(0xbe); rr.Add(0xef); // check bytes
+                    rr.Add(0);                  // len_skp
+                }
+                // Add RR PX field
+                rr.Add(0x50); rr.Add(0x58);     // "PX"
+                rr.Add(44);                     // length
                 rr.Add(1);                      // version
-                int nm_flags = 0;
-                if (id.Equals("\0")) nm_flags |= 0x2;
-                if (id.Equals("\u0001")) nm_flags |= 0x3;
-                rr.Add((byte)nm_flags);
-                if (rr_name_len > 0) rr.AddRange(Encoding.ASCII.GetBytes(fsi.Name));
+                int posix_attrs = 0x1ff;        // permissions
+                if (fsi == null || fsi is DirectoryInfo)
+                    posix_attrs |= 0x4000;     // dir
+                else
+                    posix_attrs |= 0x8000;    // regular
+                rr.AddRange(int_lsb_msb(posix_attrs));
+                rr.AddRange(int_lsb_msb(0));    // links
+                rr.AddRange(int_lsb_msb(0));    // uid
+                rr.AddRange(int_lsb_msb(0));    // gid
+                rr.AddRange(int_lsb_msb(0));    // serial num
+                                                // Add RR NM entry
+                if (!id.Equals("\0") && !id.Equals("\u0001"))
+                {
+                    rr.Add(0x4e); rr.Add(0x4d);     // "NM"
+                                                    // get name len
+                    var rr_name_len = (id.Equals("\0") || id.Equals("\u0001") ? 0 : fsi.Name.Length);
+                    rr.Add((byte)(5 + rr_name_len));    // length
+                    rr.Add(1);                      // version
+                    int nm_flags = 0;
+                    if (id.Equals("\0")) nm_flags |= 0x2;
+                    if (id.Equals("\u0001")) nm_flags |= 0x3;
+                    rr.Add((byte)nm_flags);
+                    if (rr_name_len > 0) rr.AddRange(Encoding.ASCII.GetBytes(fsi.Name));
+                }
+                // Add SUSP ST
+                //rr.Add(0x53); rr.Add(0x54);     // "ST"
+                //rr.Add(4);                      // length
+                //rr.Add(1);                      // ver
             }
-            // Add SUSP ST
-            //rr.Add(0x53); rr.Add(0x54);     // "ST"
-            //rr.Add(4);                      // length
-            //rr.Add(1);                      // ver
 
             dr_len += rr.Count;
 
