@@ -166,12 +166,11 @@ namespace isomake
                 return new string[] { "\0", null };
             }
 
-            // Split so that the first, rather than last, period defines the extension
-            var wn = d.Name + "." + d.Extension + " ";
-            var n = wn.Substring(0, wn.IndexOf('.'));
-            var e = wn.Substring(wn.IndexOf('.') + 1);
-            e = string.Join("", e.Split('.'));
-            e = e.TrimEnd(' ');
+            // Separate file name and extension
+            var n = d.Name;
+            if (n.Contains("."))
+                n = n.Substring(0, n.LastIndexOf("."));
+            var e = d.Extension.TrimStart('.');
 
             string[] ret;
 
