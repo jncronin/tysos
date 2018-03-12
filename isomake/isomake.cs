@@ -10,16 +10,22 @@ namespace isomake
     class Program
     {
         static bool do_rr = true;
-        static string boot_file = "boot/grub/eltorito.img";
-        static bool no_emul_boot = true;
-        static int boot_load_size = 4;
-        static bool boot_info_table = true;
+
+        static List<BootEntry> bootEntries = new List<BootEntry>();
+
+        static string ofname = "output.iso";
+        internal static string boot_catalog = "boot.catalog";
+        internal static string boot_catalog_d = null;
+        internal static string boot_catalog_f = null;
+        static string src_dir = null;
 
         static void Main(string[] args)
         {
-            var ofname = "test.iso";
-
-            var src_dir = "iso_image/iso";
+            if(!parse_args(args))
+            {
+                show_usage();
+                return;
+            }
 
             var d = new System.IO.DirectoryInfo(src_dir);
 
@@ -36,7 +42,7 @@ namespace isomake
             voldescs.Add(pvd);
 
             ElToritoBootDescriptor bvd = null;
-            if (boot_file != null)
+            if (bootEntries.Count > 0)
             {
                 bvd = new ElToritoBootDescriptor();
                 voldescs.Add(bvd);
@@ -52,9 +58,14 @@ namespace isomake
             int cur_lba = 0x10 + voldescs.Count;
 
             List<AnnotatedFSO> output_order = new List<AnnotatedFSO>();
-            AnnotatedFSO afso_boot_file = null;
+            AnnotatedFSO afso_bc = null;
             foreach(var file in files)
             {
+                if (file.fsi is BootCatalogFileInfo)
+                {
+                    afso_bc = file;
+                    continue;
+                }
                 var fi = file.fsi as FileInfo;
                 var l = align(fi.Length);
                 var lbal = l / 2048;
@@ -65,12 +76,130 @@ namespace isomake
 
                 output_order.Add(file);
 
-                if (boot_file != null && Path.GetFullPath(Path.Combine(d.FullName, boot_file)) == fi.FullName)
+                foreach(var bfe in bootEntries)
                 {
-                    file.is_boot_file = true;
-                    afso_boot_file = file;
+                    if(bfe.ffname != null && bfe.boot_table && bfe.ffname == fi.FullName)
+                    {
+                        file.needs_boot_table = true;
+                        bfe.afso_boot_file = file;
+                    }
                 }
             }
+
+            // create boot catalog
+            List<byte> bc = new List<byte>();
+            var bc_lba = cur_lba;
+            if (bootEntries.Count > 0)
+            {
+                // Validation entry
+                List<byte> val_ent = new List<byte>();
+                val_ent.Add(0x01);
+                if (bootEntries[0].type == BootEntry.BootType.BIOS)
+                    val_ent.Add(0);
+                else
+                    val_ent.Add(0xef);
+                val_ent.Add(0);
+                val_ent.Add(0);
+                //val_ent.AddRange(Encoding.ASCII.GetBytes("isomake".PadRight(24)));
+                for (int i = 0; i < 24; i++)
+                    val_ent.Add(0);
+                var cs = elt_checksum(val_ent, 0xaa55);
+                val_ent.Add((byte)(cs & 0xff));
+                val_ent.Add((byte)((cs >> 8) & 0xff));
+                val_ent.Add(0x55);
+                val_ent.Add(0xaa);
+                bc.AddRange(val_ent);
+
+                // default entry
+                List<byte> def_ent = new List<byte>();
+                if (bootEntries[0].bootable)
+                    def_ent.Add(0x88);
+                else
+                    def_ent.Add(0x00);
+                switch (bootEntries[0].etype)
+                {
+                    case BootEntry.EmulType.Floppy:
+                        def_ent.Add(0x02);
+                        break;
+                    case BootEntry.EmulType.Hard:
+                        def_ent.Add(0x04);
+                        break;
+                    case BootEntry.EmulType.NoEmul:
+                        def_ent.Add(0x00);
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+                def_ent.AddRange(BitConverter.GetBytes((ushort)bootEntries[0].load_seg));
+                def_ent.Add(0x0);
+                def_ent.Add(0x0);
+                def_ent.AddRange(BitConverter.GetBytes((ushort)bootEntries[0].sector_count));
+                if (bootEntries[0].afso_boot_file != null)
+                    def_ent.AddRange(BitConverter.GetBytes(bootEntries[0].afso_boot_file.lba));
+                else
+                    def_ent.AddRange(BitConverter.GetBytes((int)0));
+                for (int i = 0; i < 20; i++)
+                    def_ent.Add(0);
+                bc.AddRange(def_ent);
+
+                for (int idx = 1; idx < bootEntries.Count; idx++)
+                {
+                    // section header
+                    List<byte> sh = new List<byte>();
+                    if (idx == bootEntries.Count - 1)
+                        sh.Add(0x91);
+                    else
+                        sh.Add(0x90);
+                    if (bootEntries[idx].type == BootEntry.BootType.BIOS)
+                        sh.Add(0x0);
+                    else
+                        sh.Add(0xef);
+                    sh.AddRange(BitConverter.GetBytes((ushort)1));
+                    for (int i = 0; i < 28; i++)
+                        sh.Add(0);
+                    //sh.AddRange(Encoding.ASCII.GetBytes(bootEntries[idx].type.ToString().PadRight(28)));
+                    bc.AddRange(sh);
+
+                    // section entry
+                    List<byte> se = new List<byte>();
+                    if (bootEntries[idx].bootable)
+                        se.Add(0x88);
+                    else
+                        se.Add(0x00);
+                    switch (bootEntries[idx].etype)
+                    {
+                        case BootEntry.EmulType.Floppy:
+                            se.Add(0x02);
+                            break;
+                        case BootEntry.EmulType.Hard:
+                            se.Add(0x04);
+                            break;
+                        case BootEntry.EmulType.NoEmul:
+                            se.Add(0x00);
+                            break;
+                        default:
+                            throw new NotSupportedException();
+                    }
+                    se.AddRange(BitConverter.GetBytes((ushort)bootEntries[idx].load_seg));
+                    se.Add(0);
+                    se.Add(0);
+                    se.AddRange(BitConverter.GetBytes((ushort)bootEntries[idx].sector_count));
+                    if (bootEntries[idx].afso_boot_file != null)
+                        se.AddRange(BitConverter.GetBytes((int)bootEntries[idx].afso_boot_file.lba));
+                    else
+                        se.AddRange(BitConverter.GetBytes((int)0));
+                    se.Add(0);
+                    for (int i = 0; i < 19; i++)
+                        se.Add(0);
+                    bc.AddRange(se);
+                }
+
+                afso_bc.lba = bc_lba;
+                afso_bc.len = bc.Count;
+
+                cur_lba += (int)align(bc.Count) / 2048;
+            }
+
             // build directory tree from most deeply nested to most shallow, so that we automatically patch up
             //  the appropriate child lbas as we go
             List<byte> dir_tree = new List<byte>();
@@ -108,45 +237,6 @@ namespace isomake
 
             cur_lba = path_table_b_lba + (int)align(path_table_b.Length) / 2048;
 
-            // create boot catalog
-            List<byte> bc = new List<byte>();
-            var bc_lba = cur_lba;
-            if(boot_file != null)
-            {
-
-                // Validation entry
-                List<byte> val_ent = new List<byte>();
-                val_ent.Add(0x01);
-                val_ent.Add(0);
-                val_ent.Add(0);
-                val_ent.Add(0);
-                val_ent.AddRange(Encoding.ASCII.GetBytes("isomake".PadRight(24)));
-                var cs = elt_checksum(val_ent, 0xaa55);
-                val_ent.Add((byte)(cs & 0xff));
-                val_ent.Add((byte)((cs >> 8) & 0xff));
-                val_ent.Add(0x55);
-                val_ent.Add(0xaa);
-                bc.AddRange(val_ent);
-
-                // default entry
-                List<byte> def_ent = new List<byte>();
-                def_ent.Add(0x88);
-                if (no_emul_boot)
-                    def_ent.Add(0x0);
-                else
-                    throw new NotImplementedException();
-                def_ent.Add(0x0);
-                def_ent.Add(0x0);
-                def_ent.Add(0x0);
-                def_ent.Add(0x0);
-                def_ent.Add((byte)(boot_load_size & 0xff));
-                def_ent.Add((byte)((boot_load_size >> 8) & 0xff));
-                def_ent.AddRange(BitConverter.GetBytes(afso_boot_file.lba));
-                for (int i = 0; i < 20; i++)
-                    def_ent.Add(0);
-                bc.AddRange(def_ent);
-            }
-
             // Set pvd entries
             pvd.WriteString("VolumeIdentifier", "UNNAMED");
             pvd.WriteInt("VolumeSpaceSize", cur_lba);
@@ -158,7 +248,7 @@ namespace isomake
             pvd.WriteInt("LocTypeMPathTable", path_table_b_lba);
             pvd.WriteBytes("RootDir", root_entry);
 
-            if (boot_file != null)
+            if (bootEntries.Count > 0)
                 bvd.BootCatalogAddress = bc_lba;
 
             // Write out volume descriptors
@@ -173,7 +263,7 @@ namespace isomake
 
                 var b = fin.ReadBytes(f.len);
 
-                if(boot_info_table && f.is_boot_file)
+                if(f.needs_boot_table)
                 {
                     // patch in the eltorito boot info table to offset 8
 
@@ -199,7 +289,7 @@ namespace isomake
             o.Write(path_table_b, 0, path_table_b.Length);
 
             // boot catalog
-            if(boot_file != null)
+            if(bootEntries.Count > 0)
             {
                 o.Seek(bc_lba * 2048, SeekOrigin.Begin);
 
@@ -207,10 +297,158 @@ namespace isomake
             }
 
             // Align to sector size
+            o.Seek(0, SeekOrigin.End);
             while ((o.BaseStream.Position % 2048) != 0)
                 o.Write((byte)0);
 
             o.Close();
+        }
+
+        private static bool parse_args(string[] args)
+        {
+            List<BootEntry> tmp_bootEntries = new List<BootEntry>();
+            int cur_boot_entry = 0;
+            tmp_bootEntries.Add(new BootEntry());
+
+            try
+            {
+                for (int i = 0; i < args.Length; i++)
+                {
+                    var c = args[i];
+
+                    if (c == "-as")
+                    {
+                        c = args[++i];
+                        if (c == "mkisofs")
+                        {
+                            // pass
+                        }
+                        else
+                        {
+                            System.Console.WriteLine("Unknown -as value: " + c);
+                            return false;
+                        }
+                    }
+                    else if (c == "-R" || c == "-r")
+                        do_rr = true;
+                    else if (c == "-f")
+                    {
+                        // pass
+                    }
+                    else if (c == "-e" || c == "--efi-boot")
+                    {
+                        tmp_bootEntries[cur_boot_entry].fname = args[++i];
+                        tmp_bootEntries[cur_boot_entry].type = BootEntry.BootType.EFI;
+                        tmp_bootEntries[cur_boot_entry].valid = true;
+                    }
+                    else if (c == "-b")
+                    {
+                        tmp_bootEntries[cur_boot_entry].fname = args[++i];
+                        tmp_bootEntries[cur_boot_entry].type = BootEntry.BootType.BIOS;
+                        tmp_bootEntries[cur_boot_entry].valid = true;
+                    }
+                    else if (c == "-no-emul-boot")
+                    {
+                        tmp_bootEntries[cur_boot_entry].etype = BootEntry.EmulType.NoEmul;
+                    }
+                    else if (c == "-hard-disk-boot")
+                    {
+                        tmp_bootEntries[cur_boot_entry].etype = BootEntry.EmulType.Hard;
+                    }
+                    else if (c == "-no-boot")
+                    {
+                        tmp_bootEntries[cur_boot_entry].bootable = false;
+                        tmp_bootEntries[cur_boot_entry].valid = true;
+                    }
+                    else if (c == "-boot-load-seg")
+                    {
+                        tmp_bootEntries[cur_boot_entry].load_seg = readDecOrHex(args[++i]);
+                    }
+                    else if (c == "-boot-load-size")
+                    {
+                        tmp_bootEntries[cur_boot_entry].sector_count = readDecOrHex(args[++i]);
+                    }
+                    else if (c == "-boot-info-table")
+                    {
+                        tmp_bootEntries[cur_boot_entry].boot_table = true;
+                    }
+                    else if (c == "-eltorito-alt-boot")
+                    {
+                        tmp_bootEntries[cur_boot_entry++] = new BootEntry();
+                    }
+                    else if (c == "-o")
+                    {
+                        ofname = args[++i];
+                    }
+                    else if(c == "-c")
+                    {
+                        boot_catalog = args[++i];
+                    }
+                    else if (i == args.Length - 1 && !c.StartsWith("-"))
+                    {
+                        src_dir = c;
+                    }
+                    else
+                        return false;
+                }
+            }
+            catch(ArgumentOutOfRangeException)
+            {
+                return false;
+            }
+
+            if (src_dir == null)
+                return false;
+
+            // sanitize the boot table
+            foreach(var tbe in tmp_bootEntries)
+            {
+                if (tbe.valid)
+                {
+                    bootEntries.Add(tbe);
+                    if (tbe.fname != null)
+                    {
+                        tbe.ffname = Path.GetFullPath(Path.Combine(src_dir, tbe.fname));
+                        var fi = new FileInfo(tbe.ffname);
+                        if (fi.Exists == false)
+                        {
+                            System.Console.WriteLine("Boot file " + tbe.fname + " not found within src_dir");
+                            return false;
+                        }
+                        if(tbe.sector_count == -1)
+                        {
+                            if (tbe.type == BootEntry.BootType.BIOS)
+                                tbe.sector_count = 4;
+                            else
+                                tbe.sector_count = (int)align(fi.Length) / 2048;
+                        }
+                    }
+                }
+            }
+            if(bootEntries.Count > 0)
+            {
+                boot_catalog = Path.GetFullPath(Path.Combine(src_dir, boot_catalog));
+                var bcfi = new FileInfo(boot_catalog);
+                boot_catalog_d = bcfi.Directory.FullName;
+                boot_catalog_f = bcfi.Name;
+            }
+
+            return true;
+        }
+
+        private static int readDecOrHex(string v)
+        {
+            if (v.StartsWith("0x") || v.StartsWith("0X") || v.IndexOfAny(new char[] { 'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f' }) != -1)
+                return int.Parse(v, System.Globalization.NumberStyles.HexNumber);
+            else
+                return int.Parse(v);
+        }
+
+        private static void show_usage()
+        {
+            Console.WriteLine("Usage: isomake [-o output_file] [-R] [-r] [-b boot_file] [-e efi_boot_file] [-no-emul-boot] [-boot-load-table] [-boot-load-size] " +
+                "[-eltorito-alt-boot] <src_dir>");
+            Console.WriteLine("  All arguments as per 'man mkisofs'");
         }
 
         private static uint elt_checksum32(IList<byte> v, int offset)
@@ -327,6 +565,21 @@ namespace isomake
                     rr.Add(1);                  // version
                     rr.Add(0xbe); rr.Add(0xef); // check bytes
                     rr.Add(0);                  // len_skp
+
+                    // Add SUSP ER field to identify RR
+                    rr.Add(0x45); rr.Add(0x52); // "ER"
+                    var ext_id = "IEEE_P1282";
+                    var ext_desc = "THE IEEE P1282 PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS.";
+                    var ext_src = "";
+                    rr.Add((byte)(8 + ext_id.Length + ext_desc.Length + ext_src.Length));       // length
+                    rr.Add(1);                  // version
+                    rr.Add((byte)ext_id.Length);    // LEN_ID
+                    rr.Add((byte)ext_desc.Length);  // LEN_DES
+                    rr.Add((byte)ext_src.Length);   // LEN_SRC
+                    rr.Add(1);                  // EXT_VER
+                    rr.AddRange(Encoding.ASCII.GetBytes(ext_id));
+                    rr.AddRange(Encoding.ASCII.GetBytes(ext_desc));
+                    rr.AddRange(Encoding.ASCII.GetBytes(ext_src));
                 }
                 // Add RR PX field
                 rr.Add(0x50); rr.Add(0x58);     // "PX"
@@ -361,6 +614,8 @@ namespace isomake
                 //rr.Add(4);                      // length
                 //rr.Add(1);                      // ver
             }
+            if ((rr.Count % 2) == 0x1)
+                rr.Add(0);
 
             dr_len += rr.Count;
 
@@ -517,5 +772,21 @@ namespace isomake
             else
                 return v + (align - r);
         }
+    }
+
+    class BootEntry
+    {
+        public int id;
+        public enum BootType { BIOS, EFI };
+        public string fname, ffname;
+        public int sector_count = -1;
+        public bool boot_table = false;
+        public bool bootable = true;
+        public BootType type = BootType.BIOS;
+        public enum EmulType { NoEmul, Floppy, Hard };
+        public EmulType etype = EmulType.Floppy;
+        public int load_seg = 0;
+        public bool valid = false;
+        public AnnotatedFSO afso_boot_file;
     }
 }

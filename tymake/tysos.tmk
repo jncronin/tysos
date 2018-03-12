@@ -636,7 +636,7 @@ if(defined(USE_GRUB))
 		}
 
 		GRUB_PREFIX = dir(CDBOOT);
-		GRUB_MODS = "biosdisk multiboot configfile normal iso9660 all_video gfxterm acpi relocator";
+		GRUB_MODS = "biosdisk multiboot configfile normal iso9660 all_video gfxterm acpi relocator serial help";
 
 		shellcmd("$GRUB_MKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -p $GRUB_PREFIX -O i386-pc $GRUB_MODS");
 	

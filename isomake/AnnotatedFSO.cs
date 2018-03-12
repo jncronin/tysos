@@ -21,7 +21,7 @@ namespace isomake
 
         public int lba, len;
 
-        public bool is_boot_file = false;
+        public bool needs_boot_table = false;
 
         public override string ToString()
         {
@@ -71,7 +71,7 @@ namespace isomake
                         ci.Identifier = key;
 
                     // add version to files
-                    if(ci.fsi is FileInfo)
+                    if(ci.fsi is FileInfo || ci.fsi is BootCatalogFileInfo)
                         ci.Identifier = ci.Identifier + ";1";
 
                     if (ci.fsi is DirectoryInfo)
@@ -153,6 +153,10 @@ namespace isomake
                 {
                     new_afso.Children.Add(doscache_add(c, new_afso, doscache));
                 }
+                if(Program.boot_catalog_d != null && Program.boot_catalog_d.Equals(di.FullName))
+                {
+                    new_afso.Children.Add(doscache_add(new BootCatalogFileInfo(), new_afso, doscache));
+                }
             }
 
             return new_afso;
@@ -168,22 +172,23 @@ namespace isomake
 
             // Separate file name and extension
             var n = d.Name;
+            var e = "";
             if (n.Contains("."))
+            {
+                e = n.Substring(n.LastIndexOf(".")).TrimStart('.');
                 n = n.Substring(0, n.LastIndexOf("."));
-            var e = d.Extension.TrimStart('.');
+            }
 
             string[] ret;
 
             if(d is DirectoryInfo)
             {
-                var di = d as DirectoryInfo;
                 ret = new string[] { trim_str(n, 8), null };
                 ret[0] = dosify(ret[0]);
                 id = ret[0];
             }
             else
             {
-                var fi = d as FileInfo;
                 ret = new string[] { trim_str(n, 8), trim_str(e, 3) };
                 ret[0] = dosify(ret[0]);
                 ret[1] = dosify(ret[1]);
@@ -200,10 +205,10 @@ namespace isomake
             foreach(var c in v)
             {
                 var d = char.ToUpper(c);
-                if (d == '_' || (d >= 'A' && d <= 'Z') || (d >= '0' || d <= '9'))
+                if (d == '_' || (d >= 'A' && d <= 'Z') || (d >= '0' && d <= '9'))
                     sb.Append(d);
                 else
-                    sb.Append(' ');
+                    sb.Append('_');
             }
             return sb.ToString();
         }
@@ -224,5 +229,16 @@ namespace isomake
         Dictionary<string, AnnotatedFSO> cache = new Dictionary<string, AnnotatedFSO>();
     }
 
+    class BootCatalogFileInfo : FileSystemInfo
+    {
+        public override string Name { get { return Program.boot_catalog_f; } }
+        public override string FullName { get { return Program.boot_catalog; } }
 
+        public override bool Exists => true;
+
+        public override void Delete()
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
