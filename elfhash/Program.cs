@@ -30,6 +30,7 @@ namespace elfhash
     {
         static string input, output;
         static string hash_sym = "_hash_start";
+        static string update_sym = null;
         static int bitness = -1;
         static int ver = 0;
 
@@ -134,6 +135,37 @@ namespace elfhash
                     hss.Type = binary_library.SymbolType.Global;
                     hss.ObjectType = binary_library.SymbolObjectType.Object;
                     hss.Offset = hs.LoadAddress;
+
+                    // Update the value of update_sym if it exists
+                    if (update_sym != null)
+                    {
+                        foreach (var sym in f.GetSymbols())
+                        {
+                            if(sym.Name == update_sym)
+                            {
+                                // get offset
+                                var offset = sym.Offset - sym.DefinedIn.LoadAddress;
+
+                                // write as lsb depending on bitness
+                                byte[] v;
+                                switch(f.Bitness)
+                                {
+                                    case binary_library.Bitness.Bits32:
+                                        v = BitConverter.GetBytes((uint)hs.LoadAddress);
+                                        break;
+                                    case binary_library.Bitness.Bits64:
+                                        v = BitConverter.GetBytes((ulong)hs.LoadAddress);
+                                        break;
+                                    default:
+                                        throw new NotSupportedException();
+                                }
+                                for(int i = 0; i < v.Length; i++)
+                                {
+                                    sym.DefinedIn.Data[(int)offset + i] = v[i];
+                                }
+                            }
+                        }
+                    }
                 }
 
                 f.AddSection(hs);
@@ -186,6 +218,8 @@ namespace elfhash
                 }
                 else if (arg.Equals("--hash-sym"))
                     hash_sym = args[++i];
+                else if (arg.Equals("--update-sym"))
+                    update_sym = args[++i];
                 else if (i == args.Length - 1)
                     input = arg;
                 else
