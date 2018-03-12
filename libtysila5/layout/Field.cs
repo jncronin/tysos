@@ -429,6 +429,22 @@ namespace libtysila5.layout
                             os.Data.Add(0);
                     }
 
+                    /* Output any additional defined symbols */
+                    foreach(var alias in ts.m.GetFieldAliases((int)fdef_row))
+                    {
+                        var asym = of.CreateSymbol();
+                        asym.Name = alias;
+                        asym.Offset = offset + (ulong)cur_offset;
+                        asym.Type = binary_library.SymbolType.Global;
+                        asym.ObjectType = binary_library.SymbolObjectType.Object;
+                        os.AddSymbol(asym);
+
+                        asym.Size = ft_size;
+
+                        if (base_m != null && ts.m != base_m)
+                            asym.Type = binary_library.SymbolType.Weak;
+                    }
+
                     cur_offset += ft_size;
                 }
             }

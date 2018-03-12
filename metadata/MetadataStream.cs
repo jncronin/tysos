@@ -72,6 +72,7 @@ namespace metadata
 
         public int[] td_custom_attrs;
         public int[] md_custom_attrs;
+        public int[] fd_custom_attrs;
         public int[] next_ca;
 
         public string[] td_extends_override;
@@ -1779,6 +1780,7 @@ namespace metadata
         {
             td_custom_attrs = new int[table_rows[tid_TypeDef] + 1];
             md_custom_attrs = new int[table_rows[tid_MethodDef] + 1];
+            fd_custom_attrs = new int[table_rows[tid_Field] + 1];
             td_extends_override = new string[table_rows[tid_TypeDef] + 1];
             next_ca = new int[table_rows[tid_CustomAttribute] + 1];
 
@@ -1822,6 +1824,10 @@ namespace metadata
                     case tid_MethodDef:
                         next_ca[i] = md_custom_attrs[parent_row];
                         md_custom_attrs[parent_row] = i;
+                        break;
+                    case tid_Field:
+                        next_ca[i] = fd_custom_attrs[parent_row];
+                        fd_custom_attrs[parent_row] = i;
                         break;
                 }
             }
@@ -1883,6 +1889,51 @@ namespace metadata
                 if (simple_type_idx[i] != -1)
                     simple_type_rev_idx[simple_type_idx[i]] = i;
             }
+        }
+
+        public IEnumerable<string> GetFieldAliases(int fdrow)
+        {
+            if (fd_custom_attrs == null)
+                yield break;
+
+            int cur_ca = fd_custom_attrs[fdrow];
+
+            while(cur_ca != 0)
+            {
+                int type_tid, type_row;
+                GetCodedIndexEntry(tid_CustomAttribute,
+                    cur_ca, 1, CustomAttributeType, out type_tid,
+                    out type_row);
+
+                MethodSpec ca_ms;
+                GetMethodDefRow(type_tid, type_row, out ca_ms);
+                var ca_ms_name = ca_ms.MangleMethod();
+
+                if (ca_ms_name == "_ZN14libsupcs#2Edll8libsupcs19FieldAliasAttribute_7#2Ector_Rv_P2u1tu1S")
+                {
+                    int val_idx = (int)GetIntEntry(MetadataStream.tid_CustomAttribute,
+                        cur_ca, 2);
+
+                    SigReadUSCompressed(ref val_idx);
+                    var prolog = sh_blob.di.ReadUShort(val_idx);
+                    if (prolog == 0x0001)
+                    {
+                        val_idx += 2;
+
+                        var str_len = SigReadUSCompressed(ref val_idx);
+                        StringBuilder sb = new StringBuilder();
+                        for (uint i = 0; i < str_len; i++)
+                        {
+                            sb.Append((char)sh_blob.di.ReadByte(val_idx++));
+                        }
+                        yield return sb.ToString();
+                    }
+                }
+
+                cur_ca = next_ca[cur_ca];
+            }
+
+            yield break;
         }
     }
 }

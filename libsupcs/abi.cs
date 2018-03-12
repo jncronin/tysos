@@ -77,6 +77,14 @@ namespace libsupcs
         public MethodReferenceAliasAttribute(string alias) { }
     }
 
+    /** <summary>Give this field a separate alias to allow easy access for unmanaged code.  Only applicable to static fields (ignored for instance fields).</summary> 
+     */
+    [global::System.AttributeUsage(System.AttributeTargets.Field, Inherited = false, AllowMultiple = true)]
+    public sealed class FieldAliasAttribute : System.Attribute
+    {
+        public FieldAliasAttribute(string alias) { }
+    }
+
     /** <summary>Any references to this field (declared as a static field) will instead reference the following label</summary>
      */
     [global::System.AttributeUsage(System.AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
