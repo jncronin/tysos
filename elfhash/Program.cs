@@ -196,7 +196,7 @@ namespace elfhash
             Console.WriteLine("  -v0                    enforce version 0 (ELF-style) hash file without header");
             Console.WriteLine("  -v1                    enforce version 1 (tysos) hash file with header");
             Console.WriteLine("  -e                     embed in output ELF file");
-            Console.WriteLine("  --hash-sym <name>      name of symbol that starts embedded hash (defaults to _hash_start)")
+            Console.WriteLine("  --hash-sym <name>      name of symbol that starts embedded hash (defaults to _hash_start)");
             Console.WriteLine();
             Console.WriteLine();
         }
