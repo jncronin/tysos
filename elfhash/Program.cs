@@ -29,6 +29,7 @@ namespace elfhash
     class Program
     {
         static string input, output;
+        static string hash_sym = "_hash_start";
         static int bitness = -1;
         static int ver = 0;
 
@@ -114,7 +115,7 @@ namespace elfhash
 
                     // Create start symbol
                     var hss = f.CreateSymbol();
-                    hss.Name = "_hash_start";
+                    hss.Name = hash_sym;
                     hss.Type = binary_library.SymbolType.Global;
                     hss.ObjectType = binary_library.SymbolObjectType.Object;
                     hs.AddSymbol(hss);
@@ -168,6 +169,8 @@ namespace elfhash
                     }
                     output = args[++i];
                 }
+                else if (arg.Equals("--hash-sym"))
+                    hash_sym = args[++i];
                 else if (i == args.Length - 1)
                     input = arg;
                 else
@@ -193,6 +196,7 @@ namespace elfhash
             Console.WriteLine("  -v0                    enforce version 0 (ELF-style) hash file without header");
             Console.WriteLine("  -v1                    enforce version 1 (tysos) hash file with header");
             Console.WriteLine("  -e                     embed in output ELF file");
+            Console.WriteLine("  --hash-sym <name>      name of symbol that starts embedded hash (defaults to _hash_start)")
             Console.WriteLine();
             Console.WriteLine();
         }
