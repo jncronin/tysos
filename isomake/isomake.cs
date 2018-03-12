@@ -691,7 +691,7 @@ namespace isomake
             var afn = a.FName.PadRight(fname_len);
             var bfn = b.FName.PadRight(fname_len);
 
-            var fn_cmp = afn.CompareTo(bfn);
+            var fn_cmp = string.CompareOrdinal(afn, bfn);
             if (fn_cmp != 0)
                 return fn_cmp;
 
@@ -699,7 +699,7 @@ namespace isomake
             var aext = (a.Ext ?? "").PadRight(ext_len);
             var bext = (b.Ext ?? "").PadRight(ext_len);
 
-            return aext.CompareTo(bext);
+            return string.CompareOrdinal(aext, bext);
         }
 
         private static byte[] build_path_table(List<AnnotatedFSO>[] afso, bool lsb)
