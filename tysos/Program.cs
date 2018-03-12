@@ -41,6 +41,9 @@ namespace tysos
 
         internal static string[] kernel_cmd_line;
 
+        [libsupcs.FieldAlias("_tysos_hash")]
+        static IntPtr _hash_placeholder;
+
         [libsupcs.MethodAlias("kmain")]
         [libsupcs.Profile(false)]
         public static void KMain(Multiboot.Header mboot)
@@ -159,7 +162,13 @@ namespace tysos
                 Formatter.Write(tysos_vaddr, "X", arch.DebugOutput);
                 Formatter.WriteLine(arch.DebugOutput);
 
-                ElfReader.LoadSymbols(stab, tysos_vaddr, 0);
+                unsafe
+                {
+                    Formatter.WriteLine("tysos hash at " + ((ulong)libsupcs.OtherOperations.GetStaticObjectAddress("_tysos_hash")).ToString("X"), arch.DebugOutput);
+                    while (true) ;
+                }
+
+                // ElfReader.LoadSymbols(stab, tysos_vaddr, 0);
                 //ElfReader.LoadSymbols(stab, tysos_vaddr, mboot.tysos_virtaddr, khash_addr);
                 Formatter.WriteLine("done", arch.BootInfoOutput);
             }

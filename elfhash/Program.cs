@@ -96,7 +96,7 @@ namespace elfhash
                     for (int i = 0; i < f.GetSectionCount(); i++)
                     {
                         var s = f.GetSection(i);
-                        if(s != null && s.IsAlloc)
+                        if (s != null && s.IsAlloc)
                         {
                             if (s.LoadAddress + (ulong)s.Length > last_vaddr)
                                 last_vaddr = s.LoadAddress + (ulong)s.Length;
@@ -114,11 +114,26 @@ namespace elfhash
                     hs.FileOffset = last_offset;
 
                     // Create start symbol
-                    var hss = f.CreateSymbol();
-                    hss.Name = hash_sym;
+                    binary_library.ISymbol hss = null;
+
+                    // see if one exists first
+                    foreach (var sym in f.GetSymbols())
+                    {
+                        if (sym.Name == hash_sym)
+                        {
+                            hss = sym;
+                            break;
+                        }
+                    }
+                    if (hss == null)
+                    {
+                        hss = f.CreateSymbol();
+                        hss.Name = hash_sym;
+                        hs.AddSymbol(hss);
+                    }
                     hss.Type = binary_library.SymbolType.Global;
                     hss.ObjectType = binary_library.SymbolObjectType.Object;
-                    hs.AddSymbol(hss);
+                    hss.Offset = hs.LoadAddress;
                 }
 
                 f.AddSection(hs);
@@ -197,6 +212,8 @@ namespace elfhash
             Console.WriteLine("  -v1                    enforce version 1 (tysos) hash file with header");
             Console.WriteLine("  -e                     embed in output ELF file");
             Console.WriteLine("  --hash-sym <name>      name of symbol that starts embedded hash (defaults to _hash_start)");
+            Console.WriteLine("                          Will update a symbol of this name if it exists instead of");
+            Console.WriteLine("                          creating a new one.");
             Console.WriteLine();
             Console.WriteLine();
         }
