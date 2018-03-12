@@ -284,9 +284,15 @@ namespace typroject
                     is_v4plus = true;
                     return roslyn.FullName;
                 }
+                roslyn = new FileInfo(Project.add_dir_split(Project.add_dir_split(Project.add_dir_split(dn) + "Roslyn") + "bincore") + "RunCsc.cmd");
+                if (roslyn.Exists)
+                {
+                    is_v4plus = true;
+                    return roslyn.FullName;
+                }
             }
 
-            if (tools_ver.StartsWith("4.5"))
+            if (tools_ver.StartsWith("4.5") || tools_ver.StartsWith("4.6"))
                 tools_ver = "4.0";
 
             if (platform == 0)
