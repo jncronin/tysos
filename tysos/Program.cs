@@ -42,7 +42,7 @@ namespace tysos
         internal static string[] kernel_cmd_line;
 
         [libsupcs.FieldAlias("_tysos_hash")]
-        static IntPtr _hash_placeholder;
+        static IntPtr tysos_hash;
 
         [libsupcs.MethodAlias("kmain")]
         [libsupcs.Profile(false)]
@@ -164,7 +164,7 @@ namespace tysos
 
                 unsafe
                 {
-                    Formatter.WriteLine("tysos hash at " + ((ulong)libsupcs.OtherOperations.GetStaticObjectAddress("_tysos_hash")).ToString("X"), arch.DebugOutput);
+                    Formatter.WriteLine("tysos hash at " + tysos_hash.ToString("X"), arch.DebugOutput);
                     while (true) ;
                 }
 
