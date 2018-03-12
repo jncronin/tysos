@@ -335,8 +335,8 @@ rulefor("%.obj", [ "%.dll" ], [ TYSILA, MSCORLIB, THIS ], function()
 rulefor("%.to", [ "%.obj" ], [ TL, THIS ], function() {
 	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
 });
-rulefor("%.to", [ "%.bin" ], [ ELFHASH, THIS ], function() {
-	shellcmd("$ELFHASH -o $_RULE_OUTPUT -e $_RULE_INPUT");
+rulefor("tysos.to", [ "tysos.bin" ], [ ELFHASH, THIS ], function() {
+	shellcmd("$ELFHASH -o $_RULE_OUTPUT -e --hash-sym _tysos_hash $_RULE_INPUT");
 });
 
 /* Assemble all corefx assemblies */
