@@ -250,15 +250,23 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	sym_tab_paddr = 0;
 	str_tab_paddr = 0;
 	void *shdrs = malloc(ehdr->e_shnum * ehdr->e_shentsize);
-	fseek_func(fobj, ehdr->e_shoff, SEEK_SET);
-	fread_func(fobj, shdrs, ehdr->e_shnum * ehdr->e_shentsize);
+	int coffset = fseek_func(fobj, ehdr->e_shoff, SEEK_SET);
+	size_t shread = fread_func(fobj, shdrs, ehdr->e_shnum * ehdr->e_shentsize);
 
+	printf("Section headers loaded from offset %x (%x) to 0x%x (%d x %d = %d)\n", (int)ehdr->e_shoff, coffset, shdrs, ehdr->e_shnum, ehdr->e_shentsize, shread);
 	for (int i = 0; i < ehdr->e_shnum; i++)
 	{
 		Elf64_Shdr *shdr = (Elf64_Shdr *)((uintptr_t)shdrs + i * ehdr->e_shentsize);
+		printf("Checking header %d, type %d\n", i, shdr->sh_type);
 		if (shdr->sh_type == SHT_SYMTAB)
 		{
 			sym_tab_paddr = (EFI_PHYSICAL_ADDRESS)(uintptr_t)malloc(shdr->sh_size);
+			if (sym_tab_paddr == 0)
+			{
+				printf("error: couldn't allocate space for kernel symbol table\n");
+				press_key();
+				return GRUB_ERR_OUT_OF_MEMORY;
+			}
 			sym_tab_size = (EFI_PHYSICAL_ADDRESS)shdr->sh_size;
 			sym_tab_entsize = (EFI_PHYSICAL_ADDRESS)shdr->sh_entsize;
 			fseek_func(fobj, shdr->sh_offset, SEEK_SET);

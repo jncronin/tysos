@@ -72,9 +72,9 @@ int feof(FILE *stream);
 int ferror(FILE *stream);
 int fileno(FILE *stream);
 
-#define SEEK_SET		1
-#define SEEK_CUR		2
-#define SEEK_END		3
+#define SEEK_SET		0
+#define SEEK_CUR		1
+#define SEEK_END		2
 
 typedef long fpos_t;
 int fseek(FILE *stream, long offset, int whence);

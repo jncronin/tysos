@@ -88,7 +88,8 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 			if(seg_high > kernel_high)
 				kernel_high = seg_high;
 
-			fseek_func(fobj, phdr->p_offset, SEEK_SET);
+			int coffset = (int)fseek_func(fobj, phdr->p_offset, SEEK_SET);
+			printf("seeked to offset %x\n", coffset);
 
 			/* Is the first page mapped? (segments pages can overlap) */
 			EFI_PHYSICAL_ADDRESS first_page_paddr = get_pmem_for_vmem(vpage_start);
@@ -100,12 +101,13 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 				size_t to_load = 0x1000 - page_offset;
 				if(to_load > phdr->p_filesz)
 					to_load = phdr->p_filesz;
-				fread_func(fobj, (void *)(uintptr_t)(first_page_paddr + page_offset), to_load);
+				size_t to_load_r = fread_func(fobj, (void *)(uintptr_t)(first_page_paddr + page_offset), to_load);
+				printf("first_page: requested %x, loaded %x\n", (int)to_load, (int)to_load_r);
 				seg_offset += to_load;
 				
-				size_t to_zero = 0x1000 - page_offset - to_load;
-				memset((void *)(uintptr_t)(first_page_paddr + page_offset + seg_offset), 0, to_zero);
-				seg_offset += to_load;
+				//size_t to_zero = 0x1000 - page_offset - to_load;
+				//memset((void *)(uintptr_t)(first_page_paddr + page_offset + seg_offset), 0, to_zero);
+				//seg_offset += to_load;
 				
 				next_page_vaddr += 0x1000;
 				v_length -= 0x1000;
@@ -131,7 +133,8 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 
 				size_t rest_to_load = phdr->p_filesz - seg_offset;
 				EFI_PHYSICAL_ADDRESS cur_paddr = next_paddr + page_offset;
-				fread_func(fobj, (void *)(uintptr_t)cur_paddr, rest_to_load);
+				size_t rest_to_load_r = fread_func(fobj, (void *)(uintptr_t)cur_paddr, rest_to_load);
+				printf("rest: requested %x, loaded %x\n", (int)rest_to_load, (int)rest_to_load_r);
 				cur_paddr += rest_to_load;
 				size_t rest_to_zero = phdr->p_memsz - phdr->p_filesz;
 				memset((void *)(uintptr_t)cur_paddr, 0, rest_to_zero);

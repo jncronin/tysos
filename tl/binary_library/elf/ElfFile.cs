@@ -533,6 +533,10 @@ namespace binary_library.elf
             if (e_phnum == 0)
                 e_phoff = 0;
 
+            // Write 64 padding bytes at end
+            for (int i = 0; i < 64; i++)
+                w.Write((byte)0);
+
             // Rewrite file header
             e_shnum = osects.Count;
             if (is_exec)

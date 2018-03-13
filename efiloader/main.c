@@ -244,6 +244,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		if(shdr->sh_type == SHT_SYMTAB)
 		{
 			sym_tab_paddr = (EFI_PHYSICAL_ADDRESS)malloc(shdr->sh_size);
+			if (sym_tab_paddr == 0)
+			{
+				printf("error: couldn't allocate space for kernel symbol table\n");
+				return EFI_OUT_OF_RESOURCES;
+			}
 			sym_tab_size = (EFI_PHYSICAL_ADDRESS)shdr->sh_size;
 			sym_tab_entsize = (EFI_PHYSICAL_ADDRESS)shdr->sh_entsize;
 			fseek_func(fobj, shdr->sh_offset, SEEK_SET);

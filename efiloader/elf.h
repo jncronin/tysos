@@ -47,7 +47,7 @@ typedef struct {
 	Elf64_Word			sh_info;
 	Elf64_Xword			sh_addralign;
 	Elf64_Xword			sh_entsize;
-} Elf64_Shdr;
+} __attribute__((packed)) Elf64_Shdr;
 
 typedef struct {
 	Elf32_Word			sh_name;
@@ -60,7 +60,7 @@ typedef struct {
 	Elf32_Word			sh_info;
 	Elf32_Word			sh_addralign;
 	Elf32_Word			sh_entsize;
-} Elf32_Shdr;
+} __attribute__((packed)) Elf32_Shdr;
 
 #define SHT_NULL		0
 #define SHT_PROGBITS		1
@@ -91,7 +91,7 @@ typedef struct
 	Elf64_Half e_shentsize; /* Size of section header entry */
 	Elf64_Half e_shnum; /* Number of section header entries */
 	Elf64_Half e_shstrndx; /* Section name string table index */
-} Elf64_Ehdr;
+} __attribute__((packed)) Elf64_Ehdr;
 
 typedef struct
 {
@@ -109,7 +109,7 @@ typedef struct
 	Elf32_Half		e_shentsize;
 	Elf32_Half		e_shnum;
 	Elf32_Half		e_shstrndx;
-} Elf32_Ehdr;
+} __attribute__((packed)) Elf32_Ehdr;
 
 #define EI_MAG0 0
 #define EI_MAG1 1
@@ -143,7 +143,7 @@ typedef struct
 	Elf64_Xword p_filesz; /* Size of segment in file */
 	Elf64_Xword p_memsz; /* Size of segment in memory */
 	Elf64_Xword p_align; /* Alignment of segment */
-} Elf64_Phdr;
+} __attribute__((packed)) Elf64_Phdr;
 
 typedef struct
 {
@@ -155,7 +155,7 @@ typedef struct
 	Elf32_Word p_memsz;
 	Elf32_Word p_flags;
 	Elf32_Word p_align;
-} Elf32_Phdr;
+} __attribute__((packed)) Elf32_Phdr;
 
 #define ET_NONE 0
 #define ET_REL 1
@@ -191,13 +191,13 @@ typedef struct
 {
 	Elf64_Addr r_offset; /* Address of reference */
 	Elf64_Xword r_info; /* Symbol index and type of relocation */
-} Elf64_Rel;
+} __attribute__((packed)) Elf64_Rel;
 typedef struct
 {
 	Elf64_Addr r_offset; /* Address of reference */
 	Elf64_Xword r_info; /* Symbol index and type of relocation */
 	Elf64_Sxword r_addend; /* Constant part of expression */
-} Elf64_Rela;
+} __attribute__((packed)) Elf64_Rela;
 typedef struct
 {
 	Elf64_Word	st_name;		/* Symbol name */
@@ -206,7 +206,7 @@ typedef struct
 	Elf64_Half	st_shndx;		/* Section table index */
 	Elf64_Addr	st_value;		/* Symbol value */
 	Elf64_Xword	st_size;		/* Size of object */
-} Elf64_Sym;
+} __attribute__((packed)) Elf64_Sym;
 
 #define ELF64_R_SYM(i)		((i) >> 32)
 #define ELF64_R_TYPE(i)		((i) & 0xffffffffL)
@@ -227,7 +227,7 @@ typedef struct
 		Elf64_Xword		d_val;
 		Elf64_Addr		d_ptr;
 	} d_un;
-} Elf64_Dyn;
+} __attribute__((packed)) Elf64_Dyn;
 
 #define	DT_NULL				0
 #define DT_STRTAB			5
