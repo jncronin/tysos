@@ -156,20 +156,21 @@ namespace tysos
             /* Load up the symbol table for tysos */
             if (GetCmdLine("skip_kernel_syms") == false)
             {
+                ulong sym_vaddr = Program.map_in(mboot.tysos_sym_tab_paddr, mboot.tysos_sym_tab_size,
+                    "tysos_sym_tab");
+                ulong str_vaddr = Program.map_in(mboot.tysos_str_tab_paddr, mboot.tysos_str_tab_size,
+                    "tysos_str_tab");
+
                 stab = new SymbolTable();
                 Formatter.Write("Loading kernel symbols... ", arch.BootInfoOutput);
                 Formatter.Write("Loading kernel symbols.  Tysos base: ", arch.DebugOutput);
                 Formatter.Write(tysos_vaddr, "X", arch.DebugOutput);
                 Formatter.WriteLine(arch.DebugOutput);
 
-                unsafe
-                {
-                    Formatter.WriteLine("tysos hash at " + tysos_hash.ToString("X"), arch.DebugOutput);
-                    while (true) ;
-                }
+                var hr = new ElfReader.ElfHashTable((ulong)tysos_hash, sym_vaddr, mboot.tysos_sym_tab_entsize, str_vaddr,
+                    null, 0, mboot.tysos_sym_tab_size);
+                stab.symbol_providers.Add(hr);
 
-                // ElfReader.LoadSymbols(stab, tysos_vaddr, 0);
-                //ElfReader.LoadSymbols(stab, tysos_vaddr, mboot.tysos_virtaddr, khash_addr);
                 Formatter.WriteLine("done", arch.BootInfoOutput);
             }
 

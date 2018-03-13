@@ -1069,7 +1069,7 @@ namespace tysos
             }
         }
 
-        unsafe class ElfHashTable : SymbolTable.SymbolProvider
+        unsafe internal class ElfHashTable : SymbolTable.SymbolProvider
         {
             uint nbucket, nchain;
             uint* bucket;

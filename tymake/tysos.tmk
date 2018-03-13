@@ -604,7 +604,12 @@ BOOT_MNU = OUTDIR + "/boot.mnu";
 // for quick kernel testing
 PROCESSES = [];
 
-
+KERNELTOGZ = ISODIR + "/tysos.to.gz";
+rulefor(KERNELTOGZ, [ KERNELTO ], [ GZIP ], function()
+{
+	cp(KERNELTO, ISODIR);
+	shellcmd("$GZIP -f $ISODIR/tysos.to");
+});
 
 if(defined(USE_GRUB))
 {
@@ -612,18 +617,14 @@ if(defined(USE_GRUB))
 	GRUBCFG = ROOT + "/grub-loader/iso/boot/grub/grub.cfg";
 	autodir(GRUB_MOD_DIR);
 
-	rulefor(ISOIMAGE, [ KERNELTO, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU ],
+	rulefor(ISOIMAGE, [ KERNELTOGZ, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU ],
 		[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT, GRUB_MOD_DIR ], function()
 	{
-		cp(KERNELTO, ISODIR);
 		cp(GRUBCFG, GRUBDIR);
 		cp(LIBSUPCS, ISODIR);
 		cp(MSCORLIB, ISODIR);
 		cp(GRUBLOADER, ISODIR);
 		cp(BOOT_MNU, BOOTDIR);
-
-		// Compress kernel
-		shellcmd("$GZIP -f $ISODIR/tysos.to");
 
 		foreach(proc in PROCESSES)
 		{
