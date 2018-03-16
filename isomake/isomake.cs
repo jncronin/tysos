@@ -19,6 +19,9 @@ namespace isomake
         internal static string boot_catalog_f = null;
         static string src_dir = null;
 
+        static int rr_ce_lba = 0;
+        static List<byte> rr_ce = null;
+
         static void Main(string[] args)
         {
             if(!parse_args(args))
@@ -200,6 +203,30 @@ namespace isomake
                 cur_lba += (int)align(bc.Count) / 2048;
             }
 
+            // create root dir first entry continuation area containing rockridge attribute if required
+            rr_ce = new List<byte>();
+            if(do_rr)
+            {
+                // Use a spare sector to contain the 'ER' field as is it too big for the system use area
+                // This is later referenced in a 'CE' entry
+                rr_ce_lba = cur_lba++;
+
+                // Add SUSP ER field to identify RR
+                rr_ce.Add(0x45); rr_ce.Add(0x52); // "ER"
+                var ext_id = "IEEE_P1282";
+                var ext_desc = "THE IEEE P1282 PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS.";
+                var ext_src = "PLEASE CONTACT THE IEEE STANDARDS DEPARTMENT, PISCATAWAY, NJ, USA FOR THE P1282 SPECIFICATION.";
+                rr_ce.Add((byte)(8 + ext_id.Length + ext_desc.Length + ext_src.Length));       // length
+                rr_ce.Add(1);                  // version
+                rr_ce.Add((byte)ext_id.Length);    // LEN_ID
+                rr_ce.Add((byte)ext_desc.Length);  // LEN_DES
+                rr_ce.Add((byte)ext_src.Length);   // LEN_SRC
+                rr_ce.Add(1);                  // EXT_VER
+                rr_ce.AddRange(Encoding.ASCII.GetBytes(ext_id));
+                rr_ce.AddRange(Encoding.ASCII.GetBytes(ext_desc));
+                rr_ce.AddRange(Encoding.ASCII.GetBytes(ext_src));
+            }
+
             // build directory tree from most deeply nested to most shallow, so that we automatically patch up
             //  the appropriate child lbas as we go
             List<byte> dir_tree = new List<byte>();
@@ -294,6 +321,14 @@ namespace isomake
                 o.Seek(bc_lba * 2048, SeekOrigin.Begin);
 
                 o.Write(bc.ToArray(), 0, bc.Count);
+            }
+
+            // rr es field continuation area
+            if(rr_ce != null)
+            {
+                o.Seek(rr_ce_lba * 2048, SeekOrigin.Begin);
+
+                o.Write(rr_ce.ToArray(), 0, rr_ce.Count);
             }
 
             // Align to sector size
@@ -565,21 +600,6 @@ namespace isomake
                     rr.Add(1);                  // version
                     rr.Add(0xbe); rr.Add(0xef); // check bytes
                     rr.Add(0);                  // len_skp
-
-                    // Add SUSP ER field to identify RR
-                    rr.Add(0x45); rr.Add(0x52); // "ER"
-                    var ext_id = "IEEE_P1282";
-                    var ext_desc = "THE IEEE P1282 PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS.";
-                    var ext_src = "";
-                    rr.Add((byte)(8 + ext_id.Length + ext_desc.Length + ext_src.Length));       // length
-                    rr.Add(1);                  // version
-                    rr.Add((byte)ext_id.Length);    // LEN_ID
-                    rr.Add((byte)ext_desc.Length);  // LEN_DES
-                    rr.Add((byte)ext_src.Length);   // LEN_SRC
-                    rr.Add(1);                  // EXT_VER
-                    rr.AddRange(Encoding.ASCII.GetBytes(ext_id));
-                    rr.AddRange(Encoding.ASCII.GetBytes(ext_desc));
-                    rr.AddRange(Encoding.ASCII.GetBytes(ext_src));
                 }
                 // Add RR PX field
                 rr.Add(0x50); rr.Add(0x58);     // "PX"
@@ -595,7 +615,8 @@ namespace isomake
                 rr.AddRange(int_lsb_msb(0));    // uid
                 rr.AddRange(int_lsb_msb(0));    // gid
                 rr.AddRange(int_lsb_msb(0));    // serial num
-                                                // Add RR NM entry
+                                                
+                // Add RR NM entry
                 if (!id.Equals("\0") && !id.Equals("\u0001"))
                 {
                     rr.Add(0x4e); rr.Add(0x4d);     // "NM"
@@ -609,10 +630,17 @@ namespace isomake
                     rr.Add((byte)nm_flags);
                     if (rr_name_len > 0) rr.AddRange(Encoding.ASCII.GetBytes(fsi.Name));
                 }
-                // Add SUSP ST
-                //rr.Add(0x53); rr.Add(0x54);     // "ST"
-                //rr.Add(4);                      // length
-                //rr.Add(1);                      // ver
+
+                // If '.' in root dir, point to the 'ER' field in the continuation area set above
+                if(is_root_dot)
+                {
+                    rr.Add(0x43); rr.Add(0x45);     // "CE"
+                    rr.Add(28);                     // length
+                    rr.Add(1);                      // version
+                    rr.AddRange(int_lsb_msb(rr_ce_lba));    // block location of continuation area
+                    rr.AddRange(int_lsb_msb(0));    // offset within block
+                    rr.AddRange(int_lsb_msb(rr_ce.Count));  // length of continuation area
+                }
             }
             if ((rr.Count % 2) == 0x1)
                 rr.Add(0);
