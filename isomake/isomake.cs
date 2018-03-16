@@ -336,6 +336,12 @@ namespace isomake
             while ((o.BaseStream.Position % 2048) != 0)
                 o.Write((byte)0);
 
+            // Add 300k padding - required for VirtualBox it seems
+            //  According to 'man xorriso': 
+            //  "This is a traditional remedy for a traditional bug in block device read drivers."
+            for (int i = 0; i < 300 * 1024 / 4; i++)
+                o.Write((int)0);
+
             o.Close();
         }
 
