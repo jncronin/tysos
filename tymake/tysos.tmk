@@ -30,11 +30,6 @@ function x86_yasm()
 	});
 }
 
-function find_xorriso()
-{
-	export XORRISO ?= find("xorriso", "xorriso replacement for mkisofs (http://www.gnu.org/software/xorriso)", XORRISO);
-}
-
 function uefi_finds()
 {
 	if(MAKE_ISO == "y")
@@ -43,7 +38,6 @@ function uefi_finds()
 		export EFIAR = find("x86_64-w64-mingw32-ar", "cross archiver for x64 UEFI", EFIAR);
 		export MKFAT = find("mkfat", "mkfat utility (http://www.tysos.org/redmine/projects/tysos/wiki/EFI)", MKFAT);
 		export GZIP = find("gzip", "gzip", GZIP);
-		find_xorriso();
 	}
 }
 
@@ -59,8 +53,6 @@ function grub_finds()
 		export GZIP = find("gzip", "gzip", GZIP);
 
 		export GRUB_MKIMAGE = find("grub-mkimage.exe", "GRUB mkimage tool", GRUB_MKIMAGE, [ dir(dir(CDBOOT)) ]);
-
-		find_xorriso();
 	}
 }
 
@@ -251,6 +243,7 @@ TYSILAPROJ = ROOT + "/tysila4/tysila4.csproj";
 TYSILA = typroject(TYSILAPROJ, "Release", "4.6.1", 1, [], REF_OVERRIDES);
 TL = typroject(ROOT + "/tl/tl/tl.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
 ELFHASH = typroject(ROOT + "/elfhash/elfhash.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
+ISOMAKE = typroject(ROOT + "/isomake/isomake.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
 TYSOS = typroject(ROOT + "/tysos/tysos.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
 TYSOSOBJ = objfromexe(TYSOS);
 LIBSUPCS = typroject(ROOT + "/libsupcs/libsupcs.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
@@ -594,7 +587,6 @@ PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj", "Release",
 	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ, GUIOBJ, NETOBJ, PCNET32OBJ ];
 
 COREIMG = OUTDIR + "/core.img";
-XORRISO = "xorriso";
 GRUBPREFIX_CFG = OUTDIR + "/grub_prefix.cfg";
 ELTORITO = GRUBDIR + "/eltorito.img";
 
@@ -618,7 +610,7 @@ if(defined(USE_GRUB))
 	autodir(GRUB_MOD_DIR);
 
 	rulefor(ISOIMAGE, [ KERNELTOGZ, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU ],
-		[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT, GRUB_MOD_DIR ], function()
+		[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT, GRUB_MOD_DIR, ISOMAKE ], function()
 	{
 		cp(GRUBCFG, GRUBDIR);
 		cp(LIBSUPCS, ISODIR);
@@ -658,8 +650,9 @@ if(defined(USE_GRUB))
 		feltorito = fopen(ELTORITO);
 		feltorito.Write(bcdboot, 0, fcdboot.Length);
 		feltorito.Write(bcoreimg, 0, fcoreimg.Length);
+		feltorito.Close();
 
-		shellcmd("$XORRISO -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
+		shellcmd("$ISOMAKE -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
 	});
 }
 else if(defined(USE_UEFI))
@@ -669,7 +662,7 @@ else if(defined(USE_UEFI))
 	autodir(IMGDIR + "/boot");
 
 	rulefor(ISOIMAGE, [ KERNELTO, LIBSUPCS, MSCORLIB, EFILOADER, BOOT_MNU ] + PROCESSES,
-		[ IMGDIR, IMGDIR + "/EFI/BOOT", IMGDIR + "/boot", ISODIR ],
+		[ IMGDIR, IMGDIR + "/EFI/BOOT", IMGDIR + "/boot", ISODIR, ISOMAKE ],
 		function()
 	{
 		cp(KERNELTO, IMGDIR);
@@ -688,7 +681,7 @@ else if(defined(USE_UEFI))
 		cp(EFILOADER, IMGDIR + "/EFI/BOOT/BOOTX64.EFI");
 
 		shellcmd("$MKFAT -o $ISODIR/efi.img $IMGDIR");
-		shellcmd("$XORRISO -as mkisofs -R -f --efi-boot efi.img -no-emul-boot -o $ISOIMAGE $ISODIR");
+		shellcmd("$ISOMAKE -as mkisofs -R -f --efi-boot efi.img -no-emul-boot -o $ISOIMAGE $ISODIR");
 	});
 }
 
