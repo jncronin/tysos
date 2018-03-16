@@ -630,9 +630,23 @@ namespace isomake
                     rr.Add((byte)nm_flags);
                     if (rr_name_len > 0) rr.AddRange(Encoding.ASCII.GetBytes(fsi.Name));
                 }
+                else if(id.Equals("\0"))
+                {
+                    rr.Add(0x4e); rr.Add(0x4d);
+                    rr.Add(0x5);
+                    rr.Add(0x1);
+                    rr.Add(2);
+                }
+                else if(id.Equals("\u0001"))
+                {
+                    rr.Add(0x4e); rr.Add(0x4d);
+                    rr.Add(0x5);
+                    rr.Add(0x1);
+                    rr.Add(4);
+                }
 
                 // If '.' in root dir, point to the 'ER' field in the continuation area set above
-                if(is_root_dot)
+                if (is_root_dot)
                 {
                     rr.Add(0x43); rr.Add(0x45);     // "CE"
                     rr.Add(28);                     // length
