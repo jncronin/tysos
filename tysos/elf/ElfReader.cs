@@ -1167,7 +1167,7 @@ namespace tysos
                     {
                         ulong name_addr = sym_name_tab_start + cur_sym->st_name;
                         string sym_name = new string((sbyte*)name_addr);
-                        offset = address - cur_sym->st_size;
+                        offset = address - cur_sym->st_value;
                         return sym_name;
                     }
                 }
