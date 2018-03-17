@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using QUT.Gppg;
 
 namespace tymake_lib
 {
@@ -816,7 +817,8 @@ namespace tymake_lib
 
         public override Expression.EvalResult Run(MakeState s, List<Expression.EvalResult> passed_args)
         {
-            if (passed_args[0].Type == Expression.EvalResult.ResultType.Void)
+            if (passed_args[0].Type == Expression.EvalResult.ResultType.Void ||
+                passed_args[0].Type == Expression.EvalResult.ResultType.Undefined)
                 return new Expression.EvalResult(0);
             else
                 return new Expression.EvalResult(1);
@@ -1288,13 +1290,18 @@ namespace tymake_lib
 
         protected override void PostDoAction()
         {
+            LocationBase e = null;
             if(CurrentSemanticValue.exprval != null)
+                e = CurrentSemanticValue.exprval;
+            else if(CurrentSemanticValue.stmtval != null)
+                e = CurrentSemanticValue.stmtval;
+            if(e != null)
             {
-                Expression e = CurrentSemanticValue.exprval;
-                Scanner s = Scanner as Scanner;
-                e.scol = s.scol;
-                e.sline = s.sline;
-                e.fname = s.filename;
+                e.scol = CurrentLocationSpan.StartColumn;
+                e.sline = CurrentLocationSpan.StartLine;
+                e.ecol = CurrentLocationSpan.EndColumn;
+                e.eline = CurrentLocationSpan.EndLine;
+                e.fname = ((Scanner)Scanner).filename;
             }
         }
     }
@@ -1313,6 +1320,18 @@ namespace tymake_lib
 
         internal int sline { get { return yyline; } }
         internal int scol { get { return yycol; } }
+
+        public override LexLocation yylloc
+        {
+            get
+            {
+                return new LexLocation(tokLin, tokCol, tokELin, tokECol);
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 
     public class ParseException : Exception

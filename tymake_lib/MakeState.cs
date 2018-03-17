@@ -31,6 +31,8 @@ namespace tymake_lib
         public TextReader stdin;
         public TextWriter stdout, stderr;
 
+        public LocationBase fcall;
+
         public MakeState parent = null;
         public Expression.EvalResult returns = null;
         public List<string> search_paths = new List<string> { ".", "" };

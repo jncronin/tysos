@@ -349,6 +349,11 @@ namespace tymake
 
                 string ofile = new_mrs.output_file.Evaluate(s).strval;
                 new_mrs.state_at_def = s.Clone();
+                foreach(var dep in new_mrs.depend_list)
+                {
+                    if (dep.Type == Expression.EvalResult.ResultType.Undefined)
+                        throw new SyntaxException("rule for " + new_mrs.output_file.ToString() + " depends on " + dep.strval + " which is undefined", dep.orig_expr);
+                }
                 new_mrs.dfiles = FlattenToString(new_mrs.depend_list, s);
                 new_mrs.ifiles = FlattenToString(new_mrs.inputs_list, s);
 

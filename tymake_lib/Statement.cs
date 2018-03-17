@@ -26,13 +26,18 @@ using System.Text;
 
 namespace tymake_lib
 {
-    public abstract class Statement
+    public abstract class LocationBase
+    {
+        public string fname;
+        public int scol, sline, ecol, eline;
+    }
+    public abstract class Statement : LocationBase
     {
         public class SyntaxException : Exception
         {
-            Expression expr;
+            LocationBase expr;
 
-            static string pretty_string(string msg, Expression e)
+            static string pretty_string(string msg, LocationBase e)
             {
                 StringBuilder sb = new StringBuilder();
                 sb.Append(msg);
@@ -40,7 +45,7 @@ namespace tymake_lib
                 {
                     FileInfo fi;
                     if (e.fname == null || ((fi = new FileInfo(e.fname)).Exists == false))
-                        sb.Append(Environment.NewLine + "  at line " + e.sline);
+                        sb.Append(Environment.NewLine + "  at line " + e.sline + ", column " + e.scol);
                     else
                     {
                         var f = new StreamReader(fi.OpenRead());
@@ -51,15 +56,16 @@ namespace tymake_lib
                             cline++;
                             cl = f.ReadLine();
                         }
+                        cl = cl.Insert(e.ecol, "^").Insert(e.scol, "^");
                         f.Close();
-                        sb.Append(Environment.NewLine + "  at line " + e.sline + " in " + fi.FullName + ":");
+                        sb.Append(Environment.NewLine + "  at line " + e.sline + ", column " + e.scol + " in " + fi.FullName + ":");
                         sb.Append(Environment.NewLine + "    " + cl);
                     }
                 }
                 return sb.ToString();
             }
 
-            public SyntaxException(string msg, Expression e) : base(pretty_string(msg, e))
+            public SyntaxException(string msg, LocationBase e) : base(pretty_string(msg, e))
             {
                 expr = e;
             }
@@ -496,6 +502,7 @@ namespace tymake_lib
                         sb.Append("o");
                         break;
                     case Expression.EvalResult.ResultType.Void:
+                    case Expression.EvalResult.ResultType.Undefined:
                         sb.Append("v");
                         break;
                     case Expression.EvalResult.ResultType.Function:

@@ -25,13 +25,10 @@ using System.Text;
 
 namespace tymake_lib
 {
-    public class Expression
+    public class Expression : LocationBase
     {
         internal Expression a, b;
         internal Tokens op;
-
-        internal string fname;
-        internal int scol, sline;
 
         public virtual EvalResult Evaluate(MakeState s)
         {
@@ -86,7 +83,10 @@ namespace tymake_lib
                         nl.AddRange(eb.arrval);
                         return new EvalResult(nl);
                     }
-                    else if (ea.Type == EvalResult.ResultType.Void && eb.Type == EvalResult.ResultType.Void)
+                    else if ((ea.Type == EvalResult.ResultType.Void ||
+                        ea.Type == EvalResult.ResultType.Undefined) &&
+                        (eb.Type == EvalResult.ResultType.Void ||
+                        eb.Type == EvalResult.ResultType.Undefined))
                         return new EvalResult();
                     else
                         throw new Statement.SyntaxException("Mismatched arguments to PLUS: " + ea.Type.ToString() + " and " + eb.Type.ToString(), this);
@@ -108,7 +108,7 @@ namespace tymake_lib
                     if (b == null)
                     {
                         // unary minus
-                        if (ea.Type == EvalResult.ResultType.Void)
+                        if (ea.Type == EvalResult.ResultType.Void || ea.Type == EvalResult.ResultType.Undefined)
                             return ea;
                         if (ea.Type == EvalResult.ResultType.String)
                             throw new Statement.SyntaxException("Cannot apply unary minus to type string", this);
@@ -120,7 +120,7 @@ namespace tymake_lib
 
                         check_null(eb);
 
-                        if (ea.Type == EvalResult.ResultType.String && (eb.Type == EvalResult.ResultType.Int || eb.Type == EvalResult.ResultType.Void))
+                        if (ea.Type == EvalResult.ResultType.String && (eb.Type == EvalResult.ResultType.Int || eb.Type == EvalResult.ResultType.Void || eb.Type == EvalResult.ResultType.Undefined))
                         {
                             long rem_amount = eb.AsInt;
                             if (rem_amount > ea.strval.Length)
@@ -134,7 +134,10 @@ namespace tymake_lib
                             else
                                 throw new Statement.SyntaxException(ea.strval + " does not end with " + eb.strval, this);
                         }
-                        else if (ea.Type == EvalResult.ResultType.Void && eb.Type == EvalResult.ResultType.Void)
+                        else if ((ea.Type == EvalResult.ResultType.Void ||
+                        ea.Type == EvalResult.ResultType.Undefined) &&
+                        (eb.Type == EvalResult.ResultType.Void ||
+                        eb.Type == EvalResult.ResultType.Undefined))
                         {
                             return new EvalResult();
                         }
@@ -261,7 +264,7 @@ namespace tymake_lib
 
         public class EvalResult
         {
-            public enum ResultType { Int, String, Void, Function, MakeRule, Object, Array, Any, Null };
+            public enum ResultType { Int, String, Void, Function, MakeRule, Object, Array, Any, Null, Undefined };
 
             public ResultType Type;
 
@@ -270,6 +273,8 @@ namespace tymake_lib
             public Dictionary<string, EvalResult> objval;
             public FunctionStatement funcval;
             public List<EvalResult> arrval;
+
+            public Expression orig_expr;
 
             public EvalResult()
             {
@@ -328,6 +333,7 @@ namespace tymake_lib
                                 return 0;
                             return 1;
                         case ResultType.Void:
+                        case ResultType.Undefined:
                             return 0;
                         case ResultType.Null:
                             return 0;
@@ -351,6 +357,7 @@ namespace tymake_lib
                     case ResultType.String:
                         return "\"" + strval + "\"";
                     case ResultType.Void:
+                    case ResultType.Undefined:
                         return "{void}";
                     case ResultType.Array:
                         {
@@ -467,7 +474,7 @@ namespace tymake_lib
                     }
                 };
             else
-                return new EvalResult();
+                return new EvalResult() { Type = EvalResult.ResultType.Undefined, strval = val, orig_expr = this };
         }
 
         public override string ToString()
@@ -541,6 +548,8 @@ namespace tymake_lib
                     
                 case EvalResult.ResultType.Object:
                     return elabel.objval[eindex.strval];
+                case EvalResult.ResultType.Undefined:
+                    throw new Statement.SyntaxException("attempt to access array index of undefined object " + elabel.strval, this);
                 default:
                     throw new Statement.SyntaxException("indexing cannot be applied to object of type: " + elabel.Type.ToString(), this);
             }
@@ -555,6 +564,9 @@ namespace tymake_lib
         public override EvalResult Evaluate(MakeState s)
         {
             EvalResult elabel = label.Evaluate(s);
+
+            if (elabel.Type == EvalResult.ResultType.Undefined)
+                throw new Statement.SyntaxException("attempt to access member of undefined object " + elabel.strval, this);
 
             if (member is LabelExpression)
             {
@@ -787,6 +799,7 @@ namespace tymake_lib
                         sb.Append("o");
                         break;
                     case EvalResult.ResultType.Void:
+                    case EvalResult.ResultType.Undefined:
                         sb.Append("v");
                         break;
                     case EvalResult.ResultType.Null:
@@ -811,6 +824,10 @@ namespace tymake_lib
                 List<EvalResult> args_to_pass = new List<EvalResult>();
                 foreach (Expression arg in args)
                     args_to_pass.Add(arg.Evaluate(s));
+                // add these here because error messages for a function
+                //  call should relate to the location the function is
+                //  called rather than defined
+                s.fcall = this;
                 return s.funcs[mangled_name].Run(s, args_to_pass);
             }
             /*List<string> mangle_all = MangleAll(s);

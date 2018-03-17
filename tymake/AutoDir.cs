@@ -48,7 +48,7 @@ namespace tymake
                     if (di.Parent != null)
                         depend_list.Add(new Expression.EvalResult(di.Parent.FullName));
 
-                    RuleForFunction mr = new RuleForFunction();
+                    RuleForFunction mr = new RuleForFunction() { fname = fname, scol = scol, sline = sline };
                     mr.Run(s, new List<Expression.EvalResult>
                     {
                         new Expression.EvalResult(di.FullName),
