@@ -93,7 +93,10 @@ if(!defined(STDLIB_TMH))
 
 	export function typroject(string name)
 	{
-		return typroject(name, "Release", "", 0);
+		TYPROJECT_CONFIG ?= "Release";
+		TYPROJECT_UNSAFE ?= 1;
+		TYPROJECT_TOOLSVER ?= "4.6.1";
+		return typroject(name, TYPROJECT_CONFIG, TYPROJECT_TOOLSVER, TYPROJECT_UNSAFE);
 	}
 
 	function _find(string path, string name, array _path_splits, array _exts)
