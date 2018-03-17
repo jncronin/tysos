@@ -40,9 +40,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="tysos">
-      <HintPath>..\..\tysos\bin\Release\tysos.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\tysos\tysos.csproj">
+      <Project>{97ad573f-2e77-4f43-9c2b-1050796471a9}</Project>
+      <Name>tysos</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

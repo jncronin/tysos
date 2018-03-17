@@ -1,0 +1,66 @@
+/* The kernel contains the main tysos kernel,
+	the JIT engine libtysila, various CPU-specific support files,
+	and a group of missing function stubs that display meaningful,
+	exception messages if a missing function is called */
+
+export TYSOS = typroject(ROOT + "/tysos/tysos.csproj");
+TYSOSOBJ = objfromexe(TYSOS);
+TYSOSDIR = dir(TYSOS);
+LIBTYSILA = typroject(ROOT + "/libtysila5/libtysila5.csproj");
+LIBTYSILAOBJ = objfromexe(LIBTYSILA);
+BINLIBOBJ = objfromexe(typroject(ROOT + "/tl/binary_library/binary_library.csproj"));
+
+export KERNEL = ROOT + "/tysos.bin";
+export KERNELTO = ROOT + "/tysos.to";
+
+// CPU-specific code
+if(TARGET == "x86_64")
+{
+	TYSOS_CPU_OBJ = [ "$ROOT/tysos/x86_64/cpu.o",
+						"$ROOT/tysos/x86_64/halt.o",
+						"$ROOT/tysos/x86_64/exceptions.o",
+						"$ROOT/tysos/x86_64/switcher.o" ];
+}
+else
+{
+	error("Unsupported target: $TARGET");
+}
+
+// The following are all of the objects which will make up tysos
+TYSOS_OBJS = [ TYSOSOBJ, LIBTYSILAOBJ, BINLIBOBJ, MSCORLIBOBJ, TYSOS_CPU_OBJ, LIBSUPCSA, COREFX_LIB ];
+MISSING_OBJ = ROOT + "/tysos/missing.o";
+
+rulefor(MISSING_OBJ, TYSOS_OBJS, [ GENMISSING_PROG, THIS ], function()
+{
+	shellcmd("$GENMISSING_PROG -o $_RULE_OUTPUT -t$TYSILAARCH -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$TYSOSDIR $_RULE_INPUTS");
+});
+
+/* Rule for linking the kernel */
+rulefor(KERNEL, [ TYSOS_OBJS, MISSING_OBJ ], [ XCC, THIS ],
+	function()
+{
+	shellcmd("$XCC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");
+});
+
+// build
+setoutputcolor(["cyan"]);
+print("Building JIT engine\n");
+print("--------------------------------\n");
+build(LIBTYSILA);
+print("\n");
+setoutputcolor([]);
+
+setoutputcolor(["cyan"]);
+print("Building kernel\n");
+print("--------------------------------\n");
+build(TYSOS);
+print("\n");
+setoutputcolor([]);
+
+setoutputcolor(["cyan"]);
+print("Compiling to native code\n");
+print("--------------------------------\n");
+build(KERNELTO);
+print("\n");
+setoutputcolor([]);
+

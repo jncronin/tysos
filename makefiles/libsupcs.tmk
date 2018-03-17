@@ -1,0 +1,58 @@
+// libsupcs contains a combination of managed code, C code and
+//  assembly, packaged into a single archive
+
+export LIBSUPCS = typroject(ROOT + "/libsupcs/libsupcs.csproj");
+export LIBSUPCSOBJ = objfromexe(LIBSUPCS);
+export LIBSUPCSA = dir(LIBSUPCS) + "/" + basefname(LIBSUPCS) + ".a";
+export LIBSUPCSDIR = dir(LIBSUPCS);
+
+METADATA = typroject(ROOT + "/metadata/metadata.csproj");
+METADATAOBJ = objfromexe(METADATA);
+
+// Define target-specific code
+if (TARGET == "x86_64")
+{
+	LIBSUPCS_CPU_OBJ = [ ROOT + "/libsupcs/x86_64_cpu.o",
+		ROOT + "/libsupcs/x86_64_Invoke.o",
+		ROOT + "/libsupcs/x86_64_Spinlock.o" ];
+}
+else
+{
+	error("Unsupported target: $TARGET");
+}
+
+// Compiler RT library from netlib/llvm
+LIBSUPCS_COMPILER_RT = [
+	ROOT + "/libsupcs/compiler_rt/ashldi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/ashrdi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/divdi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/fixdfdi.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/fixunsdfdi.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/fixunsdfsi.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/floatdidf.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/floatundidf.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/lshrdi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/moddi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/muldi3.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/negdi2.$TARGET.o",
+	ROOT + "/libsupcs/compiler_rt/udivmoddi4.$TARGET.o",
+
+	ROOT + "/libsupcs/netlib/s_rint.$TARGET.o",
+	ROOT + "/libsupcs/netlib/s_floor.$TARGET.o",
+];
+
+/* Rule for libsupcs library (contains C# and native code) */
+rulefor(LIBSUPCSA, [ LIBSUPCSOBJ, METADATAOBJ ] + LIBSUPCS_CPU_OBJ + LIBSUPCS_COMPILER_RT,
+	[ THIS ], function()
+{
+	shellcmd("$XAR -cru $_RULE_OUTPUT $_RULE_INPUTS");
+	shellcmd("$XRANLIB $_RULE_OUTPUT");
+});
+
+// Build it
+setoutputcolor(["cyan"]);
+print("Building libsupcs\n");
+print("--------------------------------\n");
+build(LIBSUPCS);
+print("\n");
+setoutputcolor([]);

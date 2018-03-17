@@ -1,0 +1,32 @@
+// How to build a cdrom.  The actual cdrom building commands are
+//  bootloader-specific, so see those files for the final build.
+
+if(MAKE_ISO == "y")
+{
+	export OUTDIR = ROOT + "/iso_image";
+	autodir(OUTDIR);
+	export ISODIR = OUTDIR + "/iso";
+	autodir(ISODIR);
+
+	export ISOIMAGE = OUTDIR + "/tysos.iso";
+
+	// Generate a compressed kernel
+	KERNELTOGZ = ISODIR + "/tysos.to.gz";
+	rulefor(KERNELTOGZ, [ KERNELTO ], [ GZIP ], function()
+	{
+		cp(KERNELTO, ISODIR);
+		shellcmd("$GZIP -f $ISODIR/tysos.to");
+	});
+
+	// Load up process list
+	include "processes.tmk";
+
+	if(defined(USE_GRUB))
+	{
+		include "grub-cdrom.tmk";
+	}
+	else if(defined(USE_UEFI))
+	{
+		error("UEFI build not supported");
+	}
+}

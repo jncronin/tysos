@@ -128,156 +128,17 @@ print("--------------------------------\n");
 setoutputcolor([]);
 
 // Rules
-function objfromexe(string exe)
-{
-	return dir(exe) + "/" + basefname(exe) + ".obj";
-}
-function objfromexe(array exe)
-{
-	ret = [];
-	foreach(e in exe)
-	{
-		ret.add(objfromexe(e));
-	}
-	return ret;
-}
-function tobjfromexe(string exe)
-{
-	return dir(exe) + "/" + basefname(exe) + ".to";
-}
 
 TYPROJECT_EXTRADEPENDS = [ THIS ];
 LDFLAGS = "$LDFLAGS -Wl,--gc-sections";
 
-/* coreclr corlib is distributed amongst several assemblies */
-DOTNETCORLIB = typroject(ROOT + "/coreclr/src/mscorlib/System.Private.CoreLib.csproj", "Release", "4.6.1", 1, [], [], 0);
-dntp = typrojectfromoutput(DOTNETCORLIB);
-dntp.add("AssemblyName", "mscorlib");
-build(DOTNETCORLIB);
 
-/* Copy dotnet corlib output to MSCORLIB */
-MSCORLIB = ROOT + "/coreclr/mscorlib.dll";
-MSCORLIBOBJ = objfromexe(MSCORLIB);
-// MSCORLIBDIR = "\"" + typroject_refdir("4.6.1") + "\"";
-MSCORLIBDIR = dir(MSCORLIB);
-
-rulefor(MSCORLIB, [ DOTNETCORLIB ], [ THIS ], function()
-{
-	cp(DOTNETCORLIB, MSCORLIB);
-});
-build(MSCORLIB);
-
-
-/* function to build a constituent assembly */
-COREFX_LIBDIR = "corefx/lib";		// place results here
-autodir(COREFX_LIBDIR);
-corefx_projs = [=];
-
-function build_corefx(string name)
-{
-	/* decorate name if it isn't already */
-	if(ext(name) != ".csproj")
-	{
-		name = "corefx/src/" + name + "/src/" + name + ".csproj";
-	}
-
-	if(corefx_projs.containskey(name))
-	{
-		return corefx_projs.get(name);
-	}
-
-	_p = _typroject(name, "Release", "4.6.1", 1, [], [ "mscorlib=$MSCORLIB" ], COREFX_LIBDIR);
-
-	_depends = [];
-	foreach(dep in _p.ProjectReferences)
-	{
-		_depends.add(build_corefx(dep));
-	}
-	foreach(dep in _p.References)
-	{
-		_depends.add(build_corefx("corefx/src/" + dep + "/src/" + dep + ".csproj"));
-	}
-	_depends.add(COREFX_LIBDIR);
-	_depends.add(THIS);
-
-	rulefor(_p.OutputFile, _p.Sources, _depends, function()
-	{
-		_p.Build();
-	});
-
-	_o = COREFX_LIBDIR + "/" + basefname(name) + ".dll";
-	rulefor(_o, [ _p.OutputFile ], [], function()
-	{
-		cp(_RULE_INPUT, _RULE_OUTPUT);
-	});
-
-	corefx_projs.add(name, _o);
-
-	return _o;
-}
-
-/* Build some common ones (pulls in others) - see COREFX_LIBDIR for assemblies produced */
-build(build_corefx("System.Console"));
-build(build_corefx("System.IO.FileSystem"));
-
-/* Build a list of reference assemblies to include in all projects, and add .obj files to the link
-	(in future we will do this more cleverly) */
-COREFX_REFS = "";
-COREFX_OBJS = [];
-COREFX_LIB = COREFX_LIBDIR + "/corefx.a";
-
-foreach(ref in files(COREFX_LIBDIR))
-{
-	if(ext(ref) == ".dll")
-	{
-		COREFX_REFS = COREFX_REFS + ";" + basefname(ref);
-		COREFX_OBJS.add(COREFX_LIBDIR + "/" + basefname(ref) + ".obj");
-	}
-}
 
 /* Make all run-time assemblies depend on the dotnet corlib and this file */
 //TYPROJECT_LIBDIR = COREFX_LIBDIR;
 REF_OVERRIDES = [ ];
 
-TYSILAPROJ = ROOT + "/tysila4/tysila4.csproj";
-TYSILA = typroject(TYSILAPROJ, "Release", "4.6.1", 1, [], REF_OVERRIDES);
-TL = typroject(ROOT + "/tl/tl/tl.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
-ELFHASH = typroject(ROOT + "/elfhash/elfhash.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
-ISOMAKE = typroject(ROOT + "/isomake/isomake.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
-TYSOS = typroject(ROOT + "/tysos/tysos.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
-TYSOSOBJ = objfromexe(TYSOS);
-LIBSUPCS = typroject(ROOT + "/libsupcs/libsupcs.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
-LIBSUPCSOBJ = objfromexe(LIBSUPCS);
-LIBSUPCSA = dir(LIBSUPCS) + "/" + basefname(LIBSUPCS) + ".a";
-LIBASMOBJ = objfromexe(typroject(ROOT + "/libasm/libasm.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-LIBTYSILAOBJ = objfromexe(typroject(ROOT + "/libtysila/libtysila.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-TYSOSDIR = dir(TYSOS);
-LIBSUPCSDIR = dir(LIBSUPCS);
-METADATA = typroject(ROOT + "/metadata/metadata.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES);
-METADATAOBJ = objfromexe(METADATA);
 
-
-LIBSUPCS_COMPILER_RT = [
-	ROOT + "/libsupcs/compiler_rt/ashldi3.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/ashrdi3.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/divdi3.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/fixdfdi.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/fixunsdfdi.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/fixunsdfsi.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/floatdidf.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/floatundidf.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/lshrdi3.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/moddi3.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/muldi3.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/negdi2.$TARGET.o",
-	ROOT + "/libsupcs/compiler_rt/udivmoddi4.$TARGET.o",
-
-	ROOT + "/libsupcs/netlib/s_rint.$TARGET.o",
-	ROOT + "/libsupcs/netlib/s_floor.$TARGET.o",
-];
-
-KERNEL = ROOT + "/tysos.bin";
-KERNELTO = ROOT + "/tysos.to";
 
 /* Rules for char-conversions */
 CC_DIR = ROOT + "/unicode_support/char-conversions";
@@ -332,13 +193,6 @@ rulefor("tysos.to", [ "tysos.bin" ], [ ELFHASH, THIS ], function() {
 	shellcmd("$ELFHASH -o $_RULE_OUTPUT -e --update-sym _tysos_hash $_RULE_INPUT");
 });
 
-/* Assemble all corefx assemblies */
-rulefor(COREFX_LIB, objfromexe(files(COREFX_LIBDIR, "*.dll")), [], function()
-{
-	shellcmd("$XAR -cru $_RULE_OUTPUT $_RULE_INPUTS");
-	shellcmd("$XRANLIB $_RULE_OUTPUT");
-});
-build(COREFX_LIB);
 
 /* Generate missing function stubs */
 TYSOS_OBJS = [ TYSOSOBJ, MSCORLIBOBJ, TYSOS_CPU_OBJ, LIBSUPCSA, METADATAOBJ, COREFX_LIB ];
@@ -371,14 +225,6 @@ rulefor("%.$TARGET.o", [ "%.c" ], [ THIS ], function() {
 
 rulefor("%.$TARGET.o", [ "%.s" ], [ THIS ], function() {
 	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
-});
-
-/* Rule for libsupcs library (contains C# and native code) */
-rulefor(LIBSUPCSA, [ LIBSUPCSOBJ ] + LIBSUPCS_CPU_OBJ + LIBSUPCS_COMPILER_RT,
-	[ THIS ], function()
-{
-	shellcmd("$XAR -cru $_RULE_OUTPUT $_RULE_INPUTS");
-	shellcmd("$XRANLIB $_RULE_OUTPUT");
 });
 
 /* Rules for GRUB modules */
@@ -538,14 +384,6 @@ if(USE_UEFI)
 	});
 }
 
-rulefor(ROOT + "/efiloader/tloadkif.c", [ TYSOS ], [ TYSILA, MSCORLIB ], function()
-{
-	shellcmd("$TYSILA -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$LIBSUPCSDIR -H $ROOT/efiloader/tloadkif.h -C $ROOT/efiloader/tloadkif.c $TYSOS");
-});
-rulefor(ROOT + "/efiloader/tloadkif.h", [ TYSOS ], [ TYSILA, MSCORLIB ], function()
-{
-	shellcmd("$TYSILA -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$LIBSUPCSDIR -H $ROOT/efiloader/tloadkif.h -C $ROOT/efiloader/tloadkif.c $TYSOS");
-});
 
 
 /* The actual build */
@@ -557,40 +395,12 @@ OUTDIR = ROOT + "/iso_image";
 autodir(OUTDIR);
 ISODIR = OUTDIR + "/iso";
 autodir(ISODIR);
-BOOTDIR = ISODIR + "/boot";
-autodir(BOOTDIR);
-GRUBDIR = BOOTDIR + "/grub";
-autodir(GRUBDIR);
 
 ISOIMAGE = OUTDIR + "/tysos.iso";
-GRUBCFG = OUTDIR + "/grub.cfg";
 
 // Processes
-DEBUGPRINTOBJ = tobjfromexe(typroject(ROOT + "/testsuite/debugprint/debugprint.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-VFSOBJ = tobjfromexe(typroject(ROOT + "/processes/services/vfs/vfs.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-ACPIPCOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/acpipc/acpipc.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-LOGGEROBJ = tobjfromexe(typroject(ROOT + "/processes/services/logger/logger.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-MODFSOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/modfs/modfs.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-FSDUMPOBJ = tobjfromexe(typroject(ROOT + "/testsuite/fsdump/fsdump.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-PCIOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pci/pci.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-BGAOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/bga/bga.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-PCIIDEOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pciide/pciide.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-ATAOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/ata/ata.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-DISKOBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/disk/disk.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-FRAMEBUFFEROBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/framebuffer/framebuffer.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-GUIOBJ = tobjfromexe(typroject(ROOT + "/processes/services/gui/gui.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-NETOBJ = tobjfromexe(typroject(ROOT + "/processes/services/net/net.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
-PCNET32OBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pcnet32/pcnet32.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES));
 
-PROCESSES = [ typroject(ROOT + "/testsuite/test_002/test_002.csproj", "Release", "4.6.1", 1, [], REF_OVERRIDES), DEBUGPRINTOBJ,
-	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ, PCIOBJ, BGAOBJ, PCIIDEOBJ,
-	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ, GUIOBJ, NETOBJ, PCNET32OBJ ];
 
-COREIMG = OUTDIR + "/core.img";
-GRUBPREFIX_CFG = OUTDIR + "/grub_prefix.cfg";
-ELTORITO = GRUBDIR + "/eltorito.img";
-
-BOOT_MNU = OUTDIR + "/boot.mnu";
 
 
 // for quick kernel testing
@@ -605,55 +415,7 @@ rulefor(KERNELTOGZ, [ KERNELTO ], [ GZIP ], function()
 
 if(defined(USE_GRUB))
 {
-	GRUB_MOD_DIR = GRUBDIR + "/i386-pc";
-	GRUBCFG = ROOT + "/grub-loader/iso/boot/grub/grub.cfg";
-	autodir(GRUB_MOD_DIR);
 
-	rulefor(ISOIMAGE, [ KERNELTOGZ, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU ],
-		[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT, GRUB_MOD_DIR, ISOMAKE ], function()
-	{
-		cp(GRUBCFG, GRUBDIR);
-		cp(LIBSUPCS, ISODIR);
-		cp(MSCORLIB, ISODIR);
-		cp(GRUBLOADER, ISODIR);
-		cp(BOOT_MNU, BOOTDIR);
-
-		foreach(proc in PROCESSES)
-		{
-			cp(proc, ISODIR);
-		}
-
-		foreach(mod in files(dir(CDBOOT)))
-		{
-			cp(mod, GRUBDIR + "/i386-pc");
-		}
-
-		GRUB_PREFIX = dir(CDBOOT);
-		GRUB_MODS = "biosdisk multiboot configfile normal iso9660 all_video gfxterm acpi relocator serial help";
-
-		shellcmd("$GRUB_MKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -p $GRUB_PREFIX -O i386-pc $GRUB_MODS");
-	
-		fcdboot = fopen(CDBOOT);
-		fcoreimg = fopen(COREIMG);
-
-		bcdboot = [];
-		fcdboot.Read(bcdboot, 0, fcdboot.Length);
-
-		bcoreimg = [];
-		fcoreimg.Read(bcoreimg, 0, fcoreimg.Length);
-
-		if(exists(ELTORITO))
-		{
-			rm(ELTORITO);
-		}
-
-		feltorito = fopen(ELTORITO);
-		feltorito.Write(bcdboot, 0, fcdboot.Length);
-		feltorito.Write(bcoreimg, 0, fcoreimg.Length);
-		feltorito.Close();
-
-		shellcmd("$ISOMAKE -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
-	});
 }
 else if(defined(USE_UEFI))
 {

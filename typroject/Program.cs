@@ -1475,14 +1475,28 @@ namespace typroject
             /* Copy project references to output directory */
             System.IO.FileInfo o_fi = new FileInfo(OutputFile);
             string dest_dir = add_dir_split(o_fi.DirectoryName);
-            foreach (Project pref in ProjectReferences)
+            List<string> srcs = new List<string>();
+            add_project_references(srcs, ProjectReferences);
+            foreach(var src in srcs)
             {
-                string src = pref.OutputFile;
                 string dest = dest_dir + new System.IO.FileInfo(src).Name;
                 File.Copy(src, dest, true);
             }
 
             return 0;
+        }
+
+        private void add_project_references(List<string> srcs, List<Project> projectReferences)
+        {
+            foreach(Project pref in projectReferences)
+            {
+                string src = pref.OutputFile;
+                if(!srcs.Contains(src))
+                {
+                    srcs.Add(src);
+                    add_project_references(srcs, pref.ProjectReferences);
+                }
+            }
         }
 
         private IEnumerable<string> get_reference_overrides(string joined, string override_name)

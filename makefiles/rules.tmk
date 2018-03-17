@@ -1,0 +1,28 @@
+// Define various simple rules for tysila/C code etc
+
+export TYSILAFLAGS ?= "";
+
+/* Rules for assembling CLR binaries */
+rulefor("%.obj", [ "%.exe" ], [ TYSILA, MSCORLIB, LIBSUPCS, THIS ], function()
+{
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$LIBSUPCSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+});
+rulefor("%.obj", [ "%.dll" ], [ TYSILA, MSCORLIB, LIBSUPCS, THIS ], function()
+{
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$LIBSUPCSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+});
+rulefor("%.to", [ "%.obj" ], [ TL, THIS ], function() {
+	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
+});
+rulefor("tysos.to", [ "tysos.bin" ], [ ELFHASH, THIS ], function() {
+	shellcmd("$ELFHASH -o $_RULE_OUTPUT -e --update-sym _tysos_hash $_RULE_INPUT");
+});
+
+/* Rules for C/asm code */
+rulefor("%.$TARGET.o", [ "%.c" ], [ THIS, XCC ], function() {
+	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
+});
+
+rulefor("%.$TARGET.o", [ "%.s" ], [ THIS, XCC ], function() {
+	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
+});

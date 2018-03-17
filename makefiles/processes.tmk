@@ -1,0 +1,21 @@
+// Processes to include in file system images
+
+DEBUGPRINTOBJ = objfromexe(typroject(ROOT + "/testsuite/debugprint/debugprint.csproj"));
+VFSOBJ = objfromexe(typroject(ROOT + "/processes/services/vfs/vfs.csproj"));
+ACPIPCOBJ = objfromexe(typroject(ROOT + "/processes/drivers/acpipc/acpipc.csproj"));
+LOGGEROBJ = objfromexe(typroject(ROOT + "/processes/services/logger/logger.csproj"));
+MODFSOBJ = objfromexe(typroject(ROOT + "/processes/drivers/modfs/modfs.csproj"));
+FSDUMPOBJ = objfromexe(typroject(ROOT + "/testsuite/fsdump/fsdump.csproj"));
+PCIOBJ = objfromexe(typroject(ROOT + "/processes/drivers/pci/pci.csproj"));
+BGAOBJ = objfromexe(typroject(ROOT + "/processes/drivers/bga/bga.csproj"));
+PCIIDEOBJ = objfromexe(typroject(ROOT + "/processes/drivers/pciide/pciide.csproj"));
+ATAOBJ = objfromexe(typroject(ROOT + "/processes/drivers/ata/ata.csproj"));
+DISKOBJ = objfromexe(typroject(ROOT + "/processes/drivers/disk/disk.csproj"));
+FRAMEBUFFEROBJ = objfromexe(typroject(ROOT + "/processes/drivers/framebuffer/framebuffer.csproj"));
+GUIOBJ = objfromexe(typroject(ROOT + "/processes/services/gui/gui.csproj"));
+NETOBJ = objfromexe(typroject(ROOT + "/processes/services/net/net.csproj"));
+PCNET32OBJ = objfromexe(typroject(ROOT + "/processes/drivers/pcnet32/pcnet32.csproj"));
+
+export PROCESSES = [ DEBUGPRINTOBJ,
+	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ, PCIOBJ, BGAOBJ, PCIIDEOBJ,
+	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ, GUIOBJ, NETOBJ, PCNET32OBJ ];

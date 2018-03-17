@@ -1,0 +1,89 @@
+// How to build the tygrub grub module for booting tysos
+
+#include "tloadkif.tmk";
+
+ZLIBDIR = ROOT + "/tload/tloadefi/zlib";
+CONFUSEDIR = ROOT + "/tload/tloadefi/confuse-2.7/src";
+GRUBCFLAGS = "-I$GRUBSRC -I$ROOT/grub-loader " +
+	"-I$ROOT/tload/tloadefi/efilibc/inc " +
+	"-I$CONFUSEDIR -I$ZLIBDIR " +
+	"-I$ROOT/tload/tloadefi/efilibc/efi " +
+	"-I$ROOT/tload/tloadefi/efilibc/efi/inc " +
+	"-I$ROOT/tload/tloadefi/efilibc/efi/inc/protocol " +
+	"-I$ROOT/tload/tloadefi/efilibc/efi/inc/x86_64 " +
+	"-I$ROOT/efiloader " + 
+	"-Wall -W -Os -DGRUB_MACHINE_PCBIOS=1 " +
+	"-Wshadow -g -falign-jumps=1 -falign-loops=1 -falign-functions=1 -mno-mmx " +
+	"-mno-sse -mno-sse2 -mno-3dnow -m32 -fno-stack-protector -mno-stack-arg-probe " +
+	"-mrtd -mregparm=3 -MD -DGRUB_UTIL -std=gnu99 -ffreestanding " +
+	"-DGRUB_FILE=__FILE__ -DTYGRUB -malign-data=compat";
+GRUBLDFLAGS = "-m32 -nostdlib -Wl,--build-id=none -Wl,-r,-d";
+
+rulefor("%.grub.o", [ "%.c" ], [ THIS, ROOT + "/efiloader/tloadkif.h", GRUBCC ], function() {
+	return(shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBCFLAGS -c $_RULE_INPUT"));
+});
+rulefor("%.grub.o", [ "%.s" ], [ THIS, GRUBCC ], function() {
+	return(shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBCFLAGS -c $_RULE_INPUT"));
+});
+rulefor("%.target32.grub.o", [ "%.target.grub.o" ], [ THIS, XOBJCOPY ], function() {
+	return(shellcmd("$XOBJCOPY -O elf32-i386 $_RULE_INPUT $_RULE_OUTPUT"));
+});
+rulefor("%.target.grub.o", [ "%.s" ], [ THIS, XCC ], function() {
+		return(shellcmd("$XCC -o $_RULE_OUTPUT -c $_RULE_INPUT"));
+});
+
+ZLIB = ZLIBDIR + "/libz.grub.a";
+rulefor(ZLIB, [ ZLIBDIR + "/adler32.grub.o", ZLIBDIR + "/compress.grub.o", ZLIBDIR + "/crc32.grub.o",
+	ZLIBDIR + "/deflate.grub.o", ZLIBDIR + "/gzclose.grub.o", ZLIBDIR + "/gzlib.grub.o", ZLIBDIR + "/gzread.grub.o",
+	ZLIBDIR + "/gzwrite.grub.o", ZLIBDIR + "/infback.grub.o", ZLIBDIR + "/inffast.grub.o", ZLIBDIR + "/inflate.grub.o",
+	ZLIBDIR + "/inftrees.grub.o", ZLIBDIR + "/trees.grub.o", ZLIBDIR + "/uncompr.grub.o", ZLIBDIR + "/zutil.grub.o" ],
+	[ THIS, GRUBAR ],
+	function()
+{
+	shellcmd("$GRUBAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+});
+
+CONFUSE = CONFUSEDIR + "/libconfuse.grub.a";
+rulefor(CONFUSE, [ CONFUSEDIR + "/confuse.grub.o", CONFUSEDIR + "/lexer.grub.o" ],
+	[ THIS, GRUBAR ],
+	function()
+{
+	shellcmd("$GRUBAR rcs $_RULE_OUTPUT $_RULE_INPUTS");
+});
+
+export GRUBLOADER = ROOT + "/grub-loader/tygrub.mod";
+rulefor(GRUBLOADER,
+	[
+		ROOT + "/grub-loader/tygrub.grub.o",
+		ROOT + "/efiloader/cfg.grub.o",
+		ROOT + "/tload/tloadefi/efilibc/strtod.grub.o",
+		ROOT + "/tload/tloadefi/efilibc/scanf.grub.o",
+		ROOT + "/tload/tloadefi/efilibc/strtoll.grub.o",
+		ROOT + "/tload/tloadefi/efilibc/strtoull.grub.o",
+		ROOT + "/tload/tloadefi/efilibc/string.grub.o",
+		ROOT + "/tload/tloadefi/efilibc/atoi.grub.o",
+		ROOT + "/tload/tloadefi/efilibc/atof.grub.o",
+		ROOT + "/efiloader/vmem.grub.o",
+		ROOT + "/grub-loader/grublibc.grub.o",
+		ROOT + "/grub-loader/umoddi3.grub.o",
+		ROOT + "/grub-loader/udivmoddi4.grub.o",
+		ROOT + "/grub-loader/udivdi3.grub.o",
+		ROOT + "/efiloader/load.grub.o",
+		ROOT + "/efiloader/elf.grub.o",
+		ROOT + "/efiloader/pmem_alloc.grub.o",
+		ROOT + "/efiloader/kif.grub.o",
+		ROOT + "/efiloader/tloadkif.grub.o",
+		ROOT + "/efiloader/modules.grub.o",
+		ROOT + "/grub-loader/tramp.target32.grub.o",
+	],
+	[ ZLIB, CONFUSE, THIS ],
+	function()
+{
+	shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBLDFLAGS -L$ZLIBDIR -L$CONFUSEDIR $_RULE_INPUTS -lz.grub -lconfuse.grub");
+});
+// Special case tloadkif so it uses kmalloc rather than malloc
+rulefor(ROOT + "/efiloader/tloadkif.grub.o",
+	[ ROOT + "/efiloader/tloadkif.c" ], [ THIS, GRUBCC ], function()
+{
+	return(shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBCFLAGS -Dmalloc=kmalloc -c $_RULE_INPUT"));
+});

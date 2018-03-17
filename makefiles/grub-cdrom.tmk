@@ -1,0 +1,76 @@
+// How to build a GRUB ISO image
+
+#include "tygrub.tmk";
+
+BOOTDIR = ISODIR + "/boot";
+autodir(BOOTDIR);
+GRUBDIR = BOOTDIR + "/grub";
+autodir(GRUBDIR);
+
+GRUBCFG = OUTDIR + "/grub.cfg";
+
+COREIMG = OUTDIR + "/core.img";
+GRUBPREFIX_CFG = OUTDIR + "/grub_prefix.cfg";
+ELTORITO = GRUBDIR + "/eltorito.img";
+
+BOOT_MNU = OUTDIR + "/boot.mnu";
+
+GRUB_MOD_DIR = GRUBDIR + "/i386-pc";
+GRUBCFG = ROOT + "/grub-loader/iso/boot/grub/grub.cfg";
+autodir(GRUB_MOD_DIR);
+
+
+
+// How to assemble the ISO image
+rulefor(ISOIMAGE, [ KERNELTOGZ, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU ],
+	[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT, GRUB_MOD_DIR, ISOMAKE, GRUB_MKIMAGE ], function()
+{
+	cp(GRUBCFG, GRUBDIR);
+	cp(LIBSUPCS, ISODIR);
+	cp(MSCORLIB, ISODIR);
+	cp(GRUBLOADER, ISODIR);
+	cp(BOOT_MNU, BOOTDIR);
+
+	foreach(proc in PROCESSES)
+	{
+		cp(proc, ISODIR);
+	}
+
+	foreach(mod in files(dir(CDBOOT)))
+	{
+		cp(mod, GRUBDIR + "/i386-pc");
+	}
+
+	GRUB_PREFIX = dir(CDBOOT);
+	GRUB_MODS = "biosdisk multiboot configfile normal iso9660 all_video gfxterm acpi relocator serial help";
+
+	shellcmd("$GRUB_MKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -p $GRUB_PREFIX -O i386-pc $GRUB_MODS");
+	
+	fcdboot = fopen(CDBOOT);
+	fcoreimg = fopen(COREIMG);
+
+	bcdboot = [];
+	fcdboot.Read(bcdboot, 0, fcdboot.Length);
+
+	bcoreimg = [];
+	fcoreimg.Read(bcoreimg, 0, fcoreimg.Length);
+
+	if(exists(ELTORITO))
+	{
+		rm(ELTORITO);
+	}
+
+	feltorito = fopen(ELTORITO);
+	feltorito.Write(bcdboot, 0, fcdboot.Length);
+	feltorito.Write(bcoreimg, 0, fcoreimg.Length);
+	feltorito.Close();
+
+	shellcmd("$ISOMAKE -as mkisofs -R -f -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $ISOIMAGE $ISODIR");
+});
+
+setoutputcolor(["cyan"]);
+print("Building GRUB CD-ROM at $ISOIMAGE\n");
+print("--------------------------------\n");
+build(ISOIMAGE);
+print("\n");
+setoutputcolor([]);

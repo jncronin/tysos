@@ -1,0 +1,28 @@
+export function objfromexe(string exe)
+{
+	return dir(exe) + "/" + basefname(exe) + ".obj";
+}
+export function objfromexe(array exe)
+{
+	ret = [];
+	foreach(e in exe)
+	{
+		ret.add(objfromexe(e));
+	}
+	return ret;
+}
+export function tobjfromexe(string exe)
+{
+	return dir(exe) + "/" + basefname(exe) + ".to";
+}
+
+export function error(string msg)
+{
+	setoutputcolor(["red"]);
+	print("--------------------------------\n");
+	print("Error:\n");
+	print(msg);
+	print("\n");
+	setoutputcolor([]);
+	exit(-1);
+}

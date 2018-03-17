@@ -1,0 +1,28 @@
+/* coreclr:
+
+	we rename the output assembly to 'mscorlib'
+*/
+
+DOTNETCORLIB = typroject(ROOT + "/coreclr/src/mscorlib/System.Private.CoreLib.csproj", "Release", "4.6.1", 1, [], [], 0);
+dntp = typrojectfromoutput(DOTNETCORLIB);
+dntp.add("AssemblyName", "mscorlib");
+
+/* Copy dotnet corlib output to MSCORLIB */
+export MSCORLIB = ROOT + "/coreclr/mscorlib.dll";
+export MSCORLIBOBJ = objfromexe(MSCORLIB);
+export MSCORLIBDIR = dir(MSCORLIB);
+
+rulefor(MSCORLIB, [ DOTNETCORLIB ], [ THIS ], function()
+{
+	cp(DOTNETCORLIB, MSCORLIB);
+});
+
+
+// do the actual build
+setoutputcolor(["cyan"]);
+print("Building coreclr\n");
+print("--------------------------------\n");
+build(MSCORLIB);
+
+print("\n");
+setoutputcolor([]);

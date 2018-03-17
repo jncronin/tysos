@@ -1,0 +1,10 @@
+// Rules for tloadkif
+rulefor(ROOT + "/efiloader/tloadkif.c", [ TYSOS ], [ TYSILA, MSCORLIB ], function()
+{
+	shellcmd("$TYSILA -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$LIBSUPCSDIR -H $ROOT/efiloader/tloadkif.h -C $ROOT/efiloader/tloadkif.c $TYSOS");
+});
+rulefor(ROOT + "/efiloader/tloadkif.h", [ TYSOS ], [ TYSILA, MSCORLIB ], function()
+{
+	shellcmd("$TYSILA -t $TYSILAARCH -q -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$LIBSUPCSDIR -H $ROOT/efiloader/tloadkif.h -C $ROOT/efiloader/tloadkif.c $TYSOS");
+});
+

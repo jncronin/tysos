@@ -1,0 +1,28 @@
+include "utils.tmk";
+
+// Get config
+CONFIG ?= "makefiles" + DIR_SPLIT + "config.tmk";
+if(!exists(CONFIG))
+{
+	error("Config file " + CONFIG + " does not exist.  Please either create it manually " +
+		" or run \"tymake makefiles/genconfig.tmk\" first.");
+}
+include CONFIG;
+
+// we are located within the makefiles directory, so ROOT is our parent
+ROOT = dir(THIS) + DIR_SPLIT + "..";
+
+// most of the logic is contained within the following files
+
+// the first describe how to build .dll/.exe files
+include "coreclr.tmk";
+include "corefx.tmk";
+include "libsupcs.tmk";
+include "tools.tmk";
+
+// the next describe how to convert these to native code
+include "rules.tmk";
+include "kernel.tmk";
+
+// finally we describe how to build a file-system image if requested
+include "cdrom.tmk";
