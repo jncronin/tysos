@@ -1285,11 +1285,23 @@ namespace tymake_lib
         {
             throw new NotImplementedException();
         }
+
+        protected override void PostDoAction()
+        {
+            if(CurrentSemanticValue.exprval != null)
+            {
+                Expression e = CurrentSemanticValue.exprval;
+                Scanner s = Scanner as Scanner;
+                e.scol = s.scol;
+                e.sline = s.sline;
+                e.fname = s.filename;
+            }
+        }
     }
 
     partial class Scanner
     {
-        string filename;
+        internal string filename;
         internal Scanner(Stream file, string fname) : this(file) { filename = fname; }
 
         public override void yyerror(string format, params object[] args)

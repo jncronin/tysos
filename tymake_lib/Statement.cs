@@ -30,7 +30,39 @@ namespace tymake_lib
     {
         public class SyntaxException : Exception
         {
-            public SyntaxException(string msg) : base(msg) { }
+            Expression expr;
+
+            static string pretty_string(string msg, Expression e)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append(msg);
+                if (e != null)
+                {
+                    FileInfo fi;
+                    if (e.fname == null || ((fi = new FileInfo(e.fname)).Exists == false))
+                        sb.Append(Environment.NewLine + "  at line " + e.sline);
+                    else
+                    {
+                        var f = new StreamReader(fi.OpenRead());
+                        int cline = 0;
+                        string cl = null;
+                        while (cline < e.sline)
+                        {
+                            cline++;
+                            cl = f.ReadLine();
+                        }
+                        f.Close();
+                        sb.Append(Environment.NewLine + "  at line " + e.sline + " in " + fi.FullName + ":");
+                        sb.Append(Environment.NewLine + "    " + cl);
+                    }
+                }
+                return sb.ToString();
+            }
+
+            public SyntaxException(string msg, Expression e) : base(pretty_string(msg, e))
+            {
+                expr = e;
+            }
         }
 
         public abstract Expression.EvalResult Execute(MakeState s);

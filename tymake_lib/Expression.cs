@@ -30,6 +30,9 @@ namespace tymake_lib
         internal Expression a, b;
         internal Tokens op;
 
+        internal string fname;
+        internal int scol, sline;
+
         public virtual EvalResult Evaluate(MakeState s)
         {
             EvalResult ea, eb;
@@ -86,7 +89,7 @@ namespace tymake_lib
                     else if (ea.Type == EvalResult.ResultType.Void && eb.Type == EvalResult.ResultType.Void)
                         return new EvalResult();
                     else
-                        throw new Statement.SyntaxException("Mismatched arguments to PLUS: " + ea.Type.ToString() + " and " + eb.Type.ToString());
+                        throw new Statement.SyntaxException("Mismatched arguments to PLUS: " + ea.Type.ToString() + " and " + eb.Type.ToString(), this);
 
                 case Tokens.MUL:
                     ea = a.Evaluate(s);
@@ -108,7 +111,7 @@ namespace tymake_lib
                         if (ea.Type == EvalResult.ResultType.Void)
                             return ea;
                         if (ea.Type == EvalResult.ResultType.String)
-                            throw new Statement.SyntaxException("Cannot apply unary minus to type string");
+                            throw new Statement.SyntaxException("Cannot apply unary minus to type string", this);
                         return new EvalResult(0 - ea.intval);
                     }
                     else
@@ -129,7 +132,7 @@ namespace tymake_lib
                             if (ea.strval.EndsWith(eb.strval))
                                 return new EvalResult(ea.strval.Substring(0, ea.strval.Length - eb.strval.Length));
                             else
-                                throw new Statement.SyntaxException(ea.strval + " does not end with " + eb.strval);
+                                throw new Statement.SyntaxException(ea.strval + " does not end with " + eb.strval, this);
                         }
                         else if (ea.Type == EvalResult.ResultType.Void && eb.Type == EvalResult.ResultType.Void)
                         {
@@ -539,7 +542,7 @@ namespace tymake_lib
                 case EvalResult.ResultType.Object:
                     return elabel.objval[eindex.strval];
                 default:
-                    throw new Statement.SyntaxException("indexing cannot be applied to object of type: " + elabel.Type.ToString());
+                    throw new Statement.SyntaxException("indexing cannot be applied to object of type: " + elabel.Type.ToString(), this);
             }
         }
     }
@@ -575,7 +578,7 @@ namespace tymake_lib
 
                 if (m == "type")
                     return new EvalResult(elabel.Type.ToString());
-                throw new Statement.SyntaxException("object: " + label.ToString() + " does not contain member " + m.ToString());
+                throw new Statement.SyntaxException("object: " + label.ToString() + " does not contain member " + m.ToString(), this);
             }
             else if (member is FuncCall)
             {
@@ -703,7 +706,7 @@ namespace tymake_lib
                         break;
                 }
 
-                throw new Statement.SyntaxException("object: " + label.ToString() + " does not contain member " + m.ToString());
+                throw new Statement.SyntaxException("object: " + label.ToString() + " does not contain member " + m.ToString(), this);
             }
             else
                 throw new NotSupportedException();
@@ -822,7 +825,7 @@ namespace tymake_lib
                 }
             }*/
 
-            throw new Statement.SyntaxException("unable to find function " + Mangle(s));
+            throw new Statement.SyntaxException("unable to find function " + Mangle(s), this);
         }
 
         static Dictionary<string, List<string>> mangle_all_cache = new Dictionary<string, List<string>>();

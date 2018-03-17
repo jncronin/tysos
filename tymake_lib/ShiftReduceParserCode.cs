@@ -44,6 +44,11 @@ namespace QUT.Gppg
             this.scanner = scanner;
         }
 
+        // Added for tymake - function to be called after DoAction
+        protected virtual void PostDoAction()
+        { }
+        
+
         // ==============================================================
         //                    TECHNICAL EXPLANATION.
         //   Why the next two fields are not exposed via properties.
@@ -344,6 +349,7 @@ namespace QUT.Gppg
             }
 
             DoAction(ruleNumber);
+            PostDoAction();
 
             for (int i = 0; i < rule.RightHandSide.Length; i++)
             {
