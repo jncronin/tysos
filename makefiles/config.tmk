@@ -4,6 +4,7 @@ print("--------------------------------\n");
 
 export TARGET = "x86_64";
 export TYSILAARCH = "x86_64";
+export TLARCH = "x86_64-elf-tyobj";
 
 export CFLAGS = "-ffreestanding -mno-red-zone";
 export TYSILAFLAGS = "-mno-sse4_1";
