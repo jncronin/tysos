@@ -112,10 +112,10 @@ namespace libtysila5
             StringObject = corlib.GetTypeSpec("System", "String");
             var fs_len = corlib.GetFieldDefRow("m_stringLength", StringObject);
             length_offset = layout.Layout.GetFieldOffset(StringObject, fs_len,
-                t);
+                t, out var is_tls);
             var fs_start = corlib.GetFieldDefRow("m_firstChar", StringObject);
             string_obj_len = layout.Layout.GetFieldOffset(StringObject, fs_start,
-                t);
+                t, out is_tls);
         }
 
         public void WriteToOutput(binary_library.IBinaryFile of,

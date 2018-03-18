@@ -61,6 +61,7 @@ namespace metadata
         public int[] gtparams;
         public int[] gmparams;
         public int[] const_field_owners;
+        public bool[] thread_local_fields;
 
         public int[] simple_type_idx;
         public int[] simple_type_rev_idx;
@@ -1783,6 +1784,7 @@ namespace metadata
             fd_custom_attrs = new int[table_rows[tid_Field] + 1];
             td_extends_override = new string[table_rows[tid_TypeDef] + 1];
             next_ca = new int[table_rows[tid_CustomAttribute] + 1];
+            thread_local_fields = new bool[table_rows[tid_Field] + 1];
 
             for(int i = 0; i <= table_rows[tid_CustomAttribute]; i++)
             {
@@ -1828,6 +1830,24 @@ namespace metadata
                     case tid_Field:
                         next_ca[i] = fd_custom_attrs[parent_row];
                         fd_custom_attrs[parent_row] = i;
+
+                        // Determine if this is a thread static attribute
+                        if (assemblyName != "mscorlib")
+                        {
+                            GetCodedIndexEntry(tid_CustomAttribute,
+                                i, 1, CustomAttributeType, out type_tid,
+                                out type_row);
+
+                            MethodSpec ca_ms;
+                            GetMethodDefRow(type_tid, type_row, out ca_ms);
+                            var ca_ms_name = ca_ms.MangleMethod();
+
+                            if (ca_ms_name == "_ZW6System21ThreadStaticAttribute_7#2Ector_Rv_P1u1t")
+                            {
+                                thread_local_fields[parent_row] = true;
+                            }
+                        }
+
                         break;
                 }
             }

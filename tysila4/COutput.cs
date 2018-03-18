@@ -170,7 +170,7 @@ namespace tysila4
 
                 List<TypeSpec> fields = new List<TypeSpec>();
                 List<string> fnames = new List<string>();
-                libtysila5.layout.Layout.GetFieldOffset(tdr, null, ass, false,
+                libtysila5.layout.Layout.GetFieldOffset(tdr, null, ass, out var is_tls, false,
                     fields, fnames);
 
                 for (int i = 0; i < fields.Count; i++)

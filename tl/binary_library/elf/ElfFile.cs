@@ -183,6 +183,8 @@ namespace binary_library.elf
                     sh.sh_flags |= 0x2;
                 if (sect.IsExecutable)
                     sh.sh_flags |= 0x4;
+                if (sect.IsThreadLocal)
+                    sh.sh_flags |= (1UL << 10);
                 sh.sh_addr = sect.LoadAddress;
                 sh.sh_size = sect.Length;
 
@@ -502,6 +504,8 @@ namespace binary_library.elf
                         continue;
                     ElfProgramHeader ph = new ElfProgramHeader();
                     ph.p_type = ElfProgramHeader.PT_LOAD;
+                    if (sect.IsThreadLocal)
+                        ph.p_type = ElfProgramHeader.PT_TLS;
                     ph.p_offset = (ulong)osects[osect_map[sect]].sh_offset;
                     ph.p_vaddr = sect.LoadAddress;
                     ph.p_paddr = 0;
@@ -642,6 +646,8 @@ namespace binary_library.elf
                 esym.st_shndx = 0;
             else
             {
+                if (sym.DefinedIn.IsThreadLocal)
+                    esym.st_type = 6;
                 if (!sect_map.TryGetValue(sym.DefinedIn, out esym.st_shndx))
                     return -1;
             }
@@ -874,6 +880,7 @@ namespace binary_library.elf
                     sect.IsWriteable = ((sh.sh_flags & SectionHeader.SHF_WRITE) != 0);
                     sect.IsAlloc = ((sh.sh_flags & SectionHeader.SHF_ALLOC) != 0);
                     sect.IsExecutable = ((sh.sh_flags & SectionHeader.SHF_EXECINSTR) != 0);
+                    sect.IsThreadLocal = ((sh.sh_flags & SectionHeader.SHF_TLS) != 0);
 
                     sect.LoadAddress = sh.sh_addr;
                     sect.Name = name;
@@ -1170,6 +1177,7 @@ namespace binary_library.elf
         {
             internal const uint PT_NULL = 0;
             internal const uint PT_LOAD = 1;
+            internal const uint PT_TLS = 7;
             internal const uint PF_X = 1;
             internal const uint PF_W = 2;
             internal const uint PF_R = 4;
@@ -1202,6 +1210,7 @@ namespace binary_library.elf
             internal const uint SHF_WRITE = 1;
             internal const uint SHF_ALLOC = 2;
             internal const uint SHF_EXECINSTR = 4;
+            internal const uint SHF_TLS = 1 << 10;
 
             internal int sh_name;
             internal uint sh_type;

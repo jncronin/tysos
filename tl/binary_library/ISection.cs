@@ -36,6 +36,7 @@ namespace binary_library
         bool IsWriteable { get; set; }
         bool IsExecutable { get; set; }
         bool HasData { get; set; }
+        bool IsThreadLocal { get; set; }
         IList<byte> Data { get; }
         IBinaryFile File { get; }
 

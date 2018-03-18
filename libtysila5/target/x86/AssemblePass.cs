@@ -85,6 +85,7 @@ namespace libtysila5.target.x86
                 if (I.p.Length == 0)
                     continue;
 
+                int tls_flag = (int)I.p[0].v2;
                 switch (I.p[0].v)
                 {
                     case Generic.g_mclabel:
@@ -125,14 +126,19 @@ namespace libtysila5.target.x86
                     case x86_mov_r16_rm16:
                     case x86_mov_r64_rm64:
                         if (I.p[0].v == x86_mov_r8_rm8)
+                        {
+                            Code.AddRange(TLSOverride(ref tls_flag));
                             Code.Add(0x8a);
+                        }
                         else if (I.p[0].v == x86_mov_r16_rm16)
                         {
+                            Code.AddRange(TLSOverride(ref tls_flag));
                             Code.Add(0x67);
                             Code.Add(0x8b);
                         }
                         else
                         {
+                            Code.AddRange(TLSOverride(ref tls_flag));
                             AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                             Code.Add(0x8b);
                         }
@@ -649,6 +655,7 @@ namespace libtysila5.target.x86
 
                     case x86_mov_r32_rm32disp:
                     case x86_mov_r64_rm64disp:
+                        Code.AddRange(TLSOverride(ref tls_flag));
                         AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x8b);
                         Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
@@ -697,6 +704,7 @@ namespace libtysila5.target.x86
                         break;
                     case x86_mov_rm32disp_r32:
                     case x86_mov_rm64disp_r64:
+                        Code.AddRange(TLSOverride(ref tls_flag));
                         AddRex(Code, Rex(I.p[0].v, I.p[3].mreg, I.p[1].mreg));
                         Code.Add(0x89);
                         Code.AddRange(ModRMSIB(GetR(I.p[3].mreg), GetRM(I.p[1].mreg), 2, -1, -1, (int)I.p[2].v));
@@ -1029,7 +1037,11 @@ namespace libtysila5.target.x86
                     default:
                         throw new NotImplementedException(insts[(int)I.p[0].v]);
                 }
+
+                if (tls_flag == 1)
+                    throw new NotImplementedException("TLS not supported for " + insts[(int)I.p[0].v]);
             }
+
 
             // Handle cil instructions which encode to nothing (e.g. nop) but may still be branch targets - point them to the next instruction
             int cur_il_start = -1;
@@ -1050,6 +1062,19 @@ namespace libtysila5.target.x86
                 var offset = dest_offset - src - 4;
                 InsertImm32(Code, offset, src);
             }
+        }
+
+        private IEnumerable<byte> TLSOverride(ref int tls_flag)
+        {
+            if (tls_flag == 0)
+                return new byte[0];
+            if(psize == 8)
+            {
+                // use %fs for TLS
+                tls_flag = 0;
+                return new byte[] { 0x64 };
+            }
+            throw new NotImplementedException();
         }
 
         private void AddRex(List<byte> code, byte v)

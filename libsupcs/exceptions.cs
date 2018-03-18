@@ -26,6 +26,7 @@ namespace libsupcs
 {
     unsafe class exceptions
     {
+        [ThreadStatic]
         static void** start, end, cur;
         const int stack_length = 1024;
 

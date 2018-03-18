@@ -297,6 +297,14 @@ namespace tysila4
                     t.r.VTableRequestor.Request(ts.Box);
                 }
 
+                /* Generate a thread-local data section.  We may not use it. */
+                var tlsos = bf.CreateContentsSection();
+                tlsos.Name = ".tdata";
+                tlsos.IsAlloc = true;
+                tlsos.IsExecutable = false;
+                tlsos.IsWriteable = true;
+                tlsos.IsThreadLocal = true;
+
                 while (!t.r.Empty)
                 {
                     if (!t.r.MethodRequestor.Empty)
@@ -325,7 +333,7 @@ namespace tysila4
                             tsect = get_decorated_section(bf, bf.GetDataSection(), "." + sf.MangleType() + "S");
 
                         libtysila5.layout.Layout.OutputStaticFields(sf,
-                            t, bf, m, tsect);
+                            t, bf, m, tsect, tlsos);
                         if (!quiet)
                             Console.WriteLine(sf.MangleType() + "S");
                     }
@@ -389,6 +397,9 @@ namespace tysila4
                     sw.Write(d);
                     sw.Close();
                 }
+
+                if (tlsos.Length > 0)
+                    bf.AddSection(tlsos);
 
                 /* String table */
                 st.WriteToOutput(bf, m, t);

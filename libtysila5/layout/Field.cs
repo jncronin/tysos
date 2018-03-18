@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using binary_library;
 using metadata;
 
 namespace libtysila5.layout
@@ -101,9 +102,10 @@ namespace libtysila5.layout
         }
 
         public static int GetFieldOffset(metadata.TypeSpec ts,
-            metadata.MethodSpec fs, target.Target t, bool is_static = false)
+            metadata.MethodSpec fs, target.Target t, out bool is_tls, bool is_static = false)
         {
             int align = 1;
+            is_tls = false;
             if(ts.SimpleType == 0 || ts.SimpleType == 0xe)      // class or string
                 align = GetTypeAlignment(ts, t, is_static);
 
@@ -121,6 +123,7 @@ namespace libtysila5.layout
             }
 
             int cur_offset = 0;
+            int cur_tl_offset = 0;
 
             if (is_static == false && !ts.IsValueType)
             {
@@ -136,7 +139,7 @@ namespace libtysila5.layout
                 }
                 else
                 {
-                    cur_offset = GetFieldOffset(ts.GetExtends(), (string)null, t);
+                    cur_offset = GetFieldOffset(ts.GetExtends(), (string)null, t, out is_tls);
                     cur_offset = util.util.align(cur_offset, align);
                 }
             }
@@ -156,6 +159,7 @@ namespace libtysila5.layout
                     ((flags & 0x10) == 0 && is_static == false))
                 {
                     // Check on name if we are looking for a particular field
+                    bool f_is_tls = ts.m.thread_local_fields[fdef_row];
                     if (search_field_name != 0)
                     {
                         var fname = ts.m.GetIntEntry(MetadataStream.tid_Field,
@@ -163,7 +167,16 @@ namespace libtysila5.layout
                         if (MetadataStream.CompareString(ts.m, fname,
                             fs.m, search_field_name))
                         {
-                            return cur_offset;
+                            if (f_is_tls)
+                            {
+                                is_tls = true;
+                                return cur_tl_offset;
+                            }
+                            else
+                            {
+                                is_tls = false;
+                                return cur_offset;
+                            }
                         }
                     }
 
@@ -174,8 +187,16 @@ namespace libtysila5.layout
                     var ft = ts.m.GetFieldType(ref fsig, ts.gtparams, null);
                     var ft_size = t.GetSize(ft);
 
-                    cur_offset += ft_size;
-                    cur_offset = util.util.align(cur_offset, align);
+                    if (f_is_tls)
+                    {
+                        cur_tl_offset += ft_size;
+                        cur_tl_offset = util.util.align(cur_tl_offset, align);
+                    }
+                    else
+                    {
+                        cur_offset += ft_size;
+                        cur_offset = util.util.align(cur_offset, align);
+                    }
                 }
             }
 
@@ -188,10 +209,11 @@ namespace libtysila5.layout
         }
 
         public static int GetFieldOffset(metadata.TypeSpec ts,
-            string fname, target.Target t, bool is_static = false,
+            string fname, target.Target t, out bool is_tls, bool is_static = false,
             List<TypeSpec> field_types = null, List<string> field_names = null)
         {
             int align = 1;
+            is_tls = false;
             if (ts.SimpleType == 0) // class
                 align = GetTypeAlignment(ts, t, is_static);
             if (ts.SimpleType == 0xe && !is_static) // string
@@ -244,6 +266,7 @@ namespace libtysila5.layout
             var last_fdef = ts.m.GetLastFieldDef(ts.tdrow);
 
             int cur_offset = 0;
+            int cur_tl_offset = 0;
 
             if (is_static == false && !ts.IsValueType)
             {
@@ -270,6 +293,7 @@ namespace libtysila5.layout
                 else
                 {
                     cur_offset = GetFieldOffset(ts.GetExtends(), (string)null, t,
+                        out is_tls,
                         is_static, field_types, field_names);
                     cur_offset = util.util.align(cur_offset, align);
                 }
@@ -290,13 +314,23 @@ namespace libtysila5.layout
                     ((flags & 0x10) == 0 && is_static == false))
                 {
                     // Check on name if we are looking for a particular field
+                    bool f_is_tls = ts.m.thread_local_fields[fdef_row];
                     if (fname != null)
                     {
                         var ffname = ts.m.GetIntEntry(MetadataStream.tid_Field,
                             (int)fdef_row, 1);
                         if (MetadataStream.CompareString(ts.m, ffname, fname))
                         {
-                            return cur_offset;
+                            if (f_is_tls)
+                            {
+                                is_tls = true;
+                                return cur_tl_offset;
+                            }
+                            else
+                            {
+                                is_tls = false;
+                                return cur_offset;
+                            }
                         }
                     }
 
@@ -316,8 +350,16 @@ namespace libtysila5.layout
                         field_names.Add(cur_fname);
                     }
 
-                    cur_offset += ft_size;
-                    cur_offset = util.util.align(cur_offset, align);
+                    if (f_is_tls)
+                    {
+                        cur_tl_offset += ft_size;
+                        cur_tl_offset = util.util.align(cur_tl_offset, align);
+                    }
+                    else
+                    {
+                        cur_offset += ft_size;
+                        cur_offset = util.util.align(cur_offset, align);
+                    }
                 }
             }
 
@@ -350,7 +392,7 @@ namespace libtysila5.layout
                         if(size != 0)
                             return (int)size;
                     }
-                    return GetFieldOffset(ts, (string)null, t, is_static);
+                    return GetFieldOffset(ts, (string)null, t, out var is_tls, is_static);
                 case TypeSpec.SpecialType.SzArray:
                 case TypeSpec.SpecialType.Array:
                     if (is_static)
@@ -369,7 +411,8 @@ namespace libtysila5.layout
         public static void OutputStaticFields(metadata.TypeSpec ts,
             target.Target t, binary_library.IBinaryFile of,
             MetadataStream base_m = null,
-            binary_library.ISection os = null)
+            binary_library.ISection os = null,
+            binary_library.ISection tlsos = null)
         {
             // Don't compile if not for this architecture
             if (!t.IsTypeValid(ts))
@@ -385,8 +428,14 @@ namespace libtysila5.layout
             os.Align(align);
 
             ulong offset = (ulong)os.Data.Count;
+            ulong tl_offset = 0;
+            if(tlsos != null)
+            {
+                tl_offset = (ulong)tlsos.Data.Count;
+            }
 
             int cur_offset = 0;
+            int cur_tloffset = 0;
 
             /* is_initialized */
             for (int i = 0; i < t.psize; i++)
@@ -415,18 +464,27 @@ namespace libtysila5.layout
 
                     ft_size = util.util.align(ft_size, align);
 
+                    bool is_tls = ts.m.thread_local_fields[(int)fdef_row];
+                    ISection cur_os = os;
+                    if(is_tls)
+                    {
+                        if (tlsos == null)
+                            throw new NotSupportedException("No thread-local section provided");
+                        cur_os = tlsos;
+                    }
+
                     /* See if there is any data defined as an rva */
                     var rva = ts.m.fieldrvas[(int)fdef_row];
                     if (rva != 0)
                     {
                         var rrva = (int)ts.m.ResolveRVA(rva);
                         for (int i = 0; i < ft_size; i++)
-                            os.Data.Add(ts.m.file.ReadByte(rrva++));
+                            cur_os.Data.Add(ts.m.file.ReadByte(rrva++));
                     }
                     else
                     {
                         for (int i = 0; i < ft_size; i++)
-                            os.Data.Add(0);
+                            cur_os.Data.Add(0);
                     }
 
                     /* Output any additional defined symbols */
@@ -437,7 +495,7 @@ namespace libtysila5.layout
                         asym.Offset = offset + (ulong)cur_offset;
                         asym.Type = binary_library.SymbolType.Global;
                         asym.ObjectType = binary_library.SymbolObjectType.Object;
-                        os.AddSymbol(asym);
+                        cur_os.AddSymbol(asym);
 
                         asym.Size = ft_size;
 
@@ -445,7 +503,10 @@ namespace libtysila5.layout
                             asym.Type = binary_library.SymbolType.Weak;
                     }
 
-                    cur_offset += ft_size;
+                    if (is_tls)
+                        cur_tloffset += ft_size;
+                    else
+                        cur_offset += ft_size;
                 }
             }
 
@@ -461,6 +522,21 @@ namespace libtysila5.layout
                 os.AddSymbol(sym);
 
                 sym.Size = os.Data.Count - (int)offset;
+
+                if (base_m != null && ts.m != base_m)
+                    sym.Type = binary_library.SymbolType.Weak;
+            }
+            if(cur_tloffset > 0)
+            {
+                /* Add thread local symbol */
+                var sym = of.CreateSymbol();
+                sym.Name = ts.m.MangleType(ts) + "ST";
+                sym.Offset = tl_offset;
+                sym.Type = binary_library.SymbolType.Global;
+                sym.ObjectType = binary_library.SymbolObjectType.Object;
+                tlsos.AddSymbol(sym);
+
+                sym.Size = tlsos.Data.Count - (int)tl_offset;
 
                 if (base_m != null && ts.m != base_m)
                     sym.Type = binary_library.SymbolType.Weak;

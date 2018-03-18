@@ -1,7 +1,7 @@
 /* D:\tysos\libtysila5\target\Target.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 17:06:48 on 08 January 2018
+ * It was generated at 14:50:33 on 18 March 2018
  * from D:\tysos\libtysila5\target\Target.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -442,10 +442,10 @@ namespace libtysila5.target.x86
 			cc_map_sysv[95] = new int[] { 25, };
 			cc_map_sysv[97] = new int[] { 25, };
 			cc_map_sysv[96] = new int[] { 25, };
-			cc_map_sysv[99] = new int[] { 25, };
-			cc_map_sysv[100] = new int[] { 25, };
+			cc_map_sysv[102] = new int[] { 25, };
+			cc_map_sysv[103] = new int[] { 25, };
+			cc_map_sysv[104] = new int[] { 25, };
 			cc_map_sysv[101] = new int[] { 25, };
-			cc_map_sysv[98] = new int[] { 25, };
 		}
 		
 		internal const ulong sysv_caller_preserves = 1664;
@@ -463,10 +463,10 @@ namespace libtysila5.target.x86
 		{
 			cc_map_ret_sysv[95] = new int[] { 7, };
 			cc_map_ret_sysv[97] = new int[] { 7, };
-			cc_map_ret_sysv[99] = new int[] { 7, };
-			cc_map_ret_sysv[100] = new int[] { 7, };
+			cc_map_ret_sysv[102] = new int[] { 7, };
+			cc_map_ret_sysv[103] = new int[] { 7, };
 			cc_map_ret_sysv[96] = new int[] { 24, };
-			cc_map_ret_sysv[98] = new int[] { 15, };
+			cc_map_ret_sysv[101] = new int[] { 15, };
 		}
 		
 		internal const ulong ret_sysv_caller_preserves = 0;
@@ -571,9 +571,9 @@ namespace libtysila5.target.x86_64
 			cc_classmap_sysv[95] = 191;
 			cc_classmap_sysv[97] = 191;
 			cc_classmap_sysv[96] = 191;
-			cc_classmap_sysv[99] = 191;
-			cc_classmap_sysv[100] = 191;
-			cc_classmap_sysv[98] = 192;
+			cc_classmap_sysv[102] = 191;
+			cc_classmap_sysv[103] = 191;
+			cc_classmap_sysv[101] = 192;
 			cc_map_sysv[191] = new int[] { 11, 12, 10, 9, 27, 28, 25, };
 			cc_map_sysv[192] = new int[] { 16, 17, 18, 19, 20, 21, 22, 23, 25, };
 			cc_map_sysv[190] = new int[] { 25, };
@@ -594,10 +594,10 @@ namespace libtysila5.target.x86_64
 		{
 			cc_map_ret_sysv[95] = new int[] { 7, };
 			cc_map_ret_sysv[97] = new int[] { 7, };
-			cc_map_ret_sysv[99] = new int[] { 7, };
-			cc_map_ret_sysv[100] = new int[] { 7, };
+			cc_map_ret_sysv[102] = new int[] { 7, };
+			cc_map_ret_sysv[103] = new int[] { 7, };
 			cc_map_ret_sysv[96] = new int[] { 7, };
-			cc_map_ret_sysv[98] = new int[] { 16, };
+			cc_map_ret_sysv[101] = new int[] { 16, };
 		}
 		
 		internal const ulong ret_sysv_caller_preserves = 0;
@@ -616,9 +616,9 @@ namespace libtysila5.target.x86_64
 			cc_classmap_isr[95] = 191;
 			cc_classmap_isr[97] = 191;
 			cc_classmap_isr[96] = 191;
-			cc_classmap_isr[99] = 191;
-			cc_classmap_isr[100] = 191;
-			cc_classmap_isr[98] = 192;
+			cc_classmap_isr[102] = 191;
+			cc_classmap_isr[103] = 191;
+			cc_classmap_isr[101] = 192;
 		}
 		
 		internal const ulong isr_caller_preserves = 0;
@@ -652,9 +652,9 @@ namespace libtysila5.target.x86_64
 			cc_classmap_isrec[95] = 191;
 			cc_classmap_isrec[97] = 191;
 			cc_classmap_isrec[96] = 191;
-			cc_classmap_isrec[99] = 191;
-			cc_classmap_isrec[100] = 191;
-			cc_classmap_isrec[98] = 192;
+			cc_classmap_isrec[102] = 191;
+			cc_classmap_isrec[103] = 191;
+			cc_classmap_isrec[101] = 192;
 		}
 		
 		internal const ulong isrec_caller_preserves = 0;
@@ -951,10 +951,10 @@ namespace libtysila5.target.x86
 			init_options();
 			ct_regs[95] = 6912;
 			ct_regs[96] = 0;
-			ct_regs[98] = 8257536;
+			ct_regs[101] = 8257536;
 			ct_regs[97] = ct_regs[95];
-			ct_regs[99] = ct_regs[95];
-			ct_regs[100] = ct_regs[95];
+			ct_regs[102] = ct_regs[95];
+			ct_regs[103] = ct_regs[95];
 			instrs.trie = x86_instrs;
 			instrs.start = x86_instrs_start;
 			instrs.vals = x86_instrs_vals;
@@ -1111,10 +1111,10 @@ namespace libtysila5.target.x86_64
 			init_options();
 			ct_regs[95] = 34225527552;
 			ct_regs[96] = 34225527552;
-			ct_regs[98] = 8761741541376;
+			ct_regs[101] = 8761741541376;
 			ct_regs[97] = ct_regs[96];
-			ct_regs[99] = ct_regs[96];
-			ct_regs[100] = ct_regs[96];
+			ct_regs[102] = ct_regs[96];
+			ct_regs[103] = ct_regs[96];
 			instrs.trie = x86_64_instrs;
 			instrs.start = x86_64_instrs_start;
 			instrs.vals = x86_64_instrs_vals;

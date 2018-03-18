@@ -1,7 +1,7 @@
 /* D:\tysos\libtysila5\ir\IrOpcodes.cs
  * This is an auto-generated file
  * DO NOT EDIT
- * It was generated at 17:06:48 on 08 January 2018
+ * It was generated at 14:50:33 on 18 March 2018
  * from D:\tysos\libtysila5\ir\IrOpcodes.td
  * by TableMap (part of tysos: http://www.tysos.org)
  * Please edit the source file, rather than this file, to make any changes
@@ -258,10 +258,13 @@ namespace libtysila5.ir
 		public const int ct_int32 = 95;
 		public const int ct_int64 = 96;
 		public const int ct_intptr = 97;
-		public const int ct_float = 98;
-		public const int ct_object = 99;
-		public const int ct_ref = 100;
-		public const int ct_vt = 101;
+		public const int ct_tls_int32 = 98;
+		public const int ct_tls_int64 = 99;
+		public const int ct_tls_intptr = 100;
+		public const int ct_float = 101;
+		public const int ct_object = 102;
+		public const int ct_ref = 103;
+		public const int ct_vt = 104;
 		
 		internal static void init_ct()
 		{
@@ -269,10 +272,13 @@ namespace libtysila5.ir
 			ct_names[95] = "int32";
 			ct_names[96] = "int64";
 			ct_names[97] = "intptr";
-			ct_names[98] = "float";
-			ct_names[99] = "object";
-			ct_names[100] = "ref";
-			ct_names[101] = "vt";
+			ct_names[98] = "tls_int32";
+			ct_names[99] = "tls_int64";
+			ct_names[100] = "tls_intptr";
+			ct_names[101] = "float";
+			ct_names[102] = "object";
+			ct_names[103] = "ref";
+			ct_names[104] = "vt";
 		}
 	}
 }

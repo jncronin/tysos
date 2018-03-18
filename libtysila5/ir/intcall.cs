@@ -141,7 +141,7 @@ namespace libtysila5.ir
             else if (ct == Opcode.ct_vt)
             {
                 System.Collections.Generic.List<TypeSpec> fld_types = new System.Collections.Generic.List<TypeSpec>();
-                layout.Layout.GetFieldOffset(ts, null, c.t, false, fld_types);
+                layout.Layout.GetFieldOffset(ts, null, c.t, out var is_tls, false, fld_types);
                 foreach(var fld_type in fld_types)
                 {
                     if (isRefOrContainsRef(fld_type, c))
@@ -304,13 +304,13 @@ namespace libtysila5.ir
         private static Stack<StackItem> typedref_ValueOffset(CilNode n, Code c, Stack<StackItem> stack_before)
         {
             var typedref = c.ms.m.al.GetAssembly("mscorlib").GetSimpleTypeSpec((int)CorElementType.TypedByRef);
-            return ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typedref, "Value", c.t), (int)CorElementType.I4);
+            return ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typedref, "Value", c.t, out var is_tls), (int)CorElementType.I4);
         }
 
         private static Stack<StackItem> typedref_TypeOffset(CilNode n, Code c, Stack<StackItem> stack_before)
         {
             var typedref = c.ms.m.al.GetAssembly("mscorlib").GetSimpleTypeSpec((int)CorElementType.TypedByRef);
-            return ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typedref, "Type", c.t), (int)CorElementType.I4);
+            return ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typedref, "Type", c.t, out var is_tls), (int)CorElementType.I4);
         }
 
         private static Stack<StackItem> spinlock_hint(CilNode n, Code c, Stack<StackItem> stack_before)
@@ -438,14 +438,14 @@ namespace libtysila5.ir
 
             // metadata entry
             stack_after = copy_to_front(n, c, stack_after);
-            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(tysosAssembly, "metadata", c.t), 0x18);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(tysosAssembly, "metadata", c.t, out var is_tls), 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_after = ldlab(n, c, stack_after, c.ms.m.AssemblyName);
             stack_after = stind(n, c, stack_after, c.t.psize);
 
             // assemblyName entry
             stack_after = copy_to_front(n, c, stack_after);
-            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(tysosAssembly, "assemblyName", c.t), 0x18);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(tysosAssembly, "assemblyName", c.t, out is_tls), 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_after = ldstr(n, c, stack_after, c.ms.m.AssemblyName);
             stack_after = stind(n, c, stack_after, c.t.psize);
@@ -524,7 +524,7 @@ namespace libtysila5.ir
         private static Stack<StackItem> class_getSystemTypeImplOffset(CilNode n, Code c, Stack<StackItem> stack_before)
         {
             var systype = c.ms.m.al.GetAssembly("libsupcs").GetTypeSpec("libsupcs", "TysosType");
-            var v = layout.Layout.GetFieldOffset(systype, "_impl", c.t);
+            var v = layout.Layout.GetFieldOffset(systype, "_impl", c.t, out var is_tls);
 
             return ldc(n, c, stack_before, v);
         }
@@ -675,7 +675,7 @@ namespace libtysila5.ir
             }
 
             var ts = c.ms.m.DemangleType(type);
-            var offset = layout.Layout.GetFieldOffset(ts, field, c.t);
+            var offset = layout.Layout.GetFieldOffset(ts, field, c.t, out var is_tls);
 
             stack_after = ldc(n, c, stack_after, offset);
 
@@ -694,7 +694,7 @@ namespace libtysila5.ir
             }
 
             var ts = c.ms.m.DemangleType(type);
-            var offset = layout.Layout.GetFieldOffset(ts, field, c.t, true);
+            var offset = layout.Layout.GetFieldOffset(ts, field, c.t, out var is_tls, true);
 
             stack_after = ldc(n, c, stack_after, offset);
 

@@ -40,6 +40,14 @@ namespace libtysila5.ir
 
         internal static target.Target.Reg DoAllocation(Code c, int ct, target.Target t, ref long alloced, ref int cur_stack)
         {
+            // rationalise thread-local addresses to use the same registers as normal ones
+            if (ct == Opcode.ct_tls_int32)
+                ct = Opcode.ct_int32;
+            else if (ct == Opcode.ct_tls_int64)
+                ct = Opcode.ct_int64;
+            else if (ct == Opcode.ct_tls_intptr)
+                ct = Opcode.ct_intptr;
+
             long avail = t.ct_regs[ct] & ~alloced;
 
             if (avail != 0)

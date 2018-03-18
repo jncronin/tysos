@@ -60,8 +60,8 @@ namespace libtysila5.layout
 
             var ts = corlib.GetSimpleTypeSpec(0x0e);
 
-            length = GetFieldOffset(ts, "length", c.t);
-            sc = GetFieldOffset(ts, "start_char", c.t);
+            length = GetFieldOffset(ts, "length", c.t, out var is_tls);
+            sc = GetFieldOffset(ts, "start_char", c.t, out is_tls);
         }
     }
 }

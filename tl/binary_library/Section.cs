@@ -34,6 +34,7 @@ namespace binary_library
         protected bool is_alloc = true;
         protected bool is_writeable = true;
         protected bool is_executable = false;
+        protected bool is_threadlocal = false;
         protected IBinaryFile file;
 
         protected internal long file_offset = 0;
@@ -142,6 +143,8 @@ namespace binary_library
                 is_writeable = value;
             }
         }
+
+        public virtual bool IsThreadLocal { get { return is_threadlocal; } set { is_threadlocal = value; } }
 
         public abstract bool IsExecutable { get; set; }
 

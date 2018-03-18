@@ -36,7 +36,7 @@ namespace libtysila5.ir
 
         public Spec.FullySpecSignature fss;
 
-        public int ct { get { if (ts == null) return _ct; return Opcode.GetCTFromType(ts); } }
+        public int ct { get { if (_ct == Opcode.ct_tls_int32 || _ct == Opcode.ct_tls_int64 || _ct == Opcode.ct_tls_intptr || ts == null) return _ct; return Opcode.GetCTFromType(ts); } }
 
         public long min_l = long.MinValue;
         public long max_l = long.MaxValue;
@@ -990,7 +990,7 @@ namespace libtysila5.ir
             // extract the 'Type' member as a RuntimeTypeHandle
             var typed_ref = c.ms.m.al.GetAssembly("mscorlib").GetTypeSpec("System", "TypedReference");
 
-            var stack_after = ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typed_ref, "Type", c.t), 0x18);
+            var stack_after = ldc(n, c, stack_before, layout.Layout.GetFieldOffset(typed_ref, "Type", c.t, out var is_tls), 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_after = ldind(n, c, stack_after, c.ms.m.SystemRuntimeTypeHandle);
 
@@ -1016,7 +1016,7 @@ namespace libtysila5.ir
 
             // Save the 'Type' member
             stack_after = copy_to_front(n, c, stack_after);
-            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(typed_ref, "Type", c.t), 0x18);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(typed_ref, "Type", c.t, out var is_tls), 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_after = ldlab(n, c, stack_after, ts.MangleType());
             stack_after = call(n, c, stack_after, false, "__type_from_vtbl", c.special_meths, c.special_meths.type_from_vtbl);
@@ -1024,7 +1024,7 @@ namespace libtysila5.ir
 
             // Save the 'Value' member
             stack_after = copy_to_front(n, c, stack_after);
-            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(typed_ref, "Value", c.t), 0x18);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetFieldOffset(typed_ref, "Value", c.t, out is_tls), 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_after = copy_to_front(n, c, stack_after, 2);
             stack_after = stind(n, c, stack_after, c.t.psize);
@@ -2147,6 +2147,7 @@ namespace libtysila5.ir
 
             var ct_src = st_src.ct;
 
+            ulong is_tls = 0;
             if (check_type)
             {
                 switch (ct_src)
@@ -2154,12 +2155,15 @@ namespace libtysila5.ir
                     case Opcode.ct_intptr:
                     case Opcode.ct_ref:
                         break;
+                    case Opcode.ct_tls_intptr:
+                        is_tls = 1;
+                        break;
                     default:
                         throw new Exception("Cannot perform " + n.opcode.ToString() + " from address type " + Opcode.ct_names[ct_src]);
                 }
             }
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldind, ct = Opcode.GetCTFromType(ts), vt_size = c.t.GetSize(ts), imm_l = ts.IsSigned ? 1 : 0, stack_before = stack_before, stack_after = stack_after, arg_a = src, res_a = res });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldind, ct = Opcode.GetCTFromType(ts), vt_size = c.t.GetSize(ts), imm_ul = is_tls, imm_l = ts.IsSigned ? 1 : 0, stack_before = stack_before, stack_after = stack_after, arg_a = src, res_a = res });
 
             return stack_after;
         }
@@ -2179,7 +2183,7 @@ namespace libtysila5.ir
 
             fld_ts = c.ms.m.GetFieldType(fs, ts.gtparams, c.ms.gmparams);
 
-            var fld_addr = layout.Layout.GetFieldOffset(ts, fs, c.t, is_static);
+            var fld_addr = layout.Layout.GetFieldOffset(ts, fs, c.t, out var is_tls, is_static);
 
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
             StackItem si = new StackItem
@@ -2195,9 +2199,14 @@ namespace libtysila5.ir
             if(is_static)
             {
                 var static_name = c.ms.m.MangleType(ts) + "S";
+                if (is_tls)
+                {
+                    static_name = static_name + "T";
+                    si._ct = Opcode.ct_tls_intptr;
+                }
                 si.str_val = static_name;
 
-                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldlabaddr, ct = Opcode.ct_intptr, imm_lab = static_name, imm_l = fld_addr, stack_before = stack_before, stack_after = stack_after });
+                n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldlabaddr, ct = si._ct, imm_lab = static_name, imm_l = fld_addr, imm_ul = is_tls ? 1UL : 0UL, stack_before = stack_before, stack_after = stack_after });
 
                 c.t.r.StaticFieldRequestor.Request(ts.Unbox);
             }
@@ -2449,10 +2458,14 @@ namespace libtysila5.ir
 
             var ct_dest = st_dest.ct;
 
+            ulong is_tls = 0;
             switch(ct_dest)
             {
                 case Opcode.ct_intptr:
                 case Opcode.ct_ref:
+                    break;
+                case Opcode.ct_tls_intptr:
+                    is_tls = 1;
                     break;
                 default:
                     throw new Exception("Cannot perform " + n.opcode.ToString() + " to address type " + Opcode.ct_names[ct_dest]);
@@ -2460,7 +2473,7 @@ namespace libtysila5.ir
 
             var ct_src = st_src.ct;
 
-            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stind, ct = ir.Opcode.ct_intptr, ct2 = ct_src, ctret = ir.Opcode.ct_unknown, vt_size = vt_size, stack_before = stack_before, stack_after = stack_after, arg_a = addr, arg_b = val });
+            n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_stind, ct = ir.Opcode.ct_intptr, ct2 = ct_src, ctret = ir.Opcode.ct_unknown, imm_ul = is_tls, vt_size = vt_size, stack_before = stack_before, stack_after = stack_after, arg_a = addr, arg_b = val });
 
             return stack_after;
         }
