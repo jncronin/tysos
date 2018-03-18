@@ -40,7 +40,7 @@ namespace tl
         internal static bool gen_ph = false;
 
         const string nl = "\n";
-        internal static string comment = nl + "tl" + nl;
+        internal static string comment = "\0tl" + nl;
 
         static void Main(string[] args)
         {
@@ -149,7 +149,7 @@ namespace tl
             comment += "os: " + of.OS + nl;
             comment += "script: " + script.Name + nl;
             comment += "comp-date: " + DateTime.Now.ToLongDateString() + " " + DateTime.Now.ToLongTimeString() + nl;
-            comment += "endtl" + nl;
+            comment += "endtl" + nl + "\0";
             
             // Run the script
             script.RunScript(of, inputs);
