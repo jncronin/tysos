@@ -78,6 +78,7 @@ namespace tysila4
             string hfile = null;
             bool quiet = false;
             bool require_metadata_version_match = true;
+            string act_epoint = null;
             Dictionary<string, object> opts = new Dictionary<string, object>();
 
             while((c = go.Getopt(argc, args, arg_str)) != '\0')
@@ -241,6 +242,9 @@ namespace tysila4
                     mflags &= 0x7;
                     tflags &= 0x7;
 
+                    ms.msig = (int)m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
+                        i, 4);
+
                     /* See if this is the entry point */
                     int tid, row;
                     m.InterpretToken(m.entry_point_token, out tid, out row);
@@ -255,6 +259,7 @@ namespace tysila4
                             tflags = 1;
 
                             ms.AlwaysCompile = true;
+                            act_epoint = ms.MangleMethod();
                         }
                     }
 
@@ -267,9 +272,6 @@ namespace tysila4
 
                         ms.AlwaysCompile = true;
                     }
-
-                    ms.msig = (int)m.GetIntEntry(metadata.MetadataStream.tid_MethodDef,
-                        i, 4);
 
                     if (ms.type.IsGenericTemplate == false &&
                         ms.IsGenericTemplate == false &&
@@ -413,6 +415,26 @@ namespace tysila4
                 mdsymend.Type = binary_library.SymbolType.Global;
                 mdsymend.Size = 0;
                 rdata.AddSymbol(mdsymend);
+
+                /* Add comment */
+                var csect = bf.CreateContentsSection();
+                csect.IsAlloc = false;
+                csect.IsExecutable = false;
+                csect.IsWriteable = false;
+                csect.Name = ".comment";
+                var cbytes = Encoding.ASCII.GetBytes(comment);
+                foreach (var cbyte in cbytes)
+                    csect.Data.Add(cbyte);
+                csect.Data.Add(0);
+                if(act_epoint != null)
+                {
+                    var epbytes = Encoding.ASCII.GetBytes("entry: " +
+                        act_epoint);
+                    foreach (var epbyte in epbytes)
+                        csect.Data.Add(epbyte);
+                    csect.Data.Add(0);
+                }
+                bf.AddSection(csect);
 
                 /* Write output file */
                 bf.Filename = output_file;
