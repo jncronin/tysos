@@ -544,12 +544,18 @@ namespace binary_library.elf
             else
                 e_type = 1;
 
-            if (EntryPoint != null && IsExecutable)
+            /* We slightly break ELF here in that relocatable files
+             * can have an entry point.  This is to support tyobj
+             * files which are relocatable but have an entry point
+             * which is not 'main'.
+             */
+            e_entry = 0;
+            if (EntryPoint != null)
             {
                 var s = FindSymbol(EntryPoint);
                 if (s != null && s.DefinedIn != null)
                     e_entry = s.Offset;
-                else
+                else if(IsExecutable)
                 {
                     // default to offset 0x0 in text
                     var sect = FindSection(".text");
@@ -573,8 +579,6 @@ namespace binary_library.elf
                     }
                 }
             }
-            else
-                e_entry = 0;
 
             int cur_pos = (int)w.BaseStream.Position;
             w.Seek(fh_start, System.IO.SeekOrigin.Begin);
