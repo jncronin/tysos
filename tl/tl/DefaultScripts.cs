@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using binary_library;
 
 namespace tl
 {
@@ -108,6 +109,22 @@ namespace tl
             Scripts["elf64"] = elf32_def;
         }
 
+        class EntryPointParser : LinkerScript.ParseComments.CommentParser
+        {
+            public override void Parse(string comment, IBinaryFile output, IList<IBinaryFile> inputs, LinkerScript.LinkerScriptState state)
+            {
+                var cs = comment.Split(new char[] { '\n', '\0' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach(var c in cs)
+                {
+                    if(c.StartsWith("entry: "))
+                    {
+                        output.EntryPoint = c.Substring("entry: ".Length);
+                        return;
+                    }
+                }
+            }
+        }
+
         private static void InitElfTyObj()
         {
             // TyObj is a relocatable format that will eventually contain a ELF hash of the symbol table
@@ -143,6 +160,7 @@ namespace tl
             elf32_tyobj.Script.Add(new LinkerScript.DefineSection(".comment", 0, false, false, false, true));
             elf32_tyobj.Script.Add(new LinkerScript.InputFileSection(".comment*"));
             elf32_tyobj.Script.Add(new LinkerScript.AddComment());
+            elf32_tyobj.Script.Add(new LinkerScript.ParseComments(new EntryPointParser()));
             elf32_tyobj.Script.Add(new LinkerScript.EndSection());
 
             elf32_tyobj.Script.Add(new LinkerScript.UpdateOffset(LinkerScript.UpdateOffset.UpdateType.Set, 0));

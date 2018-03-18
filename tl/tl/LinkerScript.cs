@@ -406,6 +406,28 @@ namespace tl
             }
         }
 
+        public class ParseComments : ScriptEntry
+        {
+            public abstract class CommentParser
+            {
+                public abstract void Parse(string comment, IBinaryFile output,
+                    IList<IBinaryFile> inputs, LinkerScriptState state);
+            }
+
+            CommentParser cp;
+            public ParseComments(CommentParser parser) { cp = parser; }
+
+            public override void DoCommand(IBinaryFile output, IList<IBinaryFile> inputs, LinkerScriptState state)
+            {
+                if(state.cur_section.HasData)
+                {
+                    byte[] darr = state.data[state.cur_section].ToArray();
+                    var dstr = Encoding.ASCII.GetString(darr);
+                    cp.Parse(dstr, output, inputs, state);
+                }
+            }
+        }
+
         public class UpdateOffset : ScriptEntry
         {
             ulong new_offset;
