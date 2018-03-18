@@ -3168,11 +3168,11 @@ namespace libtysila5.target.x86
             List<MCInst> r = new List<MCInst>();
             if (dest is ContentsReg)
             {
-                r.Add(inst(x86_mov_rm32_imm32, r_eax, new ir.Param { t = ir.Opcode.vl_str, str = n.imm_lab, v = n.imm_l }, n));
+                r.Add(inst(x86_mov_rm32_imm32, r_eax, new ir.Param { t = ir.Opcode.vl_str, str = n.imm_lab, v = n.imm_l, v2 = (long)n.imm_ul }, n));
                 handle_move(dest, r_eax, r, n, c);
             }
             else
-                r.Add(inst(x86_mov_rm32_imm32, dest, new ir.Param { t = ir.Opcode.vl_str, str = n.imm_lab, v = n.imm_l }, n));
+                r.Add(inst(x86_mov_rm32_imm32, dest, new ir.Param { t = ir.Opcode.vl_str, str = n.imm_lab, v = n.imm_l, v2 = (long)n.imm_ul }, n));
             return r;
         }
 

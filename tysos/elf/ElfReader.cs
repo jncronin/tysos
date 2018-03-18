@@ -269,7 +269,8 @@ namespace tysos
             }
         }
 
-        public static unsafe ulong LoadObject(Virtual_Regions vreg, VirtMem vmem, SymbolTable stab, ulong binary, ulong binary_paddr, string name)
+        public static unsafe ulong LoadObject(Virtual_Regions vreg, VirtMem vmem, SymbolTable stab, ulong binary, ulong binary_paddr, string name,
+            out ulong tls_size)
         {
             Elf64_Ehdr* ehdr = VerifyElf(binary);
 
@@ -283,6 +284,7 @@ namespace tysos
             ulong hash_addr = 0;
             ulong hash_len = 0;
             ulong text_addr = 0;
+            tls_size = Program.arch.tysos_tls_length;
 
             /* Map sections to their load address */
             Dictionary<uint, ulong> sect_map = new Dictionary<uint, ulong>(
@@ -295,6 +297,13 @@ namespace tysos
                 if((cur_shdr->sh_flags & 0x2) == 0x2)
                 {
                     /* SHF_ALLOC */
+
+                    if((cur_shdr->sh_flags & (1 << 10)) != 0)
+                    {
+                        // TLS
+                        tls_size += cur_shdr->sh_size;
+                        continue;
+                    }
 
                     // get its name
                     ulong name_addr = binary +

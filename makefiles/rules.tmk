@@ -26,3 +26,7 @@ rulefor("%.$TARGET.o", [ "%.c" ], [ THIS, XCC ], function() {
 rulefor("%.$TARGET.o", [ "%.s" ], [ THIS, XCC ], function() {
 	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
 });
+
+rulefor("%.o", [ "%.asm" ], [ THIS, YASM ], function() {
+	shellcmd("$YASM -o $_RULE_OUTPUT -felf64 $_RULE_INPUT");
+});

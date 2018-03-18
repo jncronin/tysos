@@ -42,6 +42,7 @@ extern UINTPTR kernel_low;
 extern UINTPTR kernel_high;
 extern EFI_PHYSICAL_ADDRESS static_start;
 extern EFI_PHYSICAL_ADDRESS static_end;
+extern UINTPTR tls_start;
 
 EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(void *fobj, void *buf, size_t len),
 							off_t (*fseek_func)(void *fobj, off_t offset, int whence))
@@ -73,7 +74,7 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 	for(int i = 0; i < (*ehdr)->e_phnum; i++)
 	{
 		Elf64_Phdr *phdr = (Elf64_Phdr *)(uintptr_t)((EFI_PHYSICAL_ADDRESS)(uintptr_t)phdrs + i * (*ehdr)->e_phentsize);
-		if(phdr->p_type == PT_LOAD)
+		if(phdr->p_type == PT_LOAD || phdr->p_type == PT_TLS)
 		{
 			EFI_PHYSICAL_ADDRESS page_offset = phdr->p_vaddr & 0xfff;
 			UINTPTR vpage_start = phdr->p_vaddr & ~0xfffULL;
@@ -140,8 +141,11 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 				memset((void *)(uintptr_t)cur_paddr, 0, rest_to_zero);
 			}
 
+			if (phdr->p_type == PT_TLS)
+				tls_start = (UINTPTR)phdr->p_vaddr;
+
 			/* Find all writeable sections - we need to add them as GC roots */
-			if ((phdr->p_flags & PF_W) != 0)
+			if ((phdr->p_flags & PF_W) != 0 && phdr->p_type == PT_LOAD)
 			{
 				printf("elf: writeable section found from %x to %x\n",
 					phdr->p_vaddr, phdr->p_vaddr + phdr->p_memsz);

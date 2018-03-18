@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 // prevent including grub's elf.h
@@ -92,6 +93,8 @@ uint64_t mb_adjust;
 UINTPTR kernel_low;
 UINTPTR kernel_high;
 
+UINTPTR tls_start;
+
 extern int v_width;
 extern int v_height;
 extern int v_bpp;
@@ -106,6 +109,17 @@ struct cfg_module
 	const char *path;
 	struct cfg_module *next;
 };
+
+static inline void wrmsr(uint32_t msr, uint64_t value)
+{
+	uint32_t low = value & 0xFFFFFFFF;
+	uint32_t high = value >> 32;
+	asm volatile (
+		"wrmsr"
+		:
+	: "c"(msr), "a"(low), "d"(high)
+		);
+}
 
 EFI_PHYSICAL_ADDRESS align(EFI_PHYSICAL_ADDRESS v, EFI_PHYSICAL_ADDRESS alignment)
 {
@@ -245,6 +259,10 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 		press_key();
 		return Status;
 	}
+
+	/* Set FS BASE */
+	if (tls_start != 0)
+		wrmsr(0xc0000100, tls_start);
 
 	/* Initialize the symbol + string tables */
 	sym_tab_paddr = 0;

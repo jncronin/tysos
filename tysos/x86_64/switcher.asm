@@ -1,10 +1,11 @@
-global _ZN11tysos#2Edll14tysos#2Ex86_6412TaskSwitcher_16do_x86_64_switch_Rv_P4yU5tysos6Threadyy:function
+global _ZN11tysos#2Edll14tysos#2Ex86_6412TaskSwitcher_16do_x86_64_switch_Rv_P5yU5tysos6Threadyyy:function
 
-_ZN11tysos#2Edll14tysos#2Ex86_6412TaskSwitcher_16do_x86_64_switch_Rv_P4yU5tysos6Threadyy:
+_ZN11tysos#2Edll14tysos#2Ex86_6412TaskSwitcher_16do_x86_64_switch_Rv_P5yU5tysos6Threadyyy:
 	; static void do_x86_64_switch(ulong cur_thread_pointer,
 	;	Thread next_thread,
 	;	ulong tsi_offset_within_thread,
-	;	ulong rsp_offset_within_tsi);
+	;	ulong rsp_offset_within_tsi,
+	;	ulong fs_base_within_tsi);
 
 	pushfq
 	push rax
@@ -46,6 +47,7 @@ _ZN11tysos#2Edll14tysos#2Ex86_6412TaskSwitcher_16do_x86_64_switch_Rv_P4yU5tysos6
 	; next_thread					= rsi
 	; tsi_offset_within_thread		= rdx
 	; rsp_offset_within_tsi			= rcx
+	; fsbase_within_tsi				= r8
 
 	mov rax, [rdi]				; cur_thread
 	
@@ -60,6 +62,13 @@ _ZN11tysos#2Edll14tysos#2Ex86_6412TaskSwitcher_16do_x86_64_switch_Rv_P4yU5tysos6
 	; load rsp from the new thread
 	mov rbx, [rsi + rdx]		; next_thread_tsi
 	mov rsp, [rbx + rcx]		; load rsp from next thread
+
+	; load fsbase from the new thread
+	mov rax, [rbx + r8]		
+	mov rdx, rax				; get to eax:edx
+	shr rdx, 32
+	mov rcx, 0xc0000100		; ia32_fs_base
+	wrmsr
 
 	; change the cur_thread pointer
 	mov [rdi], rsi

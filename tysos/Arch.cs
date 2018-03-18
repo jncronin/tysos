@@ -34,6 +34,8 @@ namespace tysos
         internal Virtual_Regions VirtualRegions;
         internal List<Cpu> Processors;
 
+        internal ulong tysos_tls_length = 0x1000;      // hard-wired - someday get this from the ELF file
+
         internal virtual ulong GetBuffer(ulong len) { return 0; }
 
         public IDebugOutput DebugOutput;

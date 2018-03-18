@@ -41,11 +41,11 @@ namespace tysos
         internal string current_directory = "/";
         public string CurrentDirectory { get { return current_directory; } }
 
-        internal static Process Create(string name, ulong e_point, ulong stack_size, Virtual_Regions vreg, SymbolTable stab, object[] parameters)
+        internal static Process Create(string name, ulong e_point, ulong stack_size, Virtual_Regions vreg, SymbolTable stab, object[] parameters, ulong tls_size)
         {
             Process p = new Process();
 
-            p.startup_thread = Thread.Create(name + "(Thread 1)", e_point, stack_size, vreg, stab, parameters);
+            p.startup_thread = Thread.Create(name + "(Thread 1)", e_point, stack_size, tls_size, vreg, stab, parameters);
             p.startup_thread.owning_process = p;
             p.threads.Add(p.startup_thread);
             p.name = name;
@@ -60,7 +60,7 @@ namespace tysos
         {
             return Create(name,
                 (ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(e_point),
-                0x8000, Program.arch.VirtualRegions, Program.stab, parameters);
+                0x8000, Program.arch.VirtualRegions, Program.stab, parameters, Program.arch.tysos_tls_length);
         }
 
         internal Virtual_Regions.Region ipc_region;
@@ -71,10 +71,10 @@ namespace tysos
             /* Create a process from an ELF module in a file object */
 
             ulong epoint = elf.ElfFileReader.LoadObject(Program.arch.VirtualRegions,
-                Program.arch.VirtMem, Program.stab, file, name);
+                Program.arch.VirtMem, Program.stab, file, name, out var tls_size);
 
             return Create(name, epoint, 0x8000, Program.arch.VirtualRegions, Program.stab,
-                parameters);
+                parameters, tls_size);
         }
 
         public void Start()
@@ -108,6 +108,7 @@ namespace tysos
         public Process owning_process;
         internal Virtual_Regions.Region sse;
         internal Virtual_Regions.Region stack;
+        internal Virtual_Regions.Region tls;
 
         internal string name;
 
@@ -128,7 +129,7 @@ namespace tysos
 
         internal ulong exit_address;
 
-        internal static Thread Create(string name, ulong e_point, ulong stack_size, Virtual_Regions vreg, SymbolTable stab, object[] parameters)
+        internal static Thread Create(string name, ulong e_point, ulong stack_size, ulong tls_size, Virtual_Regions vreg, SymbolTable stab, object[] parameters)
         {
             Thread t = new Thread();
 
@@ -136,7 +137,8 @@ namespace tysos
 
             t.saved_state = Program.arch.CreateTaskSwitchInfo();
             t.stack = vreg.AllocRegion(stack_size, 0x1000, name + "_Stack", 0x1000, Virtual_Regions.Region.RegionType.Stack, true);
-            t.saved_state.Init(new UIntPtr(e_point), t.stack, new UIntPtr(stab.GetAddress("__exit")), parameters);
+            t.tls = vreg.AllocRegion(tls_size, 0x1000, name + "_TLS", 0, Virtual_Regions.Region.RegionType.ModuleSection, true);
+            t.saved_state.Init(new UIntPtr(e_point), t.stack, t.tls, new UIntPtr(stab.GetAddress("__exit")), parameters);
 
             t.name = name;
 
@@ -148,7 +150,7 @@ namespace tysos
         internal static Thread Create(string name, Delegate e_point, object[] parameters)
         {
             return Create(name, (ulong)System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(e_point),
-                0x8000, Program.arch.VirtualRegions, Program.stab, parameters);
+                0x8000, Program.arch.tysos_tls_length, Program.arch.VirtualRegions, Program.stab, parameters);
         }
 
         public static Thread CurrentThread

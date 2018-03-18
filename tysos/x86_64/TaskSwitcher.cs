@@ -32,6 +32,7 @@ namespace tysos.x86_64
         ulong cur_thread_pointer;
         ulong tsi_within_thread;
         ulong rsp_within_tsi;
+        ulong fsbase_within_tsi;        
 
         public TaskSwitcher()
         {
@@ -43,16 +44,18 @@ namespace tysos.x86_64
             tsi_within_thread = (ulong)libsupcs.ClassOperations.GetFieldOffset("_ZN11tysos#2Edll5tysos6Thread", "saved_state");
 
             rsp_within_tsi = (ulong)libsupcs.ClassOperations.GetFieldOffset("_ZN11tysos#2Edll14tysos#2Ex86_6414TaskSwitchInfo", "rsp");
+            fsbase_within_tsi = (ulong)libsupcs.ClassOperations.GetFieldOffset("_ZN11tysos#2Edll14tysos#2Ex86_6414TaskSwitchInfo", "fs_base");
         }
 
         public override void Switch(Thread next)
         {
             //Formatter.WriteLine("x86_64: switching to " + next.name, Program.arch.DebugOutput);
-            do_x86_64_switch(cur_thread_pointer, next, tsi_within_thread, rsp_within_tsi);
+            do_x86_64_switch(cur_thread_pointer, next, tsi_within_thread, rsp_within_tsi, fsbase_within_tsi);
         }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        extern static void do_x86_64_switch(ulong cur_thread_pointer, Thread next_thread, ulong tsi_offset_within_thread, ulong rsp_offset_within_tsi);
+        extern static void do_x86_64_switch(ulong cur_thread_pointer, Thread next_thread, ulong tsi_offset_within_thread, ulong rsp_offset_within_tsi,
+            ulong fsbase_within_tsi);
 	}
 
     class TaskSwitchInfo : tysos.TaskSwitchInfo
@@ -60,6 +63,8 @@ namespace tysos.x86_64
         public ulong rsp;
 
         public ulong send_eoi;
+
+        public ulong fs_base;
 
         ulong max_stack;
 
@@ -74,11 +79,12 @@ namespace tysos.x86_64
             return libsupcs.CastOperations.ReinterpretAsUlong(parameters[idx]);
         }
 
-        public override void Init(UIntPtr entry_address, Virtual_Regions.Region stack, UIntPtr exit_address, object[] parameters)
+        public override void Init(UIntPtr entry_address, Virtual_Regions.Region stack, Virtual_Regions.Region tls, UIntPtr exit_address, object[] parameters)
         {
             unsafe
             {
                 max_stack = stack.start + stack.length;
+                fs_base = tls.start;
                 ulong* p_st = (ulong*)(max_stack);                
 
                 *--p_st = (ulong)exit_address;          // address of __exit()

@@ -32,7 +32,7 @@ namespace tysos
 
     abstract class TaskSwitchInfo
     {
-        public abstract void Init(UIntPtr entry_address, Virtual_Regions.Region stack, UIntPtr exit_address, object[] parameters);
+        public abstract void Init(UIntPtr entry_address, Virtual_Regions.Region stack, Virtual_Regions.Region tls, UIntPtr exit_address, object[] parameters);
         public abstract ulong GetSavedStackPointer();
         public abstract bool StackGrowsDownwards();
         public abstract ulong GetMaximumStack();

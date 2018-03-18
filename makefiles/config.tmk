@@ -25,6 +25,7 @@ export GRUBSRC = dir(GRUBSRC);
 export CDBOOT = find("cdboot.img", "GRUB cdboot.img", "", [ downloadextract("ftp://ftp.gnu.org/gnu/grub/grub-2.02-for-windows.zip", "grub-2.02-for-windows/i386-pc", GRUBBIN) ]);
 export GRUB_MKIMAGE = find("grub-mkimage.exe", "GRUB mkimage tool", GRUB_MKIMAGE, [ dir(dir(CDBOOT)) ]);
 export GZIP = find("gzip", "gzip", GZIP);
+export YASM = find("yasm", "yasm", "d:/cygwin64/bin/yasm.exe");
 
 export MAKE_ISO = "y";
 export USE_GRUB = "y";

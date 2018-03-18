@@ -96,18 +96,6 @@ namespace tysos
             }
 
             [libsupcs.Syscall]
-            public static Process ExecModule(string name)
-            {
-                return Program.LoadELFProgram(name, Program.mboot_header, Program.stab, Program.running_processes, 0x8000);
-            }
-
-            [libsupcs.Syscall]
-            public static Process ExecModule(string name, bool start)
-            {
-                return Program.LoadELFProgram(name, Program.mboot_header, Program.stab, Program.running_processes, 0x8000, start);
-            }
-
-            [libsupcs.Syscall]
             public static void StartProcess(Process p)
             {
                 if(!p.started)

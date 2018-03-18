@@ -55,6 +55,8 @@ EFI_PHYSICAL_ADDRESS sym_tab_paddr, sym_tab_size, sym_tab_entsize, str_tab_paddr
 UINTPTR kernel_low;
 UINTPTR kernel_high;
 
+UINTPTR tls_start;
+
 extern int v_width;
 extern int v_height;
 extern int v_bpp;

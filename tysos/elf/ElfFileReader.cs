@@ -129,7 +129,7 @@ namespace tysos.elf
         static unsafe byte* ReadStructure(lib.File s, ulong pos, ulong len)
         { return ReadStructure(s, (long)pos, (long)len); }
 
-        public static unsafe ulong LoadObject(Virtual_Regions vreg, VirtMem vmem, SymbolTable stab, lib.File s, string name)
+        public static unsafe ulong LoadObject(Virtual_Regions vreg, VirtMem vmem, SymbolTable stab, lib.File s, string name, out ulong tls_size)
         {
             ElfReader.Elf64_Ehdr ehdr = ReadHeader(s);
 
@@ -146,6 +146,7 @@ namespace tysos.elf
             byte* sect_header = shdrs;
 
             ulong start = 0;
+            tls_size = Program.arch.tysos_tls_length;
 
             for (uint i = 0; i < e_shnum; i++)
             {
@@ -154,7 +155,12 @@ namespace tysos.elf
                 if ((cur_shdr->sh_flags & 0x2) == 0x2)
                 {
                     /* SHF_ALLOC */
-
+                    if((cur_shdr->sh_flags & (1 << 10)) != 0)
+                    {
+                        // TLS
+                        tls_size += cur_shdr->sh_size;
+                        continue;
+                    }
                     // get its name
                     byte* name_addr = sect_shstr + cur_shdr->sh_name;
                     string sect_name = new string((sbyte*)name_addr);

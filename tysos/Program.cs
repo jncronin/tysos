@@ -326,12 +326,6 @@ namespace tysos
             libsupcs.OtherOperations.Halt();
 
 
-            /* Load the ACPI setup program */
-            LoadELFProgram("ACPI_PC", mboot, stab, running_processes, 0x10000);
-
-            /* Load the console application */
-            LoadELFProgram("Console", mboot, stab, running_processes, 0x8000);
-
             /* Create kernel threads */
             CreateKernelThreads();
 
@@ -363,11 +357,11 @@ namespace tysos
 
         private static void CreateKernelThreads()
         {
-            Process kernel_pmem = Process.Create("kernel_pmem", stab.GetAddress("_ZN5tysos5tysos7Pmem_12TaskFunction_Rv_P1u1t"), 0x1000, arch.VirtualRegions, stab, new object[] { arch.PhysMem });
+            Process kernel_pmem = Process.Create("kernel_pmem", stab.GetAddress("_ZN5tysos5tysos7Pmem_12TaskFunction_Rv_P1u1t"), 0x1000, arch.VirtualRegions, stab, new object[] { arch.PhysMem }, Program.arch.tysos_tls_length);
             //arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_pmem.startup_thread);
             kernel_pmem.started = true;
 
-            Process kernel_idle = Process.Create("kernel_idle", stab.GetAddress("_ZN5tysos5tysos7Program_12IdleFunction_Rv_P0"), 0x1000, arch.VirtualRegions, stab, new object[] { });
+            Process kernel_idle = Process.Create("kernel_idle", stab.GetAddress("_ZN5tysos5tysos7Program_12IdleFunction_Rv_P0"), 0x1000, arch.VirtualRegions, stab, new object[] { }, Program.arch.tysos_tls_length);
             kernel_idle.startup_thread.priority = 0;
             arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_idle.startup_thread);
             kernel_idle.started = true;
@@ -486,44 +480,13 @@ namespace tysos
             Formatter.Write(base_addr, "X", arch.BootInfoOutput);
             Formatter.WriteLine(arch.BootInfoOutput);
 
-            ulong e_point = ElfReader.LoadObject(arch.VirtualRegions, arch.VirtMem, stab, base_addr, base_addr, name);
+            ulong e_point = ElfReader.LoadObject(arch.VirtualRegions, arch.VirtMem, stab, base_addr, base_addr, name, out var tls_size);
 
-            Process p = Process.Create(name, e_point, stack_size, arch.VirtualRegions, stab, parameters);
+            Process p = Process.Create(name, e_point, stack_size, arch.VirtualRegions, stab, parameters, tls_size);
 
             Formatter.Write(name, arch.DebugOutput);
             Formatter.Write(" process created, entry point: ", arch.DebugOutput);
             Formatter.Write(e_point, "X", arch.DebugOutput);
-            Formatter.WriteLine(arch.DebugOutput);
-
-            return p;
-        }
-
-        internal static Process LoadELFProgram(string name, Multiboot.Header mboot, SymbolTable stab, Dictionary<string, Process> running_processes, ulong stack_size)
-        { return LoadELFProgram(name, mboot, stab, running_processes, stack_size, true); }
-        internal static Process LoadELFProgram(string name, Multiboot.Header mboot, SymbolTable stab, Dictionary<string, Process> running_processes, ulong stack_size, bool start)
-        {
-            Formatter.Write("Loading program: ", arch.BootInfoOutput);
-            Formatter.Write(name, arch.BootInfoOutput);
-            Formatter.Write("... ", arch.BootInfoOutput);
-
-            Multiboot.Module mod = find_module(mboot.modules, name);
-            ulong mod_vaddr = map_in(mod);
-            ulong load_vaddr = ElfReader.LoadModule(arch.VirtualRegions, arch.VirtMem, stab, mod_vaddr, mod.base_addr, name);
-            ulong e_point = ElfReader.GetEntryPoint(mod_vaddr, load_vaddr);
-            Process p = Process.Create(name, e_point, stack_size, arch.VirtualRegions, stab, new object[] {});
-
-            ElfReader.LoadSymbols(stab, mod_vaddr, load_vaddr);
-
-            running_processes.Add(name, p);
-            
-            if(start)
-                arch.CurrentCpu.CurrentScheduler.Reschedule(p.startup_thread);
-            p.started = start;
-
-            Formatter.WriteLine("done", arch.BootInfoOutput);
-            Formatter.Write(name, arch.DebugOutput);
-            Formatter.Write(" process created, load address: ", arch.DebugOutput);
-            Formatter.Write(load_vaddr, "X", arch.DebugOutput);
             Formatter.WriteLine(arch.DebugOutput);
 
             return p;
