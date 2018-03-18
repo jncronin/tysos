@@ -282,6 +282,7 @@ namespace tysos
            
             ulong hash_addr = 0;
             ulong hash_len = 0;
+            ulong text_addr = 0;
 
             /* Map sections to their load address */
             Dictionary<uint, ulong> sect_map = new Dictionary<uint, ulong>(
@@ -331,6 +332,10 @@ namespace tysos
                     {
                         hash_addr = sect_addr;
                         hash_len = cur_shdr->sh_size;
+                    }
+                    else if (sect_name == ".text")
+                    {
+                        text_addr = sect_addr;
                     }
 
                     sect_map[i] = sect_addr;
@@ -569,6 +574,12 @@ namespace tysos
                 }
 
                 sect_header += e_shentsize;
+            }
+
+            if(start == 0)
+            {
+                // use either first .text address or entry point in header
+                start = text_addr + ehdr->e_entry;
             }
 
             return start;
