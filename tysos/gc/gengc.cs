@@ -231,7 +231,7 @@ namespace tysos.gc
             bool can_continue = false;
             while(can_continue == false)
             {
-                lock(collection_mutex)
+                libsupcs.Monitor.Enter(collection_mutex);
                 {
                     if(collection_in_progress == false && alloc_in_progress == false)
                     {
@@ -239,6 +239,7 @@ namespace tysos.gc
                         can_continue = true;
                     }
                 }
+                libsupcs.Monitor.Exit(collection_mutex);
             }
 
             /* Increase the allocation counter */

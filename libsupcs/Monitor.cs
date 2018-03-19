@@ -19,14 +19,29 @@
  * THE SOFTWARE.
  */
 
+using System.Runtime.CompilerServices;
+
 namespace libsupcs
 {
-    class Monitor
+    public class Monitor
     {
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern void ReliableEnter(object o, ref bool success);
+
+        public static void Enter(object o)
+        {
+            bool s = false;
+            ReliableEnter(o, ref s);
+        }
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern void Exit(object o);
+
         [libsupcs.AlwaysCompile]
         [libsupcs.Uninterruptible]
         [libsupcs.WeakLinkage]
         [libsupcs.MethodAlias("_ZW18System#2EThreading7Monitor_13ReliableEnter_Rv_P2u1ORb")]
+        [MethodAlias("_ZN14libsupcs#2Edll8libsupcs7Monitor_13ReliableEnter_Rv_P2u1ORb")]
         static unsafe void ReliableEnter(byte *obj, ref bool success)
         {
             var tid = System.Threading.Thread.CurrentThread.ManagedThreadId;
@@ -41,6 +56,7 @@ namespace libsupcs
         [libsupcs.AlwaysCompile]
         [libsupcs.Uninterruptible]
         [libsupcs.MethodAlias("_ZW18System#2EThreading7Monitor_4Exit_Rv_P1u1O")]
+        [MethodAlias("_ZN14libsupcs#2Edll8libsupcs7Monitor_4Exit_Rv_P1u1O")]
         static unsafe void Monitor_exit(byte *obj)
         {
             var tid = System.Threading.Thread.CurrentThread.ManagedThreadId;

@@ -49,12 +49,13 @@ namespace tysos.gc
 
             while (can_continue == false)
             {
-                lock (collection_mutex)
+                libsupcs.Monitor.Enter(collection_mutex);
                 {
                     if (collection_in_progress)
                     {
                         Formatter.WriteLine("gengc: attempt to run collection whilst already in progress",
                             Program.arch.DebugOutput);
+                        libsupcs.Monitor.Exit(collection_mutex);
                         return;
                     }
 
@@ -64,6 +65,7 @@ namespace tysos.gc
                         can_continue = true;
                     }
                 }
+                libsupcs.Monitor.Exit(collection_mutex);
             }
 
             /* Run a collection.  Process is:
