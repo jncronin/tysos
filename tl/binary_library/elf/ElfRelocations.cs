@@ -40,6 +40,7 @@ namespace binary_library.elf
             reloc_types[EM_X86_64][R_X86_64_32] = new Rel_x86_64_32();
             reloc_types[EM_X86_64][R_X86_64_32S] = new Rel_x86_64_32s();
             reloc_types[EM_X86_64][R_X86_64_DTPOFF32] = new Rel_x86_64_TLS_DTPOFF32();
+            reloc_types[EM_X86_64][R_X86_64_TPOFF32] = new Rel_x86_64_TLS_TPOFF32();
 
             reloc_types[EM_JCA] = new Dictionary<int, IRelocationType>();
             reloc_types[EM_JCA][R_JCA_LITR1] = new Rel_JCA_LitR1();

@@ -84,7 +84,8 @@ namespace tysos.x86_64
             unsafe
             {
                 max_stack = stack.start + stack.length;
-                fs_base = tls.start;
+                fs_base = tls.start + tls.length;       // TLS offsets in x86_64 are negative relative to %fs so
+                                                        //  set %fs to the end of the TLS section
                 ulong* p_st = (ulong*)(max_stack);                
 
                 *--p_st = (ulong)exit_address;          // address of __exit()

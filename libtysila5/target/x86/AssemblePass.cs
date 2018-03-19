@@ -191,7 +191,7 @@ namespace libtysila5.target.x86
                                     if (psize == 4)
                                         reloc.Type = new binary_library.elf.ElfFile.Rel_386_TLS_DTPOFF32();
                                     else
-                                        reloc.Type = new binary_library.elf.ElfFile.Rel_x86_64_TLS_DTPOFF32();
+                                        reloc.Type = new binary_library.elf.ElfFile.Rel_x86_64_TLS_TPOFF32();
                                 }
                                 reloc.Addend = I.p[2].v;
                                 reloc.References = bf.CreateSymbol();

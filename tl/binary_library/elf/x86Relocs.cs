@@ -350,6 +350,35 @@ namespace binary_library.elf
             { get { return 0; } }
         }
 
+        public class Rel_x86_64_TLS_TPOFF32 : IRelocationType
+        {
+            public int Length => throw new NotImplementedException();
+
+            public ulong KeepMask => throw new NotImplementedException();
+
+            public ulong SetMask => throw new NotImplementedException();
+
+            public string Name => throw new NotImplementedException();
+
+            public int Type => 23;
+
+            public int BitLength => throw new NotImplementedException();
+
+            public bool IsSigned => throw new NotImplementedException();
+
+            public int BitOffset => throw new NotImplementedException();
+
+            public long Evaluate(IRelocation reloc)
+            {
+                throw new NotImplementedException();
+            }
+
+            public long GetCurrentValue(IRelocation reloc)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public class Rel_x86_64_TLS_DTPOFF32 : IRelocationType
         {
             public int Length => throw new NotImplementedException();

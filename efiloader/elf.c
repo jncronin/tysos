@@ -43,6 +43,7 @@ extern UINTPTR kernel_high;
 extern EFI_PHYSICAL_ADDRESS static_start;
 extern EFI_PHYSICAL_ADDRESS static_end;
 extern UINTPTR tls_start;
+extern UINTPTR tls_end;
 
 EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(void *fobj, void *buf, size_t len),
 							off_t (*fseek_func)(void *fobj, off_t offset, int whence))
@@ -142,7 +143,10 @@ EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t (*fread_func)(
 			}
 
 			if (phdr->p_type == PT_TLS)
+			{
 				tls_start = (UINTPTR)phdr->p_vaddr;
+				tls_end = tls_start + (UINTPTR)phdr->p_memsz;
+			}
 
 			/* Find all writeable sections - we need to add them as GC roots */
 			if ((phdr->p_flags & PF_W) != 0 && phdr->p_type == PT_LOAD)

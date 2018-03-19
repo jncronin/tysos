@@ -8,6 +8,7 @@
 	0x1c(%esp)		kernel stack
 	0x24(%esp)		gdt
 	0x2c(%esp)		kif
+	0x34(%esp)		fsbase
 */
 
 .globl trampoline
@@ -15,6 +16,10 @@
 .code32
 trampoline:
 	cli
+
+	/* BOCHS magic break */
+	xchgw	%bx, %bx
+
 
 /* This follows the sequence in Intel 3A:9.8.5
 
@@ -50,6 +55,7 @@ trampoline:
 	movl	0x10(%esp), %ebx
 	movl	0x18(%esp), %esi
 	movl	0x20(%esp), %edi
+	movl	0x38(%esp),	%ebp			// fsbase
 
 	movl	$0xc0000080, %ecx
 	rdmsr
@@ -96,6 +102,14 @@ next_instr:
 
 clear_pipe:
 .code64
+	/* Set IA32_FS_BASE MSR */
+	push		%rdx
+	movl		$0xc0000100,		%ecx
+	movl		%ebp, %eax
+	xorl		%edx, %edx
+	wrmsr
+	pop		%rdx
+
 	/* call the kernel then halt function
 
 		mbheader (in ebx) -> rdi

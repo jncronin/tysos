@@ -84,7 +84,7 @@ int elf_kernel_len;
 EFI_PHYSICAL_ADDRESS sym_tab_paddr, sym_tab_size, sym_tab_entsize, str_tab_paddr, str_tab_size, static_start, static_end;
 
 void(*trampoline_func)(uint64_t target, uint64_t cr3, uint64_t _mbheader, uint64_t halt_func,
-	uint64_t kernel_stack, uint64_t gdt, uint64_t kif);
+	uint64_t kernel_stack, uint64_t gdt, uint64_t kif, uint64_t fsbase);
 extern char trampoline, trampoline_end;
 uint64_t __halt_func;
 
@@ -94,6 +94,7 @@ UINTPTR kernel_low;
 UINTPTR kernel_high;
 
 UINTPTR tls_start;
+UINTPTR tls_end;
 
 extern int v_width;
 extern int v_height;
@@ -261,8 +262,8 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	}
 
 	/* Set FS BASE */
-	if (tls_start != 0)
-		wrmsr(0xc0000100, tls_start);
+	if (tls_end != 0)
+		wrmsr(0xc0000100, tls_end);
 
 	/* Initialize the symbol + string tables */
 	sym_tab_paddr = 0;
@@ -441,7 +442,7 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	EFI_PHYSICAL_ADDRESS tramp_end = (EFI_PHYSICAL_ADDRESS)(uintptr_t)&trampoline_end;
 	printf("trampoline from %x to %x (copied to %x)\n", (uintptr_t)tramp_start, (uintptr_t)tramp_end, (uintptr_t)p_tramp);
 	memcpy((void *)(uintptr_t)p_tramp, (void *)(uintptr_t)tramp_start, (size_t)((uintptr_t)tramp_end - (uintptr_t)tramp_start));
-	trampoline_func = (void(*)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t))(uintptr_t)p_tramp;
+	trampoline_func = (void(*)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t))(uintptr_t)p_tramp;
 	__halt_func = Get_Symbol_Addr("__halt");
 
 	/* Build the kernel page tables */
@@ -540,11 +541,13 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 
 	printf("Success - running trampoline function\n");
 	trampoline_func((uint64_t)ehdr->e_entry,
-		(uint64_t)pml4t, (uint64_t)(uintptr_t)mbheader + mb_adjust,
+		(uint64_t)pml4t,
+		(uint64_t)(uintptr_t)mbheader + mb_adjust,
 		(uint64_t)__halt_func,
 		(uint64_t)(kernel_stack + kernel_stack_len),
 		(uint64_t)gdt,
-		(uint64_t)p_kif);
+		(uint64_t)p_kif,
+		(uint64_t)tls_end);
 
 	while (1);
 
