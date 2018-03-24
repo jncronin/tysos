@@ -418,6 +418,16 @@ namespace libtysila5.target.x86_64
 {
     partial class x86_64_Assembler : x86.x86_Assembler
     {
+        protected internal override IRelocationType GetDataToCodeReloc()
+        {
+            return new binary_library.elf.ElfFile.Rel_x86_64_64();
+        }
+
+        protected internal override IRelocationType GetDataToDataReloc()
+        {
+            return new binary_library.elf.ElfFile.Rel_x86_64_64();
+        }
+
         public override int GetCCClassFromCT(int ct, int size, TypeSpec ts, string cc)
         {
             if (cc == "sysv" | cc == "default")

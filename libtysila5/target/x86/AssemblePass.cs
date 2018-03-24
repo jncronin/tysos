@@ -185,7 +185,6 @@ namespace libtysila5.target.x86
                             case ir.Opcode.vl_str:
                                 var reloc = bf.CreateRelocation();
                                 reloc.DefinedIn = text_section;
-                                reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
                                 if (I.p[2].v2 == 1)
                                 {
                                     if (psize == 4)
@@ -193,6 +192,10 @@ namespace libtysila5.target.x86
                                     else
                                         reloc.Type = new binary_library.elf.ElfFile.Rel_x86_64_TLS_TPOFF32();
                                 }
+                                else if (psize == 4)
+                                    reloc.Type = new binary_library.elf.ElfFile.Rel_386_32();
+                                else
+                                    reloc.Type = new binary_library.elf.ElfFile.Rel_x86_64_32();
                                 reloc.Addend = I.p[2].v;
                                 reloc.References = bf.CreateSymbol();
                                 reloc.References.Name = I.p[2].str;
