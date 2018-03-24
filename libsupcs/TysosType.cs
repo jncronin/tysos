@@ -1180,5 +1180,24 @@ namespace libsupcs
 
             return sb.ToString();
         }
+
+        [MethodAlias("_ZW34System#2ERuntime#2EInteropServices7Marshal_37GetDelegateForFunctionPointerInternal_RU6System8Delegate_P2u1IV4Type")]
+        [AlwaysCompile]
+        static void* Marshal_GetDelegateForFunctionPointer(void *ptr, TysosType t)
+        {
+            // build new object of the appropriate size
+            var ret = MemoryOperations.GcMalloc(t.GetClassSize());
+
+            // extract vtbl and write it to the appropriate field
+            *(void**)ret = t._impl;
+
+            // mutex lock
+            *(int*)((byte*)ret + ClassOperations.GetMutexLockOffset()) = 0;
+
+            // insert the function pointer
+            *(void**)((byte*)ret + ClassOperations.GetDelegateFPtrOffset()) = ptr;
+
+            return ret;
+        }
     }
 }

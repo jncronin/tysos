@@ -226,6 +226,7 @@ namespace tysos
 
         public Thread TimerTick(long ns, Thread cur, TaskSwitcher switcher)
         {
+            //System.Diagnostics.Debugger.Log(0, "Scheduler", "TimerTick");
             /* first wake up any sleeping tasks */
             lock (this)
             {

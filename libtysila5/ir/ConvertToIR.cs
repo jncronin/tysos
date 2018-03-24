@@ -111,10 +111,10 @@ namespace libtysila5.ir
                 foreach(var n in c.cil)
                 {
                     if (n.is_meth_start)
-                        DoConversion(n, c, new Stack<StackItem>());
+                        DoConversion(n, c, new Stack<StackItem>(c.lv_types.Length));
                     else if(n.is_filter_start)
                     {
-                        var stack = new Stack<StackItem>();
+                        var stack = new Stack<StackItem>(c.lv_types.Length);
                         stack.Push(new StackItem { ts = c.ms.m.SystemObject });
                         DoConversion(n, c, stack);
                     }
@@ -122,7 +122,7 @@ namespace libtysila5.ir
                     {
                         if (n.is_filter_start)
                             System.Diagnostics.Debugger.Break();
-                        var stack = new Stack<StackItem>();
+                        var stack = new Stack<StackItem>(c.lv_types.Length);
                         if (n.handler_starts.Count != 0)
                         {
                             if (n.handler_starts.Count > 1)
@@ -139,7 +139,7 @@ namespace libtysila5.ir
                         DoConversion(n, c, stack);
                     }
                     else if (n.try_starts.Count > 0)
-                        DoConversion(n, c, new Stack<StackItem>());
+                        DoConversion(n, c, new Stack<StackItem>(c.lv_types.Length));
                     else
                     {
                         bool any_prev_visited = false;
@@ -151,7 +151,7 @@ namespace libtysila5.ir
                             {
                                 // leave empties stack
                                 any_prev_visited = true;
-                                prev_stack = new Stack<StackItem>();
+                                prev_stack = new Stack<StackItem>(c.lv_types.Length);
                                 break;
                             }
                             else if (prev.visited)
@@ -1272,10 +1272,13 @@ namespace libtysila5.ir
                 foreach(var ehdr in c.ehdrs)
                 {
                     if (n.il_offset >= ehdr.TryILOffset &&
-                        n.il_offset < (ehdr.TryILOffset + ehdr.TryLength))
+                        n.il_offset < (ehdr.TryILOffset + ehdr.TryLength) &&
+                        (n.il_offsets_after[0] < ehdr.TryILOffset ||
+                        n.il_offsets_after[0] >= (ehdr.TryILOffset + ehdr.TryLength)))
                     {
-                        // invoke the exception handler to leave the most deeply nested block
-                        var stack_after2 = new Stack<StackItem>();
+                        // invoke the exception handler to leave the most deeply nested block but
+                        //  only up until the shallowest nested block
+                        var stack_after2 = new Stack<StackItem>(c.lv_types.Length);
                         stack_after2 = ldlab(n, c, stack_after2, c.ms.m.MangleMethod(c.ms) + "EH",
                             ehdr.EhdrIdx * layout.Layout.GetEhdrSize(c.t));
                         call(n, c, stack_after2, false, "leave_try",
@@ -1288,7 +1291,7 @@ namespace libtysila5.ir
                         ehdr.EType == ExceptionHeader.ExceptionHeaderType.Filter))
                     {
                         // invoke the exception handler to leave the most deeply nested block
-                        var stack_after2 = new Stack<StackItem>();
+                        var stack_after2 = new Stack<StackItem>(c.lv_types.Length);
                         stack_after2 = ldlab(n, c, stack_after2, c.ms.m.MangleMethod(c.ms) + "EH",
                             ehdr.EhdrIdx * layout.Layout.GetEhdrSize(c.t));
                         call(n, c, stack_after2, false, "leave_handler",
@@ -1298,7 +1301,7 @@ namespace libtysila5.ir
             }
 
             // empty execution stack
-            var stack_after = new Stack<StackItem>();
+            var stack_after = new Stack<StackItem>(c.lv_types.Length);
 
             // jump to the targetted instruction
             return br(n, c, stack_after);
@@ -2237,7 +2240,7 @@ namespace libtysila5.ir
                 ret_vt_size = c.t.GetSize(rt_ts);
             }
 
-            var stack_after = new Stack<StackItem>();
+            var stack_after = new Stack<StackItem>(c.lv_types.Length);
 
             n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ret, ct = ret_ct, vt_size = ret_vt_size, stack_before = stack_before, stack_after = stack_after });
 
@@ -2500,6 +2503,12 @@ namespace libtysila5.ir
             if (is_ovf)
                 imm |= 2;
 
+            if(Opcode.IsTLSCT(ct))
+            {
+                ct = Opcode.UnTLSCT(ct);
+                si._ct = Opcode.TLSCT(ct);
+            }
+
             n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_conv, imm_l = imm, ct = ct, ctret = to_ct, stack_before = stack_before, stack_after = stack_after });
 
             return stack_after;
@@ -2513,6 +2522,9 @@ namespace libtysila5.ir
                 case Opcode.ct_int64:
                 case Opcode.ct_intptr:
                 case Opcode.ct_float:
+                case Opcode.ct_tls_intptr:
+                case Opcode.ct_tls_int32:
+                case Opcode.ct_tls_int64:
                     return true;
 
                 case Opcode.ct_ref:
@@ -3135,6 +3147,25 @@ namespace libtysila5.ir
             var vt_size = c.t.GetSize(ts);
             var ct = Opcode.GetCTFromType(ts);
 
+            if (stack_before.lv_tls_addrs[v])
+            {
+                switch(si.ct)
+                {
+                    case Opcode.ct_ref:
+                    case Opcode.ct_intptr:
+                        si._ct = Opcode.ct_tls_intptr;
+                        break;
+                    case Opcode.ct_int32:
+                        si._ct = Opcode.ct_tls_int32;
+                        break;
+                    case Opcode.ct_int64:
+                        si._ct = Opcode.ct_tls_int64;
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+
             n.irnodes.Add(new CilNode.IRNode { parent = n, opcode = Opcode.oc_ldloc, ctret = ct, vt_size = vt_size, imm_l = v, imm_ul = ts.IsSigned ? 1UL : 0UL, stack_before = stack_before, stack_after = stack_after });
 
             return stack_after;
@@ -3143,10 +3174,18 @@ namespace libtysila5.ir
         private static Stack<StackItem> stloc(CilNode n, Code c, Stack<StackItem> stack_before, int v)
         {
             Stack<StackItem> stack_after = new Stack<StackItem>(stack_before);
-            var ts = stack_after.Pop().ts;
+            var si = stack_after.Pop();
+            var ts = si.ts;
 
             var to_ts = c.lv_types[v];
             // TODO: ensure top of stack can be assigned to lv
+
+            if(si._ct == Opcode.ct_tls_int32 || si._ct == Opcode.ct_tls_int64 ||
+                si._ct == Opcode.ct_tls_intptr)
+            {
+                // we need to mark the current lv entry as being a pointer to a TLS object
+                stack_after.lv_tls_addrs[v] = true;
+            }
 
             var vt_size = c.t.GetSize(ts);
             var ct = Opcode.GetCTFromType(ts);

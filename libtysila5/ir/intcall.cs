@@ -75,6 +75,7 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_23GetSystemTypeImplOffset_Ri_P0"] = class_getSystemTypeImplOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_14GetFieldOffset_Ri_P2u1Su1S"] = class_getFieldOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_20GetStaticFieldOffset_Ri_P2u1Su1S"] = class_getStaticFieldOffset;
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_21GetDelegateFPtrOffset_Ri_P0"] = class_getDelegateFPtrOffset;
 
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU1_Rh_P1u1U"] = peek_Byte;
             intcalls["_ZN14libsupcs#2Edll8libsupcs16MemoryOperations_6PeekU2_Rt_P1u1U"] = peek_Ushort;
@@ -107,7 +108,7 @@ namespace libtysila5.ir
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_28GetTypedReferenceValueOffset_Ri_P0"] = typedref_ValueOffset;
             intcalls["_ZN14libsupcs#2Edll8libsupcs15ClassOperations_27GetTypedReferenceTypeOffset_Ri_P0"] = typedref_TypeOffset;
 
-
+            intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_15CompareExchange_RPv_P3PPvPvPv"] = threading_CompareExchange_IntPtr;
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ru1I_P3Ru1Iu1Iu1I"] = threading_CompareExchange_IntPtr;
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ru1O_P3Ru1Ou1Ou1O"] = threading_CompareExchange_Object;
             intcalls["_ZW18System#2EThreading11Interlocked_15CompareExchange_Ri_P3Riii"] = threading_CompareExchange_int;
@@ -519,6 +520,13 @@ namespace libtysila5.ir
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
             stack_after = ldind(n, c, stack_after, c.ms.m.SystemIntPtr);
             return stack_after;
+        }
+
+        private static Stack<StackItem> class_getDelegateFPtrOffset(CilNode n, Code c, Stack<StackItem> stack_before)
+        {
+            var dgate = c.ms.m.SystemDelegate.Type;
+            var v = layout.Layout.GetFieldOffset(dgate, "_methodPtr", c.t, out var is_tls);
+            return ldc(n, c, stack_before, v);
         }
 
         private static Stack<StackItem> class_getSystemTypeImplOffset(CilNode n, Code c, Stack<StackItem> stack_before)

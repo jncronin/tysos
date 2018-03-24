@@ -54,9 +54,17 @@ namespace libsupcs
         {
             if(start == null)
             {
-                start = (void**)MemoryOperations.GcMalloc(stack_length * sizeof(void*));
-                end = start + stack_length;
-                cur = start;
+                void** new_start = (void**)MemoryOperations.GcMalloc(stack_length * sizeof(void*));
+
+                fixed(void ***start_addr = &start)
+                {
+                    if(OtherOperations.CompareExchange((void**)start_addr, (void*)new_start) == null)
+                    {
+                        end = start + stack_length;
+                        cur = start;
+                        System.Diagnostics.Debugger.Log(0, "libsupcs", "new ehdr stack at " + ((ulong)start).ToString("X") + "-" + ((ulong)end).ToString("X"));
+                    }
+                }
             }
 
             if ((cur + 1) >= end)
@@ -65,10 +73,15 @@ namespace libsupcs
                 throw new OutOfMemoryException("exception header stack overflowed");
             }
 
-            *cur = eh;
-            cur++;
-            *cur = fp;
-            cur++;
+            //if(System.Threading.Thread.CurrentThread.ManagedThreadId != 1)
+            //    System.Diagnostics.Debugger.Log(0, "libsupcs", "exceptions: push_ehdr: " + ((ulong)eh).ToString("X"));
+
+            // the following should be atomic for the current stack only, so disabling interrupts is
+            //  sufficient
+            var state = OtherOperations.EnterUninterruptibleSection();
+            *cur++ = eh;
+            *cur++ = fp;
+            OtherOperations.ExitUninterruptibleSection(state);
         }
 
         [AlwaysCompile]
@@ -76,14 +89,20 @@ namespace libsupcs
         [MethodAlias("pop_ehdr")]
         static void* pop_ehdr()
         {
-            if (start == null || cur <= start)
+            if (start == null || (void**)cur <= (void**)start)
             {
                 System.Diagnostics.Debugger.Break();
                 throw new OutOfMemoryException("exception header stack underflowed");
             }
 
-            cur--;
-            return *cur;
+            var state = OtherOperations.EnterUninterruptibleSection();
+            var ret = *--cur;
+            OtherOperations.ExitUninterruptibleSection(state);
+
+            return ret;
+
+            //if (System.Threading.Thread.CurrentThread.ManagedThreadId != 1)
+            //    System.Diagnostics.Debugger.Log(0, "libsupcs", "exceptions: pop_ehdr: " + ((ulong)*cur).ToString("X"));
         }
 
         [AlwaysCompile]
@@ -91,12 +110,16 @@ namespace libsupcs
         [MethodAlias("peek_ehdr")]
         static void* peek_ehdr()
         {
-            if (start == null || cur <= start)
+            if (start == null || (void**)cur <= (void**)start)
             {
                 return null;
             }
 
-            return *(cur - 2);
+            var state = OtherOperations.EnterUninterruptibleSection();
+            var ret = *(cur - 2);
+            OtherOperations.ExitUninterruptibleSection(state);
+
+            return ret;
         }
 
         [AlwaysCompile]
@@ -110,13 +133,17 @@ namespace libsupcs
                 throw new OutOfMemoryException("exception header stack underflowed");
             }
 
-            cur--;
-            return *cur;
+            var state = OtherOperations.EnterUninterruptibleSection();
+            var ret = *--cur;
+            OtherOperations.ExitUninterruptibleSection(state);
+
+            return ret;
         }
 
         [AlwaysCompile]
         [WeakLinkage]
         [MethodAlias("enter_try")]
+        [Uninterruptible]
         internal static void enter_try(void *eh, void *fp)
         {
             if (eh == PeekEhdr())
@@ -139,8 +166,16 @@ namespace libsupcs
         {
             void* fp = PopFramePointer();
             void* popped = PopEhdr();
-            if(eh != popped)
+            if (eh != popped)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "leave_try: popping incorrect exception header");
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "expected: " + ((ulong)eh).ToString("X"));
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "got: " + ((ulong)popped).ToString("X") + ", fp: " + ((ulong)fp).ToString("X"));
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "start: " + ((ulong)start).ToString("X"));
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "end: " + ((ulong)end).ToString("X"));
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "cur: " + ((ulong)cur).ToString("X"));
                 while (true) ;
+            }
 
             void** ehdr = (void**)eh;
 

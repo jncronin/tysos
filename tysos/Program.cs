@@ -185,7 +185,7 @@ namespace tysos
             /* Start the scheduler */
             Formatter.Write("Starting scheduler... ", arch.DebugOutput);
             arch.CurrentCpu.CurrentScheduler = new Scheduler();
-            if(GetCmdLine("ignore_timer") == false)
+            if (GetCmdLine("ignore_timer") == false)
                 arch.SchedulerTimer.Callback = new Timer.TimerCallback(Scheduler.TimerProc);
             Formatter.WriteLine("done", arch.DebugOutput);
 
@@ -229,7 +229,7 @@ namespace tysos
             Process logger = LoadELFModule("logger", mboot, stab, running_processes, 0x8000,
                 new object[] { });
 
-            Process debugprint = LoadELFModule("debugprint", mboot, stab, running_processes, 
+            Process debugprint = LoadELFModule("debugprint", mboot, stab, running_processes,
                 0x8000, new object[] { });
 
             logger.Start();
@@ -340,7 +340,7 @@ namespace tysos
             while (true) ;
         }
 
-        static string str_array_test(string [] val)
+        static string str_array_test(string[] val)
         {
             return val[0];
         }
@@ -381,7 +381,7 @@ namespace tysos
             ulong offset;
             string sym = Program.stab.GetSymbolAndOffset(ret_address, out offset);
             ulong len = Program.stab.GetLength(sym);
-            if(len != 0)
+            if (len != 0)
             {
                 if (offset >= len)
                     return null;
@@ -584,7 +584,7 @@ namespace tysos
                     Formatter.Write("LEAVE: ", arch.DebugOutput);
 
                 // Do this to avoid any calls to Length/Item on System.String
-                for(int i = 0; i < c_str_len; i++)
+                for (int i = 0; i < c_str_len; i++)
                     Formatter.Write(c_str[i], arch.DebugOutput);
 
                 Formatter.Write(" @ ", arch.DebugOutput);
@@ -614,7 +614,7 @@ namespace tysos
         [libsupcs.AlwaysCompile]
         static void MissingFunction(string name)
         {
-            if(arch != null && arch.DebugOutput != null)
+            if (arch != null && arch.DebugOutput != null)
             {
                 Formatter.Write("Undefined function called: ", arch.DebugOutput);
                 Formatter.Write(name, arch.DebugOutput);
@@ -642,7 +642,7 @@ namespace tysos
         [libsupcs.AlwaysCompile]
         static void DisplayHalt()
         {
-            if(arch != null && arch.BootInfoOutput != null)
+            if (arch != null && arch.BootInfoOutput != null)
                 Formatter.WriteLine("System halted", arch.BootInfoOutput);
         }
 
@@ -695,6 +695,17 @@ namespace tysos
                 return arch.CurrentCpu.CurrentThread.thread_id;
         }
 
+        [libsupcs.MethodAlias("_ZW18System#2EThreading6Thread_19get_ManagedThreadId_Ri_P1u1t")]
+        [libsupcs.AlwaysCompile]
+        unsafe static int get_ManagedThreadId(System.Threading.Thread t)
+        {
+            if (arch == null || arch.CurrentCpu == null || arch.CurrentCpu.CurrentThread == null)
+                return 1;
+
+            var tt = Thread.GetTysosThread(t);
+            return tt.thread_id;
+        }
+
         [libsupcs.MethodAlias("_ZW18System#2EThreading6Thread_22GetCurrentThreadNative_RV6Thread_P0")]
         [libsupcs.AlwaysCompile]
         static unsafe System.Threading.Thread GetCurThread()
@@ -702,7 +713,7 @@ namespace tysos
             if(arch == null || arch.CurrentCpu == null || arch.CurrentCpu.CurrentThread == null)
                 return StartupThread;
 
-            return StartupThread;
+            return arch.CurrentCpu.CurrentThread.mt;
             /* TODO: Create a new System.Threading.Thread object */
             /*libsupcs.TysosType thread_type = libsupcs.TysosType.ReinterpretAsType(typeof(System.Threading.Thread));
             object t = libsupcs.MemoryOperations.GcMalloc(new IntPtr(thread_type.GetClassSize()));
@@ -815,6 +826,16 @@ namespace tysos
 
             Formatter.Write("[", arch.DebugOutput);
             Formatter.Write(arch.GetMonotonicCount, arch.DebugOutput);
+            if (arch.CurrentCpu == null || arch.CurrentCpu.CurrentThread == null || arch.CurrentCpu.CurrentThread.name == null)
+                Formatter.Write(": kernel(1)", arch.DebugOutput);
+            else
+            {
+                Formatter.Write(": ", arch.DebugOutput);
+                Formatter.Write(arch.CurrentCpu.CurrentThread.name, arch.DebugOutput);
+                Formatter.Write("(", arch.DebugOutput);
+                Formatter.Write((ulong)arch.CurrentCpu.CurrentThread.thread_id, arch.DebugOutput);
+                Formatter.Write(")", arch.DebugOutput);
+            }
             Formatter.Write("] ", arch.DebugOutput);
             Formatter.Write(category, arch.DebugOutput);
             Formatter.Write(": ", arch.DebugOutput);

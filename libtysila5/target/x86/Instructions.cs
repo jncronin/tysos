@@ -1362,13 +1362,11 @@ namespace libtysila5.target.x86
 
         protected static MCInst inst(int idx, ir.Param v1, ir.Param v2, CilNode.IRNode p, bool is_tls = false)
         {
-            if (is_tls)
-                throw new NotImplementedException();
             return new MCInst
             {
                 p = new ir.Param[]
                 {
-                    new ir.Param { t = ir.Opcode.vl_str, v = idx, str = insts[idx] },
+                    new ir.Param { t = ir.Opcode.vl_str, v = idx, str = insts[idx], v2 = is_tls ? 1 : 0 },
                     v1,
                     v2
                 },
@@ -4001,6 +3999,7 @@ namespace libtysila5.target.x86
             var size = n.imm_l;
             var issigned = n.imm_ul == 0 ? false : true;
 
+
             int oc = 0;
             int oc2 = 0;
             switch(size)
@@ -4029,6 +4028,8 @@ namespace libtysila5.target.x86
             var newval = n.stack_before.Peek(n.arg_a).reg;
             var dest = n.stack_after.Peek(n.res_a).reg;
 
+            bool is_tls = ir.Opcode.IsTLSCT(n.stack_before.Peek(n.arg_c).ct);
+
             // lock cmpxchg takes the old value in rax,
             //  ptr in first argument and new val in second
             // the old value is returned in rax regardless of
@@ -4051,7 +4052,7 @@ namespace libtysila5.target.x86
             }
             handle_move(r_eax, oldval, r, n, c);
 
-            r.Add(inst(oc, new ContentsReg { basereg = ptr }, newval, n));
+            r.Add(inst(oc, new ContentsReg { basereg = ptr }, newval, n, is_tls));
 
             if (dest is ContentsReg)
             {
@@ -4078,9 +4079,55 @@ namespace libtysila5.target.x86
             {
                 case x86_roundsd_xmm_xmmm64_imm8:
                     return handle_roundsd(t, nodes, start, count, c);
+                case x86_enter_cli:
+                    return handle_enter_cli(t, nodes, start, count, c);
+                case x86_exit_cli:
+                    return handle_exit_cli(t, nodes, start, count, c);
                 default:
                     throw new NotImplementedException("Invalid target specific operation");
             }
+        }
+
+        internal static List<MCInst> handle_enter_cli(
+                Target t,
+                List<CilNode.IRNode> nodes,
+                int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            var dest = n.stack_after.Peek(n.res_a).reg;
+
+            var r = new List<MCInst>();
+            r.Add(inst(x86_pushf, n));
+            if (dest is ContentsReg)
+                r.Add(inst(x86_pop_rm32, dest, n));
+            else
+                r.Add(inst(x86_pop_r32, dest, n));
+            r.Add(inst(x86_cli, n));
+
+            return r;
+        }
+
+        internal static List<MCInst> handle_exit_cli(
+                Target t,
+                List<CilNode.IRNode> nodes,
+                int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            var src = n.stack_before.Peek(n.arg_a).reg;
+
+            var r = new List<MCInst>();
+            if (src is ContentsReg)
+                r.Add(inst(x86_push_rm32, src, n));
+            else
+                r.Add(inst(x86_push_r32, src, n));
+            if (t.psize == 4)
+                r.Add(inst(x86_popf, n));
+            else
+                r.Add(inst(x86_popfq, n));
+
+            return r;
         }
 
         internal static List<MCInst> handle_roundsd(

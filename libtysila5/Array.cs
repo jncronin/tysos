@@ -40,7 +40,7 @@ namespace libtysila5.ir
             cil.CilNode n = new cil.CilNode(ms, 0);
 
             List<cil.CilNode.IRNode> ret = new List<cil.CilNode.IRNode>();
-            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>(0);
 
             // Enter
             n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_enter, stack_before = stack_before, stack_after = stack_before });
@@ -158,7 +158,7 @@ namespace libtysila5.ir
             t.AllocateLocalVarsArgs(c);
             cil.CilNode n = new cil.CilNode(ms, 0);
 
-            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>(0);
 
             // Returns void
             c.ret_ts = ms.m.SystemVoid;
@@ -199,7 +199,7 @@ namespace libtysila5.ir
             t.AllocateLocalVarsArgs(c);
             cil.CilNode n = new cil.CilNode(ms, 0);
 
-            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>(0);
 
             // Get return type
             var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
@@ -431,7 +431,7 @@ namespace libtysila5.ir
             t.AllocateLocalVarsArgs(c);
             cil.CilNode n = new cil.CilNode(ms, 0);
 
-            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>(0);
 
             // Get return type
             var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
@@ -461,7 +461,7 @@ namespace libtysila5.ir
             t.AllocateLocalVarsArgs(c);
             cil.CilNode n = new cil.CilNode(ms, 0);
 
-            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>(0);
 
             // Get return type
             var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);
@@ -523,7 +523,7 @@ namespace libtysila5.ir
             t.AllocateLocalVarsArgs(c);
             cil.CilNode n = new cil.CilNode(ms, 0);
 
-            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>(0);
 
             // Get return type
             var sig_idx = ms.m.GetMethodDefSigRetTypeIndex(ms.msig);

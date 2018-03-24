@@ -139,6 +139,7 @@ x86_instrs = [
 	"in_eax_dx",
 	"iret",
 	"int3",
+	"pushf", "popf", "cli",
 
 	"movsd_xmm_xmmm64",
 	"movsd_xmm_xmmm64disp",
@@ -161,6 +162,9 @@ x86_instrs = [
 	"cmpsd_xmm_xmmm64_imm8",
 	"roundsd_xmm_xmmm64_imm8",
 	"xorpd_xmm_xmmm128",
+
+	// pseudo insts
+	"enter_cli", "exit_cli",
 
 	// put x86_64 instructions after mov_r64_imm64
 	"mov_r64_imm64",
@@ -221,6 +225,7 @@ x86_instrs = [
 	"mov_r64_rm64sibscaledisp",
 	"iretq",
 	"lock_cmpxchg_rm64_r64",
+	"popfq"
 ];
 
 intmap(nspace, assembler, name, "insts", "init_instrs", x86_instrs);

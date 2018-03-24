@@ -49,6 +49,7 @@ namespace tysos.x86_64
 
         public override void Switch(Thread next)
         {
+            System.Diagnostics.Debugger.Log(0, "x86_64", "Switching to " + next.name);
             //Formatter.WriteLine("x86_64: switching to " + next.name, Program.arch.DebugOutput);
             do_x86_64_switch(cur_thread_pointer, next, tsi_within_thread, rsp_within_tsi, fsbase_within_tsi);
         }

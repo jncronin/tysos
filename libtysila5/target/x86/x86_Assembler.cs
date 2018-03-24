@@ -111,6 +111,28 @@ namespace libtysila5.target.x86
             ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortInw_Rt_P1t"] = portin_word;
             ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs12IoOperations_7PortInd_Rj_P1t"] = portin_dword;
             ConvertToIR.intcalls["_ZW6System4Math_5Round_Rd_P1d"] = math_Round;
+            ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_27EnterUninterruptibleSection_Ru1I_P0"] = enter_cli;
+            ConvertToIR.intcalls["_ZN14libsupcs#2Edll8libsupcs15OtherOperations_26ExitUninterruptibleSection_Rv_P1u1I"] = exit_cli;
+        }
+
+        private static util.Stack<StackItem> enter_cli(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
+        {
+            var stack_after = new Stack<StackItem>(stack_before);
+
+            stack_after.Push(new StackItem { ts = c.ms.m.SystemIntPtr });
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_target_specific, imm_l = x86_enter_cli, stack_before = stack_before, stack_after = stack_after });
+
+            return stack_after;
+        }
+
+        private static util.Stack<StackItem> exit_cli(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)
+        {
+            var stack_after = new Stack<StackItem>(stack_before);
+
+            stack_after.Pop();
+            n.irnodes.Add(new cil.CilNode.IRNode { parent = n, opcode = Opcode.oc_target_specific, imm_l = x86_exit_cli, stack_before = stack_before, stack_after = stack_after });
+
+            return stack_after;
         }
 
         private static util.Stack<StackItem> math_Round(cil.CilNode n, Code c, util.Stack<StackItem> stack_before)

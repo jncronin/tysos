@@ -373,6 +373,9 @@ namespace libsupcs
         [MethodImpl(MethodImplOptions.InternalCall)]
         [IgnoreImplementation]
         public extern static int GetStaticFieldOffset(string typename, string field);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern int GetDelegateFPtrOffset();
     }
 
     public unsafe class JitOperations
@@ -474,6 +477,14 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern void AsmBreakpoint();
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern System.IntPtr EnterUninterruptibleSection();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern void ExitUninterruptibleSection(System.IntPtr state);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe static extern void* CompareExchange(void** addr, void* value, void* comparand = null);
     }
 
     public class ArrayOperations

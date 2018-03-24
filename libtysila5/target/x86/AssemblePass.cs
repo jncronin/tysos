@@ -397,6 +397,7 @@ namespace libtysila5.target.x86
                     case x86_lock_cmpxchg_rm32_r32:
                     case x86_lock_cmpxchg_rm64_r64:
                         Code.Add(0xf0); // lock before rex
+                        Code.AddRange(TLSOverride(ref tls_flag));
                         AddRex(Code, Rex(I.p[0].v, I.p[2].mreg, I.p[1].mreg));
                         Code.Add(0x0f);
                         Code.Add(0xb1);
@@ -1039,6 +1040,20 @@ namespace libtysila5.target.x86
                     case x86_iretq:
                         AddRex(Code, Rex(I.p[0].v, null, null));
                         Code.Add(0xcf);
+                        break;
+
+                    case x86_pushf:
+                        Code.Add(0x9c);
+                        break;
+
+                    case x86_popf:
+                    case x86_popfq:
+                        AddRex(Code, Rex(I.p[0].v, null, null));
+                        Code.Add(0x9d);
+                        break;
+
+                    case x86_cli:
+                        Code.Add(0xfa);
                         break;
 
                     default:

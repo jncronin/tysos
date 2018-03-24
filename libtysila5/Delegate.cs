@@ -227,7 +227,7 @@ namespace libtysila5.ir
             cil.CilNode n = new cil.CilNode(ms, 0);
 
             List<cil.CilNode.IRNode> ret = new List<cil.CilNode.IRNode>();
-            util.Stack<StackItem> stack_before = new util.Stack<StackItem>();
+            util.Stack<StackItem> stack_before = new util.Stack<StackItem>(0);
             TypeSpec fld_ts;
 
             // Enter

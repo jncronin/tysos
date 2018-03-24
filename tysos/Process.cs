@@ -110,6 +110,8 @@ namespace tysos
         internal Virtual_Regions.Region stack;
         internal Virtual_Regions.Region tls;
 
+        internal System.Threading.Thread mt;             // managed thread associated with this thread
+
         internal string name;
 
         public string ProcessName { get
@@ -129,9 +131,29 @@ namespace tysos
 
         internal ulong exit_address;
 
+        internal unsafe static void SetTysosThread(System.Threading.Thread t, Thread tt)
+        {
+            *(void**)((byte*)libsupcs.CastOperations.ReinterpretAsPointer(t) +
+                libsupcs.ClassOperations.GetFieldOffset("_ZW18System#2EThreading6Thread", "DONT_USE_InternalThread")) =
+                libsupcs.CastOperations.ReinterpretAsPointer(tt);
+        }
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [libsupcs.ReinterpretAsMethod]
+        public unsafe static extern Thread ReinterpretAsTysosThread(void* addr);
+
+        internal unsafe static Thread GetTysosThread(System.Threading.Thread t)
+        {
+            return ReinterpretAsTysosThread(*(void**)((byte*)libsupcs.CastOperations.ReinterpretAsPointer(t) +
+                libsupcs.ClassOperations.GetFieldOffset("_ZW18System#2EThreading6Thread", "DONT_USE_InternalThread")));
+        }
+
         internal static Thread Create(string name, ulong e_point, ulong stack_size, ulong tls_size, Virtual_Regions vreg, SymbolTable stab, object[] parameters)
         {
             Thread t = new Thread();
+
+            t.mt = new System.Threading.Thread(System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<System.Threading.ThreadStart>((IntPtr)e_point));
+            SetTysosThread(t.mt, t);
 
             t.thread_id = next_thread_id++;
 

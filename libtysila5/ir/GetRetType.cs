@@ -82,6 +82,50 @@ namespace libtysila5.ir
             return null;
         }
 
+        internal static bool IsTLSCT(int ct)
+        {
+            switch(ct)
+            {
+                case ct_tls_int32:
+                case ct_tls_int64:
+                case ct_tls_intptr:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        internal static int TLSCT(int ct)
+        {
+            switch(ct)
+            {
+                case ct_int32:
+                    return ct_tls_int32;
+                case ct_int64:
+                    return ct_tls_int64;
+                case ct_intptr:
+                case ct_ref:
+                    return ct_tls_intptr;
+                default:
+                    return ct;
+            }
+        }
+
+        internal static int UnTLSCT(int ct)
+        {
+            switch(ct)
+            {
+                case ct_tls_int32:
+                    return ct_int32;
+                case ct_tls_int64:
+                    return ct_int64;
+                case ct_tls_intptr:
+                    return ct_intptr;
+                default:
+                    return ct;
+            }
+        }
+
         internal static int GetCTFromType(int type)
         {
             switch (type)

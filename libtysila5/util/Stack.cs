@@ -27,6 +27,11 @@ namespace libtysila5.util
 {
     public class Stack<T> : List<T>
     {
+        // This is a bit of a hack but we use Stack<T> to represent the current 
+        //  state of the instruction stream too.  In particular, we need to know
+        //  if local vars are addresses of TLS objects
+        internal bool[] lv_tls_addrs;
+
         public void Push(T v)
         {
             Add(v);
@@ -46,14 +51,34 @@ namespace libtysila5.util
             return this[Count - 1 - v];
         }
 
-        public Stack() : base() {}
+        public Stack(int lv_count = 0) : base()
+        {
+            lv_tls_addrs = new bool[lv_count];
+        }
 
         public Stack(ICollection<T> other) : base(other.Count + 10)
         {
             foreach (var o in other)
                 Add(o);
+            
+            if(other is Stack<T>)
+            {
+                var ot = other as Stack<T>;
+                lv_tls_addrs = new bool[ot.lv_tls_addrs.Length];
+                for (int i = 0; i < ot.lv_tls_addrs.Length; i++)
+                    lv_tls_addrs[i] = ot.lv_tls_addrs[i];
+            }
         }
 
-        public Stack(IEnumerable<T> other) : base(other) { }
+        public Stack(IEnumerable<T> other) : base(other)
+        {
+            if (other is Stack<T>)
+            {
+                var ot = other as Stack<T>;
+                lv_tls_addrs = new bool[ot.lv_tls_addrs.Length];
+                for (int i = 0; i < ot.lv_tls_addrs.Length; i++)
+                    lv_tls_addrs[i] = ot.lv_tls_addrs[i];
+            }
+        }
     }
 }
