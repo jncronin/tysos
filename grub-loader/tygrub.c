@@ -72,7 +72,7 @@ EFI_STATUS allocate_any(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS
 EFI_STATUS allocate(UINTPTR length, UINTPTR *vaddr_out, EFI_PHYSICAL_ADDRESS *paddr_out);
 EFI_STATUS add_start_hole(UINTPTR base, UINTPTR len);
 EFI_STATUS elf64_map_kernel(Elf64_Ehdr **ehdr, void *fobj, size_t(*fread_func)(void *, void *, size_t), off_t(*fseek_func)(void *, off_t, int));
-EFI_STATUS load_module(const char *fname, UINTPTR *addr, size_t *length, EFI_PHYSICAL_ADDRESS *paddr);
+EFI_STATUS load_module(const char *fname, UINTPTR *addr, UINTPTR *length, EFI_PHYSICAL_ADDRESS *paddr);
 EFI_STATUS build_page_tables(EFI_PHYSICAL_ADDRESS *pml4t_out);
 EFI_STATUS kif_init(EFI_PHYSICAL_ADDRESS p_kif, EFI_PHYSICAL_ADDRESS len, struct Multiboot_Header **mbheader);
 EFI_STATUS parse_cfg_file();
@@ -512,7 +512,8 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 		UINTPTR mod_addr, mod_len;
 		struct Multiboot_Module **cur_mod = (struct Multiboot_Module **)(uintptr_t)&mod_ia[cur_mod_idx];
 		*cur_mod = (struct Multiboot_Module *)kmalloc(sizeof(struct Multiboot_Module));
-		load_module(mod->path, &mod_addr, (size_t *)&mod_len, (EFI_PHYSICAL_ADDRESS *)&(*cur_mod)->base_addr);
+		memset(*cur_mod, 0, sizeof(struct Multiboot_Module));
+		load_module(mod->path, &mod_addr, &mod_len, (EFI_PHYSICAL_ADDRESS *)&(*cur_mod)->base_addr);
 		Init_Multiboot_Module(*cur_mod);
 		(*cur_mod)->virt_base_addr = mod_addr;
 		(*cur_mod)->length = mod_len;
