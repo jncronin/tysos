@@ -206,7 +206,10 @@ namespace metadata
                 else if (sh.Name == "#~")
                     m.sh_tables = sh;
                 else
+                {
+                    System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: unknown table \"" + sh.Name + "\"");
                     throw new Exception("Unknown metadata table");
+                }
             }
 
             // Parse tables

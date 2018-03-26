@@ -1685,10 +1685,11 @@ namespace libtysila5.ir
                     stack_after = newstr(n, c, stack_after, ctor);
 
                     // create a copy of the character length, multiply 2 and add string object length
+                    //  and 4 extra bytes to ensure coreclr String.EqualsHelper works correctly
                     stack_after = copy_to_front(n, c, stack_after);
                     stack_after = ldc(n, c, stack_after, 2);
                     stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_int32);
-                    stack_after = ldc(n, c, stack_after, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c));
+                    stack_after = ldc(n, c, stack_after, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c) + 4);
                     stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_int32);
 
                     is_string = true;

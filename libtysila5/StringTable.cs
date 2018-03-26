@@ -91,6 +91,12 @@ namespace libtysila5
                     str_tab.Add((byte)(c & 0xff));
                     str_tab.Add((byte)((c >> 8) & 0xff));
                 }
+
+                // null-terminate and align up to ensure coreclr String.EqualsHelper works
+                str_tab.Add(0);
+                str_tab.Add(0);
+                while ((str_tab.Count % t.GetPointerSize()) != 0)
+                    str_tab.Add(0);
                 return ret;
             }
         }
