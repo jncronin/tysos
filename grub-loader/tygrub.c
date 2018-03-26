@@ -44,6 +44,9 @@
 #include <grub/video.h>
 #include <grub/multiboot.h>
 #include <grub/acpi.h>
+#include <grub/bitmap.h>
+#include <grub/bitmap_scale.h>
+#include <grub/gfxterm.h>
 
 #include <efi.h>
 
@@ -56,7 +59,7 @@
 
 char modname[] __attribute__((section(".modname"))) = "tygrub";
 
-char moddeps[] __attribute__((section(".moddeps"))) = "relocator\0video\0vbe\0multiboot\0gfxterm\0acpi";
+char moddeps[] __attribute__((section(".moddeps"))) = "relocator\0video\0vbe\0multiboot\0gfxterm\0acpi\0bitmap\0bitmap_scale";
 
 GRUB_MOD_LICENSE("GPLv3+");
 
@@ -238,6 +241,75 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 
 	/* Parse config */
 	parse_cfg_file();
+
+	/* Set video mode */
+	char *buf;
+	buf = grub_xasprintf("%dx%dx%d,%dx%d,800x600x16,640x480x8,auto",
+		v_width, v_height, v_bpp,
+		v_width, v_height);
+	grub_printf("video string: %s\n", buf);
+	grub_err_t r = grub_video_set_mode(buf, 0, 0);
+	grub_printf("video result: %d\n", r);
+
+	struct grub_video_mode_info vmi;
+	grub_err_t vmierr = grub_video_get_info(&vmi);
+
+	grub_printf("video mode: %dx%dx%d (%d) (%d)\n",
+		vmi.width, vmi.height, vmi.bpp, vmi.mode_type, vmierr);
+
+	/* Load background */
+	if (vmierr != GRUB_ERR_NONE)
+	{
+		grub_printf("video mode not set - cannot load bitmap\n");
+	}
+	else
+	{
+		if (grub_video_set_active_render_target(GRUB_VIDEO_RENDER_TARGET_DISPLAY) != GRUB_ERR_NONE)
+		{
+			grub_printf("unable to set active render target\n");
+		}
+		else
+		{
+			unsigned int width = vmi.width;
+			unsigned int height = vmi.height;
+
+			grub_video_set_viewport(0, 0, width, height);
+			grub_video_set_region(0, 0, width, height);
+
+			struct grub_video_bitmap *bmp;
+			grub_video_bitmap_load(&bmp, "/boot/tysos.png");
+			if (grub_errno != GRUB_ERR_NONE)
+			{
+				grub_printf("error loading background bitmap\n");
+			}
+			else
+			{
+				/* Do we need to scale the bitmap? */
+				grub_printf("background loaded\n");
+				if (width != grub_video_bitmap_get_width(bmp) ||
+					height != grub_video_bitmap_get_height(bmp))
+				{
+					grub_printf("background needs scaling (%d, %d) vs (%d, %d)\n",
+						grub_video_bitmap_get_width(bmp),
+						grub_video_bitmap_get_height(bmp),
+						width,
+						height);
+					struct grub_video_bitmap *sbmp;
+					grub_video_bitmap_create_scaled(&sbmp, width, height, bmp,
+						GRUB_VIDEO_BITMAP_SCALE_METHOD_BEST);
+					if (grub_errno == GRUB_ERR_NONE)
+					{
+						grub_video_bitmap_destroy(bmp);
+						bmp = sbmp;
+						grub_printf("background scaled\n");
+					}
+				}
+				grub_video_blit_bitmap(bmp, GRUB_VIDEO_BLIT_REPLACE, 0, 0, 0, 0, width, height);
+				grub_video_swap_buffers();
+				grub_printf("background set\n");
+			}
+		}
+	}
 
 	/* Load up the kernel */
 	void *fobj;
@@ -483,19 +555,7 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	mbheader->machine_minor_type = BIOS;
 	mbheader->virt_bda = 0;
 
-	char *buf;
-	buf = grub_xasprintf("%dx%dx%d,%dx%d,800x600x16,640x480x8,auto",
-		v_width, v_height, v_bpp,
-		v_width, v_height);
-	grub_printf("video string: %s\n", buf);
-	grub_err_t r = grub_video_set_mode(buf, 0, 0);
-	grub_printf("video result: %d\n", r);
 
-	struct grub_video_mode_info vmi;
-	grub_err_t vmierr = grub_video_get_info(&vmi);
-
-	grub_printf("video mode: %dx%dx%d (%d) (%d)\n",
-		vmi.width, vmi.height, vmi.bpp, vmi.mode_type, vmierr);
 
 	grub_uint32_t map_entries = grub_get_multiboot_mmap_count();
 	struct __array *mmap_array;
