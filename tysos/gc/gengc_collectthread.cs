@@ -23,7 +23,7 @@ namespace tysos.gc
 {
     unsafe partial class gengc
     {
-        const int max_allocs = 1000;
+        const int max_allocs = 10000;
         const int min_allocs = 100;
 
         /* Runs at high priority and ensures a collection occurs when
@@ -35,12 +35,11 @@ namespace tysos.gc
             {
                 tysos.Syscalls.SchedulerFunctions.Block(new DelegateEvent(
                     delegate () { return heap.allocs >= max_allocs; }));
-#if GENGC_BASICDEBUG
-                Formatter.Write("gengc: performing collection due to high number of allocations (", Program.arch.DebugOutput);
-                Formatter.Write((ulong)heap.allocs, Program.arch.DebugOutput);
-                Formatter.WriteLine(")", Program.arch.DebugOutput);
-#endif
+                var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+                System.Diagnostics.Debugger.Log(0, "gengc", "performing collection due to high number of allocations (" + heap.allocs.ToString() + ")");
                 heap.DoCollection();
+                System.Diagnostics.Debugger.Log(0, "gengc", "max_alloc collection done");
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
             }
         }
 
@@ -53,12 +52,11 @@ namespace tysos.gc
             {
                 tysos.Syscalls.SchedulerFunctions.Block(new DelegateEvent(
                     delegate () { return heap.allocs >= min_allocs; }));
-#if GENGC_BASICDEBUG
-                Formatter.Write("gengc: performing background collection (", Program.arch.DebugOutput);
-                Formatter.Write((ulong)heap.allocs, Program.arch.DebugOutput);
-                Formatter.WriteLine(" allocations)", Program.arch.DebugOutput);
-#endif
+                var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+                System.Diagnostics.Debugger.Log(0, "gengc", "performing background collection due to low number of allocations (" + heap.allocs.ToString() + ")");
                 heap.DoCollection();
+                System.Diagnostics.Debugger.Log(0, "gengc", "min_alloc collection done");
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
             }
         }
     }

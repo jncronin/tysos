@@ -158,6 +158,9 @@ namespace tysos
         [libsupcs.AlwaysCompile]
         static void Throw(System.Exception exception)
         {
+            // cause indefinite halt at the end of this function
+            libsupcs.OtherOperations.EnterUninterruptibleSection();
+
             Formatter.WriteLine("Exception thrown!", Program.arch.BootInfoOutput);
 
             Formatter.Write("PC: ", Program.arch.DebugOutput);

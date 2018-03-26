@@ -134,6 +134,7 @@ namespace tysos
                     if (can_continue)
                     {
                         //blocking_tasks[i].BlockingOn.Clear();
+                        System.Diagnostics.Debugger.Log(0, "Scheduler", "Waking up " + blocking_tasks[i].name);
                         _Reschedule(blocking_tasks[i]);
                     }
                     else
