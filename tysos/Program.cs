@@ -563,13 +563,14 @@ namespace tysos
 
         [libsupcs.MethodAlias("profile")]
         [libsupcs.AlwaysCompile]
-        [libsupcs.Uninterruptible]
         [libsupcs.Profile(false)]
         static unsafe void Profile(string meth_name, char* c_str, int c_str_len,
             int is_leave)
         {
             if (do_profile)
             {
+                var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+
                 Formatter.Write("PROFILE: ", arch.DebugOutput);
 
                 if (is_leave == 0)
@@ -593,6 +594,8 @@ namespace tysos
 
                 if (is_leave == 1)
                     indent--;
+
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
             }
         }
 
@@ -809,11 +812,12 @@ namespace tysos
         static object log_lock;
         [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("__log")]
-        [libsupcs.Uninterruptible]
         static void Log(int level, string category, string message)
         {
             if (arch == null || arch.DebugOutput == null)
                 return;
+
+            var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
 
             if (category == null && arch.CurrentCpu != null && arch.CurrentCpu.CurrentProcess != null)
                 category = arch.CurrentCpu.CurrentProcess.name;
@@ -848,6 +852,8 @@ namespace tysos
                 Formatter.Write((ulong)level, arch.DebugOutput);
                 Formatter.WriteLine(")", arch.DebugOutput);
             }
+
+            libsupcs.OtherOperations.ExitUninterruptibleSection(state);
         }
     }
 }

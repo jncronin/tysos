@@ -143,7 +143,6 @@ namespace libsupcs
         [AlwaysCompile]
         [WeakLinkage]
         [MethodAlias("enter_try")]
-        [Uninterruptible]
         internal static void enter_try(void *eh, void *fp)
         {
             if (eh == PeekEhdr())

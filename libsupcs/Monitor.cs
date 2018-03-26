@@ -38,7 +38,6 @@ namespace libsupcs
         public static extern void Exit(object o);
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.Uninterruptible]
         [libsupcs.WeakLinkage]
         [libsupcs.MethodAlias("_ZW18System#2EThreading7Monitor_13ReliableEnter_Rv_P2u1ORb")]
         [MethodAlias("_ZN14libsupcs#2Edll8libsupcs7Monitor_13ReliableEnter_Rv_P2u1ORb")]
@@ -54,7 +53,6 @@ namespace libsupcs
 
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.Uninterruptible]
         [libsupcs.MethodAlias("_ZW18System#2EThreading7Monitor_4Exit_Rv_P1u1O")]
         [MethodAlias("_ZN14libsupcs#2Edll8libsupcs7Monitor_4Exit_Rv_P1u1O")]
         static unsafe void Monitor_exit(byte *obj)
@@ -66,7 +64,6 @@ namespace libsupcs
         }
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.Uninterruptible]
         [libsupcs.MethodAlias("__try_acquire")]
         static unsafe int try_acquire(byte* mutex_lock_address, int cur_thread_id)
         {
@@ -100,7 +97,6 @@ namespace libsupcs
         }
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.Uninterruptible]
         [libsupcs.MethodAlias("__release")]
         unsafe static void release(byte* mutex_lock_address, int cur_thread_id)
         {

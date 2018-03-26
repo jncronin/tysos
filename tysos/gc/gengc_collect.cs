@@ -27,7 +27,6 @@ namespace tysos.gc
         bool alloc_in_progress = false;
         object collection_mutex = new object();
 
-        [libsupcs.Uninterruptible]
         public void DoCollection()
         {
             /* We only want one collection to run at once.  If we just used a lock{} section,

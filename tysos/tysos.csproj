@@ -121,10 +121,7 @@
     <Compile Include="gc\gengc_collectthread.cs" />
     <Compile Include="gc\gengc_root.cs" />
     <Compile Include="gc\gengc_tree.cs" />
-    <Compile Include="gc\heap.cs" />
-    <Compile Include="gc\heap_small_area.cs" />
     <Compile Include="gc\heap_switcher.cs" />
-    <Compile Include="gc\heap_tree2.cs" />
     <Compile Include="gc\simple_heap.cs" />
     <Compile Include="Interfaces\IFile.cs" />
     <Compile Include="lib\Assembly.cs" />

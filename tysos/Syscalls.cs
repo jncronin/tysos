@@ -163,10 +163,11 @@ namespace tysos
         public class SchedulerFunctions
         {
             [libsupcs.Syscall]
-            [libsupcs.Uninterruptible]
             public static void Yield()
             {
                 /* Yield the timeslice of the current thread */
+                var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+
                 Thread cur = Program.arch.CurrentCpu.CurrentThread;
                 Scheduler sched = Program.arch.CurrentCpu.CurrentScheduler;
                 TaskSwitcher switcher = Program.arch.Switcher;
@@ -185,13 +186,16 @@ namespace tysos
 
                 if ((next != cur) && (next != null))
                     switcher.Switch(next);
+
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
             }
 
             [libsupcs.Syscall]
-            [libsupcs.Uninterruptible]
             public static void Block()
             {
                 /* Block pending receipt of a message */
+                var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+
                 Thread cur = Program.arch.CurrentCpu.CurrentThread;
                 Scheduler sched = Program.arch.CurrentCpu.CurrentScheduler;
                 TaskSwitcher switcher = Program.arch.Switcher;
@@ -210,13 +214,16 @@ namespace tysos
 
                 if ((next != cur) && (next != null))
                     switcher.Switch(next);
+
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
             }
 
             [libsupcs.Syscall]
-            [libsupcs.Uninterruptible]
             public static void Block(Event e)
             {
                 /* Block on an event */
+                var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+
                 Thread cur = Program.arch.CurrentCpu.CurrentThread;
                 Scheduler sched = Program.arch.CurrentCpu.CurrentScheduler;
                 TaskSwitcher switcher = Program.arch.Switcher;
@@ -225,7 +232,10 @@ namespace tysos
                     throw new Exception("Cannot block as scheduler not yet initialized");
 
                 if (cur != null)
+                {
+                    System.Diagnostics.Debugger.Log(0, "Scheduler", "Blocking");
                     sched.Block(cur, e);
+                }
 
                 Thread next;
                 lock (sched)
@@ -235,13 +245,22 @@ namespace tysos
 
                 if ((next != cur) && (next != null))
                     switcher.Switch(next);
+
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
             }
 
             [libsupcs.Syscall]
-            [libsupcs.Uninterruptible]
             public static Thread GetCurrentThread()
             {
-                return Program.arch.CurrentCpu.CurrentThread;
+                var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+                Thread ret;
+                if (Program.arch.CurrentCpu == null || Program.arch.CurrentCpu.CurrentThread == null)
+                    ret = null;
+                else
+                    ret = Program.arch.CurrentCpu.CurrentThread;
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
+
+                return ret;
             }
         }
 

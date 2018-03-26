@@ -228,6 +228,8 @@ namespace tysos
         {
             //System.Diagnostics.Debugger.Log(0, "Scheduler", "TimerTick");
             /* first wake up any sleeping tasks */
+            var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+
             lock (this)
             {
                 sleeping_tasks.DecreaseDelta(ns);
@@ -241,10 +243,12 @@ namespace tysos
                 } while (sleeping_thread != null);
             }
 
-            return ScheduleNext(ns, cur, switcher);
+            var ret = ScheduleNext(ns, cur, switcher);
+
+            libsupcs.OtherOperations.ExitUninterruptibleSection(state);
+            return ret;
         }
 
-        [libsupcs.Uninterruptible]
         public static void TimerProc(long ns)
         {
             Program.arch.CurrentCpu.CurrentScheduler.TimerTick(ns, Program.arch.CurrentCpu.CurrentThread, Program.arch.Switcher);

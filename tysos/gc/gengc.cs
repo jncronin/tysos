@@ -224,10 +224,11 @@ namespace tysos.gc
             ready = 1;
         }
 
-        [libsupcs.Uninterruptible]
         public void *Alloc(int length)
         {
             /* Wait for all other allocations and collections to complete */
+            var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+
             bool can_continue = false;
             while(can_continue == false)
             {
@@ -253,7 +254,9 @@ namespace tysos.gc
 
                 if (c == null)
                     return null;
-                return (void*)((byte*)c + sizeof(chunk_header));
+                var ret = (void*)((byte*)c + sizeof(chunk_header));
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
+                return ret;
             }
             else
             {
@@ -291,6 +294,7 @@ namespace tysos.gc
                         Formatter.WriteLine("succeeded", Program.arch.DebugOutput);
                 }
                 alloc_in_progress = false;
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
                 return ret;
             }            
         }
