@@ -41,5 +41,31 @@ namespace libsupcs
         {
             return GetBoolValue(name);
         }
+
+        unsafe struct StringPtrOnStack
+        {
+            internal void** ptr;
+        }
+
+        [AlwaysCompile]
+        [MethodAlias("_ZW6System9Exception_29GetMessageFromNativeResources_Rv_P2V32Exception#2BExceptionMessageKindU35System#2ERuntime#2ECompilerServices19StringHandleOnStack")]
+        static unsafe void GetMessageFromNativeResources(int kind, StringPtrOnStack msg)
+        {
+            switch(kind)
+            {
+                case 1:
+                    *msg.ptr = CastOperations.ReinterpretAsPointer("ThreadAbort");
+                    break;
+                case 2:
+                    *msg.ptr = CastOperations.ReinterpretAsPointer("ThreadInterrupted");
+                    break;
+                case 3:
+                    *msg.ptr = CastOperations.ReinterpretAsPointer("OutOfMemory");
+                    break;
+                default:
+                    *msg.ptr = CastOperations.ReinterpretAsPointer("Unknown Exception (GetMessageFromNativeResources)");
+                    break;
+            }
+        }
     }
 }
