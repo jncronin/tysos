@@ -102,6 +102,7 @@ UINTPTR tls_end;
 extern int v_width;
 extern int v_height;
 extern int v_bpp;
+extern char *splash;
 
 extern uintptr_t pmem_base[];
 extern uintptr_t pmem_len[];
@@ -236,6 +237,8 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	char **args __attribute__((unused)))
 {
 	EFI_STATUS Status;
+	int pbar_l = 0, pbar_t = 0, pbar_w = 0, pbar_h = 0;
+	grub_video_color_t fcolor = 0;
 
 	grub_printf("\n\n%s\n", _("Tygrub Starting"));
 
@@ -277,7 +280,7 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 			grub_video_set_region(0, 0, width, height);
 
 			struct grub_video_bitmap *bmp;
-			grub_video_bitmap_load(&bmp, "/boot/tysos.png");
+			grub_video_bitmap_load(&bmp, splash);
 			if (grub_errno != GRUB_ERR_NONE)
 			{
 				grub_printf("error loading background bitmap\n");
@@ -307,9 +310,64 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 				grub_video_blit_bitmap(bmp, GRUB_VIDEO_BLIT_REPLACE, 0, 0, 0, 0, width, height);
 				grub_video_swap_buffers();
 				grub_printf("background set\n");
+
+				/* Say hi in default font */
+				grub_font_t font = grub_font_load("");
+				char msg[] = "Loading kernel and modules...";
+				int twidth = 0;
+
+				/* First iterate to get length of output text so we can centre it */
+				char *mptr = msg;
+				while (*mptr)
+				{
+					struct grub_unicode_glyph uglyph;
+					grub_unicode_set_glyph_from_code(&uglyph, *mptr);
+					struct grub_font_glyph *glyph = grub_font_construct_glyph(font, &uglyph);
+					twidth += glyph->device_width;
+					mptr++;
+				}
+				
+				/* Display 80% down screen and centred */
+				int cx = (width - twidth) / 2;
+				int cy = height * 80 / 100;
+
+				/* Black */
+				fcolor = grub_video_map_rgba(0, 0, 0, 255);
+
+				/* Loop again to display the text */
+				mptr = msg;
+				while (*mptr)
+				{
+					struct grub_unicode_glyph uglyph;
+					grub_unicode_set_glyph_from_code(&uglyph, *mptr);
+					struct grub_font_glyph *glyph = grub_font_construct_glyph(font, &uglyph);
+
+					grub_font_draw_glyph(glyph, fcolor, cx, cy);
+					cx += glyph->device_width;
+
+					mptr++;
+				}
+				grub_video_swap_buffers();
+				grub_errno = GRUB_ERR_NONE;
+
+				/* Draw a box for the progress bar */
+				pbar_l = width * 10 / 100;
+				pbar_w = width * 80 / 100;
+				pbar_t = height * 875 / 1000;
+				pbar_h = height * 50 / 1000;
+
+				grub_video_fill_rect(fcolor, pbar_l, pbar_t, pbar_w, 1);
+				grub_video_fill_rect(fcolor, pbar_l, pbar_t + pbar_h - 1, pbar_w, 1);
+				grub_video_fill_rect(fcolor, pbar_l, pbar_t, 1, pbar_h);
+				grub_video_fill_rect(fcolor, pbar_l + pbar_w - 1, pbar_t, 1, pbar_h);
+				grub_video_swap_buffers();
 			}
 		}
 	}
+
+	// get mod count here so we can fill in the progress bar if necessary
+	int mod_count = cfg_get_modcount();
+
 
 	/* Load up the kernel */
 	void *fobj;
@@ -323,6 +381,11 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 		press_key();
 		return Status;
 	}
+	if (pbar_l)
+	{
+		grub_video_fill_rect(fcolor, pbar_l, pbar_t, pbar_w * 1 / (2 + mod_count), pbar_h);
+		grub_video_swap_buffers();
+	}
 
 	/* Load the elf headers and map kernel */
 	Elf64_Ehdr *ehdr;
@@ -331,6 +394,12 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	{
 		press_key();
 		return Status;
+	}
+
+	if (pbar_l)
+	{
+		grub_video_fill_rect(fcolor, pbar_l, pbar_t, pbar_w * 2 / (2 + mod_count), pbar_h);
+		grub_video_swap_buffers();
 	}
 
 	/* Set FS BASE */
@@ -433,7 +502,6 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 
 	/* Load modules */
 	struct cfg_module *mod;
-	int mod_count = cfg_get_modcount();
 	struct __array *mod_array;
 	UINTPTR *mod_ia =
 		(UINTPTR *)Create_Ref_Array(&mod_array, mod_count);
@@ -456,6 +524,12 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 
 		printf("module: %s at %x\n", mod->name, mod_addr);
 		cur_mod_idx++;
+
+		if (pbar_l)
+		{
+			grub_video_fill_rect(fcolor, pbar_l, pbar_t, pbar_w * (2 + cur_mod_idx) / (2 + mod_count), pbar_h);
+			grub_video_swap_buffers();
+		}
 	}
 	mod_array->inner_array += mb_adjust;
 	mod_array->lobounds += mb_adjust;

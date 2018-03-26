@@ -46,6 +46,8 @@ int v_width = 1024;
 int v_height = 768;
 int v_bpp = 32;
 
+char *splash;
+
 struct cfg_module *cfg_iterate_modules()
 {
 	if(cur == NULL)
@@ -105,6 +107,7 @@ static cfg_opt_t video_opts[] = {
 	CFG_STR("width", "1024", CFGF_NONE),
 	CFG_STR("height", "768", CFGF_NONE),
 	CFG_STR("bpp", "32", CFGF_NONE),
+	CFG_STR("splash", "", CFGF_NONE),
 	CFG_END()
 };
 	
@@ -170,6 +173,7 @@ EFI_STATUS parse_cfg_file()
 		v_width = atoi(cfg_getstr(video_cfg, "width"));
 		v_height = atoi(cfg_getstr(video_cfg, "height"));
 		v_bpp = atoi(cfg_getstr(video_cfg, "bpp"));
+		splash = cfg_getstr(video_cfg, "splash");
 		printf("video: width: %d, height: %d\n",
 			v_width, v_height);
 	}
