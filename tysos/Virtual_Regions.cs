@@ -112,7 +112,12 @@ namespace tysos
             {
                 ulong start = util.align(free.start, align);
                 if ((start + length + stack_protect) > (free.start + free.length))
+                {
+                    System.Diagnostics.Debugger.Log(0, "VirtualRegions", "Out of memory allocating space for " + name +
+                        ", start: " + start.ToString("X") + ", length: " + length.ToString() + ", stack_protect: " + stack_protect.ToString("X") +
+                        ", free.start: " + free.start.ToString("X") + ", free.length: " + free.length.ToString("X"));
                     throw new OutOfMemoryException();
+                }
                 ulong old_free_start = free.start;
                 free.start = start + length + stack_protect;
                 free.length -= (free.start - old_free_start);
