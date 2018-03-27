@@ -383,10 +383,10 @@ namespace libtysila5.ir
             // save string length
             var stack_after = copy_to_front(n, c, stack_before);
 
-            // Multiply number of characters by two, then add size of the string object
+            // Multiply number of characters by two, then add size of the string object and an extra pointer size to null-terminate for coreclr
             stack_after = ldc(n, c, stack_after, 2);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.mul, Opcode.ct_intptr);
-            stack_after = ldc(n, c, stack_after, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c), 0x18);
+            stack_after = ldc(n, c, stack_after, layout.Layout.GetStringFieldOffset(layout.Layout.StringField.Start_Char, c) + c.t.GetPointerSize(), 0x18);
             stack_after = binnumop(n, c, stack_after, cil.Opcode.SingleOpcodes.add, Opcode.ct_intptr);
 
             // Create object
