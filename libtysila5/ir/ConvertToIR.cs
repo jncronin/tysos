@@ -2547,7 +2547,7 @@ namespace libtysila5.ir
         }
 
         public static Stack<StackItem> call(CilNode n, Code c, Stack<StackItem> stack_before, bool is_calli = false, string override_name = null, MetadataStream override_m = null, int override_msig = 0,
-            int calli_ftn = 0)
+            int calli_ftn = 0, MethodSpec override_ms = null)
         {
             if (calli_ftn != 0)
                 throw new NotImplementedException();
@@ -2559,7 +2559,14 @@ namespace libtysila5.ir
             int sig_idx;
             MethodSpec ms;
             bool is_reinterpret_as = false;
-            if (override_name != null)
+            if(override_ms != null)
+            {
+                m = override_ms.m;
+                mangled_meth = override_ms.MangleMethod();
+                sig_idx = override_ms.msig;
+                ms = override_ms;
+            }
+            else if (override_name != null)
             {
                 m = override_m;
                 mangled_meth = override_name;

@@ -38,8 +38,14 @@ namespace libsupcs
     [VTableAlias("__tysos_assembly_vt")]
     public unsafe class TysosAssembly : System.Reflection.Assembly
     {
-        void* metadata;
+        TysosModule m;
         string assemblyName;
+
+        internal TysosAssembly(TysosModule mod, string ass_name)
+        {
+            m = mod;
+            assemblyName = ass_name;
+        }
 
         [MethodAlias("_ZW19System#2EReflection8Assembly_8GetTypes_Ru1ZU6System4Type_P2u1tb")]
         System.Type[] GetTypes(bool exportedOnly)
@@ -67,20 +73,56 @@ namespace libsupcs
         internal void* aptr;    /* pointer to assembly */
         long compile_time;
         public DateTime CompileTime { get { return new DateTime(compile_time); } }
+        internal TysosAssembly ass;
+
+        internal TysosModule(void *_aptr, string ass_name)
+        {
+            aptr = _aptr;
+            ass = new TysosAssembly(this, ass_name);
+        }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         [ReinterpretAsMethod]
         public static extern TysosModule ReinterpretAsTysosModule(System.Reflection.Module module);
 
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [ReinterpretAsMethod]
+        internal static extern Module ReinterpretAsModule(object o);
+
         internal metadata.MetadataStream m { get { return Metadata.BAL.GetAssembly(aptr); } }
+
+        unsafe struct ObjectHandleOnStack { internal void** ptr; }
 
         [MethodAlias("_ZW6System12ModuleHandle_13GetModuleType_Rv_P2U19System#2EReflection13RuntimeModuleU35System#2ERuntime#2ECompilerServices19ObjectHandleOnStack")]
         [AlwaysCompile]
-        static void ModuleHandle_GetModuleType(TysosModule mod, ref TysosType GlobalType)
+        static void ModuleHandle_GetModuleType(TysosModule mod, ObjectHandleOnStack oh)
         {
             // Get the <Module> type name for the current module.  This is always defined as tdrow 1.
-            var ts = mod.m.GetTypeSpec(metadata.MetadataStream.tid_TypeDef, 1);
-            GlobalType = ts;
+            var ts = (TysosType)mod.m.GetTypeSpec(metadata.MetadataStream.tid_TypeDef, 1);
+            *oh.ptr = CastOperations.ReinterpretAsPointer(ts);
+        }
+
+        static Dictionary<ulong, TysosModule> mod_cache = new Dictionary<ulong, TysosModule>(new metadata.GenericEqualityComparer<ulong>());
+
+        internal TysosAssembly GetAssembly()
+        {
+            return ass;
+        }
+
+        static internal TysosModule GetModule(void *aptr, string ass_name)
+        {
+            var mfile = CastOperations.ReinterpretAsUlong(CastOperations.ReinterpretAsObject(aptr));
+            lock (mod_cache)
+            {
+                if (!mod_cache.TryGetValue(mfile, out var ret))
+                {
+                    ret = new TysosModule(aptr, ass_name);
+                    mod_cache[mfile] = ret;
+
+                    System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: building new TysosModule for " + ass_name);
+                }
+                return ret;
+            }
         }
     }
 }

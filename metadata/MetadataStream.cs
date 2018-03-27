@@ -1283,7 +1283,7 @@ namespace metadata
             return last_fdef;
         }
 
-        public MethodSpec GetMethodSpec(TypeSpec ts, string name, int sig, MetadataStream sig_m, bool throw_on_error = true)
+        public MethodSpec GetMethodSpec(TypeSpec ts, string name, int sig = 0, MetadataStream sig_m = null, bool throw_on_error = true)
         {
             var first_mdef = ts.m.GetIntEntry(tid_TypeDef, ts.tdrow, 5);
             var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
@@ -1302,6 +1302,7 @@ namespace metadata
                     {
                         ret.msig = cur_sig;
                         ret.mdrow = (int)mdef_row;
+                        ret.type = ts;
                         return ret;
                     }
                     // compare signatures

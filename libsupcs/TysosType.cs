@@ -124,7 +124,7 @@ namespace libsupcs
 
         public override System.Reflection.Assembly Assembly
         {
-            get { throw new NotImplementedException(); }
+            get { return RTH_GetModule(this).GetAssembly(); }
         }
 
         public override string AssemblyQualifiedName
@@ -416,7 +416,7 @@ namespace libsupcs
 
         public override System.Reflection.Module Module
         {
-            get { throw new NotImplementedException(); }
+            get { return TysosModule.ReinterpretAsModule(RTH_GetModule(this)); }
         }
 
         string nspace = null, name = null;
@@ -719,6 +719,8 @@ namespace libsupcs
 
             if ((a_vtbl != null) && (a_vtbl == b_vtbl))
                 return true;
+            if (a_vtbl == null || b_vtbl == null)
+                return false;
 
             void* a_ti = *(void**)a_vtbl;
             void* b_ti = *(void**)b_vtbl;
@@ -1051,25 +1053,12 @@ namespace libsupcs
             return ((flags & 0x20) == 0x20);
         }
 
-        static Dictionary<ulong, TysosModule> mod_cache = new Dictionary<ulong, TysosModule>(new metadata.GenericEqualityComparer<ulong>());
-
         [AlwaysCompile]
         [MethodAlias("_ZW6System17RuntimeTypeHandle_9GetModule_RU19System#2EReflection13RuntimeModule_P1U6System11RuntimeType")]
         static internal unsafe TysosModule RTH_GetModule(TysosType t)
         {
             var aptr = (t.tspec.m.file as Metadata.BinaryInterface).b;
-            var mfile = CastOperations.ReinterpretAsUlong(CastOperations.ReinterpretAsObject(aptr));
-            lock(mod_cache)
-            {
-                if(!mod_cache.TryGetValue(mfile, out var ret))
-                {
-                    ret = new TysosModule { aptr = aptr };
-                    mod_cache[mfile] = ret;
-
-                    System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: building new TysosModule for " + t.tspec.m.AssemblyName);                    
-                }
-                return ret;
-            }
+            return TysosModule.GetModule(aptr, t.tspec.m.AssemblyName);
         }
 
         [MethodAlias("_ZW6System4Type_17GetTypeFromHandle_RV4Type_P1V17RuntimeTypeHandle")]
