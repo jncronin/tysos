@@ -37,6 +37,7 @@ namespace metadata
         public DataInterface file;
 
         public long ResolveRVA(long RVA) { return pef.ResolveRVA(RVA); }
+        public PEFile GetPEFile() { return pef; }
 
         public bool wide_string = false;
         public bool wide_guid = false;

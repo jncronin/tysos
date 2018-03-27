@@ -82,6 +82,7 @@ namespace tymake
             ret["Configuration"] = new Expression.EvalResult(p.configuration);
             ret["Defines"] = new Expression.EvalResult(p.defines);
             ret["Sources"] = new Expression.EvalResult(p.Sources);
+            ret["Resources"] = new Expression.EvalResult(p.Resources);
             ret["GACReferences"] = new Expression.EvalResult(p.References);
             ret["ProjectReferences"] = new Expression.EvalResult(new string[] { });
             foreach (typroject.Project pref in p.ProjectReferences)
