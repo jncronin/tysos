@@ -427,6 +427,18 @@ namespace tysila4
                 mdsymend.Size = 0;
                 rdata.AddSymbol(mdsymend);
 
+                /* Add resource symbol if present */
+                if(m.GetPEFile().ResourcesSize != 0)
+                {
+                    var rsym = bf.CreateSymbol();
+                    rsym.Name = m.AssemblyName + "_resources";
+                    rsym.ObjectType = SymbolObjectType.Object;
+                    rsym.Offset = (ulong)m.GetPEFile().ResourcesOffset + mdsym.Offset;
+                    rsym.Type = SymbolType.Global;
+                    rsym.Size = m.GetPEFile().ResourcesSize;
+                    rdata.AddSymbol(rsym);
+                }
+
                 /* Add comment */
                 var csect = bf.CreateContentsSection();
                 csect.IsAlloc = false;

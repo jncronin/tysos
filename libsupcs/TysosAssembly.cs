@@ -129,6 +129,33 @@ namespace libsupcs
             System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: returning " + retm.ass.assemblyName);
             *ret.ptr = CastOperations.ReinterpretAsPointer(retm);
         }
+
+        [MethodAlias("_ZW19System#2EReflection15RuntimeAssembly_11GetResource_RPh_P5V15RuntimeAssemblyu1SRyU35System#2ERuntime#2ECompilerServices20StackCrawlMarkHandleb")]
+        [AlwaysCompile]
+        static byte* GetResource(TysosAssembly ass, string resourceName, out ulong length, StackCrawlMarkHandle stackMark,
+            bool skipSecurityCheck)
+        {
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetResource(" + ass.assemblyName + ", " + resourceName + ", out ulong length, " +
+                "StackCrawlMarkHandle stackMark, bool skipSecurityCheck) called");
+
+            var res_addr = JitOperations.GetAddressOfObject(ass.assemblyName + "_resources");
+            if(res_addr == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetResource: cannot find " + ass.assemblyName + "_resources");
+                length = 0;
+                return null;
+            }
+
+            uint* ret = (uint*)res_addr;
+
+            // length is the first int32
+            length = *ret++;
+
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetResource: returning: " + ((ulong)ret).ToString("X") +
+                ", length: " + length.ToString("X"));
+
+            return (byte*)ret;
+        }
     }
 
     [VTableAlias("__tysos_module_vt")]

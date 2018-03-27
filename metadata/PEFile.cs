@@ -63,6 +63,7 @@ namespace metadata
         {
             public UInt32 EntryPointToken;
             public DataDir Metadata = new DataDir();
+            public DataDir Resources = new DataDir();
         }
 
         public class StreamHeader
@@ -73,6 +74,9 @@ namespace metadata
             public String Name;
             public DataInterface di;
         }
+
+        public long ResourcesOffset { get { return ResolveRVA(clih.Resources.RVA); } }
+        public long ResourcesSize { get { return clih.Resources.Size; } }
 
         public MetadataStream Parse(System.IO.Stream file, long offset, long length, AssemblyLoader al)
         {
@@ -152,6 +156,8 @@ namespace metadata
             clih.Metadata.RVA = file.ReadUInt((int)clih_offset + 8);
             clih.Metadata.Size = file.ReadUInt((int)clih_offset + 12);
             clih.EntryPointToken = file.ReadUInt((int)clih_offset + 20);
+            clih.Resources.RVA = file.ReadUInt((int)clih_offset + 24);
+            clih.Resources.Size = file.ReadUInt((int)clih_offset + 28);
 
             m.entry_point_token = clih.EntryPointToken;
 

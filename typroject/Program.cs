@@ -419,6 +419,11 @@ namespace typroject
                 return framework_dir + "\\v2.0.50727\\";
             }
         }
+
+        internal static object resgen(string tools_ver)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Project
@@ -442,6 +447,8 @@ namespace typroject
 
         public List<string> Sources = new List<string>();
         public List<string> References = new List<string>();
+        public List<string> Resources = new List<string>();
+        public List<string> ResourceLogicalNames = new List<string>();
         public List<Project> ProjectReferences = new List<Project>();
 
         internal XmlNamespaceManager nm;
@@ -870,6 +877,24 @@ namespace typroject
                     var rp = rel_path(fname, ret.uri_basedir, ret.uri_curdir);
                     if (!ret.Sources.Contains(rp))
                         ret.Sources.Add(rp);
+                }
+                else if(n.Name == "EmbeddedResource")
+                {
+                    var dependsn = n.SelectSingleNode("@DependentUpon", nm);
+                    if (dependsn != null)
+                        throw new NotImplementedException();
+                    var autogenn = n.SelectSingleNode("@AutoGen", nm);
+                    if (autogenn != null)
+                        throw new NotImplementedException();
+                    var fname = process_string(n.SelectSingleNode("@Include", nm).Value, props);
+                    var lname = process_string(n.SelectSingleNode("./d:LogicalName", nm).Value, props);
+
+                    var rp = rel_path(fname, ret.uri_basedir, ret.uri_curdir);
+                    if (!ret.Resources.Contains(rp))
+                    {
+                        ret.Resources.Add(rp);
+                        ret.ResourceLogicalNames.Add(lname);
+                    }
                 }
                 else if(n.Name == "ProjectReference")
                 {
@@ -1401,6 +1426,40 @@ namespace typroject
                 sb.Append("/unsafe ");
 
             sb.Append("/nologo /noconfig ");
+
+            for(int i = 0; i < Resources.Count; i++)
+            {
+                var fname = Resources[i];
+                FileInfo srcfi = new FileInfo(fname);
+
+                if (srcfi.Extension == ".resx")
+                {
+                    var new_fname = fname.Substring(0, fname.Length - ".resx".Length) + ".resources";
+                    var dstfi = new FileInfo(new_fname);
+                    if (dstfi.Exists == false || dstfi.LastWriteTimeUtc < srcfi.LastWriteTimeUtc)
+                    {
+#if DEBUG
+                        Console.WriteLine("Performing csc build step for " + new_fname);
+#endif
+
+                        var rsargs = "/compile \"" + fname + "\",\"" + new_fname + "\"";
+                        throw new NotImplementedException();
+                        var rscmd = Program.resgen(tools_ver);
+                    }
+                    else
+                        fname = new_fname;
+                }
+
+                sb.Append("/res:\"");
+                sb.Append(Program.replace_dir_split(fname));
+                sb.Append("\"");
+                if(i < ResourceLogicalNames.Count)
+                {
+                    sb.Append(",");
+                    sb.Append(ResourceLogicalNames[i]);
+                }
+                sb.Append(" ");
+            }
 
             foreach (string src in Sources)
             {

@@ -85,7 +85,8 @@ namespace tymake
                 }
             }
 
-            if(immediate)
+
+            if (immediate)
             {
                 while(true)
                 {
