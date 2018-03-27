@@ -76,6 +76,8 @@ namespace libsupcs
         [MethodAlias("_ZW20System#2EDiagnostics6Assert_23ShowDefaultAssertDialog_Ri_P4u1Su1Su1Su1S")]
         internal static int Assert_ShowDefaultAssertDialog(string conditionString, string message, string stackTrace, string windowTitle)
         {
+            OtherOperations.EnterUninterruptibleSection();
+
             System.Diagnostics.Debugger.Log(0, "Assert", windowTitle);
             System.Diagnostics.Debugger.Log(0, "Assert", conditionString);
             System.Diagnostics.Debugger.Log(0, "Assert", message);
