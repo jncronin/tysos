@@ -154,6 +154,35 @@ namespace tysos
             }
         }
 
+        [libsupcs.AlwaysCompile]
+        [libsupcs.MethodAlias("_ZW20System#2EDiagnostics6Assert_23ShowDefaultAssertDialog_Ri_P4u1Su1Su1Su1S")]
+        internal static int Assert_ShowDefaultAssertDialog(string conditionString, string message, string stackTrace, string windowTitle)
+        {
+            libsupcs.OtherOperations.EnterUninterruptibleSection();
+
+            System.Diagnostics.Debugger.Log(0, "Assert", windowTitle);
+            System.Diagnostics.Debugger.Log(0, "Assert", conditionString);
+            System.Diagnostics.Debugger.Log(0, "Assert", message);
+            System.Diagnostics.Debugger.Log(0, "Assert", stackTrace);
+
+            PageFault.unwinding = true;
+            Formatter.WriteLine("Stack trace: ", Program.arch.DebugOutput);
+
+            // Switch to protected heap and unwind stack
+            /*bool old_cpu_alloc = false;
+            if (Program.arch.CurrentCpu != null)
+            {
+                old_cpu_alloc = Program.arch.CurrentCpu.UseCpuAlloc;
+                Program.arch.CurrentCpu.UseCpuAlloc = true;
+            }*/
+            Unwind.DumpUnwindInfo(Program.arch.GetUnwinder().Init().UnwindOne().DoUnwind((UIntPtr)Program.arch.ExitAddress), Program.arch.DebugOutput);
+            /*if (Program.arch.CurrentCpu != null)
+                Program.arch.CurrentCpu.UseCpuAlloc = old_cpu_alloc;*/
+            while(true)
+                libsupcs.OtherOperations.Halt();
+        }
+
+
         [libsupcs.MethodAlias("throw")]
         [libsupcs.AlwaysCompile]
         static void Throw(System.Exception exception)
