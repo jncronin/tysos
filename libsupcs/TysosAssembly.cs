@@ -34,7 +34,7 @@ namespace libsupcs
 {
     /* System.Reflection.Assembly defines an internal constructor, so we cannot subclass
      * it directly outside of corlib therefore we need to use the following attribute */
-    [ExtendsOverride("_ZW19System#2EReflection8Assembly")]
+    [ExtendsOverride("_ZW19System#2EReflection15RuntimeAssembly")]
     [VTableAlias("__tysos_assembly_vt")]
     public unsafe class TysosAssembly : System.Reflection.Assembly
     {
@@ -55,15 +55,80 @@ namespace libsupcs
 
         [AlwaysCompile]
         [MethodAlias("_ZW19System#2EReflection8Assembly_27GetManifestResourceInternal_Ru1I_P4u1tu1SRiRV6Module")]
-        static void* GetManifestResource(void *ass, string name, out int size, out System.Reflection.Module mod)
+        static void* GetManifestResource(TysosAssembly ass, string name, out int size, out System.Reflection.Module mod)
         {
             // this always fails for now
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly: GetManifestResource(" + ass.assemblyName + ", " + name + ", out int size, out Module mod) called");
             size = 0;
             mod = null;
             return null;
         }
 
         public override string FullName => assemblyName;
+
+        struct StackCrawlMarkHandle { internal void** ptr; }
+
+        [AlwaysCompile]
+        [MethodAlias("_ZW19System#2EReflection15RuntimeAssembly_20GetExecutingAssembly_Rv_P2U35System#2ERuntime#2ECompilerServices20StackCrawlMarkHandleV19ObjectHandleOnStack")]
+        static void GetExecutingAssembly(StackCrawlMarkHandle scmh, TysosModule.ObjectHandleOnStack ret)
+        {
+            int scm = *(int*)scmh.ptr;
+
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: scm: " + scm.ToString());
+
+            Unwinder u = OtherOperations.GetUnwinder();
+            u.UnwindOne();
+
+            switch(scm)
+            {
+                case 0:
+                    break;
+                case 1:
+                    u.UnwindOne();
+                    break;
+                case 2:
+                    u.UnwindOne();
+                    u.UnwindOne();
+                    break;
+                default:
+                    System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: unsupported scm: " + scm.ToString());
+                    throw new NotSupportedException();
+            }
+
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: requested pc " + ((ulong)u.GetInstructionPointer()).ToString("X"));
+
+            void* offset;
+            var name = JitOperations.GetNameOfAddress((void*)u.GetInstructionPointer(), out offset);
+
+            if(name == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: symbol not found");
+                *ret.ptr = null;
+                return;
+            }
+
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: found method " + name);
+
+            var ts = Metadata.MSCorlib.DemangleObject(name);
+
+            if(ts == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: demangler returned null");
+                *ret.ptr = null;
+                return;
+            }
+            var m = ts.Metadata;
+            if (m == null)
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: returned ts had no assembly");
+                *ret.ptr = null;
+                return;
+            }
+            var aptr = (m.file as Metadata.BinaryInterface).b;
+            var retm = TysosModule.GetModule(aptr, m.AssemblyName);
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: returning " + retm.ass.assemblyName);
+            *ret.ptr = CastOperations.ReinterpretAsPointer(retm);
+        }
     }
 
     [VTableAlias("__tysos_module_vt")]
@@ -91,7 +156,7 @@ namespace libsupcs
 
         internal metadata.MetadataStream m { get { return Metadata.BAL.GetAssembly(aptr); } }
 
-        unsafe struct ObjectHandleOnStack { internal void** ptr; }
+        unsafe internal struct ObjectHandleOnStack { internal void** ptr; }
 
         [MethodAlias("_ZW6System12ModuleHandle_13GetModuleType_Rv_P2U19System#2EReflection13RuntimeModuleU35System#2ERuntime#2ECompilerServices19ObjectHandleOnStack")]
         [AlwaysCompile]

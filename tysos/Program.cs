@@ -315,6 +315,8 @@ namespace tysos
             if (do_debug)
                 System.Diagnostics.Debugger.Break();
 
+            libsupcs.OtherOperations.AsmBreakpoint();
+
             arch.EnableMultitasking();
             Syscalls.SchedulerFunctions.Yield();
 

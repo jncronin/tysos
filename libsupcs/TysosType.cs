@@ -122,9 +122,14 @@ namespace libsupcs
             return *(int *)((byte*)_impl + ClassOperations.GetVtblTypeSizeOffset());
         }
 
-        public override System.Reflection.Assembly Assembly
+        public unsafe override System.Reflection.Assembly Assembly
         {
-            get { return RTH_GetModule(this).GetAssembly(); }
+            get {
+                var ret = RTH_GetModule(this).GetAssembly();
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType.GetAssembly() returning " + ((ulong)CastOperations.ReinterpretAsPointer(ret)).ToString("X") +
+                    " for " + ret.FullName);
+                return ret;
+            }
         }
 
         public override string AssemblyQualifiedName

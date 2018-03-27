@@ -481,6 +481,10 @@ namespace libsupcs
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public unsafe static extern void* CompareExchange(void** addr, void* value, void* comparand = null);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        [MethodReferenceAlias("__get_unwinder")]
+        public static extern Unwinder GetUnwinder();
     }
 
     public class ArrayOperations

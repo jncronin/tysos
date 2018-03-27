@@ -48,6 +48,15 @@ namespace libsupcs
         }
 
         [AlwaysCompile]
+        [MethodAlias("_ZW18System#2EResources29ManifestBasedResourceGroveler_36GetNeutralResourcesLanguageAttribute_Rb_P3U19System#2EReflection15RuntimeAssemblyU35System#2ERuntime#2ECompilerServices19StringHandleOnStackRs")]
+        static unsafe bool ManifestBasedResourceGroveler_GetNeutralResourcesLanguageAttribute(TysosAssembly a, StringPtrOnStack cultureName, out short fallbackLocation)
+        {
+            *cultureName.ptr = CastOperations.ReinterpretAsPointer("");
+            fallbackLocation = 0;
+            return false;
+        }
+
+        [AlwaysCompile]
         [MethodAlias("_ZW6System9Exception_29GetMessageFromNativeResources_Rv_P2V32Exception#2BExceptionMessageKindU35System#2ERuntime#2ECompilerServices19StringHandleOnStack")]
         static unsafe void GetMessageFromNativeResources(int kind, StringPtrOnStack msg)
         {
