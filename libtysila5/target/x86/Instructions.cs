@@ -3988,6 +3988,77 @@ namespace libtysila5.target.x86
             return null;
         }
 
+        internal static List<MCInst> handle_syncvalswap(
+            Target t,
+            List<CilNode.IRNode> nodes,
+            int start, int count, Code c)
+        {
+            var n = nodes[start];
+
+            var r = new List<MCInst>();
+            var size = n.imm_l;
+
+            var ptr = n.stack_before.Peek(n.arg_a).reg;
+            var newval = n.stack_before.Peek(n.arg_b).reg;
+            var dest = n.stack_after.Peek(n.res_a).reg;
+
+            bool is_tls = ir.Opcode.IsTLSCT(n.stack_before.Peek(n.arg_a).ct);
+
+            if ((ptr is ContentsReg) && (newval is ContentsReg))
+            {
+                // we need another spare register for this
+                throw new NotImplementedException();
+            }
+            if (ptr is ContentsReg)
+            {
+                handle_move(r_edx, ptr, r, n, c);
+                ptr = r_edx;
+            }
+            if (newval is ContentsReg)
+            {
+                handle_move(r_edx, newval, r, n, c);
+                newval = r_edx;
+            }
+
+            int oc = 0;
+            int oc2 = 0;
+            switch (size)
+            {
+                case 1:
+                    oc = x86_lock_xchg_rm8ptr_r8;
+                    //if (issigned)
+                    //    throw new NotImplementedException();
+                    //else
+                        oc2 = t.psize == 4 ? x86_movzxbd : x86_movzxbq;
+                    break;
+                case 4:
+                    oc = x86_lock_xchg_rm32ptr_r32;
+                    oc2 = 0;
+                    break;
+                case 8:
+                    oc = x86_lock_xchg_rm64ptr_r64;
+                    oc2 = 0;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            r.Add(inst(oc, new ContentsReg { basereg = ptr }, newval, n, is_tls));
+
+            if (dest is ContentsReg)
+            {
+                if (oc2 != 0)
+                    r.Add(inst(oc2, r_eax, newval, n));
+                handle_move(dest, r_eax, r, n, c);
+            }
+            else if (oc2 != 0)
+                r.Add(inst(oc2, dest, newval, n));
+            else
+                handle_move(dest, newval, r, n, c);
+
+            return r;
+        }
+
         internal static List<MCInst> handle_syncvalcompareandswap(
             Target t,
             List<CilNode.IRNode> nodes,
