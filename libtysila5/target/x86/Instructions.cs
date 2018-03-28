@@ -4300,7 +4300,7 @@ namespace libtysila5.target.x86
             List<MCInst> r = new List<MCInst>();
             handle_sub(t, r_esp, size, r_esp, r, n);
             r.Add(inst(t.psize == 4 ? x86_and_rm32_imm8 :
-                x86_and_rm64_imm8, r_esp, 0xfc, n));
+                x86_and_rm64_imm8, r_esp, t.psize == 4 ? 0xfc : 0xf8, n));
             r.Add(inst(t.psize == 4 ? x86_lea_r32 : x86_lea_r64, act_dest,
                 new ContentsReg { basereg = r_esp }, n));
             handle_move(addr, act_dest, r, n, c);
