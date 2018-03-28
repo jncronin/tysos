@@ -37,6 +37,72 @@ namespace libsupcs
         [MethodImpl(MethodImplOptions.InternalCall)]
         static unsafe extern int mbstowcs(char* dest, byte* src, int n);
 
+        [AlwaysCompile]
+        [MethodAlias("_Zu1S_15ReplaceInternal_Ru1S_P3u1tu1Su1S")]
+        static unsafe string InternalReplace(string str, string old_value, string new_value)
+        {
+            /* maximum size of new string is str if new_value <= old_value or
+             * if new_value is larger then assume str is made up of all old_value
+             * in which case it is this count * new_value + remainder (or count + 1 * new_value)
+             */
+
+            int max_new_str;
+            if(new_value.Length > old_value.Length)
+            {
+                max_new_str = ((str.Length / new_value.Length) + 1) * new_value.Length;
+            }
+            else
+            {
+                max_new_str = str.Length;
+            }
+
+            /* limit stack alloc to 1024 chars to reduce risk of stack overflows.  Implementations
+             *  should have a stack guard page anyway to catch overflows of this size whilst larger
+             *  stack allocs could be used to introduce code beyond the guard page.
+             *  
+             *  We do it this way because C# does not support conditional stack alloc assigns
+             */
+            int max_stack_new_str = max_new_str > 1024 ? 1024 : max_new_str;
+            char* nstack = stackalloc char[max_stack_new_str];
+
+            char* ns;
+
+            if (max_new_str <= 1024)
+                ns = nstack;
+            else
+                ns = (char*)MemoryOperations.GcMalloc(max_new_str * sizeof(char));
+            char* ptr = ns;
+
+            for (int i = 0; i < str.Length; i++)
+            {
+                bool found = true;
+                for (int j = 0; j < old_value.Length; j++)
+                {
+                    if (((i + j) >= str.Length) || (str[i + j] != old_value[j]))
+                    {
+                        found = false;
+                        break;
+                    }
+                }
+
+                if (found)
+                {
+                    for (int j = 0; j < new_value.Length; j++)
+                        *ptr++ = new_value[j];
+                    i += old_value.Length;
+                    i--;        // the for loop adds a 1 for us
+                }
+                else
+                {
+                    *ptr++ = str[i];
+                }
+            }
+
+            var str_len = ptr - ns;
+
+            return new string(ptr, 0, (int)str_len);
+        }
+
         [WeakLinkage]
         [AlwaysCompile]
         [MethodAlias("_Zu1S_14InternalStrcpy_Rv_P5u1Siu1Sii")]
