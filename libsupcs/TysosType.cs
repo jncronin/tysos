@@ -825,6 +825,13 @@ namespace libsupcs
                 System.Diagnostics.Debugger.Log(0, "libsupcs", "CastClassEx failing");
                 System.Diagnostics.Debugger.Log((int)from_obj, "libsupcs", "from_obj");
                 System.Diagnostics.Debugger.Log((int)to_vtbl, "libsupcs", "to_vtbl");
+
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "from_vtbl: " + ((ulong)from_vtbl).ToString("X"));
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "to_vtbl: " + ((ulong)to_vtbl).ToString("X"));
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "from_type: " + JitOperations.GetNameOfAddress(from_vtbl, out var unused) ?? "unknown");
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "to_type: " + JitOperations.GetNameOfAddress(to_vtbl, out unused) ?? "unknown");
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "calling_pc: " + ((ulong)OtherOperations.GetUnwinder().UnwindOne().GetInstructionPointer()).ToString("X"));
+
                 return null;
             }
         }

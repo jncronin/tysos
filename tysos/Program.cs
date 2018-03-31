@@ -789,6 +789,11 @@ namespace tysos
         [libsupcs.MethodAlias("jit_nameof")]
         unsafe static string GetNameOfAddress(void *addr, out void *offset)
         {
+            if(stab == null)
+            {
+                offset = addr;
+                return "offset_0";
+            }
             ulong o;
             var ret = stab.GetSymbolAndOffset((ulong)addr, out o);
             offset = (void*)o;
