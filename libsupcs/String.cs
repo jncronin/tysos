@@ -49,12 +49,15 @@ namespace libsupcs
             int max_new_str;
             if(new_value.Length > old_value.Length)
             {
-                max_new_str = ((str.Length / new_value.Length) + 1) * new_value.Length;
+                max_new_str = ((str.Length / old_value.Length) + 1) * new_value.Length;
             }
             else
             {
                 max_new_str = str.Length;
             }
+
+            //System.Diagnostics.Debugger.Log(0, "libsupcs", "InternalReplace: str: " + str + ", old_value: " + old_value +
+            //    ", new_value: " + new_value + ", max_new_str: " + max_new_str.ToString());
 
             /* limit stack alloc to 1024 chars to reduce risk of stack overflows.  Implementations
              *  should have a stack guard page anyway to catch overflows of this size whilst larger
