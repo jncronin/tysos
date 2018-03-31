@@ -78,6 +78,7 @@ namespace libsupcs
 
             Unwinder u = OtherOperations.GetUnwinder();
             u.UnwindOne();
+            u.UnwindOne();      // we are double-nested within coreclr so unwind this and calling method (GetExecutingAssembly(ref StackMarkHandle)) first
 
             switch(scm)
             {
@@ -127,7 +128,7 @@ namespace libsupcs
             var aptr = (m.file as Metadata.BinaryInterface).b;
             var retm = TysosModule.GetModule(aptr, m.AssemblyName);
             System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosAssembly.GetExecutingAssembly: returning " + retm.ass.assemblyName);
-            *ret.ptr = CastOperations.ReinterpretAsPointer(retm);
+            *ret.ptr = CastOperations.ReinterpretAsPointer(retm.ass);
         }
 
         [MethodAlias("_ZW19System#2EReflection15RuntimeAssembly_11GetResource_RPh_P5V15RuntimeAssemblyu1SRyU35System#2ERuntime#2ECompilerServices20StackCrawlMarkHandleb")]
@@ -155,6 +156,15 @@ namespace libsupcs
                 ", length: " + length.ToString("X"));
 
             return (byte*)ret;
+        }
+
+        [AlwaysCompile]
+        [MethodAlias("_ZW19System#2EReflection12AssemblyName_5nInit_Rv_P4u1tRV15RuntimeAssemblybb")]
+        static unsafe void AssemblyName_nInit(byte *obj, out TysosAssembly assembly, bool forIntrospection, bool raiseResolveEvent)
+        {
+            string name = CastOperations.ReinterpretAsString(obj + ClassOperations.GetFieldOffset("_ZW19System#2EReflection12AssemblyName", "_Name"));
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "AssemblyName_nInit(" + name + ", out TysosAssembly, bool, bool) called");
+            assembly = null;
         }
     }
 
