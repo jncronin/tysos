@@ -103,7 +103,10 @@ namespace libsupcs
 
             var str_len = ptr - ns;
 
-            return new string(ptr, 0, (int)str_len);
+            //var ret = new string(ns, 0, (int)str_len);
+            //System.Diagnostics.Debugger.Log(0, "libsupcs", "InternalReplace: ret: " + ret);
+            //return ret;
+            return new string(ns, 0, (int)str_len);
         }
 
         [WeakLinkage]
