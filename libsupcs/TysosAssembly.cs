@@ -162,7 +162,7 @@ namespace libsupcs
         [MethodAlias("_ZW19System#2EReflection12AssemblyName_5nInit_Rv_P4u1tRV15RuntimeAssemblybb")]
         static unsafe void AssemblyName_nInit(byte *obj, out TysosAssembly assembly, bool forIntrospection, bool raiseResolveEvent)
         {
-            string name = CastOperations.ReinterpretAsString(obj + ClassOperations.GetFieldOffset("_ZW19System#2EReflection12AssemblyName", "_Name"));
+            string name = CastOperations.ReinterpretAsString(*(void**)(obj + ClassOperations.GetFieldOffset("_ZW19System#2EReflection12AssemblyName", "_Name")));
             System.Diagnostics.Debugger.Log(0, "libsupcs", "AssemblyName_nInit(" + name + ", out TysosAssembly, bool, bool) called");
             assembly = null;
         }
