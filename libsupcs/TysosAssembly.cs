@@ -164,7 +164,31 @@ namespace libsupcs
         {
             string name = CastOperations.ReinterpretAsString(*(void**)(obj + ClassOperations.GetFieldOffset("_ZW19System#2EReflection12AssemblyName", "_Name")));
             System.Diagnostics.Debugger.Log(0, "libsupcs", "AssemblyName_nInit(" + name + ", out TysosAssembly, bool, bool) called");
+
+            // split assembly name off from other fields
+            int comma = name.IndexOf(',');
+            string Name;
+            if (comma != -1)
+                Name = name.Substring(0, comma);
+            else
+                Name = name;
+
+            if (Name.Equals("System.Private.CoreLib"))
+                Name = "mscorlib";
+
+            *(void**)(obj + ClassOperations.GetFieldOffset("_ZW19System#2EReflection12AssemblyName", "_Name")) =
+                CastOperations.ReinterpretAsPointer(Name);
+
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "AssemblyName_nInit - setting _Name to " + Name);
+
             assembly = null;
+        }
+
+        [AlwaysCompile]
+        [MethodAlias("_ZW19System#2EReflection12AssemblyName_18nGetPublicKeyToken_Ru1Zh_P1u1t")]
+        static unsafe byte[] AssemblyName_nGetPublicKeyToken(byte *obj)
+        {
+            return null;
         }
     }
 
