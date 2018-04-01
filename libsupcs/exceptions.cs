@@ -173,6 +173,7 @@ namespace libsupcs
                 System.Diagnostics.Debugger.Log(0, "libsupcs", "start: " + ((ulong)start).ToString("X"));
                 System.Diagnostics.Debugger.Log(0, "libsupcs", "end: " + ((ulong)end).ToString("X"));
                 System.Diagnostics.Debugger.Log(0, "libsupcs", "cur: " + ((ulong)cur).ToString("X"));
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "calling_pc: " + ((ulong)OtherOperations.GetUnwinder().UnwindOne().GetInstructionPointer()).ToString("X"));
                 while (true) ;
             }
 
