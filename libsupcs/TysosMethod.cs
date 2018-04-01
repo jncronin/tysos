@@ -31,8 +31,9 @@ using System.Runtime.CompilerServices;
 
 namespace libsupcs
 {
+    [ExtendsOverride("_ZW19System#2EReflection17RuntimeMethodInfo")]
     [VTableAlias("__tysos_method_vt")]
-    public class TysosMethod : System.Reflection.MethodInfo
+    public unsafe class TysosMethod : System.Reflection.MethodInfo
     {
         public TysosType OwningType;
         public TysosType _ReturnType;
@@ -45,12 +46,20 @@ namespace libsupcs
         public Int32 Flags;
         public Int32 ImplFlags;
         public UInt32 TysosFlags;
-        public IntPtr MethodAddress;
+        public void* MethodAddress;
         [NullTerminatedListOf(typeof(EHClause))]
         public IntPtr EHClauses;
         public IntPtr Instructions;
 
         public const string PureVirtualName = "__cxa_pure_virtual";
+
+        metadata.MethodSpec mspec;
+
+        public TysosMethod(metadata.MethodSpec ms, TysosType owning_type)
+        {
+            mspec = ms;
+            OwningType = owning_type;
+        }
 
         public const UInt32 TF_X86_ISR = 0x10000001;
         public const UInt32 TF_X86_ISREC = 0x10000002;
@@ -97,12 +106,15 @@ namespace libsupcs
 
         public override System.Reflection.MethodAttributes Attributes
         {
-            get { return (System.Reflection.MethodAttributes)Flags; }
+            get
+            {
+                return (System.Reflection.MethodAttributes)mspec.m.GetIntEntry(metadata.MetadataStream.tid_MethodDef, mspec.mdrow, 2);
+            }
         }
 
         public override System.Reflection.MethodImplAttributes GetMethodImplementationFlags()
         {
-            return (System.Reflection.MethodImplAttributes)ImplFlags;
+            return (System.Reflection.MethodImplAttributes)mspec.m.GetIntEntry(metadata.MetadataStream.tid_MethodDef, mspec.mdrow, 1);
         }
 
         public unsafe override System.Reflection.ParameterInfo[] GetParameters()
@@ -142,7 +154,14 @@ namespace libsupcs
 
         public override object Invoke(object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, object[] parameters, System.Globalization.CultureInfo culture)
         {
-            if (MethodAddress == (IntPtr)0)
+
+            if (MethodAddress == null)
+            {
+                var mangled_name = mspec.MangleMethod();
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosMethod.Invoke: requesting run-time address for " + mangled_name);
+                MethodAddress = JitOperations.GetAddressOfObject(mspec.MangleMethod());
+            }
+            if (MethodAddress == null)
                 throw new System.Reflection.TargetException("Method does not have a defined implementation (" + OwningType.FullName + "." + Name + "())");
             if (!IsStatic && (obj == null))
                 throw new System.Reflection.TargetException("Instance method and obj is null (" + OwningType.FullName + "." + Name + "())");
@@ -202,7 +221,15 @@ namespace libsupcs
 
         public override string Name
         {
-            get { return _Name; }
+            get
+            {
+                if(_Name == null)
+                {
+                    string name = mspec.m.GetStringEntry(metadata.MetadataStream.tid_MethodDef, mspec.mdrow, 3);
+                    System.Threading.Interlocked.CompareExchange(ref _Name, name, null);
+                }
+                return _Name;
+            }
         }
 
         public override Type ReflectedType

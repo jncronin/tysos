@@ -34,10 +34,9 @@ namespace libsupcs
     [ExtendsOverride("_ZW6System11RuntimeType")]
     [VTableAlias("__tysos_type_vt")]
     [SpecialType]
-    public unsafe class TysosType : Type
+    public unsafe partial class TysosType : Type
     {
         metadata.TypeSpec ts = null;
-
 
         /** <summary>holds a pointer to the vtbl represented by this type</summary> */
         void* _impl;
@@ -259,11 +258,6 @@ namespace libsupcs
             throw new NotImplementedException();
         }
 
-        protected override System.Reflection.MethodInfo GetMethodImpl(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder binder, System.Reflection.CallingConventions callConvention, Type[] types, System.Reflection.ParameterModifier[] modifiers)
-        {
-            throw new NotImplementedException();
-        }
-
         [AlwaysCompile]
         [MethodAlias("_ZW6System17RuntimeTypeHandle_40CreateInstanceForAnotherGenericParameter_Ru1O_P2V11RuntimeTypeV11RuntimeType")]
         static unsafe internal object RTH_CreateInstanceForAnotherGenericParameter(TysosType template, TysosType newtype)
@@ -333,7 +327,7 @@ namespace libsupcs
                 match = true;
 
             return match;
-        }
+        }        
 
         public override System.Reflection.MethodInfo[] GetMethods(System.Reflection.BindingFlags bindingAttr)
         {
