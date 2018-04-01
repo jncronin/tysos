@@ -63,7 +63,7 @@ namespace libtysila5.cil
                     {
                         if (ehdr.TryILOffset == offset)
                         {
-                            n.try_starts.Add(ehdr);
+                            n.try_starts.Insert(0, ehdr);
                         }
                         if (ehdr.HandlerILOffset == offset ||
                             (ehdr.EType == metadata.ExceptionHeader.ExceptionHeaderType.Filter && ehdr.FilterOffset == offset))
