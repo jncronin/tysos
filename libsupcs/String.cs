@@ -109,6 +109,37 @@ namespace libsupcs
             return new string(ns, 0, (int)str_len);
         }
 
+        [AlwaysCompile]
+        [MethodAlias("_Zu1S_20CompareOrdinalHelper_Ri_P6u1Siiu1Sii")]
+        static unsafe int CompareOrdinalHelper(byte *strA, int indexA, int countA, byte *strB, int indexB, int countB)
+        {
+            char* a = (char*)(strA + StringOperations.GetDataOffset()) + indexA;
+            char* b = (char*)(strB + StringOperations.GetDataOffset()) + indexB;
+
+            for(int i = 0; i < countA; i++, a++, b++)
+            {
+                if (*a < *b)
+                    return -1;
+                else if (*a > *b)
+                    return 1;
+            }
+
+            return 0;
+        }
+
+        [AlwaysCompile]
+        [MethodAlias("_Zu1S_7IsAscii_Rb_P1u1t")]
+        static bool IsAscii(string str)
+        {
+            foreach(var c in str)
+            {
+                if (c >= 0x80)
+                    return false;
+            }
+            return true;
+        }
+            
+
         [WeakLinkage]
         [AlwaysCompile]
         [MethodAlias("_Zu1S_14InternalStrcpy_Rv_P5u1Siu1Sii")]
