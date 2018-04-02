@@ -266,19 +266,29 @@ namespace libsupcs
             void* n_vtbl = newtype._impl;
 
             /* Special case a few generic types that are required before the JIT can start */
+            void* spec_vtbl = null;
+            void* spec_ctor = null;
             if(t_vtbl == OtherOperations.GetStaticObjectAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1i"))
             {
-                if(n_vtbl == OtherOperations.GetStaticObjectAddress("_Zu1S"))
+                if (n_vtbl == OtherOperations.GetStaticObjectAddress("_Zu1S"))
                 {
-                    var vtbl = OtherOperations.GetStaticObjectAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1u1S");
-                    var ntype = internal_from_vtbl(vtbl);
-                    var obj = ntype.Create();
-
-                    OtherOperations.CallI(CastOperations.ReinterpretAsPointer(obj),
-                        OtherOperations.GetFunctionAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1u1S_7#2Ector_Rv_P1u1t"));
-
-                    return obj;
+                    spec_vtbl = OtherOperations.GetStaticObjectAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1u1S");
+                    spec_ctor = OtherOperations.GetFunctionAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1u1S_7#2Ector_Rv_P1u1t");
                 }
+                else if (n_vtbl == OtherOperations.GetStaticObjectAddress("_Zj"))
+                {
+                    spec_vtbl = OtherOperations.GetStaticObjectAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1j");
+                    spec_ctor = OtherOperations.GetFunctionAddress("_ZW30System#2ECollections#2EGeneric25GenericEqualityComparer`1_G1j_7#2Ector_Rv_P1u1t");
+                }
+            }
+            if(spec_vtbl != null)
+            {
+                var ntype = internal_from_vtbl(spec_vtbl);
+                var obj = ntype.Create();
+
+                OtherOperations.CallI(CastOperations.ReinterpretAsPointer(obj), spec_ctor);
+
+                return obj;
             }
 
             System.Diagnostics.Debugger.Log(0, "libsupcs", "CreateInstanceForAnotherGenericParameter:");
@@ -303,11 +313,31 @@ namespace libsupcs
             if (arg_count >= 1)
                 arg1 = *(void**)((byte*)CastOperations.ReinterpretAsPointer(typeArguments[0]) + ClassOperations.GetSystemTypeImplOffset());
 
-            // IEquatable<string>
-            if (this_vtbl == OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1") && arg_count == 1 &&
-                arg1 == OtherOperations.GetStaticObjectAddress("_Zu1S"))
+            // IEquatable<>
+            if (this_vtbl == OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1") && arg_count == 1)
             {
-                return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1u1S"));
+                if (arg1 == OtherOperations.GetStaticObjectAddress("_Zu1S"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1u1S"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Za"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1a"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Zb"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1b"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Zc"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1c"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Zd"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1d"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Zf"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1f"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Zh"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1h"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Zi"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1i"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Zj"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1j"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Zx"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1x"));
+                else if (arg1 == OtherOperations.GetStaticObjectAddress("_Zy"))
+                    return internal_from_vtbl(OtherOperations.GetStaticObjectAddress("_ZW6System12IEquatable`1_G1y"));
             }
 
             System.Diagnostics.Debugger.Log(0, "libsupcs", "MakeGenericType: no fast implementation for");

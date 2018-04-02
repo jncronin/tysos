@@ -146,7 +146,10 @@ namespace libsupcs
         internal static void enter_try(void *eh, void *fp)
         {
             if (eh == PeekEhdr())
-                System.Diagnostics.Debugger.Break();
+            {
+                System.Diagnostics.Debugger.Log(0, "libsupcs", "enter_try: recursive try block found from calling_pc: " +
+                    ((ulong)OtherOperations.GetUnwinder().UnwindOne().GetInstructionPointer()).ToString("X"));
+            }
             PushEhdr(eh, fp);
         }
 

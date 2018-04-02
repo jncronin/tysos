@@ -604,7 +604,7 @@ namespace metadata
             row = (int)(token & 0xffffffU);
         }
 
-        public TypeSpec GetTypeSpec(string nspace, string name)
+        public TypeSpec GetTypeSpec(string nspace, string name, TypeSpec[] gtparams = null)
         {
             TypeSpec ts;
             var test = new nn { name = name, nspace = nspace };
@@ -613,6 +613,7 @@ namespace metadata
                 var new_ts = new TypeSpec();
                 new_ts.m = this;
                 new_ts.tdrow = ts.tdrow;
+                new_ts.gtparams = gtparams;
                 return new_ts;
             }
 
@@ -628,6 +629,7 @@ namespace metadata
                         ts = new TypeSpec();
                         ts.m = this;
                         ts.tdrow = i;
+                        ts.gtparams = gtparams;
                         typedef_db[test] = ts;
                         return ts;
                     }

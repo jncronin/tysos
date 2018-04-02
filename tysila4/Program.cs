@@ -297,6 +297,33 @@ namespace tysila4
                     t.r.VTableRequestor.Request(ts.Box);
                 }
 
+                /* If corlib, add in the default equality comparers so we don't have to jit these
+                 * commonly used classes */
+                if(m.is_corlib)
+                {
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemByte }), ".ctor"));
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemInt8 }), ".ctor"));
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemInt16 }), ".ctor"));
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemUInt16 }), ".ctor"));
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemInt32 }), ".ctor"));
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemUInt32 }), ".ctor"));
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemInt64 }), ".ctor"));
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemUInt64 }), ".ctor"));
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemString }), ".ctor"));
+                    t.r.MethodRequestor.Request(m.GetMethodSpec(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemObject }), ".ctor"));
+
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemByte }));
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemInt8 }));
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemInt16 }));
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemUInt16 }));
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemInt32 }));
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemUInt32 }));
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemInt64 }));
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemUInt64 }));
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemString }));
+                    t.r.VTableRequestor.Request(m.GetTypeSpec("System.Collections.Generic", "GenericEqualityComparer`1", new metadata.TypeSpec[] { m.SystemObject }));
+                }
+
                 /* Generate a thread-local data section.  We may not use it. */
                 var tlsos = bf.CreateContentsSection();
                 tlsos.Name = ".tdata";

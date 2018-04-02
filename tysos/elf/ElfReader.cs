@@ -287,8 +287,7 @@ namespace tysos
             tls_size = Program.arch.tysos_tls_length;
 
             /* Map sections to their load address */
-            Dictionary<uint, ulong> sect_map = new Dictionary<uint, ulong>(
-                new Program.MyGenericEqualityComparer<uint>());
+            Dictionary<uint, ulong> sect_map = new Dictionary<uint, ulong>();
 
             for(uint i = 0; i < e_shnum; i++)
             {
@@ -1136,11 +1135,25 @@ namespace tysos
                         var shndx = cur_sym->st_shndx;
                         if (shndx == 0)  // undefined symbol
                             return 0;
-                        ulong ret = (symbol_adjust != null) ? cur_sym->st_value + symbol_adjust[cur_sym->st_shndx] : cur_sym->st_value;
-                        /*Formatter.WriteLine("elfhash: symbol: " + s +
-                            " found at 0x" + ret.ToString("X"),
-                            Program.arch.DebugOutput);*/
-                        return ret;
+                        if (symbol_adjust == null)
+                            return cur_sym->st_value;
+                        else
+                        {
+                            if(symbol_adjust.TryGetValue(cur_sym->st_shndx, out var sadj))
+                            {
+                                return cur_sym->st_value + sadj;
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debugger.Log(0, "ElfReader", "ElfHashTable: symbol_adjust not found for section " + cur_sym->st_shndx.ToString());
+                                System.Diagnostics.Debugger.Log(0, "ElfReader", "symbol_adjusts exist for sections: ");
+                                foreach(var sasds in symbol_adjust.Keys)
+                                {
+                                    System.Diagnostics.Debugger.Log(0, "ElfReader", sasds.ToString() + " -> " + symbol_adjust[sasds].ToString("X"));
+                                }
+                                return 0;
+                            }
+                        }
                     }
 
                     cur_sym_idx = chain[cur_sym_idx];
