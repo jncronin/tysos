@@ -1035,7 +1035,7 @@ namespace libsupcs
 
             // ELF hash
             uint h = 0, g;
-            for(int i = 0; i < otsize; i++)
+            for(int i = 0; i < (otsize-header_size); i++)
             {
                 h = (h << 4) + *o_ptr++;
                 g = h & 0xf0000000;
