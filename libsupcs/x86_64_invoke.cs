@@ -67,8 +67,9 @@ namespace libsupcs.x86_64
                 else
                 {
                     // the type we need is encoded in the vtable
-                    var tspecdata = ((int**)types)[i][4];
-                    types[i] = (void*)((tspecdata >> 8) & 0xff);
+                    var vtbl = types[i];
+                    var cur_class = *((byte*)vtbl + 0x21);
+                    types[i] = (void*)cur_class;
                 }
             }
 

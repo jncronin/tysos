@@ -39,7 +39,8 @@ namespace libsupcs
         public TysosType _ReturnType;
         public bool returns_void;
         [NullTerminatedListOf(typeof(TysosType))]
-        public IntPtr _Params;
+        public TysosType[] _ParamTypes;
+        public TysosParameterInfo[] _Params;
         public string _Name;
         public string _MangledName;
         public IntPtr Signature;
@@ -120,29 +121,32 @@ namespace libsupcs
 
         public unsafe override System.Reflection.ParameterInfo[] GetParameters()
         {
-            // count the number of params
-            if (_Params == (IntPtr)0)
-                return new System.Reflection.ParameterInfo[] { };
-            int count = 0;
-            IntPtr* cur_param = (IntPtr*)_Params;
-            while (*cur_param != (IntPtr)0)
+            if(_Params == null)
             {
-                count++;
-                cur_param++;
+                var pc = mspec.m.GetMethodDefSigParamCount(mspec.msig);
+                var rt_idx = mspec.m.GetMethodDefSigRetTypeIndex(mspec.msig);
+                mspec.m.GetTypeSpec(ref rt_idx, mspec.gtparams, mspec.gmparams);
+
+                var _params = new TysosParameterInfo[pc];
+                var _ptypes = new TysosType[pc];
+
+                for(int i = 0; i < pc; i++)
+                {
+                    var tspec = mspec.m.GetTypeSpec(ref rt_idx, mspec.gtparams, mspec.gmparams);
+                    TysosType tt = tspec;
+                    _ptypes[i] = tt;
+
+                    TysosParameterInfo tpi = new TysosParameterInfo(tt, i, this);
+                    _params[i] = tpi;
+                }
+
+                if(System.Threading.Interlocked.CompareExchange(ref _Params, _params, null) == null)
+                {
+                    _ParamTypes = _ptypes;
+                }
             }
 
-            // build the returned array
-            System.Reflection.ParameterInfo[] ret = new System.Reflection.ParameterInfo[count];
-            cur_param = (IntPtr*)_Params;
-            count = 0;
-            while (*cur_param != (IntPtr)0)
-            {
-                TysosParameterInfo pi = new TysosParameterInfo(TysosType.ReinterpretAsType(*cur_param), count, this);
-                ret[count] = pi;
-                count++;
-                cur_param++;
-            }
-            return ret;
+            return _Params;
         }
 
         public override Type ReturnType

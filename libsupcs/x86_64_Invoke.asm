@@ -42,7 +42,7 @@ __x86_64_invoke:
 	jmp .looptest
 .startloop:
 	; get ploc to r10
-	mov dword r10d, [r13 + r11 * 4];
+	mov dword r10d, [r13 + r11 * 8];
 
 	cmp r10d, 0
 	je .integer

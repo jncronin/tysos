@@ -1117,45 +1117,19 @@ namespace libsupcs
              * metadata references
              * signature
              * 
-             * To satisfy the constraint that there can only exist one
-             * System.Type representation for a given type, we need to
-             * do some trickery to ensure that this occurs.
-             * 
-             * On call of this function, we check the second byte of 'type'
-             * If it is '2' (i.e type = 0x0200), we can take the third
-             * member as a valid tysostype pointer
-             * 
-             * If it is '1', we wait until it is '2'
-             * 
-             * If it is zero, we atomically set it to '1' and create the
-             * tysos type, then set it to '2' when done
              */
-            void* ti = *(void**)vtbl;
-            byte* lck = (byte*)ti + 1;
 
-            while(true)
+            void* ti = *(void**)vtbl;
+
+            void** ttptr = (void**)ti + 2;
+            
+            if(*ttptr == null)
             {
-                if(*lck == 2)
-                {
-                    void* ttype = *((void**)ti + 2);
-                    return ReinterpretAsType(ttype);
-                }
-                else if(*lck == 0)
-                {
-                    if (OtherOperations.SyncValCompareAndSwap(lck, 0, 1) == 0)
-                        break;
-                }
-                OtherOperations.SpinlockHint();
+                var tt = CastOperations.ReinterpretAsPointer(new TysosType(vtbl));
+                OtherOperations.CompareExchange(ttptr, tt);
             }
 
-            var ret = new TysosType(vtbl);
-            var ret_obj = CastOperations.ReinterpretAsPointer(ret);
-
-            *((void**)ti + 2) = ret_obj;
-
-            *lck = 2;
-
-            return ret;
+            return ReinterpretAsType(*ttptr);
         }
 
         // From CoreCLR

@@ -44,7 +44,7 @@ namespace libsupcs
             if (next_name == null)
                 build_method_list();
 
-            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: GetMethodImpl(" + name + ", ...)");
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: GetMethodImpl(" + name + ", " + types.Length.ToString() + ")");
 
             if (first_name.TryGetValue(name, out var fn) == false)
             {
@@ -66,12 +66,18 @@ namespace libsupcs
                     {
                         for (int i = 0; i < p.Length; i++)
                         {
-                            if (!p[i].ParameterType.Equals(types[i]))
+                            if (p[i].ParameterType != types[i])
                             {
+                                System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: GetMethodImpl: failing because " +
+                                    p[i].ParameterType.FullName + " != " + types[i].FullName);
                                 match = false;
                                 break;
                             }
                         }
+                    }
+                    else
+                    {
+                        match = false;
                     }
                     if (match)
                     {
@@ -79,6 +85,8 @@ namespace libsupcs
                         return cur_m;
                     }
                 }
+
+                fn = next_name[fn];
             }
 
             System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: GetMethodImpl: no match found on attributes/parameters");
