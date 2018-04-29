@@ -52,6 +52,8 @@ __x86_64_invoke:
 	je .sse
 	cmp r10d, 4
 	je .integer32_unbox	
+	cmp r10d, 5
+	je .integer_unbox_byref
 	jmp .memory
 
 .integer
@@ -104,15 +106,22 @@ __x86_64_invoke:
 .integer_unbox
 	; get reference parameter to r10
 	mov r10, [r12 + r11 * 8]
-	; unbox it (hardcoded to use m_value offset of 20)
-	mov r10, [r10 + 20]
+	; unbox it (hardcoded to use m_value offset of 16)
+	mov r10, [r10 + 16]
 	jmp .integer_unbox_main
 
 .integer32_unbox
 	; get reference parameter to r10
 	mov r10, [r12 + r11 * 8]
-	; unbox it (hardcoded to use m_value offset of 20)
-	mov dword r10d, [r10 + 20]
+	; unbox it (hardcoded to use m_value offset of 16)
+	mov dword r10d, [r10 + 16]
+	jmp .integer_unbox_main
+
+.integer_unbox_byref
+	; get reference parameter to r10
+	mov r10, [r12 + r11 * 8]
+	; unbox it (hardcoded to use m_value offset of 16)
+	lea r10, [r10 + 16]
 
 .integer_unbox_main
 	cmp r14, 0
@@ -161,8 +170,8 @@ __x86_64_invoke:
 .sse
 	; get reference parameter to r10
 	mov r10, [r12 + r11 * 8]
-	; unbox it (hardcoded to use m_value offset of 20)
-	mov r10, [r10 + 20]
+	; unbox it (hardcoded to use m_value offset of 16)
+	mov r10, [r10 + 16]
 	
 	cmp r14, 0
 	je .sse_use_xmm0

@@ -2253,7 +2253,7 @@ namespace libtysila5.ir
             var ms = c.ms.m.GetMethodSpec(n.inline_uint, c.ms.gtparams, c.ms.gmparams);
             var ts = ms.type;
 
-            var l = layout.Layout.GetVTableOffset(ms) * c.t.psize;
+            var l = layout.Layout.GetVTableOffset(ms, c.t) * c.t.psize;
 
             Stack<StackItem> stack_after = stack_before;
 

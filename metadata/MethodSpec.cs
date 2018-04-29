@@ -46,6 +46,15 @@ namespace metadata
         public override MetadataStream Metadata
         { get { return m; } }
 
+        public TypeSpec ReturnType
+        {
+            get
+            {
+                var rt_idx = m.GetMethodDefSigRetTypeIndex(msig);
+                return m.GetTypeSpec(ref rt_idx, gtparams, gmparams);
+            }
+        }
+
         public TypeSpec[] gtparams
         {
             get

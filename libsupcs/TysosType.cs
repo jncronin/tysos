@@ -39,7 +39,7 @@ namespace libsupcs
         metadata.TypeSpec ts = null;
 
         /** <summary>holds a pointer to the vtbl represented by this type</summary> */
-        void* _impl;
+        internal void* _impl;
 
         internal TysosType(void *vtbl)
         {

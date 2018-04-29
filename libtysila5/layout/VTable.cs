@@ -36,6 +36,7 @@ namespace libtysila5.layout
             IFacePtr (to list of implemented interfaces)
             Extends (to base classes for quick castclassex)
             TypeSize (to allow MemberwiseClone to work without full Reflection)
+            Any target-specific data
             Method 0
             ...
 
@@ -137,6 +138,9 @@ namespace libtysila5.layout
                  * instantiate */
                 for (int i = 0; i < ptr_size; i++, offset++)
                     d.Add(0);
+
+                // Target-specific information
+                t.AddExtraVTableFields(ts, d, ref offset);
             }
             else
             { 
@@ -147,6 +151,9 @@ namespace libtysila5.layout
                     d.Add(b);
                     offset++;
                 }
+
+                // Target specific information
+                t.AddExtraVTableFields(ts, d, ref offset);
 
                 /* Virtual methods */
                 OutputVirtualMethods(ts, of, os,
@@ -588,11 +595,11 @@ namespace libtysila5.layout
                 return null;
         }
 
-        public static int GetVTableOffset(metadata.MethodSpec ms)
-        { return GetVTableOffset(ms.type, ms); }
+        public static int GetVTableOffset(metadata.MethodSpec ms, Target t)
+        { return GetVTableOffset(ms.type, ms, t); }
 
         public static int GetVTableOffset(metadata.TypeSpec ts,
-            metadata.MethodSpec ms)
+            metadata.MethodSpec ms, Target t)
         {
             var vtbl = GetVirtualMethodDeclarations(ts);
             var search_meth_name = ms.m.GetIntEntry(MetadataStream.tid_MethodDef,
@@ -617,47 +624,14 @@ namespace libtysila5.layout
                             ms.m, ms.msig, ms.gtparams, ms.gmparams))
                         {
                             if (ts.IsInterface == false)
-                                i += 4;
+                                i += (4 + t.ExtraVTableFieldsPointerLength);
                             return i;
                         }
                     }
-
                 }
             }
 
             throw new Exception("Requested virtual method slot not found");
-        }
-
-        private static int GetVTableMethLength(TypeSpec ts)
-        {
-            if (ts == null)
-                return 4;
-            var vtbl = GetVirtualMethodDeclarations(ts);
-            return vtbl.Count + 4;  // tiptr, ifaceptr, extends, type_size
-
-            if (ts == null)
-                return 4; 
-
-            var extends = ts.GetExtends();
-            var vtbl_length = GetVTableMethLength(extends);
-
-            /* Iterate through methods adding 1 for each virtual
-                one */
-            var first_mdef = ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
-                ts.tdrow, 5);
-            var last_mdef = ts.m.GetLastMethodDef(ts.tdrow);
-
-            for (uint mdef_row = first_mdef; mdef_row < last_mdef; mdef_row++)
-            {
-                var flags = ts.m.GetIntEntry(MetadataStream.tid_MethodDef,
-                    (int)mdef_row, 2);
-
-                // Virtual & NewSlot
-                if ((flags & 0x140) == 0x140)
-                    vtbl_length++;
-            }
-
-            return vtbl_length;
         }
     }
 }

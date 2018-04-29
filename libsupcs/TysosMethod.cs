@@ -37,6 +37,7 @@ namespace libsupcs
     {
         public TysosType OwningType;
         public TysosType _ReturnType;
+        public bool returns_void;
         [NullTerminatedListOf(typeof(TysosType))]
         public IntPtr _Params;
         public string _Name;
@@ -84,7 +85,7 @@ namespace libsupcs
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         [MethodReferenceAlias("__invoke")]
-        static extern object InternalInvoke(void* meth, int pcnt, void *parameters);
+        static extern void* InternalInvoke(void* maddr, int pcnt, void **parameters, void **types, TysosMethod meth);
 
         public override System.Reflection.CallingConventions CallingConvention
         {
@@ -148,13 +149,26 @@ namespace libsupcs
         {
             get
             {
+                if(_ReturnType == null && !returns_void)
+                {
+                    var rtspec = mspec.ReturnType;
+                    TysosType _rt;
+                    if (rtspec == null)
+                    {
+                        _rt = null;
+                        returns_void = true;
+                    }
+                    else
+                        _rt = rtspec;
+
+                    System.Threading.Interlocked.CompareExchange(ref _ReturnType, _rt, null);
+                }
                 return _ReturnType;
             }
         }
 
         public override object Invoke(object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, object[] parameters, System.Globalization.CultureInfo culture)
         {
-
             if (MethodAddress == null)
             {
                 var mangled_name = mspec.MangleMethod();
@@ -166,26 +180,51 @@ namespace libsupcs
             if (!IsStatic && (obj == null))
                 throw new System.Reflection.TargetException("Instance method and obj is null (" + OwningType.FullName + "." + Name + "())");
 
-            // TODO: check number and type of parameters
+            // TODO: check number and type of parameters is what the method expects
 
-            // Build a new params array to include obj
+            // Get total number of parameters
             int p_length = 0;
             if (parameters != null)
                 p_length = parameters.Length;
-
-            object[] p;
             if (!IsStatic)
-            {
-                p = new object[p_length + 1];
-                p[0] = obj;
-                for (int i = 0; i < p_length; i++)
-                    p[i + 1] = parameters[i];
                 p_length++;
+
+            // See InternalStrCpy for the rationale here
+            int max_stack_alloc = p_length > 512 ? 512 : p_length;
+            IntPtr* pstack = stackalloc IntPtr[max_stack_alloc];
+            IntPtr* tstack = stackalloc IntPtr[max_stack_alloc];
+
+            void** ps, ts;
+            if(max_stack_alloc <= 512)
+            {
+                ps = (void**)pstack;
+                ts = (void**)tstack;
             }
             else
-                p = parameters;
+            {
+                ps = (void**)MemoryOperations.GcMalloc(p_length * sizeof(void*));
+                ts = (void**)MemoryOperations.GcMalloc(p_length * sizeof(void*));
+            }
 
-            return InternalInvoke(MethodAddress, p_length, (p == null) ? null : MemoryOperations.GetInternalArray(p));
+            // Build a new params array to include obj if necessary, and a tysos type array
+            int curptr = 0;
+            if(!IsStatic)
+            {
+                ps[0] = CastOperations.ReinterpretAsPointer(obj);
+                ts[0] = OtherOperations.GetStaticObjectAddress("_Zu1O");
+                curptr++;
+            }
+            if(parameters != null)
+            {
+                for(int i = 0; i < parameters.Length; i++, curptr++)
+                {
+                    var cp = CastOperations.ReinterpretAsPointer(parameters[i]);
+                    ps[curptr] = cp;
+                    ts[curptr] = *(void**)cp;
+                }
+            }
+
+            return CastOperations.ReinterpretAsObject(InternalInvoke(MethodAddress, p_length, ps, ts, this));
         }
 
         public override RuntimeMethodHandle MethodHandle

@@ -31,82 +31,70 @@ namespace libsupcs.x86_64
     {
         [MethodReferenceAlias("__x86_64_invoke")]
         [MethodImpl(MethodImplOptions.InternalCall)]
-        static unsafe extern object asm_invoke(IntPtr meth, int p_length,
+        static unsafe extern void* asm_invoke(void *maddr, int p_length,
             void* parameters, void* plocs);
 
         [MethodAlias("__invoke")]
+        [AlwaysCompile]
         [Bits64Only]
-        static unsafe object InternalInvoke(IntPtr meth, Object[] parameters, TysosType rettype)
+        static unsafe void* InternalInvoke(void* maddr, int pcnt, void **parameters, void **types, TysosMethod meth)
         {
-            /* Build an array of the call locations of each parameter
+            /* Modify the types array to contain the call locations of each parameter
              * 
              * 0 - INTEGER (pass as-is)
              * 1 - INTEGER (unbox in asm)
              * 2 - SSE (unbox in asm)
              * 3 - MEMORY (upper 24 bits give length of object)
              * 4 - INTEGER (unbox low 32 bits in asm)
+             * 5 - INTEGER (unbox to byref in asm)
              */
 
-            uint[] plocs = null;
-            int p_length = 0;
-
-            if (parameters != null)
+            for(int i = 0; i < pcnt; i++)
             {
-                p_length = parameters.Length;
-
-                plocs = new uint[p_length];
-
-                for (int i = 0; i < p_length; i++)
+                // handle this pointer
+                if(i == 0 && !meth.IsStatic)
                 {
-                    if(parameters[i] == null)
+                    if (meth.OwningType.IsValueType)
                     {
-                        plocs[i] = 0;
-                        continue;
+                        // we need to unbox the this pointer to a managed pointer
+                        types[i] = (void*)5;
                     }
-                    TysosType p_type = TysosType.ReinterpretAsType(**(void***)CastOperations.ReinterpretAsPointer(parameters[i]));
-                    plocs[i] = 0;
+                    else
+                    {
+                        types[i] = (void*)0;
+                    }
+                }
+                else
+                {
+                    // the type we need is encoded in the vtable
+                    var tspecdata = ((int**)types)[i][4];
+                    types[i] = (void*)((tspecdata >> 8) & 0xff);
                 }
             }
 
-            object ret = asm_invoke(meth, p_length,
-                (parameters == null) ? null : MemoryOperations.GetInternalArray(parameters),
-                (plocs == null) ? null : MemoryOperations.GetInternalArray(plocs));
+            var ret = asm_invoke(maddr, pcnt, parameters, types);
+
+            var rettype = meth.ReturnType;
 
             // See if we have to box the return type
             if (rettype != null && rettype.IsValueType)
             {
-                if (rettype.IsEnum)
-                    rettype = Enum.GetUnderlyingEnumType(rettype);
-                if (rettype == typeof(int))
-                    ret = ReinterpretAsInt(ret);
-                else if (rettype == typeof(uint))
-                    ret = ReinterpretAsUInt(ret);
-                else if (rettype == typeof(long))
-                    ret = ReinterpretAsLong(ret);
-                else if (rettype == typeof(ulong))
-                    ret = ReinterpretAsULong(ret);
-                else if (rettype == typeof(short))
-                    ret = ReinterpretAsShort(ret);
-                else if (rettype == typeof(ushort))
-                    ret = ReinterpretAsUShort(ret);
-                else if (rettype == typeof(byte))
-                    ret = ReinterpretAsByte(ret);
-                else if (rettype == typeof(sbyte))
-                    ret = ReinterpretAsSByte(ret);
-                else if (rettype == typeof(char))
-                    ret = ReinterpretAsChar(ret);
-                else if (rettype == typeof(IntPtr))
-                    ret = ReinterpretAsIntPtr(ret);
-                else if (rettype == typeof(UIntPtr))
-                    ret = ReinterpretAsUIntPtr(ret);
-                else if (rettype == typeof(bool))
-                    ret = ReinterpretAsBoolean(ret);
-                else if (rettype == typeof(void))
-                    ret = null;
-                else
+                // Get the size of the return type
+                var tsize = meth._ReturnType.GetClassSize();
+                if(tsize > 8)
                     throw new NotImplementedException("InternalInvoke: return type " + rettype.FullName + " not supported");
 
-                return ret;
+                // Build a new boxed version of the type
+                var obj = (void**)MemoryOperations.GcMalloc(tsize + ClassOperations.GetBoxedTypeDataOffset());
+                *obj = meth._ReturnType._impl;
+                *(int*)((byte*)obj + ClassOperations.GetMutexLockOffset()) = 0;
+
+                if (tsize > 4)
+                    *(long*)((byte*)obj + ClassOperations.GetBoxedTypeDataOffset()) = (long)ret;
+                else
+                    *(int*)((byte*)obj + ClassOperations.GetBoxedTypeDataOffset()) = (int)((long)ret & 0xffffffff);
+
+                return obj;
             }
             else
                 return ret;

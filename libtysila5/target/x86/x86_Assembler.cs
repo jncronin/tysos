@@ -526,5 +526,69 @@ namespace libtysila5.target.x86_64
             else
                 return base.GetCCStackReserve(cc);
         }
+
+        protected internal override void AddExtraVTableFields(TypeSpec ts, IList<byte> d, ref ulong offset)
+        {
+            // We add the SysV ABI calling convention class code here
+            var size = GetSize(ts);
+
+            var cmap = cc_classmap["sysv"];
+            var ct = GetCTFromTypeForCC(ts);
+            int class_code;
+            if (cmap.ContainsKey(ct))
+                class_code = cmap[ct];
+            else
+                class_code = GetCCClassFromCT(ct, size, ts, "sysv");
+
+            switch(class_code)
+            {
+                case sysvc_INTEGER:
+                    d.Add(0);
+                    break;
+                case sysvc_SSE:
+                    d.Add(2);
+                    break;
+                case sysvc_MEMORY:
+                    d.Add(3);
+                    break;
+                default:
+                    throw new NotSupportedException();
+            }
+
+            // Now add the ct type encoded as class code (see libsupcs/x86_64_invoke.cs)
+            switch(ct)
+            {
+                case Opcode.ct_float:
+                    d.Add(2);
+                    break;
+                case Opcode.ct_int32:
+                    d.Add(4);
+                    break;
+                case Opcode.ct_int64:
+                case Opcode.ct_intptr:
+                    d.Add(1);
+                    break;
+                case Opcode.ct_object:
+                case Opcode.ct_ref:
+                    d.Add(0);
+                    break;
+                case Opcode.ct_vt:
+                    d.Add(0);
+                    break;
+                default:
+                    throw new NotSupportedException();
+            }
+
+            // Now the simple type
+            d.Add((byte)ts.SimpleType);
+
+            // Pad with 5 zeros
+            for (int i = 0; i < 5; i++)
+                d.Add(0);
+
+            offset += 8;
+        }
+
+        protected internal override int ExtraVTableFieldsPointerLength => 1;
     }
 }

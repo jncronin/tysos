@@ -87,6 +87,9 @@ namespace libtysila5.target
 
         protected internal virtual int GetCTFromTypeForCC(metadata.TypeSpec t) { return ir.Opcode.GetCTFromType(t); }
 
+        protected internal virtual void AddExtraVTableFields(metadata.TypeSpec ts, IList<byte> d, ref ulong offset) { }
+        protected internal virtual int ExtraVTableFieldsPointerLength { get { return 0; } }
+
         public virtual void InitIntcalls() { }
 
         TargetOptions opts = new TargetOptions();
