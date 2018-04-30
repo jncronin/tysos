@@ -44,6 +44,7 @@ namespace tysos
             items = Items;
         }
 
+        [libsupcs.AlwaysCompile]
         public tysos.lib.File Open(IList<string> path, System.IO.FileMode mode,
             System.IO.FileAccess access, System.IO.FileShare share,
             System.IO.FileOptions options)
@@ -75,28 +76,33 @@ namespace tysos
             return new lib.ErrorFile(lib.MonoIOError.ERROR_FILE_NOT_FOUND);
         }
 
+        [libsupcs.AlwaysCompile]
         public bool Close(lib.File handle)
         {
             return true;
         }
 
+        [libsupcs.AlwaysCompile]
         public int Read(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
         {
             f.Error = lib.MonoIOError.ERROR_READ_FAULT;
             return 0;
         }
 
+        [libsupcs.AlwaysCompile]
         public int Write(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
         {
             f.Error = lib.MonoIOError.ERROR_WRITE_FAULT;
             return 0;
         }
 
+        [libsupcs.AlwaysCompile]
         public int IntProperties(tysos.lib.File f)
         {
             return ((lib.VirtualPropertyFile)f).intProperties;
         }
-        
+
+        [libsupcs.AlwaysCompile]
         public tysos.lib.File.Property GetPropertyByName(lib.File f, string name)
         {
             return ((lib.VirtualPropertyFile)f).GetPropertyByName(name);
