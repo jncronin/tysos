@@ -182,6 +182,12 @@ namespace tysos
                 Formatter.WriteLine("done", arch.BootInfoOutput);
             }
 
+            /* Test JIT */
+            var test_meth = typeof(jittestmethods).GetMethod("get_string") as libsupcs.TysosMethod;
+            jittestmethods.test(test_meth);
+            
+
+
             /* Start the scheduler */
             Formatter.Write("Starting scheduler... ", arch.DebugOutput);
             arch.CurrentCpu.CurrentScheduler = new Scheduler();

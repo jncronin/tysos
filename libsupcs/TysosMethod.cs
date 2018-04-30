@@ -55,7 +55,7 @@ namespace libsupcs
 
         public const string PureVirtualName = "__cxa_pure_virtual";
 
-        metadata.MethodSpec mspec;
+        public metadata.MethodSpec mspec;
 
         public TysosMethod(metadata.MethodSpec ms, TysosType owning_type)
         {
