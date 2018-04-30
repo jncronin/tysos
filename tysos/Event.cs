@@ -227,4 +227,25 @@ namespace tysos
             }
         }
     }
+
+    public class DelegateWithParameterEvent : Event
+    {
+        public delegate bool ParameterEventDelegate(object o);
+        ParameterEventDelegate d;
+        object obj;
+
+        public DelegateWithParameterEvent(ParameterEventDelegate _function, object o)
+        {
+            d = _function;
+            obj = o;
+        }
+
+        public override bool IsSet
+        {
+            get
+            {
+                return d(obj);
+            }
+        }
+    }
 }

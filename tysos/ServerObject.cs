@@ -47,10 +47,6 @@ namespace tysos
         public string MountPath = null;
         public List<string> Tags = new List<string>();
 
-        // cache of previously called methods
-        Dictionary<string, System.Reflection.MethodInfo> members =
-            new Dictionary<string, System.Reflection.MethodInfo>(new Program.MyGenericEqualityComparer<string>());
-
         public ServerObject()
         {
         }
@@ -113,7 +109,12 @@ namespace tysos
             InvokeEvent.ObjectDelegate callback, object callback_obj)
         {
             // Wait for us to enter the message loop
-            while (t == null) ;
+            System.Diagnostics.Debugger.Log(0, "ServerObject", "InvokeAsync: awaiting message loop in " + libsupcs.CastOperations.ReinterpretAsUlong(this).ToString("X"));
+            while(t == null)
+            {
+                Syscalls.SchedulerFunctions.Block(new DelegateWithParameterEvent(delegate (object so) { return ((ServerObject)so).t != null; }, this));
+            }
+            System.Diagnostics.Debugger.Log(0, "ServerObject", "InvokeAsync: message loop has started");
 
             if (Syscalls.SchedulerFunctions.GetCurrentThread() == t)
             {
@@ -151,29 +152,23 @@ namespace tysos
             }
 
             System.Reflection.MethodInfo mi = null;
-            if (members.ContainsKey(name))
-                mi = members[name];
-            else
-            {
-                /* Look for methods on all base classes too
+
+            /* Look for methods on all base classes too
                 TODO: libsupcs should do this for us */
-                Type cur_type = this.GetType();
-                while(mi == null && cur_type != null)
-                {
-                    mi = cur_type.GetMethod(name, ts);
-                    cur_type = cur_type.BaseType;
-                }
+            Type cur_type = this.GetType();
+            while(mi == null && cur_type != null)
+            {
+                mi = cur_type.GetMethod(name, ts);
+                cur_type = cur_type.BaseType;
+            }
 
-                // Can only invoke public instance methods
-                if (mi == null || mi.IsPublic == false || mi.IsStatic == true)
-                {
-                    Formatter.Write("InvokeInternal: method ", Program.arch.DebugOutput);
-                    Formatter.Write(name, Program.arch.DebugOutput);
-                    Formatter.WriteLine(" not found", Program.arch.DebugOutput);
-                    return null;
-                }
-
-                //members[name] = mi;
+            // Can only invoke public instance methods
+            if (mi == null || mi.IsPublic == false || mi.IsStatic == true)
+            {
+                Formatter.Write("InvokeInternal: method ", Program.arch.DebugOutput);
+                Formatter.Write(name, Program.arch.DebugOutput);
+                Formatter.WriteLine(" not found", Program.arch.DebugOutput);
+                return null;
             }
 
             return mi.Invoke(this, p);
@@ -187,6 +182,8 @@ namespace tysos
         public virtual void MessageLoop()
         {
             t = Syscalls.SchedulerFunctions.GetCurrentThread();
+            System.Diagnostics.Debugger.Log(0, "ServerObject", "MessageLoop: in " + libsupcs.CastOperations.ReinterpretAsUlong(this).ToString("X") + 
+                " t set to " + libsupcs.CastOperations.ReinterpretAsUlong(t).ToString("X"));
             Syscalls.SchedulerFunctions.GetCurrentThread().owning_process.MessageServer = this;
 
             if(InitServer() == false)
