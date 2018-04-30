@@ -677,7 +677,7 @@ namespace libtysila5.target.x86
                         Code.AddRange(TLSOverride(ref tls_flag));
                         AddRex(Code, Rex(I.p[0].v, I.p[1].mreg, I.p[2].mreg));
                         Code.Add(0x8b);
-                        Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v));
+                        Code.AddRange(ModRMSIB(GetR(I.p[1].mreg), GetRM(I.p[2].mreg), 2, -1, -1, (int)I.p[3].v, I.p[2].mreg.Equals(x86_64.x86_64_Assembler.r_r13)));
                         break;
                     case x86_mov_r32_rm16disp:
                         Code.Add(0x66);
@@ -1358,7 +1358,7 @@ namespace libtysila5.target.x86
                 }
                 disp_val = (int)cr.disp;
                 rm_val = GetRM(cr.basereg);
-                rm_is_ebp = cr.basereg.Equals(r_ebp);
+                rm_is_ebp = cr.basereg.Equals(r_ebp) || cr.basereg.Equals(x86_64.x86_64_Assembler.r_r13);
             }
             else
             {
@@ -1510,7 +1510,7 @@ namespace libtysila5.target.x86
 
             if(disp_len == -1 && mod == 2)
             {
-                if (disp == 0)
+                if (disp == 0 && !rm_is_ebp)
                 {
                     mod = 0;
                     disp_len = 0;
@@ -1525,6 +1525,11 @@ namespace libtysila5.target.x86
                 mod = 1;
             else if (disp_len == 4)
                 mod = 2;
+
+            if(rm == 5 && mod == 0)
+            {
+                // 
+            }
 
             yield return (byte)(mod << 6 | r << 3 | rm);
 
