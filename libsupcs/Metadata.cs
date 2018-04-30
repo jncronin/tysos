@@ -29,12 +29,12 @@ using metadata;
 
 namespace libsupcs
 {
-    unsafe class Metadata
+    public unsafe class Metadata
     {
         static metadata.MetadataStream mscorlib = null;
         static BinaryAssemblyLoader bal = null;
 
-        internal static BinaryAssemblyLoader BAL
+        public static BinaryAssemblyLoader BAL
         {
             get
             {
@@ -281,7 +281,7 @@ namespace libsupcs
                 ((uint)b3 << 8) | b4;
         }
 
-        internal class BinaryAssemblyLoader : metadata.AssemblyLoader
+        public class BinaryAssemblyLoader : metadata.AssemblyLoader
         {
             internal static Dictionary<ulong, metadata.MetadataStream> ptr_cache =
                 new Dictionary<ulong, metadata.MetadataStream>(
@@ -304,7 +304,9 @@ namespace libsupcs
                     ptr = OtherOperations.GetStaticObjectAddress("metadata");
                 }
                 else
-                    throw new NotImplementedException();
+                {
+                    ptr = JitOperations.GetAddressOfObject(name);
+                }
 
                 return new BinaryInterface(ptr);
             }
