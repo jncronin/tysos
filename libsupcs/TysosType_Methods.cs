@@ -44,7 +44,7 @@ namespace libsupcs
             if (next_name == null)
                 build_method_list();
 
-            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: GetMethodImpl(" + name + ", " + types.Length.ToString() + ")");
+            System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: GetMethodImpl(" + name + ", " + ((types == null) ? "null" :  types.Length.ToString()) + ")");
 
             if (first_name.TryGetValue(name, out var fn) == false)
             {
@@ -60,24 +60,27 @@ namespace libsupcs
                 if (MatchBindingFlags(cur_m, bindingAttr))
                 {
                     // check parameters
-                    var p = cur_m.GetParameters();
                     bool match = true;
-                    if (p.Length == types.Length)
+                    if (types != null)
                     {
-                        for (int i = 0; i < p.Length; i++)
+                        var p = cur_m.GetParameters();
+                        if (p.Length == types.Length)
                         {
-                            if (p[i].ParameterType != types[i])
+                            for (int i = 0; i < p.Length; i++)
                             {
-                                System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: GetMethodImpl: failing because " +
-                                    p[i].ParameterType.FullName + " != " + types[i].FullName);
-                                match = false;
-                                break;
+                                if (p[i].ParameterType != types[i])
+                                {
+                                    System.Diagnostics.Debugger.Log(0, "libsupcs", "TysosType: GetMethodImpl: failing because " +
+                                        p[i].ParameterType.FullName + " != " + types[i].FullName);
+                                    match = false;
+                                    break;
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        match = false;
+                        else
+                        {
+                            match = false;
+                        }
                     }
                     if (match)
                     {
