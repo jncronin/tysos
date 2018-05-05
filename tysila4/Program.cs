@@ -69,7 +69,7 @@ namespace tysila4
             var argc = args.Length;
             char c;
             var go = new XGetoptCS.XGetopt();
-            var arg_str = "t:L:f:e:o:d:qDC:H:m:";
+            var arg_str = "t:L:f:e:o:d:qDC:H:m:i";
             string target = "x86";
             string debug_file = null;
             string output_file = null;
@@ -78,6 +78,7 @@ namespace tysila4
             string hfile = null;
             bool quiet = false;
             bool require_metadata_version_match = true;
+            bool interactive = false;
             string act_epoint = null;
             Dictionary<string, object> opts = new Dictionary<string, object>();
 
@@ -114,6 +115,9 @@ namespace tysila4
                         break;
                     case 'f':
                         parse_f_option(go);
+                        break;
+                    case 'i':
+                        interactive = true;
                         break;
                     case 'm':
                         {
@@ -200,6 +204,12 @@ namespace tysila4
                     Console.WriteLine("Unable to set target option " + kvp.Key + " to " + kvp.Value.ToString());
                     return;
                 }
+            }
+
+            if (interactive)
+            {
+                if (Interactive.DoInteractive() == false)
+                    return;
             }
 
             if (output_file != null)
