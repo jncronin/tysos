@@ -55,6 +55,15 @@ namespace metadata
         GetAssembly to avoid unnecessary loads</summary> */
         public abstract DataInterface LoadAssembly(string name);
 
+        /**<summary>Return all loaded assemblies</summary> */
+        public IEnumerable<string> LoadedAssemblies
+        {
+            get
+            {
+                return cache.Keys;
+            }
+        }
+
         /**<summary>Get an assembly by name</summary>*/
         public virtual MetadataStream GetAssembly(string name)
         {

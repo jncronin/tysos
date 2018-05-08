@@ -50,14 +50,14 @@ namespace ConsoleUtils
             return ReadKey(false);
         }
 
-        public static KeyPressResult ReadKey(bool intercept)
+        public static KeyPressResult ReadKey(bool intercept, int start_cursor = 0)
         {
             while (true)
             {
                 var lineStateBefore = LineState;
                 var keyInfo = Console.ReadKey(true);
                 if (!intercept)
-                    SimulateKeyPress(keyInfo);
+                    SimulateKeyPress(keyInfo, start_cursor);
 
                 return new KeyPressResult(keyInfo, lineStateBefore, LineState);
             }
@@ -76,7 +76,7 @@ namespace ConsoleUtils
             SimulateKeyPress(new ConsoleKeyInfo((char)consoleKey, consoleKey, false, false, false));
         }
 
-        public static void SimulateKeyPress(ConsoleKeyInfo keyInfo)
+        public static void SimulateKeyPress(ConsoleKeyInfo keyInfo, int start_cursor = 0)
         {
             lock (LockObj)
             {
@@ -92,13 +92,13 @@ namespace ConsoleUtils
                 {
                     if (consoleKeyMapping.TryGetValue(keyInfo.Key, out action))
                     {
-                        action.Execute(new ConsoleExtInstance(), keyInfo);
+                        action.Execute(new ConsoleExtInstance { StartCursorPosition = start_cursor }, keyInfo);
                         return;
                     }
                 }
                 if (DefaultConsoleActions.TryGetValue(keyInfo.Modifiers, out action))
                 {
-                    action.Execute(new ConsoleExtInstance(), keyInfo);
+                    action.Execute(new ConsoleExtInstance { StartCursorPosition = start_cursor }, keyInfo);
                 }
             }
         }

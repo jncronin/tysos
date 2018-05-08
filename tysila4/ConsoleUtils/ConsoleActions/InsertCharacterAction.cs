@@ -9,7 +9,7 @@ namespace ConsoleUtils.ConsoleActions
         {
             if (consoleKeyInfo.KeyChar == 0 || console.CurrentLine.Length >= byte.MaxValue - 1)
                 return;
-            console.CurrentLine = console.CurrentLine.Insert(console.CursorPosition, consoleKeyInfo.KeyChar.ToString());
+            console.CurrentLine = console.CurrentLine.Insert(console.CursorPosition - console.StartCursorPosition, consoleKeyInfo.KeyChar.ToString());
             console.CursorPosition++;
         }
     }
