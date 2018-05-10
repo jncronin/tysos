@@ -220,6 +220,115 @@ namespace libtysila5.layout
             t.sigt.WriteToOutput(of, base_m, t, data_sect);
         }
 
+        public class InterfaceMethodImplementation
+        {
+            public MethodSpec InterfaceMethod;
+            public MethodSpec ImplementationMethod;
+
+            public string TargetName
+            {
+                get
+                {
+                    if (ImplementationMethod == null)
+                        return "__cxa_pure_virtual";
+                    else
+                        return ImplementationMethod.MangleMethod();
+                }
+            }
+        }
+
+        public static List<InterfaceMethodImplementation> ImplementInterface(
+            TypeSpec impl_ts, TypeSpec iface_ts, Target t)
+        {
+            var ret = new List<InterfaceMethodImplementation>();
+            bool is_boxed = false;
+            if (impl_ts.IsBoxed)
+            {
+                impl_ts = impl_ts.Unbox;
+                is_boxed = true;
+
+                /* 'boxed' versions of each method should unbox the
+                 * first parameter to a managed pointer then call
+                 * the acutal method
+                 */
+            }
+            /* Iterate through methods */
+            var first_mdef = iface_ts.m.GetIntEntry(MetadataStream.tid_TypeDef,
+                iface_ts.tdrow, 5);
+            var last_mdef = iface_ts.m.GetLastMethodDef(iface_ts.tdrow);
+
+            for (uint mdef_row = first_mdef; mdef_row < last_mdef; mdef_row++)
+            {
+                MethodSpec iface_ms;
+                MethodSpec impl_ms = null;
+                iface_ts.m.GetMethodDefRow(MetadataStream.tid_MethodDef,
+                        (int)mdef_row, out iface_ms, iface_ts.gtparams, null);
+                iface_ms.type = iface_ts;
+
+                // First determine if there is a relevant MethodImpl entry
+                for (int i = 1; i <= impl_ts.m.table_rows[MetadataStream.tid_MethodImpl]; i++)
+                {
+                    var Class = impl_ts.m.GetIntEntry(MetadataStream.tid_MethodImpl, i, 0);
+
+                    if (Class == impl_ts.tdrow)
+                    {
+                        int mdecl_id, mdecl_row, mbody_id, mbody_row;
+                        impl_ts.m.GetCodedIndexEntry(MetadataStream.tid_MethodImpl, i, 2,
+                            impl_ts.m.MethodDefOrRef, out mdecl_id, out mdecl_row);
+                        MethodSpec mdecl_ms;
+                        impl_ts.m.GetMethodDefRow(mdecl_id, mdecl_row, out mdecl_ms, impl_ts.gtparams);
+
+                        if (MetadataStream.CompareString(mdecl_ms.m,
+                            mdecl_ms.m.GetIntEntry(MetadataStream.tid_MethodDef, mdecl_ms.mdrow, 3),
+                            iface_ms.m,
+                            iface_ms.m.GetIntEntry(MetadataStream.tid_MethodDef, iface_ms.mdrow, 3)) &&
+                            MetadataStream.CompareSignature(mdecl_ms, iface_ms))
+                        {
+                            impl_ts.m.GetCodedIndexEntry(MetadataStream.tid_MethodImpl, i, 1,
+                                impl_ts.m.MethodDefOrRef, out mbody_id, out mbody_row);
+                            impl_ts.m.GetMethodDefRow(mbody_id, mbody_row, out impl_ms, impl_ts.gtparams);
+                            impl_ms.type = impl_ts;
+                            break;
+                        }
+                    }
+                }
+
+                // Then iterate through all base classes looking for an implementation
+                if (impl_ms == null)
+                    impl_ms = GetVirtualMethod(impl_ts, iface_ms, t, true);
+
+                // Vectors implement methods which we need to provide
+                if (impl_ms == null && impl_ts.stype == TypeSpec.SpecialType.SzArray)
+                {
+                    // Build a new method that is based in the vector class
+                    impl_ms = iface_ms;
+                    impl_ms.type = new TypeSpec
+                    {
+                        m = impl_ts.m,
+                        tdrow = impl_ts.tdrow,
+                        stype = impl_ts.stype,
+                        other = impl_ts.other,
+                        gtparams = iface_ms.type.gtparams
+                    };
+                }
+
+                if (impl_ms != null)
+                {
+                    if (is_boxed)
+                    {
+                        impl_ms.is_boxed = true;
+                        t.r.BoxedMethodRequestor.Request(impl_ms);
+                    }
+                    else
+                        t.r.MethodRequestor.Request(impl_ms);
+                }
+
+                ret.Add(new InterfaceMethodImplementation { InterfaceMethod = iface_ms, ImplementationMethod = impl_ms });
+            }
+            return ret;
+        }
+
+        // TODO: Use ImplementInterface
         private static void OutputInterface(TypeSpec impl_ts,
             TypeSpec iface_ts, IBinaryFile of, ISection os,
             IList<byte> d, ref ulong offset, Target t)
@@ -308,6 +417,10 @@ namespace libtysila5.layout
 
                 // Output reference
                 string impl_target = (impl_ms == null) ? "__cxa_pure_virtual" : impl_ms.MangleMethod();
+                if(impl_ms == null)
+                {
+                    System.Diagnostics.Debugger.Break();
+                }
 
                 var impl_sym = of.CreateSymbol();
                 impl_sym.Name = impl_target;

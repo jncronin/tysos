@@ -41,6 +41,9 @@ namespace tysila4
             public metadata.MethodSpec ms = null;
             public string Name;
 
+            public static implicit operator InteractiveMethodSpec(metadata.MethodSpec _ms) { return new InteractiveMethodSpec(_ms); }
+            public static implicit operator MethodSpec(InteractiveMethodSpec ims) { return ims.ms; }
+
             public InteractiveMethodSpec(metadata.MethodSpec _ms)
             {
                 ms = _ms;
@@ -226,6 +229,8 @@ namespace tysila4
         }
 
         InteractiveState s = new InteractiveState();
+        libtysila5.target.Target t;
+        InteractiveMetadataStream corlib;
 
         List<string> cmds = new List<string>
         {
@@ -238,12 +243,14 @@ namespace tysila4
             "assemble.method",
             "list.interfaces",
             "list.methods",
-            
+            "implement.interface",
         };
 
-        internal Interactive(metadata.MetadataStream metadata)
+        internal Interactive(metadata.MetadataStream metadata, libtysila5.target.Target target)
         {
             s.m = new InteractiveMetadataStream { m = metadata };
+            t = target;
+            corlib = new InteractiveMetadataStream { m = metadata.al.GetAssembly("mscorlib") };
         }
 
         internal bool DoInteractive()
@@ -288,7 +295,6 @@ namespace tysila4
                     s.ts = ParseType(cmd, ref idx);
                     s.ms = ParseMethod(cmd, ref idx);
 
-                    var t = libtysila5.target.Target.targets["x86_64"];
                     t.InitIntcalls();
                     t.r = new libtysila5.CachingRequestor(s.m.m);
                     StringBuilder sb = new StringBuilder();
@@ -313,6 +319,23 @@ namespace tysila4
 
                     foreach (var ii in s.ts.ts.ImplementedInterfaces)
                         Console.WriteLine(((InteractiveTypeSpec)ii).Name);
+                }
+                else if(cmd[idx] == "implement.interface")
+                {
+                    idx++;
+
+                    InteractiveState istate = new InteractiveState();
+                    istate.m = ParseModule(cmd, ref idx);
+                    istate.ts = ParseType(cmd, ref idx, istate);
+
+                    t.InitIntcalls();
+                    t.r = new libtysila5.CachingRequestor(s.m.m);
+
+                    var iis = libtysila5.layout.Layout.ImplementInterface(s.ts, istate.ts, t);
+                    foreach(var ii in iis)
+                    {
+                        Console.WriteLine(((InteractiveMethodSpec)ii.InterfaceMethod).Name + " -> " + ii.TargetName);
+                    }
                 }
                 else
                 {
@@ -352,24 +375,49 @@ namespace tysila4
             return new InteractiveMetadataStream { m = new_m };
         }
 
-        private InteractiveTypeSpec ParseType(string[] cmd, ref int idx)
+        private InteractiveTypeSpec ParseType(string[] cmd, ref int idx, InteractiveState state = null)
         {
+            if (state == null)
+                state = s;
             if (idx >= cmd.Length || cmd[idx] == ":")
-                return s.ts;
+                return state.ts;
 
             var tname = cmd[idx++];
 
-            if(s.m.AllTypes.ContainsKey(tname))
+            InteractiveTypeSpec new_ts = null;
+            if(state.m.AllTypes.ContainsKey(tname))
+                new_ts = state.m.AllTypes[tname];
+            else if(corlib.AllTypes.ContainsKey(tname))
+                new_ts = corlib.AllTypes[tname];
+
+            if(new_ts == null)
             {
-                var new_ts = s.m.AllTypes[tname];
-                return new_ts;
+                Console.WriteLine("Type: " + tname + " not found in " + state.m.m.AssemblyName);
+                return state.ts;
             }
-            else
+
+            if(idx < cmd.Length)
             {
-                Console.WriteLine("Type: " + tname + " not found in " + s.m.m.AssemblyName);
-                return s.ts;
+                if(cmd[idx] == "<")
+                {
+                    // handle generics
+                    idx++;
+                    var gtparams = new List<TypeSpec>();
+                    while (cmd[idx] != ">")
+                    {
+                        gtparams.Add(ParseType(cmd, ref idx, state));
+                        if (cmd[idx] == ",")
+                            idx++;
+                    }
+                    idx++;
+                    new_ts.ts.gtparams = gtparams.ToArray();
+                }
             }
+
+            return new_ts;
         }
+
+
 
         private string[] get_command()
         {
@@ -450,16 +498,18 @@ namespace tysila4
                 var cmd = ctx[idx++];
                 if (cmd == "select.type")
                     return ParseTypeForOptions(ctx, ref idx, state);
+                if (cmd == "implement.interface")
+                    return ParseInterfaceForOptions(ctx, ref idx, state);
                 else if (cmd == "select.method")
                     return ParseMethodForOptions(ctx, ref idx, state);
-                else if(cmd == "assemble.method")
+                else if (cmd == "assemble.method")
                 {
                     if (idx < ctx.Count || state.ms == null)
                         return ParseMethodForOptions(ctx, ref idx, state);
                     else
                         return new List<string>();
                 }
-                else if(cmd == "list.methods" || cmd == "list.interfaces")
+                else if (cmd == "list.methods" || cmd == "list.interfaces")
                 {
                     if (idx < ctx.Count || state.ts == null)
                         return ParseTypeForOptions(ctx, ref idx, state);
@@ -468,6 +518,18 @@ namespace tysila4
                 }
                 return new List<string>();
                 throw new NotImplementedException();
+            }
+
+            private List<string> ParseInterfaceForOptions(List<string> ctx, ref int idx, InteractiveState state)
+            {
+                if (idx >= ctx.Count && state.ts != null)
+                {
+                    var ret = new List<string>();
+                    foreach (var ii in state.ts.ts.ImplementedInterfaces)
+                        ret.Add(((InteractiveTypeSpec)ii).Name);
+                    return ret;
+                }
+                return new List<string>();
             }
 
             private List<string> ParseMethodForOptions(List<string> ctx, ref int idx, InteractiveState state)

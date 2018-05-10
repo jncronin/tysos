@@ -208,7 +208,7 @@ namespace tysila4
 
             if (interactive)
             {
-                if (new Interactive(m).DoInteractive() == false)
+                if (new Interactive(m, t).DoInteractive() == false)
                     return;
             }
 
