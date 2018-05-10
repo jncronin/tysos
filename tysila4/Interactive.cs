@@ -354,7 +354,7 @@ namespace tysila4
 
         private InteractiveTypeSpec ParseType(string[] cmd, ref int idx)
         {
-            if (idx >= cmd.Length)
+            if (idx >= cmd.Length || cmd[idx] == ":")
                 return s.ts;
 
             var tname = cmd[idx++];
@@ -399,7 +399,36 @@ namespace tysila4
                     if (test.StartsWith(match_text))
                         ret.Add(test);
                 }
-                return ret.ToArray();
+
+                if (ret.Count == 0)
+                    return new string[] { };
+                if (ret.Count == 1)
+                    return new string[] { ret[0] + " " };   // if only one entry can put space after
+
+                /* Find common starting characters */
+                int start_common = 0;
+                while(true)
+                {
+                    char cur_c = ' ';           // matching character at position start_common
+                    bool is_first = true;       // is this the first string in the foreach loop?
+                    foreach(var str in ret)
+                    {
+                        if (start_common >= str.Length)
+                            return new string[] { ret[0].Substring(0, start_common) };
+
+                        if (is_first)
+                        {
+                            cur_c = str[start_common];
+                            is_first = false;
+                        }
+                        else
+                        {
+                            if (str[start_common] != cur_c)
+                                return new string[] { ret[0].Substring(0, start_common) };
+                        }
+                    }
+                    start_common++;
+                }
             }
 
             private List<string> GetContext(string context_text)
@@ -443,12 +472,18 @@ namespace tysila4
 
             private List<string> ParseMethodForOptions(List<string> ctx, ref int idx, InteractiveState state)
             {
+                // methods may be described by name or type:name
                 var ret = ParseTypeForOptions(ctx, ref idx, state);
-                if (ret != null)
-                    return ret;
-                if (idx >= ctx.Count)
-                    return new List<string> { ":" };
-                return new List<string>(state.ts.AllMethods.Keys);
+                if (ret == null)
+                    ret = new List<string>();
+
+                if (idx < ctx.Count && ctx[idx] == ":")
+                    idx++;
+
+                if (idx >= ctx.Count && state.ts != null)
+                    ret.AddRange(state.ts.AllMethods.Keys);
+
+                return ret;
             }
 
             private List<string> ParseTypeForOptions(List<string> ctx, ref int idx, InteractiveState state)
