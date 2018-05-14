@@ -49,6 +49,7 @@ namespace tysila4
             Path.GetDirectoryName(System.Reflection.Assembly.GetAssembly(typeof(Program)).Location),
             DirectoryDelimiter
         };
+        static List<string> new_search_dirs = new List<string>();
 
         static bool func_sects = false;
         static bool data_sects = false;
@@ -90,7 +91,7 @@ namespace tysila4
                         target = go.Optarg;
                         break;
                     case 'L':
-                        search_dirs.Add(go.Optarg);
+                        new_search_dirs.Add(go.Optarg);
                         break;
                     case 'd':
                         debug_file = go.Optarg;
@@ -156,6 +157,9 @@ namespace tysila4
                 Console.WriteLine("No input file specified");
                 return;
             }
+
+            // Insert library directories specified on the command line before the defaults
+            search_dirs.InsertRange(0, new_search_dirs);
 
             if(cfile != null && hfile == null)
             {
