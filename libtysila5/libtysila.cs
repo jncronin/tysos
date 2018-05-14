@@ -66,7 +66,10 @@ namespace libtysila5
                 var arr = new byte[l];
                 s.Read(arr, 0, (int)l);
 
-                return new ArrayInterface(arr);
+                var ret = new ArrayInterface(arr);
+                ret.Name = flr.FullFilename;
+
+                return ret;
             }
         }
     }

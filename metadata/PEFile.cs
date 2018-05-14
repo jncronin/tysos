@@ -293,6 +293,9 @@ namespace metadata
                 var build = (int)m.GetIntEntry(MetadataStream.tid_AssemblyRef, i, 2);
                 var rev = (int)m.GetIntEntry(MetadataStream.tid_AssemblyRef, i, 3);
 
+                if (ass_name == "netstandard")
+                    continue;
+
                 System.Diagnostics.Debugger.Log(0, "metadata", "PEFile.Parse: loading referenced assembly " + ass_name);
 
                 if ((m.referenced_assemblies[i - 1] = al.GetAssembly(ass_name, maj, min, build, rev)) == null)

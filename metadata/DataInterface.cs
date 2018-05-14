@@ -26,6 +26,8 @@ namespace metadata
 {
     public abstract class DataInterface
     {
+        string _name;
+        public virtual string Name { get { return _name; } set { _name = value; } }
         public abstract byte ReadByte(int offset);
 
         public virtual sbyte ReadSByte(int offset)
