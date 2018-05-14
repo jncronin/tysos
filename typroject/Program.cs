@@ -225,7 +225,7 @@ namespace typroject
             return csc(tools_ver, out is_v4plus);
         }
 
-        static string get_dotnetsdk()
+        internal static string get_dotnetsdk()
         {
             // Find dotnet.exe in path
             string dotnet = null;
@@ -688,6 +688,27 @@ namespace typroject
                 }
             }
 
+            /* Handle an SDK directive */
+            var nsdk = n.SelectSingleNode("@Sdk");
+            string projsdkdir = null;
+            if(nsdk != null)
+            {
+                var sdkname = nsdk.Value;
+
+                var cscname = Program.csc("v4.6.1");
+                var sdkdir = Program.get_dotnetsdk();
+
+                var sdkdirdi = new DirectoryInfo(Program.replace_dir_split(sdkdir + "/Sdks/" + sdkname + "/Sdk"));
+                if (sdkdirdi.Exists)
+                    projsdkdir = sdkdirdi.FullName;
+            }
+            if(projsdkdir != null)
+            {
+                var propsfi = new FileInfo(Program.replace_dir_split(projsdkdir + "/Sdk.props"));
+                if (propsfi.Exists)
+                    process_import(propsfi, ret);
+            }
+
             /* Iterate through all child nodes */
             foreach (XPathNavigator cn in n.Select("child::*", nm))
             {
@@ -697,13 +718,99 @@ namespace typroject
             if(!is_proj)
                 return ret;
 
+            /* Handle Sdk.targets */
+            if (projsdkdir != null)
+            {
+                var targetsfi = new FileInfo(Program.replace_dir_split(projsdkdir + "/Sdk.targets"));
+                if (targetsfi.Exists)
+                    process_import(targetsfi, ret);
+            }
+
+            if(props.ContainsKey("UsingMicrosoftNETSdk") && props["UsingMicrosoftNETSdk"].ToLower() == "true")
+            {
+                /* NETSDK projects include all subfiles by default excpet those we choose to exclude */
+                string[] diearr = new string[] { };
+                if(props.TryGetValue("DefaultItemExcludes", out var diexcl))
+                {
+                    diearr = process_array(diexcl, ret);
+                }
+
+                var basedi = new DirectoryInfo(ret.uri_basedir.AbsolutePath);
+                var allfiles = basedi.GetFiles("*", SearchOption.AllDirectories);
+
+                foreach(var f in allfiles)
+                {
+                    var rel_path_for_add = Project.rel_path(f.FullName, ret.uri_basedir, ret.uri_curdir);
+                    var rel_path_for_excl = Project.rel_path(f.FullName, ret.uri_basedir, ret.uri_basedir);
+
+                    // compare against each member of diearr
+                    bool can_add = true;
+                    foreach(var die in diearr)
+                    {
+                        var dies = die.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+                        var rps = rel_path_for_excl.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+
+                        int rpidx = 0;
+                        bool in_double_star = false;
+                        bool matches = true;
+                        for(int dieidx = 0; dieidx < dies.Length; dieidx++)
+                        {
+                            if(dies[dieidx] == "**")
+                            {
+                                in_double_star = true;
+                            }
+                            else
+                            {
+                                if(rpidx >= rps.Length)
+                                {
+                                    matches = false;
+                                    break;
+                                }
+                                if(cmp_wcstr(dies[dieidx], rps[rpidx]))
+                                {
+                                    in_double_star = false;
+                                    rpidx++;
+                                }
+                                else if(in_double_star)
+                                {
+                                    while(rpidx < rps.Length && !cmp_wcstr(dies[dieidx], rps[rpidx]))
+                                    {
+                                        rpidx++;
+                                    }
+                                    in_double_star = false;
+                                    dieidx--;
+                                }
+                                else
+                                {
+                                    matches = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if(matches)
+                        {
+                            can_add = false;
+                            break;
+                        }
+                    }
+                    if (can_add)
+                        ret.Sources.Add(rel_path_for_add);
+                }
+            }
+            
             /* First find the properties of this project */
             ret.configuration = props["Configuration"];
 
             if (props.ContainsKey("TargetFrameworkVersion"))
                 ret.tools_ver = props["TargetFrameworkVersion"];
             else
-                ret.tools_ver = n.SelectSingleNode("@ToolsVersion", nm).Value;
+            {
+                var tvn = n.SelectSingleNode("@ToolsVersion", nm);
+                if (tvn != null)
+                    ret.tools_ver = tvn.Value;
+                else
+                    ret.tools_ver = "4.6.1";
+            }
 
             if(props.ContainsKey("ProjectGuid"))
                 ret.Guid = new Guid(props["ProjectGuid"]);
@@ -780,6 +887,23 @@ namespace typroject
             return ret;
         }
 
+        private static bool cmp_wcstr(string wcstr, string match)
+        {
+            if (!wcstr.Contains("*"))
+                return wcstr == match;
+            var star_split = wcstr.Split(new char[] { '*' }, StringSplitOptions.RemoveEmptyEntries);
+            int midx = 0;
+            foreach(var spl in star_split)
+            {
+                if (midx >= match.Length)
+                    return false;
+                if ((midx = match.IndexOf(spl, midx)) == -1)
+                    return false;
+                midx += spl.Length;
+            }
+            return true;
+        }
+
         private static string get_prop(string name, Dictionary<string, string> props)
         {
             if (props.ContainsKey(name))
@@ -798,29 +922,31 @@ namespace typroject
                     process_propertygroup(n, ret, props, nm);
                 else if (n.Name == "ItemGroup")
                     process_itemgroup(n, ret, props, nm);
-                else if(n.Name == "ItemDefinitionGroup")
+                else if (n.Name == "ImportGroup")
+                    process_importgroup(n, ret, props, nm);
+                else if (n.Name == "ItemDefinitionGroup")
                 {
                     // ignore
                 }
-                else if(n.Name == "Target")
+                else if (n.Name == "Target")
                 {
                     if (process_condition(n, props, nm))
                         ret.targets[n.SelectSingleNode("@Name", nm).Value] = n;
                 }
-                else if(n.Name == "UsingTask")
+                else if (n.Name == "UsingTask")
                 {
                     // ignore
                 }
-                else if(n.Name == "Choose")
+                else if (n.Name == "Choose")
                 {
-                    if(process_condition(n, props, nm))
+                    if (process_condition(n, props, nm))
                     {
                         bool when_done = false;
-                        foreach(XPathNavigator cn in n.Select("child::*", nm))
+                        foreach (XPathNavigator cn in n.Select("child::*", nm))
                         {
-                            if(cn.Name == "When")
+                            if (cn.Name == "When")
                             {
-                                if(process_condition(cn, props, nm))
+                                if (process_condition(cn, props, nm))
                                 {
                                     foreach (XPathNavigator wcn in cn.Select("child::*", nm))
                                     {
@@ -830,7 +956,7 @@ namespace typroject
                                     break;
                                 }
                             }
-                            else if(cn.Name == "Otherwise" && !when_done)
+                            else if (cn.Name == "Otherwise" && !when_done)
                             {
                                 foreach (XPathNavigator wcn in cn.Select("child::*", nm))
                                 {
@@ -844,6 +970,17 @@ namespace typroject
                 }
                 else
                     throw new NotImplementedException();
+            }
+        }
+
+        private static void process_importgroup(XPathNavigator n, Project ret, Dictionary<string, string> props, XmlNamespaceManager nm)
+        {
+            if (process_condition(n, props, nm))
+            {
+                foreach (XPathNavigator cn in n.Select("child::*"))
+                {
+                    process_import(cn, ret, props, nm);
+                }
             }
         }
 
@@ -872,11 +1009,15 @@ namespace typroject
                     var autogenn = n.SelectSingleNode("@AutoGen", nm);
                     if (autogenn != null)
                         throw new NotImplementedException();
-                    var fname = process_string(n.SelectSingleNode("@Include", nm).Value, props);
+                    var incn = n.SelectSingleNode("@Include", nm);
+                    if (incn != null)
+                    {
+                        var fname = process_string(incn.Value, props);
 
-                    var rp = rel_path(fname, ret.uri_basedir, ret.uri_curdir);
-                    if (!ret.Sources.Contains(rp))
-                        ret.Sources.Add(rp);
+                        var rp = rel_path(fname, ret.uri_basedir, ret.uri_curdir);
+                        if (!ret.Sources.Contains(rp))
+                            ret.Sources.Add(rp);
+                    }
                 }
                 else if(n.Name == "EmbeddedResource")
                 {
@@ -886,14 +1027,18 @@ namespace typroject
                     var autogenn = n.SelectSingleNode("@AutoGen", nm);
                     if (autogenn != null)
                         throw new NotImplementedException();
-                    var fname = process_string(n.SelectSingleNode("@Include", nm).Value, props);
-                    var lname = process_string(n.SelectSingleNode("./d:LogicalName", nm).Value, props);
-
-                    var rp = rel_path(fname, ret.uri_basedir, ret.uri_curdir);
-                    if (!ret.Resources.Contains(rp))
+                    var incn = n.SelectSingleNode("@Include", nm);
+                    if (incn != null)
                     {
-                        ret.Resources.Add(rp);
-                        ret.ResourceLogicalNames.Add(lname);
+                        var fname = process_string(incn.Value, props);
+                        var lname = process_string(n.SelectSingleNode("./d:LogicalName", nm).Value, props);
+
+                        var rp = rel_path(fname, ret.uri_basedir, ret.uri_curdir);
+                        if (!ret.Resources.Contains(rp))
+                        {
+                            ret.Resources.Add(rp);
+                            ret.ResourceLogicalNames.Add(lname);
+                        }
                     }
                 }
                 else if(n.Name == "ProjectReference")
@@ -916,8 +1061,19 @@ namespace typroject
                 }
                 else if(n.Name == "Reference")
                 {
-                    var rname = process_string(n.SelectSingleNode("@Include", nm).Value, props, ret.items);
-                    ret.References.Add(rname);
+                    var incln = n.SelectSingleNode("@Include", nm);
+                    if (incln != null)
+                    {
+                        var rname = process_string(incln.Value, props, ret.items);
+                        ret.References.Add(rname);
+                    }
+                    var remn = n.SelectSingleNode("@Remove", nm);
+                    if (remn != null)
+                    {
+                        var rname = process_string(remn.Value, props, ret.items);
+                        while (ret.References.Remove(rname)) ;
+                    }
+
                 }
                 else if(n.Name == "ReferencePath")
                 {
@@ -951,9 +1107,12 @@ namespace typroject
                     items = new List<string>();
                     ret.items[n.Name] = items;
                 }
-                var str = process_string(n.SelectSingleNode("@Include", nm).Value, props);
-                if (!items.Contains(str))
-                    items.Add(str);
+                var incn2 = n.SelectSingleNode("@Include", nm);
+                if (incn2 != null)
+                {
+                    var str = process_string(incn2.Value, props);
+                    if (!items.Contains(str))
+                        items.Add(str); }
             }
         }
 
@@ -1076,7 +1235,7 @@ namespace typroject
 
                     while (true)
                     {
-                        if(value[i] == ')')
+                        if(i >= value.Length || value[i] == ')')
                         {
                             bcount--;
                             if (bcount == 0)
@@ -1372,6 +1531,8 @@ namespace typroject
             List<string> new_refs = new List<string>();
             foreach (string lib in References)
             {
+                if (lib.Length == 0)
+                    continue;
                 var lib2 = Program.replace_dir_split(lib);
                 if (reference_overrides != null && reference_overrides.ContainsKey(lib2))
                 {
@@ -1574,11 +1735,12 @@ namespace typroject
                 if (t2 == "")
                     continue;
 
-                var tnode = targets[t2];
-
-                foreach(XPathNavigator cn in tnode.Select("child::*", nm))
+                if (targets.TryGetValue(t2, out var tnode))
                 {
-                    process_task(cn, this, properties, nm);
+                    foreach (XPathNavigator cn in tnode.Select("child::*", nm))
+                    {
+                        process_task(cn, this, properties, nm);
+                    }
                 }
             }
         }
@@ -1648,6 +1810,14 @@ namespace typroject
                 else if(n.Name == "Error")
                 {
                     throw new Exception(process_string(n.SelectSingleNode("@Text", nm).Value, props, project.items));
+                }
+                else if(n.Name == "JoinItems")
+                {
+                    Console.WriteLine("Warning: JoinItems not implemented");
+                }
+                else if(n.Name == "ResolvePackageFileConflicts")
+                {
+                    Console.WriteLine("Warning: RResolvePackageFileConflicts not implemented");
                 }
                 else
                     throw new NotImplementedException();
