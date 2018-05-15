@@ -231,6 +231,7 @@ namespace tysila4
         InteractiveState s = new InteractiveState();
         libtysila5.target.Target t;
         InteractiveMetadataStream corlib;
+        AutoCompleteHandler ach;
 
         List<string> cmds = new List<string>
         {
@@ -255,7 +256,8 @@ namespace tysila4
 
         internal bool DoInteractive()
         {
-            ReadLine.AutoCompletionHandler = new AutoCompleteHandler(this);
+            ach = new AutoCompleteHandler(this);
+            ReadLine.AutoCompletionHandler = ach;
             ReadLine.HistoryEnabled = true;
 
             while(true)
@@ -272,6 +274,7 @@ namespace tysila4
                     idx++;
                     s.m = ParseModule(cmd, ref idx);
                     s.ts = ParseType(cmd, ref idx);
+                    s.ts = instantiate_type(s.ts);
                 }
                 else if(cmd[idx] == "select.method")
                 {
@@ -348,6 +351,28 @@ namespace tysila4
             return false;
         }
 
+        private InteractiveTypeSpec instantiate_type(InteractiveTypeSpec ts)
+        {
+            if (ts.ts.IsGenericTemplate)
+            {
+                TypeSpec[] gtparams = new TypeSpec[ts.ts.GenericParamCount];
+                for(int i = 0; i < ts.ts.GenericParamCount; i++)
+                {
+                    string[] cmd;
+                    ach.JustType = true;
+                    while ((cmd = get_command("GP" + i.ToString() + "> ")).Length == 0) ;
+                    ach.JustType = false;
+                    int idx = 0;
+                    var type = ParseType(cmd, ref idx);
+                    gtparams[i] = type;
+                }
+                ts.ts.gtparams = gtparams;
+                return ts;
+            }
+            else
+                return ts;
+        }
+
         private InteractiveMethodSpec ParseMethod(string[] cmd, ref int idx)
         {
             if (idx >= (cmd.Length - 1) || cmd[idx] != ":")
@@ -419,9 +444,9 @@ namespace tysila4
 
 
 
-        private string[] get_command()
+        private string[] get_command(string prompt = "> ")
         {
-            var cmd = get_string("> ");
+            var cmd = get_string(prompt);
             return AutoCompleteHandler.Tokenize(cmd, AutoCompleteHandler.seps).ToArray();
         }
 
@@ -431,6 +456,7 @@ namespace tysila4
             public char[] Separators { get; set; } = seps;
 
             Interactive i;
+            internal bool JustType;
 
             public AutoCompleteHandler(Interactive interactive) { i = interactive; }
 
@@ -439,7 +465,15 @@ namespace tysila4
                 string match_text = text.Substring(index);
                 string context_text = text.Substring(0, index);
 
-                var opts = GetContext(context_text);
+                List<string> opts;
+                if (JustType)
+                {
+                    var ctx = Tokenize(context_text, Separators);
+                    int idx = 0;
+                    opts = ParseTypeForOptions(ctx, ref idx, i.s);
+                }
+                else   
+                    opts = GetContext(context_text);
 
                 List<string> ret = new List<string>();
                 foreach(var test in opts)

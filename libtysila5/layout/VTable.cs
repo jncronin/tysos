@@ -420,6 +420,7 @@ namespace libtysila5.layout
                 if(impl_ms == null)
                 {
                     System.Diagnostics.Debugger.Break();
+                    var test = GetVirtualMethod(impl_ts, iface_ms, t, true);
                 }
 
                 var impl_sym = of.CreateSymbol();
@@ -703,7 +704,7 @@ namespace libtysila5.layout
             // if not found, look to base classes
             var bc = impl_ts.GetExtends();
             if (bc != null)
-                return GetVirtualMethod(bc, decl_ms, t);
+                return GetVirtualMethod(bc, decl_ms, t, allow_non_virtual);
             else
                 return null;
         }
