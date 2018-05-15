@@ -399,6 +399,18 @@ namespace metadata
             }
         }
 
+        public int GenericParamCount
+        {
+            get
+            {
+                if (stype == SpecialType.Boxed)
+                    return other.GenericParamCount;
+                if (m.gtparams == null)
+                    return 0;
+                return m.gtparams[tdrow];
+            }
+        }
+
         public override bool IsArray
         {
             get

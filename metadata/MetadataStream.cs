@@ -523,7 +523,7 @@ namespace metadata
                 return false;
 
             // Return type
-            msiga = ma.GetMethodDefSigRetTypeIndex(msiga);
+            /*msiga = ma.GetMethodDefSigRetTypeIndex(msiga);
             msigb = mb.GetMethodDefSigRetTypeIndex(msigb);
             var rta = ma.GetTypeSpec(ref msiga, gtparamsa, gmparamsa);
             var rtb = mb.GetTypeSpec(ref msigb, gtparamsb, gmparamsb);
@@ -532,7 +532,7 @@ namespace metadata
             if (rtb == null && rta != null)
                 return false;
             if (rta != null && !rta.Equals(rtb))
-                return false;
+                return false;*/
 
             // Params
             for(int i = 0; i < pca; i++)
@@ -1712,9 +1712,9 @@ namespace metadata
                     TypeOrMethodDef, out tid, out row);
 
                 if (tid == tid_TypeDef)
-                    gtparams[row] = i;
+                    gtparams[row] = gtparams[row] + 1;
                 else if (tid == tid_MethodDef)
-                    gmparams[row] = i;
+                    gmparams[row] = gmparams[row] + 1;
                 else
                     throw new NotSupportedException();
             }
