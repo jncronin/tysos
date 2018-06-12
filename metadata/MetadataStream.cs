@@ -499,7 +499,8 @@ namespace metadata
             int msiga,
             TypeSpec[] gtparamsa, TypeSpec[] gmparamsa,
             MetadataStream mb, int msigb,
-            TypeSpec[] gtparamsb, TypeSpec[] gmparamsb)
+            TypeSpec[] gtparamsb, TypeSpec[] gmparamsb,
+            bool check_rettype = false)
         {
             // Quick check
             if(ma == mb && msiga == msigb)
@@ -525,11 +526,20 @@ namespace metadata
             // Return type
             msiga = ma.GetMethodDefSigRetTypeIndex(msiga);
             msigb = mb.GetMethodDefSigRetTypeIndex(msigb);
-            ma.GetTypeSpec(ref msiga, gtparamsa, gmparamsa);
-            mb.GetTypeSpec(ref msigb, gtparamsb, gmparamsb);
+            var rta = ma.GetTypeSpec(ref msiga, gtparamsa, gmparamsa);
+            var rtb = mb.GetTypeSpec(ref msigb, gtparamsb, gmparamsb);
+            if (check_rettype)
+            {
+                if (rta == null && rtb != null)
+                    return false;
+                if (rtb == null && rta != null)
+                    return false;
+                if (rta != null && !rta.Equals(rtb))
+                    return false;
+            }
 
             // Params
-            for(int i = 0; i < pca; i++)
+            for (int i = 0; i < pca; i++)
             {
                 var pa = ma.GetTypeSpec(ref msiga, gtparamsa, gmparamsa);
                 var pb = mb.GetTypeSpec(ref msigb, gtparamsb, gmparamsb);
@@ -1346,7 +1356,7 @@ namespace metadata
                     var cur_sig = (int)ts.m.GetIntEntry(tid_MethodDef, (int)mdef_row, 4);
 
                     if (CompareSignature(ts.m, cur_sig, ts.gtparams, gmparams,
-                        sig_m, sig, ts.gtparams, gmparams))
+                        sig_m, sig, ts.gtparams, gmparams, name == "op_Explicit" || name == "op_Implicit"))
                         return (int)mdef_row;
                 }
             }
