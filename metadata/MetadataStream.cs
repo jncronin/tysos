@@ -523,16 +523,10 @@ namespace metadata
                 return false;
 
             // Return type
-            /*msiga = ma.GetMethodDefSigRetTypeIndex(msiga);
+            msiga = ma.GetMethodDefSigRetTypeIndex(msiga);
             msigb = mb.GetMethodDefSigRetTypeIndex(msigb);
-            var rta = ma.GetTypeSpec(ref msiga, gtparamsa, gmparamsa);
-            var rtb = mb.GetTypeSpec(ref msigb, gtparamsb, gmparamsb);
-            if (rta == null && rtb != null)
-                return false;
-            if (rtb == null && rta != null)
-                return false;
-            if (rta != null && !rta.Equals(rtb))
-                return false;*/
+            ma.GetTypeSpec(ref msiga, gtparamsa, gmparamsa);
+            mb.GetTypeSpec(ref msigb, gtparamsb, gmparamsb);
 
             // Params
             for(int i = 0; i < pca; i++)
@@ -692,8 +686,11 @@ namespace metadata
                         var other_ass = al.GetAssembly(ass_name);
 
                         var tforward_key = other_ass.AssemblyName + "!" + typenamespace + "." + typename;
+                        var tforward_key2 = other_ass.AssemblyName + "!*";
                         if (al.TypeForwarders.ContainsKey(tforward_key))
                             other_ass = al.GetAssembly(al.TypeForwarders[tforward_key]);
+                        else if (al.TypeForwarders.ContainsKey(tforward_key2))
+                            other_ass = al.GetAssembly(al.TypeForwarders[tforward_key2]);
 
                         ts = other_ass.GetTypeSpec(typenamespace, typename);
 
@@ -996,8 +993,11 @@ namespace metadata
 
                                 /* Is there a typeforwarder for this? */
                                 var tforward_key = other_m.AssemblyName + "!" + other_namespace + "." + other_name;
+                                var tforward_key2 = other_m.AssemblyName + "!*";
                                 if (al.TypeForwarders.ContainsKey(tforward_key))
                                     other_m = al.GetAssembly(al.TypeForwarders[tforward_key]);
+                                else if (al.TypeForwarders.ContainsKey(tforward_key2))
+                                    other_m = al.GetAssembly(al.TypeForwarders[tforward_key2]);
                                 var other_ts = other_m.GetTypeSpec(other_namespace, other_name);
                                 return other_ts;
 

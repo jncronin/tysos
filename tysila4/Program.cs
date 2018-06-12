@@ -32,7 +32,7 @@ namespace tysila4
     public class Program
     {
         /* Boiler plate */
-        const string year = "2009 - 2017";
+        const string year = "2009 - 2018";
         const string authors = "John Cronin <jncronin@tysos.org>";
         const string website = "http://www.tysos.org";
         const string nl = "\n";
@@ -167,26 +167,31 @@ namespace tysila4
                 return;
             }
 
-            //var fname = "D:\\tysos\\branches\\tysila3\\libsupcs\\bin\\Release\\libsupcs.dll";
-            //var fname = @"D:\tysos\branches\tysila3\testsuite\test_002\bin\Release\test_002.exe";
-            //var fname = @"D:\tysos\branches\tysila3\testsuite\ifelse\ifelse.exe";
-            //var fname = @"barebones\kernel.exe";
-            //var fname = @"test_005.exe";
-            //var fname = @"vtype\vtype.exe";
-            //var fname = @"D:\tysos\branches\tysila3\mono\corlib\mscorlib.dll";
-            //var fname = @"vcall\vcall.exe";
-
             libtysila5.libtysila.AssemblyLoader al = new libtysila5.libtysila.AssemblyLoader(
                 new FileSystemFileLoader());
 
             /* Load up type forwarders */
-            string typeforwarders = @"D:\tysos\corefx\lib\typeforwards.txt";
-            var tfr = new System.IO.StreamReader(typeforwarders);
-            while(!tfr.EndOfStream)
+            foreach(var libdir in search_dirs)
             {
-                var tfr_line = tfr.ReadLine();
-                var tfr_lsplit = tfr_line.Split('=');
-                al.TypeForwarders[tfr_lsplit[0]] = tfr_lsplit[1];
+                try
+                {
+                    var di = new DirectoryInfo(libdir);
+                    if (di.Exists)
+                    {
+                        foreach (var tfw_file in di.GetFiles("*.tfw"))
+                        {
+                            var tfr = new StreamReader(tfw_file.OpenRead());
+                            while (!tfr.EndOfStream)
+                            {
+                                var tfr_line = tfr.ReadLine();
+                                var tfr_lsplit = tfr_line.Split('=');
+                                al.TypeForwarders[tfr_lsplit[0]] = tfr_lsplit[1];
+                            }
+                            tfr.Close();
+                        }
+                    }
+                }
+                catch (Exception) { }
             }
 
             //search_dirs.Add(@"..\mono\corlib");
