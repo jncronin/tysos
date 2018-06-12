@@ -417,11 +417,11 @@ namespace libtysila5.layout
 
                 // Output reference
                 string impl_target = (impl_ms == null) ? "__cxa_pure_virtual" : impl_ms.MangleMethod();
-                if(impl_ms == null)
-                {
-                    System.Diagnostics.Debugger.Break();
-                    var test = GetVirtualMethod(impl_ts, iface_ms, t, true);
-                }
+                //if(impl_ms == null)
+                //{
+                //    System.Diagnostics.Debugger.Break();
+                //    var test = GetVirtualMethod(impl_ts, iface_ms, t, true);
+                //}
 
                 var impl_sym = of.CreateSymbol();
                 impl_sym.Name = impl_target;
