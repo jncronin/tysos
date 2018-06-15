@@ -9,6 +9,3 @@
 	url = https://github.com/dotnet/corefx.git
 	branch = release/2.0.0
 	ignore = all
-[submodule "tysila4/readline"]
-	path = tysila4/readline
-	url = https://github.com/tonerdo/readline.git
