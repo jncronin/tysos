@@ -27,6 +27,7 @@ UnicodeData.cs
 category-dump
 tloadkif.h
 tloadkif.c
+config.tmk
 
 corlib.dll.ty.sources
 

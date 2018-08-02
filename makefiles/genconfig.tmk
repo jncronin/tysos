@@ -1,0 +1,111 @@
+// generate config files for building tymake
+
+// store options here
+opts = [=];
+
+// require a valid input file
+function inputrequired(string prompt, string default)
+{
+	ret = input(prompt, default);
+	if(exists(ret) != 1)
+	{
+		print("$ret not found, please provide a different path\n");
+		return inputrequired(prompt, default);
+	}
+	return ret;
+}
+
+// require a directory containing a given file
+function finddirwithfile(string filename, string default_loc, string prompt)
+{
+	test_loc = input(prompt, default_loc);
+	if(!sfiles(test_loc).contains(filename))
+	{
+		print("$filename not found in $test_loc, please provide a different path\n");
+		return finddirwithfile(filename, default_loc, prompt);
+	}
+	return test_loc;
+}
+
+// first, get architecture
+opts.add("TARGET", input("Target architecture", [ "x86_64" ]));
+
+// get arch options
+if(opts.TARGET == "x86_64")
+{
+	opts.add("USE_GRUB", input("Generate GRUB bootloader?", [ "y", "n" ], "y"));
+	opts.add("USE_UEFI", input("Generate UEFI bootloader?", [ "y", "n" ], "n"));
+
+	if(opts.USE_GRUB == "y" || opts.USE_UEFI == "y")
+	{
+		opts.add("MAKE_ISO", input("Generate an ISO image?", [ "y", "n" ], "y"));
+	}
+	
+	opts.add("TYSILAARCH", "x86_64");
+	opts.add("TLARCH", "x86_64-elf-tyobj");
+
+	opts.add("CFLAGS", input("Additional CFLAGS", "-ffreestanding -mno-red-zone"));
+	opts.add("TYSILAFLAGS", input("Additional TYSILAFLAGS", "-mno-sse4_1"));
+	opts.add("LDFLAGS", input("Additional LDFLAGS", "-fno-use-linker-plugin -Ttext 0x40000000 -nostdlib"));
+
+	TOOLPREFIX = "x86_64-elf";
+	opts.add("TOOLPREFIX", "$TOOLPREFIX");
+}
+
+// get tools
+opts.add("XCC", inputrequired("Cross compiler for $TOOLPREFIX", findsilent("$TOOLPREFIX-gcc")));
+opts.add("XAR", inputrequired("Cross archiver for $TOOLPREFIX", findsilent("$TOOLPREFIX-ar")));
+opts.add("XOBJCOPY", inputrequired("Cross objcopy for $TOOLPREFIX", findsilent("$TOOLPREFIX-objcopy")));
+opts.add("XRANLIB", inputrequired("Cross ranlib for $TOOLPREFIX", findsilent("$TOOLPREFIX-ranlib")));
+
+if(opts.TARGET == "x86_64")
+{
+	opts.add("YASM", inputrequired("YASM assembler", findsilent("yasm")));
+}
+
+if(opts.TARGET == "x86_64" && opts.USE_GRUB == "y")
+{
+	opts.add("GRUBCC", inputrequired("Cross compiler for i686-elf", findsilent("i686-elf-gcc")));
+	opts.add("GRUBAR", inputrequired("Cross archiver for i686-elf", findsilent("i686-elf-ar")));
+	
+	if(PLATFORM == "unix")
+	{
+		base_loc = "/usr/include";
+	}
+	else
+	{
+		base_loc = "";
+	}
+
+	opts.add("GRUBSRC", finddirwithfile("multiboot.h", base_loc, "Location of GRUB header files"));
+	opts.add("CDBOOT", finddirwithfile("cdboot.img", "", "GRUB i386-pc module directory") + "/cdboot.img");
+	opts.add("GRUBMKIMAGE", inputrequired("GRUB's grub-mkimage tool", findsilent("grub-mkimage", [ dir(dir(opts.CDBOOT)) ])));
+}
+if(opts.TARGET == "x86_64" && opts.MAKE_ISO == "y")
+{
+	opts.add("GZIP", inputrequired("Gzip compression utility", findsilent("gzip")));
+}
+
+// dump config and write out
+print("\n");
+setoutputcolor(["cyan"]);
+print("Current configuration\n");
+print("---------------------\n");
+setoutputcolor([]);
+foreach(key in opts)
+{
+	print("export $key = \"" + opts.get(key) + "\";\n");
+}
+
+
+print("\n");
+configfile = input("Choose output config file", "config.tmk");
+f = fopen(configfile);
+foreach(key in opts)
+{
+	oline = "export $key = \"" + opts.get(key) + "\";\n";
+	obuf = tobytearray(oline);
+	f.Write(obuf);
+}
+f.Close();
+print("Configuration written to $configfile\n");
