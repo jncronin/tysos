@@ -224,23 +224,4 @@ namespace tysos
             return -1;
         }
     }
-
-    class TChar
-    {
-        [libsupcs.AlwaysCompile]
-        [libsupcs.MethodAlias("_Zc_20GetDataTablePointers_Rv_P7RPhRPhRPdRPtRPtRPtRPt")]
-        static unsafe void GetDataTablePointers(out byte* category_data, out byte* numeric_data,
-            out double* numeric_data_values, out ushort* to_lower_data_low,
-            out ushort* to_lower_data_high, out ushort* to_upper_data_low,
-            out ushort* to_upper_data_high)
-        {
-            category_data = (byte *)libsupcs.MemoryOperations.GetInternalArray(CategoryData.cCategoryData.CategoryData);
-            numeric_data = (byte*)libsupcs.MemoryOperations.GetInternalArray(unicode_support_output.DataTables.NumericData);
-            numeric_data_values = (double*)libsupcs.MemoryOperations.GetInternalArray(unicode_support_output.DataTables.NumericDataValues);
-            to_lower_data_low = (ushort*)libsupcs.MemoryOperations.GetInternalArray(unicode_support_output.DataTables.ToLowerDataLow);
-            to_lower_data_high = (ushort*)libsupcs.MemoryOperations.GetInternalArray(unicode_support_output.DataTables.ToLowerDataHigh);
-            to_upper_data_low = (ushort*)libsupcs.MemoryOperations.GetInternalArray(unicode_support_output.DataTables.ToUpperDataLow);
-            to_upper_data_high = (ushort*)libsupcs.MemoryOperations.GetInternalArray(unicode_support_output.DataTables.ToUpperDataHigh);
-        }
-    }
 }
