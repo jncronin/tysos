@@ -6,9 +6,9 @@
 export TYSOS = typroject(ROOT + "/tysos/tysos.csproj");
 TYSOSOBJ = objfromexe(TYSOS);
 TYSOSDIR = dir(TYSOS);
-LIBTYSILA = typroject(ROOT + "/libtysila5/libtysila5.csproj");
+LIBTYSILA = typroject(ROOT + "/tysila/libtysila5/libtysila5.csproj");
 LIBTYSILAOBJ = objfromexe(LIBTYSILA);
-BINLIBOBJ = objfromexe(typroject(ROOT + "/tl/binary_library/binary_library.csproj"));
+BINLIBOBJ = objfromexe(typroject(ROOT + "/tysila/binary_library/binary_library.csproj"));
 
 export KERNEL = ROOT + "/tysos.bin";
 export KERNELTO = ROOT + "/tysos.to";
@@ -27,19 +27,19 @@ else
 }
 
 // The following are all of the objects which will make up tysos
-TYSOS_OBJS = [ TYSOSOBJ, LIBTYSILAOBJ, BINLIBOBJ, MSCORLIBOBJ, TYSOS_CPU_OBJ, LIBSUPCSA, COREFX_LIB ];
+TYSOS_OBJS = [ TYSOSOBJ, LIBTYSILAOBJ, BINLIBOBJ, TYSOS_CPU_OBJ, COREFX_LIB ];
 MISSING_OBJ = ROOT + "/tysos/missing.o";
 
-rulefor(MISSING_OBJ, TYSOS_OBJS, [ GENMISSING_PROG, THIS ], function()
+rulefor(MISSING_OBJ, TYSOS_OBJS, [ GENMISSING, THIS ], function()
 {
-	shellcmd("$GENMISSING_PROG -o $_RULE_OUTPUT -t$TYSILAARCH -L$MSCORLIBDIR -L$COREFX_LIBDIR -L$TYSOSDIR $_RULE_INPUTS");
+	shellcmd("$GENMISSING -o $_RULE_OUTPUT -t$TYSILAARCH -L$MSCORLIB_DIR -L$TYSOSDIR $_RULE_INPUTS $LIBSUPCSA");
 });
 
 /* Rule for linking the kernel */
-rulefor(KERNEL, [ TYSOS_OBJS, MISSING_OBJ ], [ XCC, THIS ],
+rulefor(KERNEL, [ TYSOS_OBJS, MISSING_OBJ ], [ XCC, THIS, LIBSUPCSA ],
 	function()
 {
-	shellcmd("$XCC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS");
+	shellcmd("$XCC -o $_RULE_OUTPUT $LDFLAGS -e kmain $_RULE_INPUTS -Wl,--whole-archive $LIBSUPCSA -Wl,--no-whole-archive");
 });
 
 // build

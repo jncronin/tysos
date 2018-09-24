@@ -2,14 +2,16 @@
 
 export TYSILAFLAGS ?= "";
 
+export LIBSUPCSDIR = dir(LIBSUPCS);
+
 /* Rules for assembling CLR binaries */
 rulefor("%.obj", [ "%.exe" ], [ TYSILA, LIBSUPCS, THIS ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$LIBSUPCSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIB_DIR -L$LIBSUPCSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 rulefor("%.obj", [ "%.dll" ], [ TYSILA, LIBSUPCS, THIS ], function()
 {
-	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIBDIR -L$LIBSUPCSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
+	shellcmd("$TYSILA -o $_RULE_OUTPUT $TYSILAFLAGS -D -d " + dir(_RULE_OUTPUT) + "/" + basefname(_RULE_OUTPUT) + ".txt -t $TYSILAARCH -q -L$MSCORLIB_DIR -L$LIBSUPCSDIR -L" + dir(_RULE_INPUT) + " $_RULE_INPUT");
 });
 rulefor("%.to", [ "%.obj" ], [ TL, THIS ], function() {
 	shellcmd("$TL -o $_RULE_OUTPUT --arch=$TLARCH $_RULE_INPUT");
@@ -26,7 +28,7 @@ rulefor("%.$TARGET.o", [ "%.c" ], [ THIS, XCC ], function() {
 rulefor("%.$TARGET.o", [ "%.s" ], [ THIS, XCC ], function() {
 	shellcmd("$XCC -o $_RULE_OUTPUT $CFLAGS -c $_RULE_INPUT");
 });
-jncro
+
 rulefor("%.o", [ "%.asm" ], [ THIS, YASM ], function() {
 	shellcmd("$YASM -o $_RULE_OUTPUT -felf64 $_RULE_INPUT");
 });

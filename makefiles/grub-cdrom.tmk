@@ -22,15 +22,19 @@ autodir(GRUB_MOD_DIR);
 TYSOS_PNG = OUTDIR + "/tysos.png";
 
 // How to assemble the ISO image
-rulefor(ISOIMAGE, [ KERNELTOGZ, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU, TYSOS_PNG ],
-	[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT, GRUB_MOD_DIR, ISOMAKE, GRUB_MKIMAGE ], function()
+rulefor(ISOIMAGE, [ KERNELTOGZ, GRUBCFG, LIBSUPCS, PROCESSES, GRUBPREFIX_CFG, GRUBLOADER, BOOT_MNU, TYSOS_PNG ],
+	[ ISODIR, BOOTDIR, GRUBDIR, CDBOOT, GRUB_MOD_DIR, ISOMAKE, GRUBMKIMAGE ], function()
 {
 	cp(GRUBCFG, GRUBDIR);
 	cp(LIBSUPCS, ISODIR);
-	cp(MSCORLIB, ISODIR);
 	cp(GRUBLOADER, ISODIR);
 	cp(BOOT_MNU, BOOTDIR);
 	cp(TYSOS_PNG, BOOTDIR);
+	
+	foreach(ref in files(MSCORLIB_DIR, "*.dll"))
+	{
+		cp(ref, ISODIR);
+	}
 
 	foreach(proc in PROCESSES)
 	{
@@ -45,7 +49,7 @@ rulefor(ISOIMAGE, [ KERNELTOGZ, GRUBCFG, LIBSUPCS, MSCORLIB, PROCESSES, GRUBPREF
 	GRUB_PREFIX = dir(CDBOOT);
 	GRUB_MODS = "biosdisk multiboot configfile normal iso9660 all_video gfxterm acpi relocator serial help";
 
-	shellcmd("$GRUB_MKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -p $GRUB_PREFIX -O i386-pc $GRUB_MODS");
+	shellcmd("$GRUBMKIMAGE -o $COREIMG -c $GRUBPREFIX_CFG -p $GRUB_PREFIX -O i386-pc $GRUB_MODS");
 	
 	fcdboot = fopen(CDBOOT);
 	fcoreimg = fopen(COREIMG);
