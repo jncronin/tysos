@@ -1,5 +1,10 @@
 // generate config files for building tymake
 
+if(exists("config.tmk"))
+{
+	include "config.tmk";
+}
+
 // store options here
 opts = [=];
 
@@ -28,45 +33,51 @@ function finddirwithfile(string filename, string default_loc, string prompt)
 }
 
 // first, get architecture
-opts.add("TARGET", input("Target architecture", [ "x86_64" ]));
+opts.add("TARGET", input("Target architecture", [ "x86_64" ], TARGET ?? ""));
 
 // get arch options
 if(opts.TARGET == "x86_64")
 {
-	opts.add("USE_GRUB", input("Generate GRUB bootloader?", [ "y", "n" ], "y"));
-	opts.add("USE_UEFI", input("Generate UEFI bootloader?", [ "y", "n" ], "n"));
+	opts.add("USE_GRUB", input("Generate GRUB bootloader?", [ "y", "n" ], USE_GRUB ?? "y"));
+	opts.add("USE_UEFI", input("Generate UEFI bootloader?", [ "y", "n" ], USE_UEFI ?? "n"));
 
 	if(opts.USE_GRUB == "y" || opts.USE_UEFI == "y")
 	{
-		opts.add("MAKE_ISO", input("Generate an ISO image?", [ "y", "n" ], "y"));
+		opts.add("MAKE_ISO", input("Generate an ISO image?", [ "y", "n" ], MAKE_ISO ?? "y"));
 	}
 	
 	opts.add("TYSILAARCH", "x86_64");
 	opts.add("TLARCH", "x86_64-elf-tyobj");
 
-	opts.add("CFLAGS", input("Additional CFLAGS", "-ffreestanding -mno-red-zone"));
-	opts.add("TYSILAFLAGS", input("Additional TYSILAFLAGS", "-mno-sse4_1"));
-	opts.add("LDFLAGS", input("Additional LDFLAGS", "-fno-use-linker-plugin -Ttext 0x40000000 -nostdlib"));
+	opts.add("CFLAGS", input("Additional CFLAGS", CFLAGS ?? "-ffreestanding -mno-red-zone"));
+	opts.add("TYSILAFLAGS", input("Additional TYSILAFLAGS", TYSILAFLAGS ?? "-mno-sse4_1"));
+	opts.add("LDFLAGS", input("Additional LDFLAGS", LDFLAGS ?? "-fno-use-linker-plugin -Ttext 0x40000000 -nostdlib"));
 
 	TOOLPREFIX = "x86_64-elf";
 	opts.add("TOOLPREFIX", "$TOOLPREFIX");
 }
 
 // get tools
-opts.add("XCC", inputrequired("Cross compiler for $TOOLPREFIX", findsilent("$TOOLPREFIX-gcc")));
-opts.add("XAR", inputrequired("Cross archiver for $TOOLPREFIX", findsilent("$TOOLPREFIX-ar")));
-opts.add("XOBJCOPY", inputrequired("Cross objcopy for $TOOLPREFIX", findsilent("$TOOLPREFIX-objcopy")));
-opts.add("XRANLIB", inputrequired("Cross ranlib for $TOOLPREFIX", findsilent("$TOOLPREFIX-ranlib")));
+opts.add("XCC", inputrequired("Cross compiler for $TOOLPREFIX", XCC ?? findsilent("$TOOLPREFIX-gcc")));
+opts.add("XAR", inputrequired("Cross archiver for $TOOLPREFIX", XAR ?? findsilent("$TOOLPREFIX-ar")));
+opts.add("XOBJCOPY", inputrequired("Cross objcopy for $TOOLPREFIX", XOBJCOPY ?? findsilent("$TOOLPREFIX-objcopy")));
+opts.add("XRANLIB", inputrequired("Cross ranlib for $TOOLPREFIX", XRANLIB ?? findsilent("$TOOLPREFIX-ranlib")));
+opts.add("TYSILA", inputrequired("Tysila", TYSILA ?? findsilent("tysila4")));
+opts.add("LIBSUPCS", inputrequired("Libsupcs", LIBSUPCS ?? findsilent(dir(opts.TYSILA) + "/libsupcs.dll")));
+opts.add("LIBSUPCSA", inputrequired("libsupcs." + opts.TARGET + ".a", LIBSUPCSA ?? findsilent(dir(opts.TYSILA) + "/libsupcs." + opts.TARGET + ".a")));
+opts.add("TL", inputrequired("Tysila Linker (TL)", TL ?? findsilent(dir(opts.TYSILA) + "/tl.exe")));
+opts.add("ELFHASH", inputrequired("ElfHash", ELFHASH ?? findsilent(dir(opts.TYSILA) + "/elfhash.exe")));
+opts.add("GENMISSING", inputrequired("genmissing (from tysila)", GENMISSING ?? findsilent(dir(opts.TYSILA) + "/genmissing.exe")));
 
 if(opts.TARGET == "x86_64")
 {
-	opts.add("YASM", inputrequired("YASM assembler", findsilent("yasm")));
+	opts.add("YASM", inputrequired("YASM assembler", YASM ?? findsilent("yasm")));
 }
 
 if(opts.TARGET == "x86_64" && opts.USE_GRUB == "y")
 {
-	opts.add("GRUBCC", inputrequired("Cross compiler for i686-elf", findsilent("i686-elf-gcc")));
-	opts.add("GRUBAR", inputrequired("Cross archiver for i686-elf", findsilent("i686-elf-ar")));
+	opts.add("GRUBCC", inputrequired("Cross compiler for i686-elf", GRUBCC ?? findsilent("i686-elf-gcc")));
+	opts.add("GRUBAR", inputrequired("Cross archiver for i686-elf", GRUBAR ?? findsilent("i686-elf-ar")));
 	
 	if(PLATFORM == "unix")
 	{
@@ -77,14 +88,22 @@ if(opts.TARGET == "x86_64" && opts.USE_GRUB == "y")
 		base_loc = "";
 	}
 
-	opts.add("GRUBSRC", finddirwithfile("multiboot.h", base_loc, "Location of GRUB header files"));
-	opts.add("CDBOOT", finddirwithfile("cdboot.img", "", "GRUB i386-pc module directory") + "/cdboot.img");
-	opts.add("GRUBMKIMAGE", inputrequired("GRUB's grub-mkimage tool", findsilent("grub-mkimage", [ dir(dir(opts.CDBOOT)) ])));
+	opts.add("GRUBSRC", finddirwithfile("multiboot.h", GRUBSRC ?? base_loc, "Location of GRUB header files"));
+	opts.add("GRUBMODULEDIR", finddirwithfile("cdboot.img", GRUBMODULEDIR ?? "", "GRUB i386-pc module directory"));
+	opts.add("CDBOOT", opts.GRUBMODULEDIR + "/cdboot.img");
+	opts.add("GRUBMKIMAGE", inputrequired("GRUB's grub-mkimage tool", GRUBMKIMAGE ?? findsilent("grub-mkimage", [ dir(dir(opts.CDBOOT)) ])));
 }
 if(opts.TARGET == "x86_64" && opts.MAKE_ISO == "y")
 {
-	opts.add("GZIP", inputrequired("Gzip compression utility", findsilent("gzip")));
+	opts.add("GZIP", inputrequired("Gzip compression utility", GZIP ?? findsilent("gzip")));
 }
+if(opts.MAKE_ISO == "y")
+{
+	opts.add("ISOMAKE", inputrequired("mksiofs/isomake", ISOMAKE ?? findsilent("mkisofs")));
+}
+
+// get corelib
+opts.add("MSCORLIB_DIR", finddirwithfile("mscorlib.dll", MSCORLIB_DIR ?? "", "Directory containing mscorlib.dll (and other optional corlib dlls)"));
 
 // dump config and write out
 print("\n");
@@ -101,11 +120,15 @@ foreach(key in opts)
 print("\n");
 configfile = input("Choose output config file", "config.tmk");
 f = fopen(configfile);
+f.Write(tobytearray("//tysos build configuration file\n"));
+t = time();
+f.Write(tobytearray("//Generated " + t.longdate + " " + t.longtime + " " + t.tz + " by genconfig.tmk\n\n"));
 foreach(key in opts)
 {
-	oline = "export $key = \"" + opts.get(key) + "\";\n";
+	oline = "export $key = \"" + escape(opts.get(key)) + "\";\n";
 	obuf = tobytearray(oline);
 	f.Write(obuf);
 }
+f.Write(tobytearray("\n//End of configuration\n\n"));
 f.Close();
 print("Configuration written to $configfile\n");

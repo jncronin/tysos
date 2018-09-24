@@ -1,7 +1,0 @@
-// Various tools used to build tysos
-
-export TYSILA = typroject(ROOT + "/tysila4/tysila4.csproj");
-export TL = typroject(ROOT + "/tl/tl/tl.csproj");
-export ELFHASH = typroject(ROOT + "/elfhash/elfhash.csproj");
-export ISOMAKE = typroject(ROOT + "/isomake/isomake.csproj");
-export GENMISSING_PROG = typroject("$ROOT/genmissing/genmissing.csproj");
