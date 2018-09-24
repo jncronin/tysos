@@ -9,3 +9,6 @@
 	url = https://github.com/dotnet/corefx.git
 	branch = release/2.0.0
 	ignore = all
+[submodule "tysila"]
+	path = tysila
+	url = https://github.com/jncronin/tysila.git
