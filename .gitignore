@@ -33,6 +33,8 @@ corlib.dll.ty.sources
 
 mscorlib.txt
 
+bochsrc
+
 boot/
 
 coreclr
