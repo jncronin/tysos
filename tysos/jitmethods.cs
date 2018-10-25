@@ -26,6 +26,126 @@ namespace tysos
             libtysila5.libtysila.AssembleMethod(ms, bf, t);
         }
 
+        [libsupcs.MethodAlias("jit_vtable")]
+        [libsupcs.AlwaysCompile]
+        internal static unsafe void* test_vtable(metadata.TypeSpec ts)
+        {
+            var t = libtysila5.target.Target.targets["x86_64"];
+
+            var bf = new jit_binary();
+            bf.Init();
+            bf.Architecture = "x86_64";
+            var st = new libtysila5.StringTable("jit", libsupcs.Metadata.BAL, t);
+            t.st = st;
+            t.r = new jit_requestor();
+
+
+            // we assume t.InitIntcalls has been called here - to check
+
+            System.Diagnostics.Debugger.Log(0, "test_vtable", "Calling OutputVTable");
+            libtysila5.layout.Layout.OutputVTable(ts, t, bf);
+            System.Diagnostics.Debugger.Log(0, "test_vtable", "OutputVTable returned");
+
+            var os = bf.GetRDataSection();
+            System.Diagnostics.Debugger.Log(0, "test_vtable", os.Length.ToString() + " rdata bytes");
+            System.Diagnostics.Debugger.Log(0, "test_vtable", bf.GetSymbolCount().ToString() + " symbols");
+            for(int i = 0; i < bf.GetSymbolCount(); i++)
+            {
+                var cur_sym = bf.GetSymbol(i);
+                System.Diagnostics.Debugger.Log(0, "test_vtable", cur_sym.Name + " @ " + cur_sym.Offset.ToString("X"));
+            }
+
+            System.Diagnostics.Debugger.Log(0, "test_vtable", bf.GetRelocationCount().ToString() + " relocs");
+            for(int i = 0; i < bf.GetRelocationCount(); i++)
+            {
+                var cur_reloc = bf.GetRelocation(i);
+                var addr = Program.GetAddressOfObject(cur_reloc.References.Name);
+                if(addr == IntPtr.Zero)
+                {
+                    System.Diagnostics.Debugger.Log(0, "test_vtable", cur_reloc.Offset.ToString("X") + " -> " +
+                        cur_reloc.References.Name + " (undefined)");
+                }
+                else
+                {
+                    System.Diagnostics.Debugger.Log(0, "test_vtable", cur_reloc.Offset.ToString("X") + " -> " +
+                        cur_reloc.References.Name + " (" + addr.ToString("X") + ")");
+                }
+            }
+
+            // Create the output vtable
+            var dsect = bf.GetDataSection();
+            var rsect = bf.GetRDataSection();
+
+            var rout = (byte*)(void*)gc.gc.Alloc((ulong)rsect.Length);
+            var dout = (byte*)(void*)gc.gc.Alloc((ulong)dsect.Length);
+
+            for (var i = 0; i < rsect.Length; i++)
+                rout[i] = rsect.Data[i];
+            for (var i = 0; i < dsect.Length; i++)
+                dout[i] = dsect.Data[i];
+
+            // Add symbols
+            for(var i = 0; i < bf.GetSymbolCount(); i++)
+            {
+                var cur_sym = bf.GetSymbol(i);
+                if(cur_sym.DefinedIn != null)
+                {
+                    if(cur_sym.DefinedIn == dsect)
+                    {
+                        var addr = cur_sym.Offset + dout;
+                        Program.stab.Add(cur_sym.Name, (ulong)addr, (ulong)cur_sym.Size);
+                    }
+                    else if(cur_sym.DefinedIn == rsect)
+                    {
+                        var addr = cur_sym.Offset + rout;
+                        Program.stab.Add(cur_sym.Name, (ulong)addr, (ulong)cur_sym.Size);
+                    }
+                }
+            }
+
+            // Handle relocs
+            for(var i = 0; i < bf.GetRelocationCount(); i++)
+            {
+                var cur_reloc = bf.GetRelocation(i);
+                if(cur_reloc.DefinedIn != null)
+                {
+                    byte* addr = null;
+                    if(cur_reloc.DefinedIn == dsect)
+                    {
+                        addr = cur_reloc.Offset + dout;
+                    }
+                    else if(cur_reloc.DefinedIn == rsect)
+                    {
+                        addr = cur_reloc.Offset + rout;
+                    }
+                    if(addr != null)
+                    {
+                        var target = cur_reloc.References.Name;
+                        var taddr = Program.GetAddressOfObject(target);
+
+                        if(taddr == IntPtr.Zero)
+                        {
+                            System.Diagnostics.Debugger.Log(0, "test_vtable", "Unable to find target reloc " + target);
+                        }
+                        else
+                        {
+                            if(cur_reloc.Type.Type == binary_library.elf.ElfFile.R_X86_64_64)
+                            {
+                                *((byte**)taddr) = addr;
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debugger.Log(0, "test_vtable", "Unsupported reloc type " + cur_reloc.Type.Name);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // the vtable starts at the beginning of the rdata section
+            return rout;
+        }
+
         static string get_string()
         {
             return "I am tysos";

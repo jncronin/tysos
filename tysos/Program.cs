@@ -815,7 +815,7 @@ namespace tysos
 
         [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("jit_addrof")]
-        static System.IntPtr GetAddressOfObject(string name)
+        internal static System.IntPtr GetAddressOfObject(string name)
         {
             var ret = stab.GetAddress(name);
             System.Diagnostics.Debugger.Log(0, "jit_addrof", "Request for " + name + ": returning " + ret.ToString("X"));
