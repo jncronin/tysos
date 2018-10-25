@@ -7,8 +7,8 @@ export TYSOS = typroject(ROOT + "/tysos/tysos.csproj");
 TYSOSOBJ = objfromexe(TYSOS);
 TYSOSDIR = dir(TYSOS);
 LIBTYSILA = typroject(ROOT + "/tysila/libtysila5/libtysila5.csproj");
-LIBTYSILAOBJ = objfromexe(LIBTYSILA);
-BINLIBOBJ = objfromexe(typroject(ROOT + "/tysila/binary_library/binary_library.csproj"));
+LIBTYSILAOBJ = objfromexe(dir(TYSILA) + "/libtysila5.dll");
+BINLIBOBJ = objfromexe(dir(TYSILA) + "/binary_library.dll");
 
 export KERNEL = ROOT + "/tysos.bin";
 export KERNELTO = ROOT + "/tysos.to";
