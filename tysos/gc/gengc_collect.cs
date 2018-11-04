@@ -55,6 +55,7 @@ namespace tysos.gc
                         Formatter.WriteLine("gengc: attempt to run collection whilst already in progress",
                             Program.arch.DebugOutput);
                         libsupcs.Monitor.Exit(collection_mutex);
+                        libsupcs.OtherOperations.AsmBreakpoint();
                         return;
                     }
 

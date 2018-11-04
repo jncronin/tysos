@@ -351,7 +351,9 @@ namespace tysos.x86_64
             /* Test the gengc */
             Formatter.WriteLine("x86_64: testing gengc", Program.arch.DebugOutput);
             gc.gengc.heap = new gc.gengc();
-            Formatter.WriteLine("gengc object created", Program.arch.DebugOutput);
+            Formatter.Write("gengc object created @ ", Program.arch.DebugOutput);
+            Formatter.Write(libsupcs.CastOperations.ReinterpretAsUlong(gc.gengc.heap), "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
             unsafe
             {
                 gc.gengc.heap.Init((void*)heap_small_start, (void*)heap_long_end);

@@ -142,14 +142,6 @@ namespace tysos.gc
             sm_total_counts = new int[] { 512, 256, 160, 128, 80, 64, 48, 40, 32, 16, 8, 8, 8,
             8, 8 };
 
-            /* Check the total size needed for sm_sizes/total_counts array */
-            ulong sm_arrays_end = ((ulong)hdr + (ulong)sizeof(heap_header) +
-                (ulong)sm_sizes.Length * (ulong)sizeof(sma_header*) +
-                (ulong)sm_total_counts.Length * (ulong)sizeof(int));
-            Formatter.Write("gengc: sm_arrays_end: ", Program.arch.DebugOutput);
-            Formatter.Write(sm_arrays_end, "X", Program.arch.DebugOutput);
-            Formatter.WriteLine(Program.arch.DebugOutput);
-
             /* Check we have enough space for our structures */
             if (((byte*)end - (byte*)start) < 0x100000)
                 throw new Exception("Not enough heap space provided");
@@ -165,6 +157,10 @@ namespace tysos.gc
             hdr = (heap_header*)start;
             hdr->used_chunks = 0;
             hdr->free_chunks = 0;
+
+            Formatter.Write("gengc: hdr = ", Program.arch.DebugOutput);
+            Formatter.Write((ulong)hdr, "X", Program.arch.DebugOutput);
+            Formatter.WriteLine(Program.arch.DebugOutput);
 
             /* Start chunks 1 page in */
             byte* cur_ptr = (byte*)start + 0x1000;
