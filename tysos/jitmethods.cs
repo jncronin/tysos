@@ -11,7 +11,7 @@ namespace tysos
 {
     class jittestmethods
     {
-        internal static void test(libsupcs.TysosMethod meth)
+        internal static unsafe void test(libsupcs.TysosMethod meth)
         {
             var ms = meth.mspec;
             var t = libtysila5.target.Target.targets["x86_64"];
@@ -22,8 +22,73 @@ namespace tysos
             t.st = st;
             t.r = new jit_requestor();
             t.InitIntcalls();
+
+            StringBuilder dbg = new StringBuilder();
             
-            libtysila5.libtysila.AssembleMethod(ms, bf, t);
+            libtysila5.libtysila.AssembleMethod(ms, bf, t, dbg);
+
+            // try and run the new method
+            var tsect = bf.GetTextSection();
+            var rsect = bf.GetRDataSection();
+            var dsect = bf.GetDataSection();
+
+            var rout = (byte*)(void*)gc.gc.Alloc((ulong)rsect.Length);
+            var dout = (byte*)(void*)gc.gc.Alloc((ulong)dsect.Length);
+            var tout = (byte*)(void*)gc.gc.Alloc((ulong)tsect.Length);
+
+            System.Diagnostics.Debugger.Log(0, "jittest", "rout @ " + ((ulong)rout).ToString("X") +
+                ", length " + rsect.Length.ToString());
+            System.Diagnostics.Debugger.Log(0, "jittest", "dout @ " + ((ulong)dout).ToString("X") +
+                ", length " + dsect.Length.ToString());
+            System.Diagnostics.Debugger.Log(0, "jittest", "tout @ " + ((ulong)tout).ToString("X") +
+                ", length " + tsect.Length.ToString());
+
+            for (var i = 0; i < rsect.Length; i++)
+                rout[i] = rsect.Data[i];
+            for (var i = 0; i < dsect.Length; i++)
+                dout[i] = dsect.Data[i];
+            for (var i = 0; i < tsect.Length; i++)
+                tout[i] = tsect.Data[i];
+
+            // Add symbols
+            for (var i = 0; i < bf.GetSymbolCount(); i++)
+            {
+                var cur_sym = bf.GetSymbol(i);
+                if (cur_sym.DefinedIn != null)
+                {
+                    byte* addr = null;
+                    if (cur_sym.DefinedIn == dsect)
+                    {
+                        addr = cur_sym.Offset + dout;
+                        Program.stab.Add(cur_sym.Name, (ulong)addr, (ulong)cur_sym.Size);
+                    }
+                    else if (cur_sym.DefinedIn == rsect)
+                    {
+                        addr = cur_sym.Offset + rout;
+                        Program.stab.Add(cur_sym.Name, (ulong)addr, (ulong)cur_sym.Size);
+                    }
+                    else if(cur_sym.DefinedIn == tsect)
+                    {
+                        addr = cur_sym.Offset + tout;
+                        Program.stab.Add(cur_sym.Name, (ulong)addr, (ulong)cur_sym.Size);
+                    }
+
+                    if(addr != null)
+                    {
+                        System.Diagnostics.Debugger.Log(0, "jittest", "Created symbol " +
+                            cur_sym.Name + " at " + ((ulong)addr).ToString("X") + "" +
+                            " (offset " + cur_sym.Offset.ToString("X") + ")");
+                    }
+                }
+            }
+
+            var reloc_count = bf.GetRelocationCount();
+            System.Diagnostics.Debugger.Log(0, "jittest", "Found " + reloc_count.ToString() + " relocs");
+
+            System.Diagnostics.Debugger.Log(0, "jittest", "Debug: " + dbg.ToString());
+
+            libsupcs.OtherOperations.AsmBreakpoint();
+
         }
 
         [libsupcs.MethodAlias("jit_vtable")]
