@@ -11,6 +11,8 @@ namespace tysos
 {
     class jittestmethods
     {
+        static int next_st_id = 0;
+
         internal static unsafe void test(libsupcs.TysosMethod meth)
         {
             var ms = meth.mspec;
@@ -18,7 +20,7 @@ namespace tysos
             var bf = new jit_binary();
             bf.Init();
             bf.Architecture = "x86_64";
-            var st = new libtysila5.StringTable("jit", libsupcs.Metadata.BAL, t);
+            var st = new libtysila5.StringTable("jit" + (next_st_id++).ToString(), libsupcs.Metadata.BAL, t);
             t.st = st;
             t.r = new jit_requestor();
             t.InitIntcalls();
@@ -26,6 +28,10 @@ namespace tysos
             StringBuilder dbg = new StringBuilder();
             
             libtysila5.libtysila.AssembleMethod(ms, bf, t, dbg);
+
+            // Add stringtable to rdata
+            // Add string table
+            st.WriteToOutput(bf, ms.m, t);
 
             // try and run the new method
             var tsect = bf.GetTextSection();
@@ -84,6 +90,49 @@ namespace tysos
 
             var reloc_count = bf.GetRelocationCount();
             System.Diagnostics.Debugger.Log(0, "jittest", "Found " + reloc_count.ToString() + " relocs");
+
+            for (var i = 0; i < bf.GetRelocationCount(); i++)
+            {
+                var cur_reloc = bf.GetRelocation(i);
+                if (cur_reloc.DefinedIn != null)
+                {
+                    byte* addr = null;
+                    if (cur_reloc.DefinedIn == dsect)
+                    {
+                        addr = cur_reloc.Offset + dout;
+                    }
+                    else if (cur_reloc.DefinedIn == rsect)
+                    {
+                        addr = cur_reloc.Offset + rout;
+                    }
+                    else if (cur_reloc.DefinedIn == tsect)
+                    {
+                        addr = cur_reloc.Offset + tout;
+                    }
+
+                    if (addr != null)
+                    {
+                        var target = cur_reloc.References.Name;
+                        var taddr = Program.GetAddressOfObject(target);
+
+                        if (taddr == IntPtr.Zero)
+                        {
+                            System.Diagnostics.Debugger.Log(0, "test_vtable", "Unable to find target reloc " + target);
+                        }
+                        else
+                        {
+                            if (cur_reloc.Type.Type == binary_library.elf.ElfFile.R_X86_64_64)
+                            {
+                                *((byte**)taddr) = addr;
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debugger.Log(0, "test_vtable", "Unsupported reloc type " + cur_reloc.Type.Name);
+                            }
+                        }
+                    }
+                }
+            }
 
             System.Diagnostics.Debugger.Log(0, "jittest", "Debug: " + dbg.ToString());
 
