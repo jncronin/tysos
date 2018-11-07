@@ -24,6 +24,7 @@ namespace tysos
             t.st = st;
             t.r = new jit_requestor();
             t.InitIntcalls();
+            t.Options["mcmodel"] = "large";
 
             StringBuilder dbg = new StringBuilder();
             
@@ -123,7 +124,7 @@ namespace tysos
                         {
                             if (cur_reloc.Type.Type == binary_library.elf.ElfFile.R_X86_64_64)
                             {
-                                *((byte**)taddr) = addr;
+                                *((byte**)addr) = (byte*)taddr;
                             }
                             else
                             {
@@ -135,6 +136,11 @@ namespace tysos
             }
 
             System.Diagnostics.Debugger.Log(0, "jittest", "Debug: " + dbg.ToString());
+
+
+            // Call the function
+            var ret = libsupcs.OtherOperations.CallI<string>(tout);
+            System.Diagnostics.Debugger.Log(0, "jittest", "method returned: " + ret);
 
             libsupcs.OtherOperations.AsmBreakpoint();
 
@@ -245,7 +251,7 @@ namespace tysos
                         {
                             if(cur_reloc.Type.Type == binary_library.elf.ElfFile.R_X86_64_64)
                             {
-                                *((byte**)taddr) = addr;
+                                *((byte**)addr) = (byte*)taddr;
                             }
                             else
                             {
