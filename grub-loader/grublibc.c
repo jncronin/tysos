@@ -208,7 +208,11 @@ FILE *fopen(const char *path, const char *mode)
 		return NULL;
 	}
 
+#ifdef HAS_ENUM_GRUB_FILE_TYPE
+	grub_file_t ret = grub_file_open(path, GRUB_FILE_TYPE_MULTIBOOT_MODULE);
+#else
 	grub_file_t ret = grub_file_open(path);
+#endif
 	if (ret)
 	{
 #ifdef DEBUG

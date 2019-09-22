@@ -19,6 +19,15 @@ GRUBCFLAGS = "-I$GRUBSRC -I$ROOT/grub-loader " +
 	"-DGRUB_FILE=__FILE__ -DTYGRUB -malign-data=compat";
 GRUBLDFLAGS = "-m32 -nostdlib -Wl,--build-id=none -Wl,-r,-d";
 
+if(filecontains("$GRUBSRC/grub/file.h", "enum grub_file_type") != 0)
+{
+	GRUBCFLAGS += " -DHAS_ENUM_GRUB_FILE_TYPE";
+}
+if(filecontains("$GRUBSRC/grub/multiboot.h", "grub_multiboot_get_mmap_count") != 0)
+{
+	GRUBCFLAGS += " -DHAS_GRUB_MULTIBOOT_GET_MMAP_COUNT";
+}
+
 rulefor("%.grub.o", [ "%.c" ], [ THIS, ROOT + "/efiloader/tloadkif.h", GRUBCC ], function() {
 	return(shellcmd("$GRUBCC -o $_RULE_OUTPUT $GRUBCFLAGS -c $_RULE_INPUT"));
 });

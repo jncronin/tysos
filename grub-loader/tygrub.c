@@ -631,8 +631,11 @@ grub_cmd_tygrub(grub_extcmd_context_t ctxt __attribute__((unused)),
 	mbheader->virt_bda = 0;
 
 
-
+#ifdef HAS_GRUB_MULTIBOOT_GET_MMAP_COUNT
+	grub_uint32_t map_entries = grub_multiboot_get_mmap_count();
+#else
 	grub_uint32_t map_entries = grub_get_multiboot_mmap_count();
+#endif
 	struct __array *mmap_array;
 	struct Multiboot_MemoryMap **mmap_ia =
 		(struct Multiboot_MemoryMap **)Create_Ref_Array(&mmap_array, map_entries + cur_pmem_ptr);
