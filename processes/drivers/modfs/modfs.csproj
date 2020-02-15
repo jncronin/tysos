@@ -40,10 +40,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\tysos\tysos.csproj">
-      <Project>{97ad573f-2e77-4f43-9c2b-1050796471a9}</Project>
-      <Name>tysos</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\services\vfs\vfs.csproj">
       <Project>{47ead363-6c7f-48a4-b119-357740437369}</Project>
       <Name>vfs</Name>

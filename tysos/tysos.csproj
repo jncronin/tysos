@@ -1,225 +1,24 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{97AD573F-2E77-4F43-9C2B-1050796471A9}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>tysos</RootNamespace>
-    <AssemblyName>tysos</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkProfile />
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyTitle>tysos</AssemblyTitle>
+    <Product>tysos</Product>
+    <Copyright>Copyright ©  2016</Copyright>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;_DEBUG</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;_DEBUG</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Generate tloadkif|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Generate tloadkif\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;_DEBUG</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile corlib|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Compile corlib\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;_DEBUG</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile TestProcess|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Compile TestProcess\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;_DEBUG</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile libtysila|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Compile libtysila\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;_DEBUG</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile libsupcs|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Compile libsupcs\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;_DEBUG</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Compile BareBones|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Compile BareBones\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;_DEBUG</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="collections\VersionedList.cs" />
-    <Compile Include="Cpu.cs" />
-    <Compile Include="elf\ElfFileReader.cs" />
-    <Compile Include="Event.cs" />
-    <Compile Include="gc\gengc.cs" />
-    <Compile Include="gc\gengc_collect.cs" />
-    <Compile Include="gc\gengc_collectthread.cs" />
-    <Compile Include="gc\gengc_root.cs" />
-    <Compile Include="gc\gengc_tree.cs" />
-    <Compile Include="gc\heap_switcher.cs" />
-    <Compile Include="gc\simple_heap.cs" />
-    <Compile Include="Interfaces\IFile.cs" />
-    <Compile Include="jitmethods.cs" />
-    <Compile Include="lib\Assembly.cs" />
-    <Compile Include="lib\CompareInfo.cs" />
-    <Compile Include="lib\ConsoleDriver.cs" />
-    <Compile Include="lib\DateTime.cs" />
-    <Compile Include="lib\Enum_Impl.cs" />
-    <Compile Include="Exceptions.cs" />
-    <Compile Include="lib\ErrorFile.cs" />
-    <Compile Include="lib\File.cs" />
-    <Compile Include="lib\GC.cs" />
-    <Compile Include="lib\MonoFileType.cs" />
-    <Compile Include="lib\MonoIO.cs" />
-    <Compile Include="lib\MonoIOError.cs" />
-    <Compile Include="lib\MonoIOStat.cs" />
-    <Compile Include="lib\Security.cs" />
-    <Compile Include="lib\String.cs" />
-    <Compile Include="lib\TextEncoding.cs" />
-    <Compile Include="lib\TimeZone.cs" />
-    <Compile Include="lib\Type.cs" />
-    <Compile Include="Messages\Generic.cs" />
-    <Compile Include="NullOutput.cs" />
-    <Compile Include="Pmem_Stack.cs" />
-    <Compile Include="Resources\RangeResourceManager.cs" />
-    <Compile Include="Resources\Resource.cs" />
-    <Compile Include="rootfs.cs" />
-    <Compile Include="ServerObject.cs" />
-    <Compile Include="Syscalls.cs" />
-    <Compile Include="Timer.cs" />
-    <Compile Include="x86_64\Acpi.cs" />
-    <Compile Include="Arch.cs" />
-    <Compile Include="x86_64\Arch.cs" />
-    <Compile Include="x86_64\BIOS.cs" />
-    <Compile Include="x86_64\gdb_stub.cs" />
-    <Compile Include="x86_64\Hpet.cs" />
-    <Compile Include="collections\Lists.cs" />
-    <Compile Include="x86_64\PIT_8253.cs" />
-    <Compile Include="Scheduler.cs" />
-    <Compile Include="x86_64\Resource.cs" />
-    <Compile Include="x86_64\SmBios.cs" />
-    <Compile Include="x86_64\Apic.cs" />
-    <Compile Include="elf\ElfReader.cs" />
-    <Compile Include="lib\Environment.cs" />
-    <Compile Include="x86_64\Exceptions.cs" />
-    <Compile Include="x86_64\PIC_8259a.cs" />
-    <Compile Include="Pmem.cs" />
-    <Compile Include="Interfaces\IDebugOutput.cs" />
-    <Compile Include="x86_64\Interrupts.cs" />
-    <Compile Include="IPC.cs" />
-    <Compile Include="Formatter.cs" />
-    <Compile Include="mboot.cs" />
-    <Compile Include="PageFault.cs" />
-    <Compile Include="Process.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="x86_64\SerialDebug.cs" />
-    <Compile Include="collections\SortedList.cs" />
-    <Compile Include="collections\static_array.cs" />
-    <Compile Include="SymbolTable.cs" />
-    <Compile Include="TaskSwitcher.cs" />
-    <Compile Include="x86_64\Tss.cs" />
-    <Compile Include="Unwind.cs" />
-    <Compile Include="util.cs" />
-    <Compile Include="x86_64\UEFI.cs" />
-    <Compile Include="x86_64\Vga.cs" />
-    <Compile Include="VirtMem.cs" />
-    <Compile Include="Virtual_Regions.cs" />
+    <ProjectReference Include="..\tysila\binary_library\binary_library\binary_library.csproj" />
+    <ProjectReference Include="..\tysila\libsupcs\libsupcs.csproj" />
+    <ProjectReference Include="..\tysila\libtysila5\libtysila5.csproj" />
+    <ProjectReference Include="..\tysila\metadata\metadata.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="x86_64\TaskSwitcher.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="x86_64\x86_64_cpu.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="x86_64\switcher.asm" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\tysila\libsupcs\libsupcs.csproj">
-      <Project>{566aa7ab-c8b8-417c-b16e-08c7d359cbb1}</Project>
-      <Name>libsupcs</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\tysila\libtysila5\libtysila5.csproj">
-      <Project>{82697295-1aff-4174-97bc-6562732305f3}</Project>
-      <Name>libtysila5</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\tysila\metadata\metadata.csproj">
-      <Project>{577c93b9-acd1-4ec2-83f5-c0ff3246feba}</Project>
-      <Name>metadata</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
