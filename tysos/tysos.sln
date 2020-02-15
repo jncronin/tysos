@@ -47,6 +47,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "binary_library", "..\tysila
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "tysos", "tysos.csproj", "{97AD573F-2E77-4F43-9C2B-1050796471A9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "build_processes", "..\build_processes\build_processes.csproj", "{FA6D0A07-A6DD-4278-B490-94806E9C9807}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Compile BareBones|Any CPU = Compile BareBones|Any CPU
@@ -421,6 +423,26 @@ Global
 		{97AD573F-2E77-4F43-9C2B-1050796471A9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{97AD573F-2E77-4F43-9C2B-1050796471A9}.Release|x86.ActiveCfg = Release|Any CPU
 		{97AD573F-2E77-4F43-9C2B-1050796471A9}.Release|x86.Build.0 = Release|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile BareBones|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile BareBones|Any CPU.Build.0 = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile BareBones|x86.ActiveCfg = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile BareBones|x86.Build.0 = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile libsupcs|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile libsupcs|Any CPU.Build.0 = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile libsupcs|x86.ActiveCfg = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile libsupcs|x86.Build.0 = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile libtysila|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile libtysila|Any CPU.Build.0 = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile libtysila|x86.ActiveCfg = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Compile libtysila|x86.Build.0 = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Debug|x86.Build.0 = Debug|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Release|x86.ActiveCfg = Release|Any CPU
+		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

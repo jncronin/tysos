@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>This is a meta project for building all the processes into one output directory</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\processes\drivers\acpipc\acpipc.csproj" />
+    <ProjectReference Include="..\processes\drivers\ata\ata.csproj" />
+    <ProjectReference Include="..\processes\drivers\bga\bga.csproj" />
+    <ProjectReference Include="..\processes\drivers\disk\disk.csproj" />
+    <ProjectReference Include="..\processes\drivers\framebuffer\framebuffer.csproj" />
+    <ProjectReference Include="..\processes\drivers\modfs\modfs.csproj" />
+    <ProjectReference Include="..\processes\drivers\pciide\pciide.csproj" />
+    <ProjectReference Include="..\processes\drivers\pci\pci.csproj" />
+    <ProjectReference Include="..\processes\drivers\pcnet32\pcnet32.csproj" />
+    <ProjectReference Include="..\processes\services\Gui\Gui.csproj" />
+    <ProjectReference Include="..\processes\services\logger\logger.csproj" />
+    <ProjectReference Include="..\processes\services\net\net.csproj" />
+    <ProjectReference Include="..\processes\services\vfs\vfs.csproj" />
+    <ProjectReference Include="..\tysila\binary_library\binary_library\binary_library.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -13,6 +13,12 @@ cd ../corefx
 ./init-tools.cmd
 
 
+Build tysos and core processes:
+
+dotnet msbuild tysos\tysos.csproj /p:Configuration=Release;OutDir=bin
+dotnet msbuild build_processes\build_processes.csproj /p:Configuration=Release;OutDir=bin
+ 
+
 Build tymake
 
 cd ../tymake
