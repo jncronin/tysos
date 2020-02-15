@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2018
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libsupcs", "..\tysila\libsupcs\libsupcs.csproj", "{566AA7AB-C8B8-417C-B16E-08C7D359CBB1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "libsupcs", "..\tysila\libsupcs\libsupcs.csproj", "{566AA7AB-C8B8-417C-B16E-08C7D359CBB1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "metadata", "..\tysila\metadata\metadata.csproj", "{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "metadata", "..\tysila\metadata\metadata.csproj", "{577C93B9-ACD1-4EC2-83F5-C0FF3246FEBA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libtysila5", "..\tysila\libtysila5\libtysila5.csproj", "{82697295-1AFF-4174-97BC-6562732305F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "libtysila5", "..\tysila\libtysila5\libtysila5.csproj", "{82697295-1AFF-4174-97BC-6562732305F3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "processes", "processes", "{E4A55D97-10FA-4DBB-8AD2-13838EAB49FE}"
 EndProject
@@ -17,31 +17,31 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "services", "services", "{6B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "testsuite", "testsuite", "{6A8051E7-80C1-4087-8916-D3E5E6009705}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "acpipc", "..\processes\drivers\acpipc\acpipc.csproj", "{6F2EA8EA-6505-4825-8155-573C2C621EAA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "acpipc", "..\processes\drivers\acpipc\acpipc.csproj", "{6F2EA8EA-6505-4825-8155-573C2C621EAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ata", "..\processes\drivers\ata\ata.csproj", "{330493D1-054B-44BE-AADA-4236290D4FBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ata", "..\processes\drivers\ata\ata.csproj", "{330493D1-054B-44BE-AADA-4236290D4FBF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bga", "..\processes\drivers\bga\bga.csproj", "{5D1F5B8D-CADE-4579-8C85-D1E866811684}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "bga", "..\processes\drivers\bga\bga.csproj", "{5D1F5B8D-CADE-4579-8C85-D1E866811684}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "disk", "..\processes\drivers\disk\disk.csproj", "{F2908F7F-6573-4F06-80EE-3D932AE6DD23}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "disk", "..\processes\drivers\disk\disk.csproj", "{F2908F7F-6573-4F06-80EE-3D932AE6DD23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "framebuffer", "..\processes\drivers\framebuffer\framebuffer.csproj", "{397B00E7-CF29-40A0-904A-20AF5E6C9599}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "framebuffer", "..\processes\drivers\framebuffer\framebuffer.csproj", "{397B00E7-CF29-40A0-904A-20AF5E6C9599}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "modfs", "..\processes\drivers\modfs\modfs.csproj", "{A7860799-7290-48CE-B16E-93820BB2640C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "modfs", "..\processes\drivers\modfs\modfs.csproj", "{A7860799-7290-48CE-B16E-93820BB2640C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pci", "..\processes\drivers\pci\pci.csproj", "{4C1B5997-125E-49B7-9AE3-55D9D012901B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pci", "..\processes\drivers\pci\pci.csproj", "{4C1B5997-125E-49B7-9AE3-55D9D012901B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pciide", "..\processes\drivers\pciide\pciide.csproj", "{C0E11AA3-7AC2-4126-88A6-B8118E920E59}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pciide", "..\processes\drivers\pciide\pciide.csproj", "{C0E11AA3-7AC2-4126-88A6-B8118E920E59}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pcnet32", "..\processes\drivers\pcnet32\pcnet32.csproj", "{78202881-4562-4221-A5A0-04C8DFA20D93}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pcnet32", "..\processes\drivers\pcnet32\pcnet32.csproj", "{78202881-4562-4221-A5A0-04C8DFA20D93}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gui", "..\processes\services\Gui\Gui.csproj", "{C2C862E6-85AB-44BE-B336-873052EAFB7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gui", "..\processes\services\Gui\Gui.csproj", "{C2C862E6-85AB-44BE-B336-873052EAFB7B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "logger", "..\processes\services\logger\logger.csproj", "{29D2A95D-9E39-46BA-B711-C9248D916689}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "logger", "..\processes\services\logger\logger.csproj", "{29D2A95D-9E39-46BA-B711-C9248D916689}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "net", "..\processes\services\net\net.csproj", "{F690B7F4-961C-4F4D-82ED-85500A0B7C9C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "net", "..\processes\services\net\net.csproj", "{F690B7F4-961C-4F4D-82ED-85500A0B7C9C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vfs", "..\processes\services\vfs\vfs.csproj", "{47EAD363-6C7F-48A4-B119-357740437369}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "vfs", "..\processes\services\vfs\vfs.csproj", "{47EAD363-6C7F-48A4-B119-357740437369}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "binary_library", "..\tysila\binary_library\binary_library\binary_library.csproj", "{AE2CD66A-12AC-4991-A3CA-B5FC7BB5AF28}"
 EndProject
@@ -361,23 +361,26 @@ Global
 		{F690B7F4-961C-4F4D-82ED-85500A0B7C9C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F690B7F4-961C-4F4D-82ED-85500A0B7C9C}.Release|x86.ActiveCfg = Release|Any CPU
 		{F690B7F4-961C-4F4D-82ED-85500A0B7C9C}.Release|x86.Build.0 = Release|Any CPU
-		{47EAD363-6C7F-48A4-B119-357740437369}.Compile BareBones|Any CPU.ActiveCfg = Compile BareBones|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Compile BareBones|x86.ActiveCfg = Compile BareBones|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Compile BareBones|x86.Build.0 = Compile BareBones|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libsupcs|Any CPU.ActiveCfg = Compile libsupcs|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libsupcs|x86.ActiveCfg = Compile libsupcs|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libsupcs|x86.Build.0 = Compile libsupcs|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libtysila|Any CPU.ActiveCfg = Compile libtysila|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libtysila|x86.ActiveCfg = Compile libtysila|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libtysila|x86.Build.0 = Compile libtysila|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Debug|Any CPU.Build.0 = Debug|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Debug|x86.ActiveCfg = Debug|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Debug|x86.Build.0 = Debug|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Release|Any CPU.ActiveCfg = Release|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Release|Any CPU.Build.0 = Release|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Release|x86.ActiveCfg = Release|x86
-		{47EAD363-6C7F-48A4-B119-357740437369}.Release|x86.Build.0 = Release|x86
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile BareBones|Any CPU.ActiveCfg = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile BareBones|Any CPU.Build.0 = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile BareBones|x86.ActiveCfg = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile BareBones|x86.Build.0 = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libsupcs|Any CPU.ActiveCfg = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libsupcs|Any CPU.Build.0 = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libsupcs|x86.ActiveCfg = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libsupcs|x86.Build.0 = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libtysila|Any CPU.ActiveCfg = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libtysila|Any CPU.Build.0 = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libtysila|x86.ActiveCfg = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Compile libtysila|x86.Build.0 = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Debug|x86.Build.0 = Debug|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Release|x86.ActiveCfg = Release|Any CPU
+		{47EAD363-6C7F-48A4-B119-357740437369}.Release|x86.Build.0 = Release|Any CPU
 		{AE2CD66A-12AC-4991-A3CA-B5FC7BB5AF28}.Compile BareBones|Any CPU.ActiveCfg = Debug|Any CPU
 		{AE2CD66A-12AC-4991-A3CA-B5FC7BB5AF28}.Compile BareBones|Any CPU.Build.0 = Debug|Any CPU
 		{AE2CD66A-12AC-4991-A3CA-B5FC7BB5AF28}.Compile BareBones|x86.ActiveCfg = Debug|Any CPU
