@@ -142,7 +142,7 @@ namespace tysos
             var ret = libsupcs.OtherOperations.CallI<string>(tout);
             System.Diagnostics.Debugger.Log(0, "jittest", "method returned: " + ret);
 
-            libsupcs.OtherOperations.AsmBreakpoint();
+            //libsupcs.OtherOperations.AsmBreakpoint();
 
         }
 

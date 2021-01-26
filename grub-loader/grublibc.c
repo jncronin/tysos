@@ -231,7 +231,7 @@ FILE *fopen(const char *path, const char *mode)
 			
 			Thankfully, the previous member (estimated_speed) is not filled in upon opening,
 			so we can inspect r[0x34] and use it if non-zero, else use r[0x38]*/
-		if (r[0x34])
+		if (r[0x34 / 4])
 		{
 			fp->size = (int)r[0x34 / 4];
 			fp->offset_offset = 0xc;

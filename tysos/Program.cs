@@ -223,6 +223,8 @@ namespace tysos
                 {
                     ulong vaddr = map_in(mod);
                     mods.Add(new tysos.lib.File.Property { Name = mod.name, Value = new VirtualMemoryResource64(vaddr, mod.length) });
+                    Formatter.Write(mod.name, arch.DebugOutput);
+                    Formatter.Write(", ", arch.DebugOutput);
                 }
             }
             List<tysos.lib.File.Property> modfs_props = new List<lib.File.Property>();
@@ -321,7 +323,7 @@ namespace tysos
             if (do_debug)
                 System.Diagnostics.Debugger.Break();
 
-            libsupcs.OtherOperations.AsmBreakpoint();
+            //libsupcs.OtherOperations.AsmBreakpoint();
 
             //arch.EnableMultitasking();
             Syscalls.SchedulerFunctions.Yield();

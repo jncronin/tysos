@@ -16,9 +16,9 @@ GUIOBJ = tobjfromexe(typroject(ROOT + "/processes/services/gui/gui.csproj"));
 NETOBJ = tobjfromexe(typroject(ROOT + "/processes/services/net/net.csproj"));
 PCNET32OBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pcnet32/pcnet32.csproj"));
 
-//export PROCESSES = [ DEBUGPRINTOBJ,
-//	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ, PCIOBJ, BGAOBJ, PCIIDEOBJ,
-//	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ, GUIOBJ, NETOBJ, PCNET32OBJ ];
+export PROCESSES = [ DEBUGPRINTOBJ,
+	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ, PCIOBJ, BGAOBJ, PCIIDEOBJ,
+	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ, GUIOBJ, NETOBJ, PCNET32OBJ ];
 
-export PROCESSES = [];
+// export PROCESSES = [];
 

@@ -35,7 +35,7 @@ namespace Logger
         }
     }
 
-    class Logger : tysos.ServerObject
+    public class Logger : tysos.ServerObject
     {
         public void LogMessage(string source, int level, string message)
         {

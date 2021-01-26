@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2018
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "libsupcs", "..\tysila\libsupcs\libsupcs.csproj", "{566AA7AB-C8B8-417C-B16E-08C7D359CBB1}"
 EndProject
@@ -47,7 +47,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "binary_library", "..\tysila
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "tysos", "tysos.csproj", "{97AD573F-2E77-4F43-9C2B-1050796471A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "build_processes", "..\build_processes\build_processes.csproj", "{FA6D0A07-A6DD-4278-B490-94806E9C9807}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "build_processes", "..\build_processes\build_processes.csproj", "{FA6D0A07-A6DD-4278-B490-94806E9C9807}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "debugprint", "..\testsuite\debugprint\debugprint.csproj", "{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -443,6 +445,26 @@ Global
 		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Release|x86.ActiveCfg = Release|Any CPU
 		{FA6D0A07-A6DD-4278-B490-94806E9C9807}.Release|x86.Build.0 = Release|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile BareBones|Any CPU.ActiveCfg = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile BareBones|Any CPU.Build.0 = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile BareBones|x86.ActiveCfg = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile BareBones|x86.Build.0 = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile libsupcs|Any CPU.ActiveCfg = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile libsupcs|Any CPU.Build.0 = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile libsupcs|x86.ActiveCfg = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile libsupcs|x86.Build.0 = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile libtysila|Any CPU.ActiveCfg = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile libtysila|Any CPU.Build.0 = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile libtysila|x86.ActiveCfg = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Compile libtysila|x86.Build.0 = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Debug|x86.Build.0 = Debug|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Release|x86.ActiveCfg = Release|Any CPU
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -463,6 +485,7 @@ Global
 		{29D2A95D-9E39-46BA-B711-C9248D916689} = {6BF25313-6A5C-4B26-A3C1-AFFC6B498992}
 		{F690B7F4-961C-4F4D-82ED-85500A0B7C9C} = {6BF25313-6A5C-4B26-A3C1-AFFC6B498992}
 		{47EAD363-6C7F-48A4-B119-357740437369} = {6BF25313-6A5C-4B26-A3C1-AFFC6B498992}
+		{08860AB8-6AEF-43E9-87B0-3895A73D6FB8} = {6A8051E7-80C1-4087-8916-D3E5E6009705}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8BB54D00-9424-4590-8A33-4A3CE220817B}

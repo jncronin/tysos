@@ -19,6 +19,7 @@
     <ProjectReference Include="..\processes\services\logger\logger.csproj" />
     <ProjectReference Include="..\processes\services\net\net.csproj" />
     <ProjectReference Include="..\processes\services\vfs\vfs.csproj" />
+    <ProjectReference Include="..\testsuite\debugprint\debugprint.csproj" />
     <ProjectReference Include="..\tysila\binary_library\binary_library\binary_library.csproj" />
   </ItemGroup>
 

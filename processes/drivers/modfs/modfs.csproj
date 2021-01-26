@@ -6,6 +6,7 @@
     <Product>modfs</Product>
     <Copyright>Copyright ©  2016</Copyright>
     <OutputPath>bin\$(Configuration)\</OutputPath>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
