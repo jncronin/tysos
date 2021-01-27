@@ -152,6 +152,10 @@ namespace tysos
         {
             Thread t = new Thread();
 
+            if(e_point == 0)
+            {
+                throw new Exception("Thread entry point is null");
+            }
             t.mt = new System.Threading.Thread(System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<System.Threading.ThreadStart>((IntPtr)e_point));
             SetTysosThread(t.mt, t);
 

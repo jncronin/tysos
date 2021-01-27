@@ -387,7 +387,7 @@ namespace tysos
         {
             if (l > (ulong)Int32.MaxValue)
                 throw new Exception("region is too big for byte array");
-            throw new NotImplementedException();
+            return libsupcs.Array.CreateSZArray<byte>((int)l, (void*)Addr64);
             //return libsupcs.TysosArrayType.CreateByteArray((byte*)a, (int)l);
         }
 

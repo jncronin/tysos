@@ -187,8 +187,7 @@ namespace tysos.elf
 
                         // Convert the VirtualRegion to a managed byte array
                         //byte[] sect_data = libsupcs.TysosArrayType.CreateByteArray((byte*)sect_addr, (int)cur_shdr->sh_size);
-                        byte[] sect_data = null;
-                        throw new NotImplementedException();
+                        byte[] sect_data = libsupcs.Array.CreateSZArray<byte>((int)cur_shdr->sh_size, (void*)sect_addr);
 
                         // Read the section data into it
                         s.Seek((long)cur_shdr->sh_offset, System.IO.SeekOrigin.Begin);

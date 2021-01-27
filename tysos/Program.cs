@@ -809,13 +809,6 @@ namespace tysos
         }
 
         [libsupcs.AlwaysCompile]
-        [libsupcs.MethodAlias("jit_tm")]
-        static IntPtr JitCompile(libsupcs.TysosMethod meth)
-        {
-            throw new Exception("JIT compilation of dynamic methods not supported");
-        }
-
-        [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("jit_addrof")]
         internal static System.IntPtr GetAddressOfObject(string name)
         {
