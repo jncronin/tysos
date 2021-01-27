@@ -107,6 +107,10 @@ namespace modfs
                     f.name = p.Name;
                     f.mem = p.Value as tysos.VirtualMemoryResource64;
                     f.Error = tysos.lib.MonoIOError.ERROR_SUCCESS;
+
+                    System.Diagnostics.Debugger.Log(0, "modfs", "Request for " +
+                        path[0] + " returning " +
+                        f.mem.ToString());
                     return f;
                 }
             }
@@ -127,8 +131,14 @@ namespace modfs
             if (pos < 0)
             {
                 f.Error = tysos.lib.MonoIOError.ERROR_READ_FAULT;
+                System.Diagnostics.Debugger.Log(0, "modfs", "Read Fault (pos = " + pos.ToString() + ")");
                 return -1;
             }
+
+            System.Diagnostics.Debugger.Log(0, "modfs", "Reading from " + mf.name +
+                ", pos: " + pos.ToString() +
+                ", addr: " + (mf.mem.Addr64 + (ulong)pos).ToString("X") +
+                ", length: " + ((long)mf.mem.Length64).ToString());
 
             while (pos < (long)mf.mem.Length64 && bytes_read < count)
             {
