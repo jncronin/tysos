@@ -13,7 +13,9 @@ namespace tysos
     {
         static int next_st_id = 0;
 
-        internal static unsafe void test(libsupcs.TysosMethod meth)
+        [libsupcs.AlwaysCompile]
+        [libsupcs.MethodAlias("jit_tm")]
+        internal static unsafe void* JitCompile(libsupcs.TysosMethod meth)
         {
             var ms = meth.mspec;
             var t = libtysila5.target.Target.targets["x86_64"];
@@ -139,8 +141,10 @@ namespace tysos
 
 
             // Call the function
-            var ret = libsupcs.OtherOperations.CallI<string>(tout);
-            System.Diagnostics.Debugger.Log(0, "jittest", "method returned: " + ret);
+            //var ret = libsupcs.OtherOperations.CallI<string>(tout);
+            //System.Diagnostics.Debugger.Log(0, "jittest", "method returned: " + ret);
+
+            return tout;
 
             //libsupcs.OtherOperations.AsmBreakpoint();
 
@@ -264,6 +268,14 @@ namespace tysos
 
             // the vtable starts at the beginning of the rdata section
             return rout;
+        }
+
+        internal static unsafe void test(libsupcs.TysosMethod test_meth)
+        {
+            var addr = JitCompile(test_meth);
+
+            var ret = libsupcs.OtherOperations.CallI<string>(addr);
+            System.Diagnostics.Debugger.Log(0, "jittest", "method returned: " + ret);
         }
 
         static string get_string()
