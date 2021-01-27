@@ -25,7 +25,7 @@ using System.Text;
 
 namespace modfs
 {
-    class modfs_factory : tysos.ServerObject
+    public class modfs_factory : tysos.ServerObject
     {
         static void Main(string[] args)
         {
@@ -58,7 +58,7 @@ namespace modfs
         }
     }
 
-    class modfs : tysos.ServerObject
+    public class modfs : tysos.ServerObject
     {
         public modfs(List<tysos.lib.File.Property> Mods)
         {
