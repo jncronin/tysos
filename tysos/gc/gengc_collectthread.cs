@@ -26,6 +26,8 @@ namespace tysos.gc
         const int max_allocs = 10000;
         const int min_allocs = 100;
 
+        public static bool ScheduleCollection { get; set; } = false;
+
         /* Runs at high priority and ensures a collection occurs when
         allocs >= max_allocs */
         public static void MaxAllocCollectThreadProc()
@@ -56,6 +58,24 @@ namespace tysos.gc
                 System.Diagnostics.Debugger.Log(0, "gengc", "performing background collection due to low number of allocations (" + heap.allocs.ToString() + ")");
                 heap.DoCollection();
                 System.Diagnostics.Debugger.Log(0, "gengc", "min_alloc collection done");
+                libsupcs.OtherOperations.ExitUninterruptibleSection(state);
+            }
+        }
+
+        /* Runs at high priority and runs a background collection when
+         *  requested */
+        public static void OnRequestCollectThreadProc()
+        {
+            while (heap == null) ;
+            while (true)
+            {
+                tysos.Syscalls.SchedulerFunctions.Block(new DelegateEvent(
+                    delegate () { return ScheduleCollection; }));
+                var state = libsupcs.OtherOperations.EnterUninterruptibleSection();
+                System.Diagnostics.Debugger.Log(0, "gengc", "performing background collection as requested");
+                heap.DoCollection();
+                ScheduleCollection = false;
+                System.Diagnostics.Debugger.Log(0, "gengc", "requested collection done");
                 libsupcs.OtherOperations.ExitUninterruptibleSection(state);
             }
         }

@@ -209,7 +209,13 @@ namespace tysos
                 new object[] { });
             t_min.priority = 0;
             arch.CurrentCpu.CurrentScheduler.Reschedule(t_min);
+
+            Thread t_request = Thread.Create("gc_request", new System.Threading.ThreadStart(gc.gengc.OnRequestCollectThreadProc),
+                new object[] { });
+            t_min.priority = 10;
+            arch.CurrentCpu.CurrentScheduler.Reschedule(t_request);
             Formatter.WriteLine("done", arch.DebugOutput);
+
 
             /* Init vfs signatures */
             lib.File.InitSigs();
