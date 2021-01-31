@@ -145,6 +145,10 @@ namespace tysos.elf
             uint e_shnum = (uint)ehdr.e_shnum;
             byte* sect_header = shdrs;
 
+            /* .to files are relocatable but have the entry point set anyway */
+            ulong text_section = 0;
+            ulong hdr_epoint = ehdr.e_entry;
+
             ulong start = 0;
             tls_size = Program.arch.tysos_tls_length;
 
@@ -179,6 +183,10 @@ namespace tysos.elf
 
                     if (sect_addr + cur_shdr->sh_size > 0x7effffffff)
                         throw new Exception("Object section allocated beyond limit of small code model");
+
+                    // is this .text?
+                    if (sect_name == ".text")
+                        text_section = sect_addr;
 
                     // copy the section to its destination
                     if (cur_shdr->sh_type == 0x1)
@@ -396,6 +404,11 @@ namespace tysos.elf
                 sect_header += e_shentsize;
             }
 
+            if(start == 0)
+            {
+                // assume .to file - use entry point in header
+                start = text_section + hdr_epoint;
+            }
             return start;
         }
 
