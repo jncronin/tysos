@@ -39,6 +39,11 @@ using System.Text;
 
 namespace tysos
 {
+    public class RPCFunctionAttribute : libsupcs.AlwaysCompileAttribute
+    {
+
+    }
+
     public abstract class ServerObject
     {
         protected Thread t = null;

@@ -33,6 +33,7 @@ namespace acpipc
             f.MessageLoop();
         }
 
+        [tysos.RPCFunction]
         public tysos.ServerObject CreateFSHandler(tysos.lib.File src)
         {
             // Get the properties of the source file
