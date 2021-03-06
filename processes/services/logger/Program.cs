@@ -35,11 +35,12 @@ namespace Logger
         }
     }
 
-    public class Logger : tysos.ServerObject
+    public class Logger : tysos.ServerObject, tysos.Interfaces.ILogger
     {
-        public void LogMessage(string source, int level, string message)
+        public RPCResult<bool> LogMessage(string source, int level, string message)
         {
             System.Diagnostics.Debugger.Log(level, source, message);
+            return true;
         }
     }
 }

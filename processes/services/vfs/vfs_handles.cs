@@ -36,16 +36,14 @@ namespace vfs
 
         List<open_handle> open_handles = new List<open_handle>();
 
-        public tysos.lib.File OpenFile(string path, System.IO.FileMode mode, System.IO.FileAccess access,
+        public RPCResult<tysos.lib.File> OpenFile(string path, System.IO.FileMode mode, System.IO.FileAccess access,
             System.IO.FileShare share, System.IO.FileOptions options)
         {
             Path p = GetPath(path);
             if (p == null || p.device == null)
                 return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
 
-            tysos.lib.File ret = p.device.Invoke("Open",
-                new object[] { p.path.path, mode, access, share, options }, tysos.lib.File.sig_Open)
-                as tysos.lib.File;
+            tysos.lib.File ret = p.device.Open(p.path.path, mode, access, share, options).Sync();
 
             if(ret == null)
             {
@@ -65,7 +63,7 @@ namespace vfs
             return ret;
         }
 
-        public bool CloseFile(tysos.lib.File handle)
+        public RPCResult<bool> CloseFile(tysos.lib.File handle)
         {
             handle.Error = tysos.lib.MonoIOError.ERROR_INVALID_HANDLE;
 
@@ -81,9 +79,8 @@ namespace vfs
                 }
             }
 
-            if(handle.Error == tysos.lib.MonoIOError.ERROR_SUCCESS)
-                return (bool)handle.Device.Invoke("Close", new object[] { handle },
-                    tysos.lib.File.sig_Close);
+            if (handle.Error == tysos.lib.MonoIOError.ERROR_SUCCESS)
+                return handle.Device.Close(handle).Sync();
             else
                 return false;
         }

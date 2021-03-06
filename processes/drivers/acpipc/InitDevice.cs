@@ -26,7 +26,7 @@ using tysos.lib;
 
 namespace acpipc
 {
-    partial class acpipc : tysos.lib.VirtualDirectoryServer
+    partial class acpipc : tysos.lib.VirtualDirectoryServer, tysos.Interfaces.IFileSystem
     {
         internal tysos.Resources.PhysicalMemoryRangeManager pmems = new tysos.Resources.PhysicalMemoryRangeManager();
         internal tysos.Resources.VirtualMemoryRangeManager vmems = new tysos.Resources.VirtualMemoryRangeManager();
@@ -41,7 +41,7 @@ namespace acpipc
 
         Dictionary<string, int> next_device_id = new Dictionary<string, int>(new tysos.Program.MyGenericEqualityComparer<string>());
 
-        List<tysos.ServerObject> gsi_providers = new List<tysos.ServerObject>();
+        List<IGSIProvider> gsi_providers = new List<IGSIProvider>();
         List<InterruptSourceOverrideStructure> isos = new List<InterruptSourceOverrideStructure>();
         List<LocalAPICStructure> lapics = new List<LocalAPICStructure>();
         
@@ -630,9 +630,7 @@ namespace acpipc
         {
             foreach(var gsi_provider in gsi_providers)
             {
-                GlobalSystemInterrupt ret = gsi_provider.Invoke("GetInterruptLine",
-                    new object[] { gsi_num }, new Type[] { typeof(int) })
-                    as GlobalSystemInterrupt;
+                var ret = gsi_provider.GetInterruptLine(gsi_num).Sync();
 
                 if (ret != null)
                     return ret;

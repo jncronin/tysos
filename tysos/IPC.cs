@@ -48,6 +48,18 @@ namespace tysos
         public const int TYPE_CLOSE = 2;
     }
 
+    /** <summary>A message with sufficient information to execute a remote procedure call</summary> */
+    public unsafe class RPCMessage : IPCMessage
+    {
+        public void* mptr;
+        public object[] args;
+        public void* rtype;
+        public uint flags;
+
+        public Event result;
+        public bool EventSetsOnReturn = true;
+    }
+
     class IPC
     {
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]

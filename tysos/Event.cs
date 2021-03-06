@@ -49,7 +49,7 @@ namespace tysos
             Type = EventType.Standard;
         }
 
-        volatile int mutex = 0;
+        volatile protected int mutex = 0;
 
         public virtual bool IsSet
         {

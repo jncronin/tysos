@@ -154,7 +154,8 @@ namespace tysos.lib
                 return InvalidFileAttributes;
             }*/
 
-            System.IO.FileAttributes fa = (System.IO.FileAttributes)Program.Vfs.Invoke("GetFileAttributes", new object[] { path }, File.sig_vfs_GetFileAttributes);
+            //System.IO.FileAttributes fa = (System.IO.FileAttributes)Program.Vfs.Invoke("GetFileAttributes", new object[] { path }, File.sig_vfs_GetFileAttributes);
+            System.IO.FileAttributes fa = Program.Vfs.GetFileAttributes(path).Sync();
 
             if (fa == InvalidFileAttributes)
                 error = MonoIOError.ERROR_FILE_NOT_FOUND;
@@ -170,9 +171,10 @@ namespace tysos.lib
             //Formatter.WriteLine("MonoIO: GetFileSystemEntries: called with path: " + path + " and path_with_pattern: " + path_with_pattern, Program.arch.DebugOutput);
             while (Program.Vfs == null) ;
 
-            string[] ret = Program.Vfs.Invoke("GetFileSystemEntries",
-                new object[] { path, path_with_pattern, attrs, mask },
-                File.sig_vfs_GetFileSystemEntries) as string[];
+            //string[] ret = Program.Vfs.Invoke("GetFileSystemEntries",
+            //    new object[] { path, path_with_pattern, attrs, mask },
+            //    File.sig_vfs_GetFileSystemEntries) as string[];
+            string[] ret = Program.Vfs.GetFileSystemEntries(path, path_with_pattern, attrs, mask).Sync();
 
             if(ret == null)
             {
@@ -195,7 +197,8 @@ namespace tysos.lib
                 return false;
             }
 
-            System.IO.FileAttributes fa = (System.IO.FileAttributes)Program.Vfs.Invoke("GetFileAttributes", new object[] { path }, File.sig_vfs_GetFileAttributes);
+            //System.IO.FileAttributes fa = (System.IO.FileAttributes)Program.Vfs.Invoke("GetFileAttributes", new object[] { path }, File.sig_vfs_GetFileAttributes);
+            System.IO.FileAttributes fa = Program.Vfs.GetFileAttributes(path).Sync();
             if ((fa == InvalidFileAttributes) || ((fa & System.IO.FileAttributes.Directory) != System.IO.FileAttributes.Directory))
             {
                 error = MonoIOError.ERROR_PATH_NOT_FOUND;
@@ -219,9 +222,10 @@ namespace tysos.lib
                 return null;
             }
 
-            tysos.lib.File ret = (tysos.lib.File)Program.Vfs.Invoke("OpenFile", 
-                new object[] { name, mode, access, share, options },
-                File.sig_vfs_OpenFile);
+            //tysos.lib.File ret = (tysos.lib.File)Program.Vfs.Invoke("OpenFile", 
+            //    new object[] { name, mode, access, share, options },
+            //    File.sig_vfs_OpenFile);
+            File ret = Program.Vfs.OpenFile(name, mode, access, share, options).Sync();
             error = ret.Error;
             return ret;
         }
@@ -236,8 +240,9 @@ namespace tysos.lib
                 return false;
             }
 
-            Program.Vfs.Invoke("CloseFile",
-                new object[] { handle }, File.sig_vfs_CloseFile);
+            //Program.Vfs.Invoke("CloseFile",
+            //    new object[] { handle }, File.sig_vfs_CloseFile);
+            Program.Vfs.CloseFile(handle);
             error = handle.Error;
             return error == MonoIOError.ERROR_SUCCESS;
         }
@@ -250,10 +255,12 @@ namespace tysos.lib
 
             while (Program.Vfs == null) ;
 
-            lib.File handle = (lib.File)Program.Vfs.Invoke("OpenFile",
-                new object[] { path, System.IO.FileMode.Open, System.IO.FileAccess.Read,
-                    System.IO.FileShare.ReadWrite, System.IO.FileOptions.None },
-                File.sig_vfs_OpenFile);
+            //lib.File handle = (lib.File)Program.Vfs.Invoke("OpenFile",
+            //    new object[] { path, System.IO.FileMode.Open, System.IO.FileAccess.Read,
+            //        System.IO.FileShare.ReadWrite, System.IO.FileOptions.None },
+            //    File.sig_vfs_OpenFile);
+            File handle = Program.Vfs.OpenFile(path, System.IO.FileMode.Open, System.IO.FileAccess.Read,
+                System.IO.FileShare.ReadWrite, System.IO.FileOptions.None).Sync();
             if(handle.Error != MonoIOError.ERROR_SUCCESS)
             {
                 error = handle.Error;

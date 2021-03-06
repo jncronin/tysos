@@ -52,17 +52,14 @@ namespace tysos.lib
         {
             get
             {
-                object r = d.Invoke("IntProperties", new object[] { this }, sig_IntProperties);
-                if (r == null)
-                    return -1;
-                return (int)r;
+                return d.IntProperties(this).Sync();
             }
         }
         public virtual MonoFileType FileType { get { return fileType; } }
         public virtual bool Isatty { get { return isatty; } }
-        public virtual ServerObject Device { get { return d; } }
+        public virtual Interfaces.IFileSystem Device { get { return d; } }
 
-        protected internal ServerObject d;
+        protected internal Interfaces.IFileSystem d;
 
         public virtual long Position
         {
@@ -100,10 +97,7 @@ namespace tysos.lib
         {
             get
             {
-                object ret = d.Invoke("GetLength", new object[] { this }, sig_GetLength);
-                if (ret == null)
-                    return 0;
-                return (long)ret;
+                return d.GetLength(this).Sync();
             }
         }
 
@@ -115,11 +109,8 @@ namespace tysos.lib
                 return 0;
             }
 
-            object r = d.Invoke("Read", new object[] { this, pos, dest, dest_offset, count }, sig_Read);
-            if (r == null)
-                return 0;
+            var ret = d.Read(this, pos, dest, dest_offset, count).Sync();
 
-            int ret = (int)r;
             pos += ret;
             return ret;
         }
@@ -132,11 +123,8 @@ namespace tysos.lib
                 return 0;
             }
 
-            object r = (int)d.Invoke("Write", new object[] { this, pos, dest, dest_offset, count }, sig_Write);
-            if (r == null)
-                return 0;
+            var ret = d.Write(this, pos, dest, dest_offset, count).Sync();
 
-            int ret = (int)r;
             pos += ret;
             return ret;
         }
@@ -150,21 +138,19 @@ namespace tysos.lib
 
         public virtual tysos.lib.File.Property GetPropertyByName(string name)
         {
-            return d.Invoke("GetPropertyByName", new object[] { this, name }, sig_GetPropertyByName)
-                as tysos.lib.File.Property;
+            return d.GetPropertyByName(this, name).Sync();
         }
 
         public virtual tysos.lib.File.Property[] GetAllProperties()
         {
-            return d.Invoke("GetAllProperties", new object[] { this }, sig_GetAllProperties)
-                as tysos.lib.File.Property[];
+            return d.GetAllProperties(this).Sync();
         }
 
         public virtual string Name
         {
             get
             {
-                return d.Invoke("GetName", new object[] { this }) as string;
+                return d.GetName(this).Sync();
             }
         }
 
@@ -260,7 +246,7 @@ namespace tysos.lib
         public VirtualPropertyFile(ServerObject device, string name,
             List<tysos.lib.File.Property> props)
         {
-            d = device;
+            d = (Interfaces.IFileSystem)device;
 
             CanRead = false;
             CanWrite = false;
@@ -343,7 +329,7 @@ namespace tysos.lib
             root.Add(new File.Property { Name = "server", Value = this });
         }
 
-        public tysos.lib.File Open(IList<string> path, System.IO.FileMode mode,
+        public RPCResult<tysos.lib.File> Open(IList<string> path, System.IO.FileMode mode,
             System.IO.FileAccess access, System.IO.FileShare share,
             System.IO.FileOptions options)
         {
@@ -368,21 +354,46 @@ namespace tysos.lib
             return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
         }
 
-        public bool Close(tysos.lib.File handle)
+        public RPCResult<bool> Close(tysos.lib.File handle)
         {
             return true;
         }
 
-        public int Read(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
+        public RPCResult<int> Read(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
         {
             f.Error = MonoIOError.ERROR_READ_FAULT;
             return 0;
         }
 
-        public int Write(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
+        public RPCResult<int> Write(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
         {
             f.Error = MonoIOError.ERROR_WRITE_FAULT;
             return 0;
+        }
+
+        public RPCResult<string> GetName(File f)
+        {
+            throw new NotImplementedException();
+        }
+
+        public RPCResult<int> IntProperties(File f)
+        {
+            throw new NotImplementedException();
+        }
+
+        public RPCResult<File.Property> GetPropertyByName(File f, string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public RPCResult<File.Property[]> GetAllProperties(File f)
+        {
+            throw new NotImplementedException();
+        }
+
+        public RPCResult<long> GetLength(File f)
+        {
+            throw new NotImplementedException();
         }
     }
 

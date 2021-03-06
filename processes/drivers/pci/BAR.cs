@@ -27,7 +27,7 @@ namespace pci
 {
     partial class hostbridge
     {
-        public tysos.RangeResource GetBAR(PCIConfiguration conf, int bar_no)
+        public RPCResult<tysos.RangeResource> GetBAR(PCIConfiguration conf, int bar_no)
         {
             /* Get the requested BAR of the device passed.
             If its base is zero, but length is not, we have to allocate it

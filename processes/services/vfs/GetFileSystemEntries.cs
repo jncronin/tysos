@@ -27,7 +27,7 @@ namespace vfs
 {
     partial class vfs
     {
-        public string[] GetFileSystemEntries(string path, string path_with_pattern,
+        public RPCResult<string[]> GetFileSystemEntries(string path, string path_with_pattern,
             int attrs, int mask)
         {
             /* We are handed a string, path_with_pattern, which may include wildcards
@@ -48,7 +48,7 @@ namespace vfs
             /* Open the root directory and begin searching from there */
             tysos.lib.File root_dir_f = OpenFile("/", System.IO.FileMode.Open,
                 System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
-                System.IO.FileOptions.None);
+                System.IO.FileOptions.None).Sync();
             getFSE(split_path, 0, ret, root_dir_f, new List<string>(), attrs, mask);
             CloseFile(root_dir_f);
 
@@ -105,7 +105,7 @@ namespace vfs
                     tysos.lib.File child_dir = OpenFile(cur_child_path.ToString(),
                         System.IO.FileMode.Open, System.IO.FileAccess.Read,
                         System.IO.FileShare.ReadWrite,
-                        System.IO.FileOptions.None);
+                        System.IO.FileOptions.None).Sync();
                     if (child_dir == null || child_dir.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
                     {
                         System.Diagnostics.Debugger.Log(0, null, "getFSE: OpenFile(" + cur_child_path.ToString() + ") failed");

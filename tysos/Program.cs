@@ -31,7 +31,10 @@ namespace tysos
         internal static Environment env;
         internal static SymbolTable stab;
         internal static Multiboot.Header mboot_header;
-        internal static ServerObject Vfs, Logger, Gui, Net;
+        internal static ServerObject Gui;
+        internal static Interfaces.INet Net;
+        internal static Interfaces.IVfs Vfs;
+        internal static Interfaces.ILogger Logger;
 
         internal static Dictionary<string, Process> running_processes;
 
@@ -220,23 +223,7 @@ namespace tysos
             /* Init vfs signatures */
             lib.File.InitSigs();
 
-            /* Build a list of available modules */
-            Formatter.Write("Building module list... ", arch.DebugOutput);
-            List<tysos.lib.File.Property> mods = new List<tysos.lib.File.Property>();
-            foreach (Multiboot.Module mod in mboot.modules)
-            {
-                if (mod.length != 0)
-                {
-                    ulong vaddr = map_in(mod);
-                    mods.Add(new tysos.lib.File.Property { Name = mod.name, Value = new VirtualMemoryResource64(vaddr, mod.length) });
-                    Formatter.Write(mod.name, arch.DebugOutput);
-                    Formatter.Write(", ", arch.DebugOutput);
-                }
-            }
-            List<tysos.lib.File.Property> modfs_props = new List<lib.File.Property>();
-            modfs_props.Add(new lib.File.Property { Name = "driver", Value = "modfs" });
-            modfs_props.Add(new lib.File.Property { Name = "mods", Value = mods });
-            Formatter.WriteLine("done", arch.DebugOutput);
+
 
             /* Load the logger */
             Formatter.Write("Starting logger... ", arch.DebugOutput);
@@ -268,63 +255,12 @@ namespace tysos
             net.Start();
             Formatter.WriteLine("done", arch.DebugOutput);
 
-            /* Load and mount the root fs */
-            List<lib.File.Property> system_props = arch.SystemProperties;
-            List<Resources.InterruptLine> interrupts = new List<Resources.InterruptLine>();
-            // TODO: add interrupts for all cpus
-            interrupts.AddRange(arch.CurrentCpu.Interrupts);
-            system_props.Add(new lib.File.Property { Name = "interrupts", Value = interrupts });
-            List<rootfs.rootfs_item> rootfs_items = new List<rootfs.rootfs_item>
-            {
-                new rootfs.rootfs_item { Name = "system", Props = system_props },
-                new rootfs.rootfs_item { Name = "modules", Props = modfs_props }
-            };
+            /* Startup thread does the rest as we need to wait for the Vfs to come up */
+            Process kernel_startup = Process.Create("kernel_startup", stab.GetAddress("_ZN11tysos#2Edll5tysos7Program_11SetupThread_Rv_P0"), 0x1000, arch.VirtualRegions, stab, new object[] { }, Program.arch.tysos_tls_length);
+            arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_startup.startup_thread);
+            kernel_startup.started = true;
 
-            /* Add a basic framebuffer device if set up by bootloader */
-            if (mboot.fb_base != 0)
-            {
-                List<lib.File.Property> fb_props = new List<lib.File.Property>();
-                fb_props.Add(new lib.File.Property { Name = "driver", Value = "framebuffer" });
-                ulong fb_length = mboot.fb_stride * mboot.fb_h * mboot.fb_bpp / 8;
-                if ((fb_length & 0xfffUL) != 0)
-                {
-                    fb_length += 0x1000UL;
-                    fb_length &= ~0xfffUL;
-                }
-                fb_props.Add(new lib.File.Property { Name = "pmem", Value = new PhysicalMemoryResource64(mboot.fb_base, fb_length) });
-                fb_props.Add(new lib.File.Property { Name = "height", Value = mboot.fb_h });
-                fb_props.Add(new lib.File.Property { Name = "width", Value = mboot.fb_w });
-                fb_props.Add(new lib.File.Property { Name = "stride", Value = mboot.fb_stride });
-                fb_props.Add(new lib.File.Property { Name = "bpp", Value = mboot.fb_bpp });
-                fb_props.Add(new lib.File.Property { Name = "pformat", Value = (int)mboot.fb_pixelformat });
 
-                fb_props.Add(new lib.File.Property
-                {
-                    Name = "vmem",
-                    Value = new VirtualMemoryResource64(arch.VirtualRegions.Alloc(fb_length, 0x1000, "framebuffer"), fb_length)
-                });
-                rootfs_items.Add(new rootfs.rootfs_item { Name = "framebuffer", Props = fb_props });
-            }
-
-            rootfs rootfs = new rootfs(rootfs_items);
-            Process rootfs_p = Process.CreateProcess("rootfs",
-                new System.Threading.ThreadStart(rootfs.MessageLoop), new object[] { rootfs });
-            rootfs_p.Start();
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/", rootfs },
-                new Type[] { typeof(string), typeof(ServerObject) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/modules" }, new Type[] { typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/framebuffer" }, new Type[] { typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system" }, new Type[] { typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0" }, new Type[] { typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pcnet32_0" }, new Type[] { typeof(string) });
-            /*ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/bga_0" }, new Type[] { typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0" }, new Type[] { typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0/ata_0" }, new Type[] { typeof(string) });
-            ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/system/pci_hostbridge_0/pciide_0/ata_0/device_0" }, new Type[] { typeof(string) });*/
-
-            /* Load the modfs driver */
-            Process modfs = LoadELFModule("modfs", mboot, stab, running_processes, 0x8000, new object[] { });
-            modfs.Start();
 
             if (do_debug)
                 System.Diagnostics.Debugger.Break();
@@ -356,6 +292,85 @@ namespace tysos
             while (true) ;
         }
 
+        [libsupcs.AlwaysCompile]
+        static void SetupThread()
+        {
+            /* Build a list of available modules */
+            Formatter.Write("Building module list... ", arch.DebugOutput);
+            List<tysos.lib.File.Property> mods = new List<tysos.lib.File.Property>();
+            foreach (Multiboot.Module mod in mboot_header.modules)
+            {
+                if (mod.length != 0)
+                {
+                    ulong vaddr = map_in(mod);
+                    mods.Add(new tysos.lib.File.Property { Name = mod.name, Value = new VirtualMemoryResource64(vaddr, mod.length) });
+                    Formatter.Write(mod.name, arch.DebugOutput);
+                    Formatter.Write(", ", arch.DebugOutput);
+                }
+            }
+            List<tysos.lib.File.Property> modfs_props = new List<lib.File.Property>();
+            modfs_props.Add(new lib.File.Property { Name = "driver", Value = "modfs" });
+            modfs_props.Add(new lib.File.Property { Name = "mods", Value = mods });
+            Formatter.WriteLine("done", arch.DebugOutput);
+
+            /* Load and mount the root fs */
+            List<lib.File.Property> system_props = arch.SystemProperties;
+            List<Resources.InterruptLine> interrupts = new List<Resources.InterruptLine>();
+            // TODO: add interrupts for all cpus
+            interrupts.AddRange(arch.CurrentCpu.Interrupts);
+            system_props.Add(new lib.File.Property { Name = "interrupts", Value = interrupts });
+            List<rootfs.rootfs_item> rootfs_items = new List<rootfs.rootfs_item>
+            {
+                new rootfs.rootfs_item { Name = "system", Props = system_props },
+                new rootfs.rootfs_item { Name = "modules", Props = modfs_props }
+            };
+
+            /* Add a basic framebuffer device if set up by bootloader */
+            if (mboot_header.fb_base != 0)
+            {
+                List<lib.File.Property> fb_props = new List<lib.File.Property>();
+                fb_props.Add(new lib.File.Property { Name = "driver", Value = "framebuffer" });
+                ulong fb_length = mboot_header.fb_stride * mboot_header.fb_h * mboot_header.fb_bpp / 8;
+                if ((fb_length & 0xfffUL) != 0)
+                {
+                    fb_length += 0x1000UL;
+                    fb_length &= ~0xfffUL;
+                }
+                fb_props.Add(new lib.File.Property { Name = "pmem", Value = new PhysicalMemoryResource64(mboot_header.fb_base, fb_length) });
+                fb_props.Add(new lib.File.Property { Name = "height", Value = mboot_header.fb_h });
+                fb_props.Add(new lib.File.Property { Name = "width", Value = mboot_header.fb_w });
+                fb_props.Add(new lib.File.Property { Name = "stride", Value = mboot_header.fb_stride });
+                fb_props.Add(new lib.File.Property { Name = "bpp", Value = mboot_header.fb_bpp });
+                fb_props.Add(new lib.File.Property { Name = "pformat", Value = (int)mboot_header.fb_pixelformat });
+
+                fb_props.Add(new lib.File.Property
+                {
+                    Name = "vmem",
+                    Value = new VirtualMemoryResource64(arch.VirtualRegions.Alloc(fb_length, 0x1000, "framebuffer"), fb_length)
+                });
+                rootfs_items.Add(new rootfs.rootfs_item { Name = "framebuffer", Props = fb_props });
+            }
+
+            rootfs rootfs = new rootfs(rootfs_items);
+            Process rootfs_p = Process.CreateProcess("rootfs",
+                new System.Threading.ThreadStart(rootfs.MessageLoop), new object[] { rootfs });
+            rootfs_p.Start();
+            //ServerObject.InvokeRemoteAsync(vfs, "Mount", new object[] { "/", rootfs },
+            //    new Type[] { typeof(string), typeof(ServerObject) });
+
+            while (Vfs == null) ;
+            Vfs.Mount("/", rootfs);
+            Vfs.Mount("/modules");
+            Vfs.Mount("/system");
+            Vfs.Mount("/system/pci_hostbridge_0");
+            Vfs.Mount("/system/pci_hostbridge_0/pcnet32_0");
+
+            /* Load the modfs driver */
+            Process modfs = LoadELFModule("modfs", mboot_header, stab, running_processes, 0x8000, new object[] { });
+            modfs.Start();
+
+        }
+
         static string str_array_test(string[] val)
         {
             return val[0];
@@ -373,7 +388,7 @@ namespace tysos
 
         private static void CreateKernelThreads()
         {
-            Process kernel_pmem = Process.Create("kernel_pmem", stab.GetAddress("_ZN5tysos5tysos7Pmem_12TaskFunction_Rv_P1u1t"), 0x1000, arch.VirtualRegions, stab, new object[] { arch.PhysMem }, Program.arch.tysos_tls_length);
+            Process kernel_pmem = Process.Create("kernel_pmem", stab.GetAddress("_ZN5tysos5tysos4Pmem_12TaskFunction_Rv_P1u1t"), 0x1000, arch.VirtualRegions, stab, new object[] { arch.PhysMem }, Program.arch.tysos_tls_length);
             //arch.CurrentCpu.CurrentScheduler.Reschedule(kernel_pmem.startup_thread);
             kernel_pmem.started = true;
 

@@ -50,7 +50,7 @@ namespace tysos
                 switch (proc_type)
                 {
                     case SpecialProcessType.Vfs:
-                        Program.Vfs = o;
+                        Program.Vfs = (tysos.Interfaces.IVfs)o;
                         break;
 
                     case SpecialProcessType.Gui:
@@ -58,11 +58,11 @@ namespace tysos
                         break;
 
                     case SpecialProcessType.Logger:
-                        Program.Logger = o;
+                        Program.Logger = (Interfaces.ILogger)o;
                         break;
 
                     case SpecialProcessType.Net:
-                        Program.Net = o;
+                        Program.Net = (Interfaces.INet)o;
                         break;
                 }
                 return false;
@@ -76,14 +76,34 @@ namespace tysos
                     case SpecialProcessType.Gui:
                         return Program.Gui;
                     case SpecialProcessType.Logger:
-                        return Program.Logger;
+                        throw new NotImplementedException();
                     case SpecialProcessType.Vfs:
-                        return Program.Vfs;
+                        throw new NotImplementedException();
+                        //return Program.Vfs;
                     case SpecialProcessType.Net:
-                        return Program.Net;
+                        throw new NotImplementedException();
+                        //return Program.Net;
                     default:
                         return null;
                 }
+            }
+
+            [libsupcs.Syscall]
+            public static Interfaces.IVfs GetVfs()
+            {
+                return Program.Vfs;
+            }
+
+            [libsupcs.Syscall]
+            public static Interfaces.INet GetNet()
+            {
+                return Program.Net;
+            }
+
+            [libsupcs.Syscall]
+            public static Interfaces.ILogger GetLogger()
+            {
+                return Program.Logger;
             }
 
             [libsupcs.Syscall]
@@ -142,16 +162,14 @@ namespace tysos
             }
 
             [libsupcs.Syscall]
-            public static ServerObject LoadServerInstance(string protocol, lib.File f)
+            public static Interfaces.IFileSystem LoadServerInstance(string protocol, lib.File f)
             {
                 Formatter.WriteLine("LoadServerInstance: loading server " + protocol, Program.arch.DebugOutput);
 
-                ServerObject factory = LoadServer(protocol);
+                var factory = LoadServer(protocol) as Interfaces.IFactory;
 
                 Formatter.WriteLine("LoadServer: Invoking CreateFSHandler", Program.arch.DebugOutput);
-                ServerObject ret = factory.Invoke("CreateFSHandler",
-                    new object[] { f }, new Type[] { typeof(tysos.lib.File) })
-                    as ServerObject;
+                var ret = factory.CreateFSHandler(f).Sync();
 
                 if (ret == null)
                     throw new Exception("CreateFSHandler failed");

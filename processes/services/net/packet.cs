@@ -26,11 +26,20 @@ namespace net
 {
     partial class net
     {
-        internal Dictionary<ushort, ServerObject> packet_handlers =
-            new Dictionary<ushort, ServerObject>(
+        internal Dictionary<ushort, IPacketHandler> packet_handlers =
+            new Dictionary<ushort, IPacketHandler>(
                 new tysos.Program.MyGenericEqualityComparer<ushort>());
 
-        public void PacketReceived(byte[] packet, int dev_no, int payload_offset,
+        public RPCResult<bool> RegisterPacketHandler(ushort id, IPacketHandler handler)
+        {
+            lock(packet_handlers)
+            {
+                packet_handlers[id] = handler;
+            }
+            return true;
+        }
+
+        public RPCResult<bool> PacketReceived(byte[] packet, int dev_no, int payload_offset,
             int payload_len, p_addr devsrc)
         {
             HWAddr dest = ReadHWAddr(packet, payload_offset);
@@ -59,10 +68,10 @@ namespace net
 
             if (packet_handlers.ContainsKey(ethertype))
             {
-                packet_handlers[ethertype].InvokeAsync("PacketReceived",
-                    new object[] { packet, dev_no, payload_offset, payload_len, src },
-                    sig_packet);
+                packet_handlers[ethertype].PacketReceived(packet, dev_no, payload_offset, payload_len, src);
             }
+
+            return true;
         }
 
         public void TransmitEthernetPacket(byte[] packet, int dev_no, int payload_offset,
@@ -137,9 +146,7 @@ namespace net
             }
 
             // Send packet
-            nd.s.InvokeAsync("TransmitPacket",
-                new object[] { packet, dev_no, payload_offset, payload_len, dest },
-                sig_packet);
+            nd.s.TransmitPacket(packet, dev_no, payload_offset, payload_len, dest);
         }
     }
 }

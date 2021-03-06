@@ -28,12 +28,12 @@ using tysos.Resources;
 
 namespace pcnet32
 {
-    partial class pcnet32 : tysos.lib.VirtualFileServer
+    partial class pcnet32 : tysos.lib.VirtualFileServer, tysos.Interfaces.IFileSystem, net.INetworkDevice
     {
         tysos.RangeResource io = null;
         InterruptLine irq = null;
         tysos.VirtualMemoryResource64 buf = null;
-        ServerObject net;
+        net.INetInternal net;
         int dev_no;
         net.HWAddr hwaddr;
 
@@ -52,8 +52,8 @@ namespace pcnet32
         {
             System.Diagnostics.Debugger.Log(0, "pcnet32", "PCNET32 driver started");
 
-            while (Syscalls.ProcessFunctions.GetSpecialProcess(tysos.Syscalls.ProcessFunctions.SpecialProcessType.Net) == null) ;
-            net = Syscalls.ProcessFunctions.GetSpecialProcess(tysos.Syscalls.ProcessFunctions.SpecialProcessType.Net);
+            while (Syscalls.ProcessFunctions.GetNet() == null) ;
+            net = Syscalls.ProcessFunctions.GetNet() as net.INetInternal;
 
             /* Get our ports and interrupt */
             foreach (var r in root)
@@ -332,8 +332,7 @@ namespace pcnet32
                             byte[] msg = new byte[dlen];
                             for (uint j = 0; j < dlen; j++)
                                 msg[j] = b.Buffer[j];
-                            net.InvokeAsync("PacketReceived", new object[] { msg, dev_no, 0, msg.Length, null },
-                                global::net.net.sig_packet);
+                            net.PacketReceived(msg, dev_no, 0, msg.Length, null);
                         }
 
                         // reset the descriptor entry
@@ -378,30 +377,32 @@ namespace pcnet32
             return ret;
         }
 
-        public void RegisterDevNo(int dn)
+        public RPCResult<bool> RegisterDevNo(int dn)
         {
             if (SourceThread.owning_process.MessageServer != 
-                Syscalls.ProcessFunctions.GetSpecialProcess(Syscalls.ProcessFunctions.SpecialProcessType.Net))
+                Syscalls.ProcessFunctions.GetNet())
             {
                 System.Diagnostics.Debugger.Log(0, null, "Process " +
                     SourceThread.ProcessName + " tried to call RegisterDevNo");
-                return;
+                return false;
             }
 
             System.Diagnostics.Debugger.Log(0, null, "Allocated network device number " +
                 dn.ToString());
 
             dev_no = dn;
+
+            return true;
         }
 
-        public void Start()
+        public RPCResult<bool> Start()
         {
             if (SourceThread.owning_process.MessageServer !=
-                Syscalls.ProcessFunctions.GetSpecialProcess(Syscalls.ProcessFunctions.SpecialProcessType.Net))
+                Syscalls.ProcessFunctions.GetNet())
             {
                 System.Diagnostics.Debugger.Log(0, null, "Process " +
                     SourceThread.ProcessName + " tried to call Start");
-                return;
+                return false;
             }
 
             System.Diagnostics.Debugger.Log(0, null, "Starting");
@@ -413,21 +414,23 @@ namespace pcnet32
             csr0 |= (1U << 1);
 
             WriteCSR(0, csr0);
+
+            return true;
         }
 
-        public net.p_addr GetHardwareAddress()
+        public RPCResult<net.HWAddr> GetHardwareAddress()
         {
             return hwaddr;
         }
 
-        public void Stop()
+        public RPCResult<bool> Stop()
         {
             if (SourceThread.owning_process.MessageServer !=
-                Syscalls.ProcessFunctions.GetSpecialProcess(Syscalls.ProcessFunctions.SpecialProcessType.Net))
+                Syscalls.ProcessFunctions.GetNet())
             {
                 System.Diagnostics.Debugger.Log(0, null, "Process " +
                     SourceThread.ProcessName + " tried to call Stop");
-                return;
+                return false;
             }
 
             System.Diagnostics.Debugger.Log(0, null, "Stopping"); uint csr0 = ReadCSR(0);
@@ -438,9 +441,11 @@ namespace pcnet32
             csr0 |= (1U << 2);
 
             WriteCSR(0, csr0);
+
+            return true;
         }
 
-        public bool TransmitPacket(byte[] packet, int dev_no, int packet_offset,
+        public RPCResult<bool> TransmitPacket(byte[] packet, int dev_no, int packet_offset,
             int packet_len, net.p_addr dest)
         {
             if(txbufs[cur_tx_buf].DriverOwns == false)

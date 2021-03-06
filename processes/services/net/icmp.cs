@@ -24,7 +24,7 @@ using tysos;
 
 namespace net
 {
-    class icmp : ServerObject
+    class icmp : ServerObject, IPacketHandler
     {
         ipv4 ip;
 
@@ -43,7 +43,7 @@ namespace net
             return true;
         }
 
-        public void PacketReceived(byte[] packet, int dev_no, int payload_offset,
+        public RPCResult<bool> PacketReceived(byte[] packet, int dev_no, int payload_offset,
             int payload_len, p_addr src)
         {
             /* Parse the provided packet */
@@ -55,7 +55,7 @@ namespace net
             {
                 System.Diagnostics.Debugger.Log(0, null, "Received ICMP message with " +
                     "invalid checksum " + csum.ToString("X4"));
-                return;
+                return false;
             }
             ushort ident = net.ReadWord(packet, payload_offset + 4);
             ushort seq = net.ReadWord(packet, payload_offset + 6);
@@ -64,6 +64,8 @@ namespace net
                 src.ToString() + ": type: " + type.ToString() + ", code: " +
                 code.ToString() + ", ident: " + ident.ToString() + ", seq: " +
                 seq.ToString());
+
+            return true;
         }
     }
 }

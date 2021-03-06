@@ -25,7 +25,7 @@ using System.Text;
 
 namespace bga
 {
-    partial class bga : tysos.lib.VirtualFileServer
+    partial class bga : tysos.lib.VirtualFileServer, tysos.Interfaces.IFileSystem
     {
         pci.PCIConfiguration pciconf;
         internal tysos.x86_64.IORangeManager ios = new tysos.x86_64.IORangeManager();

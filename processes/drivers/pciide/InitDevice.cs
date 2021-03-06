@@ -28,7 +28,7 @@ using tysos.Resources;
 
 namespace pciide
 {
-    partial class pciide : tysos.lib.VirtualDirectoryServer
+    partial class pciide : tysos.lib.VirtualDirectoryServer, tysos.Interfaces.IFileSystem
     {
         pci.PCIConfiguration pciconf;
 

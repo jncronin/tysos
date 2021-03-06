@@ -26,23 +26,21 @@ using tysos;
 
 namespace net
 {
-    class ipv4 : ServerObject
+    class ipv4 : ServerObject, IPacketHandler
     {
+        INetInternal _net;
         net net;
         icmp icmp;
-        internal Dictionary<byte, ServerObject> packet_handlers =
-            new Dictionary<byte, ServerObject>(
+        internal Dictionary<byte, IPacketHandler> packet_handlers =
+            new Dictionary<byte, IPacketHandler>(
                 new tysos.Program.MyGenericEqualityComparer<byte>());
 
         public override bool InitServer()
         {
-            net = Syscalls.ProcessFunctions.GetSpecialProcess(Syscalls.ProcessFunctions.SpecialProcessType.Net)
-                as net;
+            _net = Syscalls.ProcessFunctions.GetNet() as INetInternal;
+            net = _net as net;
+            var ret = _net.RegisterPacketHandler(0x0800, this);
 
-            lock (net.packet_handlers)
-            {
-                net.packet_handlers[0x0800] = this;
-            }
 
             /* Start protocol handlers */
             icmp = new icmp(this);
@@ -51,10 +49,10 @@ namespace net
                 new object[] { icmp });
             p_icmp.Start();
 
-            return true;
+            return ret.Sync();
         }
 
-        public void PacketReceived(byte[] packet, int dev_no, int payload_offset,
+        public RPCResult<bool> PacketReceived(byte[] packet, int dev_no, int payload_offset,
             int payload_len, p_addr src)
         {
             /* Parse the provided packet */
@@ -65,7 +63,7 @@ namespace net
             {
                 System.Diagnostics.Debugger.Log(0, null, "Packet dropped as version incorrect: " +
                     ver.ToString());
-                return;
+                return false;
             }
 
             // get header length (in bytes)
@@ -88,7 +86,7 @@ namespace net
                     sb.Append(net.ReadWord(packet, payload_offset + i).ToString("X4"));
                 }
                 System.Diagnostics.Debugger.Log(0, null, sb.ToString());
-                return;
+                return false;
             }
 
             // get packet length (excluding header)
@@ -102,7 +100,7 @@ namespace net
             if(flags != 0)
             {
                 System.Diagnostics.Debugger.Log(0, null, "Packet dropped as fragmented");
-                return;
+                return false;
             }
 
             // get protocol
@@ -145,14 +143,14 @@ namespace net
 
             if(found)
             {
-                ServerObject prot_handler;
+                IPacketHandler prot_handler;
                 if(packet_handlers.TryGetValue(prot, out prot_handler))
                 {
-                    prot_handler.InvokeAsync("PacketReceived",
-                        new object[] { packet, dev_no, payload_offset + hlen, plen, spa },
-                        net.sig_packet);
+                    prot_handler.PacketReceived(packet, dev_no, payload_offset + hlen, plen, spa);
                 }
             }
+
+            return true;
         }
 
         internal static uint calc_checksum(byte[] packet, int payload_offset, int len)

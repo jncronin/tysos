@@ -32,12 +32,12 @@ namespace pci
     {
         tysos.x86_64.IOResource CONFIG_ADDRESS, CONFIG_DATA;
         internal int bus, dev, func;
-        internal hostbridge hb;
+        internal IHostBridge hb;
         internal IList<BAROverride> bars;
 
         internal PCIConfiguration(tysos.x86_64.IOResource config_address,
             tysos.x86_64.IOResource config_data, int _bus, int _dev, int _func,
-            hostbridge hostbridge, IList<BAROverride> bar_overrides)
+            IHostBridge hostbridge, IList<BAROverride> bar_overrides)
         {
             CONFIG_ADDRESS = config_address;
             CONFIG_DATA = config_data;
@@ -83,9 +83,7 @@ namespace pci
 
         public tysos.RangeResource GetBAR(int bar_no)
         {
-            return hb.Invoke("GetBAR", new object[] { this, bar_no },
-                new Type[] { typeof(PCIConfiguration), typeof(int) })
-                as tysos.RangeResource;
+            return hb.GetBAR(this, bar_no).Sync();
         }
 
         public static PCIConfiguration GetPCIConf(IEnumerable<tysos.lib.File.Property> props)

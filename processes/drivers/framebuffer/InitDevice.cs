@@ -28,7 +28,7 @@ using tysos.Resources;
 
 namespace framebuffer
 {
-    partial class framebuffer : tysos.lib.VirtualFileServer
+    partial class framebuffer : tysos.lib.VirtualFileServer, tysos.Interfaces.IFileSystem
     {
         tysos.VirtualMemoryResource64 vmem;
         tysos.PhysicalMemoryResource64 pmem;

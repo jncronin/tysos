@@ -25,7 +25,7 @@ using System.Text;
 
 namespace bga
 {
-    class Factory : tysos.ServerObject
+    class Factory : tysos.ServerObject, tysos.Interfaces.IFactory
     {
         static void Main(string[] args)
         {
@@ -33,7 +33,7 @@ namespace bga
             f.MessageLoop();
         }
 
-        public tysos.ServerObject CreateFSHandler(tysos.lib.File src)
+        public RPCResult<tysos.Interfaces.IFileSystem> CreateFSHandler(tysos.lib.File src)
         {
             // Get the properties of the source file
             tysos.lib.File.Property[] props = src.GetAllProperties();

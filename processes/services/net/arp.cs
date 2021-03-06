@@ -24,8 +24,9 @@ using tysos;
 
 namespace net
 {
-    class arp : ServerObject
+    class arp : ServerObject, IPacketHandler, IArp
     {
+        INetInternal _net;
         net net;
 
         /* cache is sorted first by network device, then protocol number, then
@@ -35,24 +36,18 @@ namespace net
                 new tysos.Program.MyGenericEqualityComparer<int>());
 
         /* This is a store of pending ARP requests */
-        Dictionary<int, Dictionary<ushort, Dictionary<p_addr, List<InvokeEvent>>>> pending_reqs =
-            new Dictionary<int, Dictionary<ushort, Dictionary<p_addr, List<InvokeEvent>>>>(
+        Dictionary<int, Dictionary<ushort, Dictionary<p_addr, List<RPCMessage>>>> pending_reqs =
+            new Dictionary<int, Dictionary<ushort, Dictionary<p_addr, List<RPCMessage>>>>(
                 new tysos.Program.MyGenericEqualityComparer<int>());
 
         public override bool InitServer()
         {
-            net = Syscalls.ProcessFunctions.GetSpecialProcess(Syscalls.ProcessFunctions.SpecialProcessType.Net)
-                as net;
-
-            lock(net.packet_handlers)
-            {
-                net.packet_handlers[0x0806] = this;
-            }
-
-            return true;
+            _net = Syscalls.ProcessFunctions.GetNet() as INetInternal;
+            net = _net as net;
+            return _net.RegisterPacketHandler(0x0806, this).Sync();
         }
 
-        public void PacketReceived(byte[] packet, int dev_no, int payload_offset,
+        public RPCResult<bool> PacketReceived(byte[] packet, int dev_no, int payload_offset,
             int payload_len, p_addr src)
         {
             ushort htype = net.ReadWord(packet, payload_offset);
@@ -65,13 +60,13 @@ namespace net
             {
                 System.Diagnostics.Debugger.Log(0, null, "Packet with unknown HTYPE: " +
                     htype.ToString("X4"));
-                return;
+                return false;
             }
             if(hlen != 6)
             {
                 System.Diagnostics.Debugger.Log(0, null, "Invalid HLEN: " +
                     hlen.ToString());
-                return;
+                return false;
             }
 
             HWAddr sha = net.ReadHWAddr(packet, payload_offset + 8);
@@ -82,7 +77,7 @@ namespace net
             // Reject those packets sent by ourselves (don't reply to our own
             //  announce packets)
             if (sha.Equals(nd.HWAddr))
-                return;
+                return false;
 
             switch(ptype)
             {
@@ -93,7 +88,7 @@ namespace net
                         {
                             System.Diagnostics.Debugger.Log(0, null, "Invalid HLEN: " +
                                 hlen.ToString());
-                            return;
+                            return false;
                         }
 
                         IPv4Address spa = net.ReadIPv4Addr(packet, payload_offset + 14);
@@ -175,8 +170,8 @@ namespace net
                             {
                                 var e = pending_list[pending_list.Count - 1];
                                 System.Diagnostics.Debugger.Log(0, null, "Handling pending request");
-                                e.ReturnValue = sha;
-                                e.Set();
+                                ((RPCResult<HWAddr>)e.result).Result = sha;
+                                e.result.Set();
                                 pending_list.RemoveAt(pending_list.Count - 1);
                             }
 
@@ -189,8 +184,10 @@ namespace net
                 default:
                     System.Diagnostics.Debugger.Log(0, null, "Packet with unknown PTYPE: " +
                         htype.ToString("X4"));
-                    return;
+                    return false;
             }
+
+            return true;
         }
 
         Dictionary<p_addr, HWAddr> GetProtocolDictionary(int dev_no, ushort etype)
@@ -216,38 +213,38 @@ namespace net
             return prot_dict;
         }
 
-        List<InvokeEvent> GetPendingRequestList(int dev_no, ushort etype,
+        List<RPCMessage> GetPendingRequestList(int dev_no, ushort etype,
             p_addr addr)
         {
             /* Get the address->hwaddr dictionary, creating the various layers
                 as we go */
-            Dictionary<ushort, Dictionary<p_addr, List<InvokeEvent>>> nd_dict;
+            Dictionary<ushort, Dictionary<p_addr, List<RPCMessage>>> nd_dict;
             if (pending_reqs.TryGetValue(dev_no, out nd_dict) == false)
             {
-                nd_dict = new Dictionary<ushort, Dictionary<p_addr, List<InvokeEvent>>>(
+                nd_dict = new Dictionary<ushort, Dictionary<p_addr, List<RPCMessage>>>(
                     new tysos.Program.MyGenericEqualityComparer<ushort>());
                 pending_reqs[dev_no] = nd_dict;
             }
 
-            Dictionary<p_addr, List<InvokeEvent>> prot_dict;
+            Dictionary<p_addr, List<RPCMessage>> prot_dict;
             if (nd_dict.TryGetValue(etype, out prot_dict) == false)
             {
-                prot_dict = new Dictionary<p_addr, List<InvokeEvent>>(
+                prot_dict = new Dictionary<p_addr, List<RPCMessage>>(
                     new tysos.Program.MyGenericEqualityComparer<p_addr>());
                 nd_dict[etype] = prot_dict;
             }
 
-            List<InvokeEvent> ret;
+            List<RPCMessage> ret;
             if(prot_dict.TryGetValue(addr, out ret) == false)
             {
-                ret = new List<InvokeEvent>();
+                ret = new List<RPCMessage>();
                 prot_dict[addr] = ret;
             }
 
             return ret;
         }
 
-        public HWAddr ResolveAddress(int dev_no, p_addr addr)
+        public RPCResult<HWAddr> ResolveAddress(int dev_no, p_addr addr)
         {
             /* Get the appropriate dictionary */
             var prot_dict = GetProtocolDictionary(dev_no, addr.EtherType);
@@ -268,7 +265,7 @@ namespace net
                 until the current function exits.  To get around this, we tell the
                 Invoke mechanism not to return from the synchronous call until
                 we have that response */
-            InvokeEvent e = CurrentInvokeEvent;
+            var e = CurrentMessage;
             e.EventSetsOnReturn = false;
 
             /* Send the request */
@@ -318,7 +315,7 @@ namespace net
             return null;
         }
 
-        public void AnnounceDevice(int dev_no, ushort etype)
+        public RPCResult<bool> AnnounceDevice(int dev_no, ushort etype)
         {
             if(etype == 0)
             {
@@ -370,6 +367,8 @@ namespace net
                         break;
                 }
             }
+
+            return true;
         }
     }
 }

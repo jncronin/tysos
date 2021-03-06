@@ -29,7 +29,7 @@ using vfs;
 
 namespace disk
 {
-    partial class disk : tysos.lib.VirtualDirectoryServer
+    partial class disk : tysos.lib.VirtualDirectoryServer, tysos.Interfaces.IFileSystem
     {
         internal disk(tysos.lib.File.Property[] Properties)
         {

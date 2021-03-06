@@ -27,17 +27,17 @@ namespace vfs
 {
     partial class vfs
     {
-        public bool Mount(string mount_path)
+        public RPCResult<bool> Mount(string mount_path)
         {
             return Mount(mount_path, mount_path);
         }
 
-        public bool Mount(string mount_path, string src)
+        public RPCResult<bool> Mount(string mount_path, string src)
         {
             /* Open source file */
             tysos.lib.File f_src = OpenFile(src, System.IO.FileMode.Open,
                 System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
-                System.IO.FileOptions.None);
+                System.IO.FileOptions.None).Sync();
             if (f_src == null || f_src.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
                 System.Diagnostics.Debugger.Log(0, null, "Mount: couldn't open source: " + src);
@@ -60,12 +60,12 @@ namespace vfs
             return Mount(mount_path, f_src, protocol);
         }
 
-        public bool Mount(string mount_path, string src, string protocol)
+        public RPCResult<bool> Mount(string mount_path, string src, string protocol)
         {
             /* Open source file */
             tysos.lib.File f_src = OpenFile(src, System.IO.FileMode.Open,
                 System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
-                System.IO.FileOptions.None);
+                System.IO.FileOptions.None).Sync();
             if (f_src == null || f_src.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
                 System.Diagnostics.Debugger.Log(0, null, "Mount: couldn't open source: " + src);
@@ -75,7 +75,7 @@ namespace vfs
             return Mount(mount_path, f_src, protocol);
         }
 
-        public bool Mount(string mount_path, tysos.lib.File f_src, string protocol)
+        public RPCResult<bool> Mount(string mount_path, tysos.lib.File f_src, string protocol)
         {
             if (mount_path == null)
             {
@@ -83,6 +83,8 @@ namespace vfs
                 CloseFile(f_src);
                 return false;
             }
+
+            System.Diagnostics.Debugger.Log(0, null, "Mount: beginning to mount " + mount_path);
 
             Path path = GetPath(mount_path);
 
@@ -103,7 +105,7 @@ namespace vfs
                 System.Diagnostics.Debugger.Log(0, null, "Mount: driver " + protocol + " not running.  Starting it...");
                 tysos.lib.File f = OpenFile("/modules/" + protocol, System.IO.FileMode.Open,
                     System.IO.FileAccess.Read, System.IO.FileShare.Read,
-                    System.IO.FileOptions.None);
+                    System.IO.FileOptions.None).Sync();
                 if(f.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
                     throw new Exception("failed to open /modules/" + protocol + ": " +
                         f.Error.ToString());
@@ -121,16 +123,14 @@ namespace vfs
             while (p.MessageServer == null) ;
 
             // Invoke the process to create a new handler for the new mount
-            tysos.ServerObject fs =
-                p.MessageServer.Invoke("CreateFSHandler", new object[] { f_src },
-                    new Type[] { typeof(tysos.lib.File) }) as tysos.ServerObject;
+            var fs = ((tysos.Interfaces.IFactory)p.MessageServer).CreateFSHandler(f_src).Sync();
 
             if (fs == null)
                 throw new Exception("CreateFSHandler failed");
 
             System.Diagnostics.Debugger.Log(0, null, "Mount: mounting " + fs.GetType().FullName + " to " + path.FullPath);
 
-            fs.MountPath = path.FullPath;
+            fs.SetMountPath(path.FullPath);
             mounts[(PathPart)path] = fs;
 
             //foreach (var tag in fs.Tags)
@@ -139,7 +139,7 @@ namespace vfs
             return true;
         }
 
-        public bool Mount(string mount_path, tysos.ServerObject device)
+        public RPCResult<bool> Mount(string mount_path, tysos.Interfaces.IFileSystem device)
         {
             if (mount_path == null)
             {
@@ -155,14 +155,14 @@ namespace vfs
                 return false;
             }
 
-            device.MountPath = p.FullPath;
+            var ret = device.SetMountPath(p.FullPath);  // We are only done when this signals
             mounts[(PathPart)p] = device;
             System.Diagnostics.Debugger.Log(0, null, "Mount: mounting " + device.GetType().FullName + " to " + p.FullPath);
 
             //foreach (var tag in device.Tags)
             //    RegisterTag(tag, device.MountPath);
 
-            return true;
+            return ret;
         }
     }
 }

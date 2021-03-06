@@ -61,12 +61,7 @@ namespace vfs
             }
         }
 
-        public void RegisterAddHandler(string tag_name, string tag_value, string del)
-        {
-            RegisterAddHandler(tag_name, tag_value, del, false);
-        }
-
-        public void RegisterAddHandler(string tag_name, string tag_value, string del,
+        public RPCResult<bool> RegisterAddHandler(string tag_name, string tag_value, int msg_id,
             bool run_for_current)
         {
             lock (tags)
@@ -74,8 +69,8 @@ namespace vfs
                 var tv = GetTagName(tag_name).GetTagValue(tag_value);
                 tv.add_dels.Add(new TagValue.CallbackFunc
                 {
-                    s = this.SourceThread.owning_process.MessageServer,
-                    method = del
+                    s = this.SourceThread.owning_process,
+                    msg_id = msg_id,
                 });
 
                 /* Execute the passed callback on all members of this tag */
@@ -83,23 +78,27 @@ namespace vfs
                 {
                     foreach (var e in tv.entries.Keys)
                     {
-                        SourceThread.owning_process.MessageServer.InvokeAsync(del,
-                            new object[] { e.ToString() }, CallbackSignature);
+                        tysos.Syscalls.IPCFunctions.SendMessage(SourceThread.owning_process,
+                            new tysos.IPCMessage { Type = msg_id, Message = e.ToString() });
                     }
                 }
             }
+
+            return true;
         }
 
-        public void RegisterDeleteHandler(string tag_name, string tag_value, string del)
+        public RPCResult<bool> RegisterDeleteHandler(string tag_name, string tag_value, int msg_id)
         {
             lock (tags)
             {
                 GetTagName(tag_name).GetTagValue(tag_value).rem_dels.Add(new TagValue.CallbackFunc
                 {
-                    s = this.SourceThread.owning_process.MessageServer,
-                    method = del
+                    s = this.SourceThread.owning_process,
+                    msg_id = msg_id,
                 });
             }
+
+            return true;
         }
 
         TagName GetTagName(string tag_name)
@@ -160,8 +159,8 @@ namespace vfs
 
             internal class CallbackFunc
             {
-                internal tysos.ServerObject s;
-                internal string method;
+                internal tysos.Process s;
+                internal int msg_id;
             }
 
             public void AddEntry(PathPart val)
@@ -171,9 +170,10 @@ namespace vfs
                 foreach (var add_del in add_dels)
                 {
                     if (add_del.s != null)
-                        add_del.s.InvokeAsync(add_del.method,
-                            new object[] { val.ToString() },
-                            vfs.CallbackSignature);
+                    {
+                        tysos.Syscalls.IPCFunctions.SendMessage(add_del.s,
+                            new tysos.IPCMessage { Type = add_del.msg_id, Message = val.ToString() });
+                    }
                 }
             }
 
@@ -186,9 +186,10 @@ namespace vfs
                     foreach (var rem_del in rem_dels)
                     {
                         if (rem_del.s != null)
-                            rem_del.s.InvokeAsync(rem_del.method,
-                                new object[] { val.ToString() },
-                                vfs.CallbackSignature);
+                        {
+                            tysos.Syscalls.IPCFunctions.SendMessage(rem_del.s,
+                                new tysos.IPCMessage { Type = rem_del.msg_id, Message = val.ToString() });
+                        }
                     }
                 }
             }
@@ -207,7 +208,7 @@ namespace vfs
             return ret;
         }
 
-        public void RegisterTag(string tag_name, string path)
+        public RPCResult<bool> RegisterTag(string tag_name, string path)
         {
             /* We do not allow the user to arbritratily specify a tag value for
             a particular path - we query the file system to get the 'tag'
@@ -217,24 +218,24 @@ namespace vfs
             {
                 System.Diagnostics.Debugger.Log(0, null, "RegisterTag called with path as null from " +
                     SourceThread.ProcessName);
-                return;
+                return false;
             }
             if (tag_name == null)
             {
                 System.Diagnostics.Debugger.Log(0, null, "RegisterTag called with tag_name as null from " +
                     SourceThread.ProcessName);
-                return;
+                return false;
             }
 
             var f = OpenFile(path, System.IO.FileMode.Open,
                 System.IO.FileAccess.Read,
                 System.IO.FileShare.ReadWrite,
-                System.IO.FileOptions.None);
+                System.IO.FileOptions.None).Sync();
             if (f == null || f.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
                 System.Diagnostics.Debugger.Log(0, null, "RegisterTag(" + tag_name +
                     ", " + path + ") failed to open path");
-                return;
+                return false;
             }
 
             var p_tag_value = f.GetPropertyByName(tag_name);
@@ -243,7 +244,7 @@ namespace vfs
             {
                 System.Diagnostics.Debugger.Log(0, null, "RegisterTag(" +
                     tag_name + ", " + path + ") failed to get property");
-                return;
+                return false;
             }
 
             string tag_value = p_tag_value.Value as string;
@@ -251,7 +252,7 @@ namespace vfs
             {
                 System.Diagnostics.Debugger.Log(0, null, "RegisterTag(" +
                     tag_name + ", " + path + ") property is not of type string");
-                return;
+                return false;
             }
 
             Path p = GetPath(path);
@@ -260,6 +261,8 @@ namespace vfs
 
             System.Diagnostics.Debugger.Log(0, null, "RegisterTag: added " + p.FullPath +
                 " to " + tag_name + "." + tag_value);
+
+            return true;
         }
     }
 }

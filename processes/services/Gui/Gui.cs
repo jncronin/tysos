@@ -20,12 +20,13 @@
  */
 
 using System;
+using tysos;
 
 namespace gui
 {
     partial class gui : tysos.ServerObject
     {
-        tysos.ServerObject vfs;
+        tysos.Interfaces.IVfs vfs;
 
         static void Main()
         {
@@ -37,17 +38,28 @@ namespace gui
         public override bool InitServer()
         {
             // Register handlers for devices
-            while (tysos.Syscalls.ProcessFunctions.GetSpecialProcess(tysos.Syscalls.ProcessFunctions.SpecialProcessType.Vfs) == null) ;
-            vfs = tysos.Syscalls.ProcessFunctions.GetSpecialProcess(tysos.Syscalls.ProcessFunctions.SpecialProcessType.Vfs);
+            while (tysos.Syscalls.ProcessFunctions.GetVfs() == null) ;
+            vfs = tysos.Syscalls.ProcessFunctions.GetVfs();
 
-            vfs.InvokeAsync("RegisterAddHandler",
-                new object[] { "class", "framebuffer", "RegisterDisplay", true },
-                new Type[] { typeof(string), typeof(string), typeof(string), typeof(bool) });
-            vfs.InvokeAsync("RegisterAddHandler",
-                new object[] { "class", "input", "RegisterInput", true },
-                new Type[] { typeof(string), typeof(string), typeof(string), typeof(bool) });
+            vfs.RegisterAddHandler("class", "framebuffer", tysos.Messages.Message.MESSAGE_GUI_REGISTER_DISPLAY, true);
+            vfs.RegisterAddHandler("class", "input", tysos.Messages.Message.MESSAGE_GUI_REGISTER_INPUT, true);
 
             return true;
+        }
+
+        protected override bool HandleGenericMessage(IPCMessage msg)
+        {
+            switch (msg.Type)
+            {
+                case tysos.Messages.Message.MESSAGE_GUI_REGISTER_DISPLAY:
+                    RegisterDisplay(msg.Message as string);
+                    return true;
+                case tysos.Messages.Message.MESSAGE_GUI_REGISTER_INPUT:
+                    RegisterInput(msg.Message as string);
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

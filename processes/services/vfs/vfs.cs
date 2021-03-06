@@ -25,10 +25,10 @@ using System.Text;
 
 namespace vfs
 {
-    public partial class vfs : tysos.ServerObject
+    public partial class vfs : tysos.ServerObject, tysos.Interfaces.IVfs
     {
-        static Dictionary<PathPart, tysos.ServerObject> mounts =
-            new Dictionary<PathPart, tysos.ServerObject>(new tysos.Program.MyGenericEqualityComparer<PathPart>());
+        static Dictionary<PathPart, tysos.Interfaces.IFileSystem> mounts =
+            new Dictionary<PathPart, tysos.Interfaces.IFileSystem>(new tysos.Program.MyGenericEqualityComparer<PathPart>());
 
         static void Main()
         {
@@ -38,11 +38,11 @@ namespace vfs
             v.MessageLoop();
         }
 
-        public System.IO.FileAttributes GetFileAttributes(string path)
+        public RPCResult<System.IO.FileAttributes> GetFileAttributes(string path)
         {
             tysos.lib.File f = OpenFile(path, System.IO.FileMode.Open,
                 System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
-                System.IO.FileOptions.None);
+                System.IO.FileOptions.None).Sync();
             if (f.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
                 return (System.IO.FileAttributes)(-1);
 
@@ -186,7 +186,7 @@ namespace vfs
 
     public class Path
     {
-        public tysos.ServerObject device;
+        public tysos.Interfaces.IFileSystem device;
         public PathPart mount_point;
         public PathPart path;
 

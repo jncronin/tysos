@@ -28,7 +28,7 @@ using tysos.Resources;
 
 namespace ata
 {
-    partial class ata : tysos.lib.VirtualDirectoryServer
+    partial class ata : tysos.lib.VirtualDirectoryServer, tysos.Interfaces.IFileSystem
     {
         tysos.RangeResource cmd = null, ctrl = null;
         tysos.Resources.InterruptLine irq = null;

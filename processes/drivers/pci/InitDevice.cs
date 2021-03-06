@@ -27,7 +27,7 @@ using System.Text;
 
 namespace pci
 {
-    partial class hostbridge : tysos.lib.VirtualDirectoryServer
+    partial class hostbridge : tysos.lib.VirtualDirectoryServer, tysos.Interfaces.IFileSystem, IHostBridge
     {
         internal tysos.Resources.PhysicalMemoryRangeManager pmems = new tysos.Resources.PhysicalMemoryRangeManager();
         internal tysos.Resources.VirtualMemoryRangeManager vmems = new tysos.Resources.VirtualMemoryRangeManager();

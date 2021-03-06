@@ -30,5 +30,9 @@ namespace tysos.Messages
         public tysos.Event completed = new Event();
 
         public const int MESSAGE_GENERIC = 0;
+        public const int MESSAGE_RPC = 1;
+        public const int MESSAGE_GUI_REGISTER_DISPLAY = 0x1000;
+        public const int MESSAGE_GUI_REGISTER_INPUT = 0x1001;
+        public const int MESSAGE_NET_REGISTER_DEVICE = 0x2000;
     }
 }

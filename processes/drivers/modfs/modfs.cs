@@ -25,7 +25,7 @@ using System.Text;
 
 namespace modfs
 {
-    public class modfs_factory : tysos.ServerObject
+    public class modfs_factory : tysos.ServerObject, tysos.Interfaces.IFactory
     {
         static void Main(string[] args)
         {
@@ -33,7 +33,7 @@ namespace modfs
             m.MessageLoop();
         }
 
-        public tysos.ServerObject CreateFSHandler(tysos.lib.File src)
+        public RPCResult<tysos.Interfaces.IFileSystem> CreateFSHandler(tysos.lib.File src)
         {
             // Get the modules associated with the handler
             tysos.lib.File.Property m_param =
@@ -58,7 +58,7 @@ namespace modfs
         }
     }
 
-    public class modfs : tysos.ServerObject
+    public class modfs : tysos.ServerObject, tysos.Interfaces.IFileSystem
     {
         public modfs(List<tysos.lib.File.Property> Mods)
         {
@@ -71,19 +71,19 @@ namespace modfs
         }
         internal List<tysos.lib.File.Property> mods;
 
-        public int IntProperties(tysos.lib.File f)
+        public RPCResult<int> IntProperties(tysos.lib.File f)
         {
             return ((modfs_File)f).intProperties;
         }
 
-        public long GetLength(tysos.lib.File f)
+        public RPCResult<long> GetLength(tysos.lib.File f)
         {
             return (long)((modfs_File)f).mem.Length64;
         }
 
         List<string> children;
 
-        public tysos.lib.File Open(IList<string> path, System.IO.FileMode mode,
+        public RPCResult<tysos.lib.File> Open(IList<string> path, System.IO.FileMode mode,
             System.IO.FileAccess access, System.IO.FileShare share,
             System.IO.FileOptions options)
         {
@@ -118,12 +118,12 @@ namespace modfs
             return new tysos.lib.ErrorFile(tysos.lib.MonoIOError.ERROR_FILE_NOT_FOUND);
         }
 
-        public bool Close(tysos.lib.File handle)
+        public RPCResult<bool> Close(tysos.lib.File handle)
         {
             return true;
         }
 
-        public int Read(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
+        public RPCResult<int> Read(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
         {
             int bytes_read = 0;
             modfs_File mf = f as modfs_File;
@@ -148,6 +148,26 @@ namespace modfs
             }
 
             return bytes_read;
+        }
+
+        public RPCResult<int> Write(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
+        {
+            throw new NotImplementedException();
+        }
+
+        public RPCResult<string> GetName(tysos.lib.File f)
+        {
+            throw new NotImplementedException();
+        }
+
+        public RPCResult<tysos.lib.File.Property> GetPropertyByName(tysos.lib.File f, string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public RPCResult<tysos.lib.File.Property[]> GetAllProperties(tysos.lib.File f)
+        {
+            throw new NotImplementedException();
         }
     }
 

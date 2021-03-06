@@ -46,17 +46,11 @@ namespace gui
             System.Diagnostics.Debugger.Log(0, null, "GetServer(" + path +
                 ") called");
 
-            tysos.lib.File f = vfs.Invoke("OpenFile",
-                new object[] { path,
-                    System.IO.FileMode.Open,
-                    System.IO.FileAccess.Read,
-                    System.IO.FileShare.ReadWrite,
-                    System.IO.FileOptions.None },
-                new Type[] { typeof(string),
-                    typeof(System.IO.FileMode),
-                    typeof(System.IO.FileAccess),
-                    typeof(System.IO.FileShare),
-                    typeof(System.IO.FileOptions) }) as tysos.lib.File;
+            var ret = vfs.OpenFile(path, System.IO.FileMode.Open,
+                System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
+                System.IO.FileOptions.None);
+            Syscalls.SchedulerFunctions.Block(ret);
+            tysos.lib.File f = ret.Result;
 
             if(f == null || f.Error != tysos.lib.MonoIOError.ERROR_SUCCESS)
             {
@@ -66,7 +60,7 @@ namespace gui
             }
 
             var p = f.GetPropertyByName("server");
-            vfs.Invoke("CloseFile", new object[] { f }, new Type[] { typeof(tysos.lib.File) });
+            vfs.CloseFile(f);
             if(p == null)
             {
                 System.Diagnostics.Debugger.Log(0, null, "GetServer(" + path +

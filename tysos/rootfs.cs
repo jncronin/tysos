@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using tysos.lib;
 
 namespace tysos
 {
@@ -29,7 +30,7 @@ namespace tysos
      * 
      * This is read only and exposes access to the kernel through the /system node */
 
-    class rootfs : ServerObject
+    class rootfs : ServerObject, Interfaces.IFileSystem
     {
         internal class rootfs_item
         {
@@ -45,7 +46,7 @@ namespace tysos
         }
 
         [libsupcs.AlwaysCompile]
-        public tysos.lib.File Open(IList<string> path, System.IO.FileMode mode,
+        public RPCResult<tysos.lib.File> Open(IList<string> path, System.IO.FileMode mode,
             System.IO.FileAccess access, System.IO.FileShare share,
             System.IO.FileOptions options)
         {
@@ -77,35 +78,50 @@ namespace tysos
         }
 
         [libsupcs.AlwaysCompile]
-        public bool Close(lib.File handle)
+        public RPCResult<bool> Close(lib.File handle)
         {
             return true;
         }
 
         [libsupcs.AlwaysCompile]
-        public int Read(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
+        public RPCResult<int> Read(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
         {
             f.Error = lib.MonoIOError.ERROR_READ_FAULT;
             return 0;
         }
 
         [libsupcs.AlwaysCompile]
-        public int Write(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
+        public RPCResult<int> Write(tysos.lib.File f, long pos, byte[] dest, int dest_offset, int count)
         {
             f.Error = lib.MonoIOError.ERROR_WRITE_FAULT;
             return 0;
         }
 
         [libsupcs.AlwaysCompile]
-        public int IntProperties(tysos.lib.File f)
+        public RPCResult<int> IntProperties(tysos.lib.File f)
         {
             return ((lib.VirtualPropertyFile)f).intProperties;
         }
 
         [libsupcs.AlwaysCompile]
-        public tysos.lib.File.Property GetPropertyByName(lib.File f, string name)
+        public RPCResult<tysos.lib.File.Property> GetPropertyByName(lib.File f, string name)
         {
             return ((lib.VirtualPropertyFile)f).GetPropertyByName(name);
+        }
+
+        public RPCResult<string> GetName(File f)
+        {
+            throw new NotImplementedException();
+        }
+
+        public RPCResult<File.Property[]> GetAllProperties(File f)
+        {
+            throw new NotImplementedException();
+        }
+
+        public RPCResult<long> GetLength(File f)
+        {
+            throw new NotImplementedException();
         }
 
         class system_node : lib.VirtualPropertyFile

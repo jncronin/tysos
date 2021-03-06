@@ -26,7 +26,7 @@ using tysos.Resources;
 
 namespace acpipc.ioapic
 {
-    partial class ioapic : tysos.ServerObject
+    partial class ioapic : tysos.ServerObject, IGSIProvider
     {
         tysos.lib.File.Property[] props;
 
@@ -119,14 +119,14 @@ namespace acpipc.ioapic
             v_conf.Write(v_conf.Addr64 + 0x10U, 4, val);
         }
 
-        public IOAPICGSI GetInterruptLine(int gsi_num)
+        public RPCResult<GlobalSystemInterrupt> GetInterruptLine(int gsi_num)
         {
             if (gsi_num < gsibase || gsi_num >= gsibase + 24)
-                return null;
+                return new RPCResult<GlobalSystemInterrupt> { Result = null };
 
             int ioapic_idx = gsi_num - (int)gsibase;
             if (gsis[ioapic_idx] == null)
-                return null;
+                return new RPCResult<GlobalSystemInterrupt> { Result = null };
             else
             {
                 IOAPICGSI ret = gsis[ioapic_idx];
