@@ -23,7 +23,7 @@ namespace tysos.gc
 {
     unsafe partial class gengc
     {
-        const int max_allocs = 10000;
+        static int max_allocs = 10000;
         const int min_allocs = 100;
 
         public static bool ScheduleCollection { get; set; } = false;
@@ -41,6 +41,10 @@ namespace tysos.gc
                 System.Diagnostics.Debugger.Log(0, "gengc", "performing collection due to high number of allocations (" + heap.allocs.ToString() + ")");
                 heap.DoCollection();
                 System.Diagnostics.Debugger.Log(0, "gengc", "max_alloc collection done");
+
+                max_allocs += max_allocs / 2;
+                if (max_allocs >= 1000000) max_allocs = 1000000;
+
                 libsupcs.OtherOperations.ExitUninterruptibleSection(state);
             }
         }
