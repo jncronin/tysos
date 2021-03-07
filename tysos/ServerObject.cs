@@ -68,9 +68,9 @@ namespace tysos
 
             /* This nested class enforces boxing of potential value types */
             public class Box<U> {
-                public static implicit operator U(Box<U> val) => val.v;
+                public static implicit operator U(Box<U> val) => (val == null) ? default(U) : val.v;
                 public static implicit operator Box<U>(U val) => new Box<U> { v = val };
-                public U v;
+                private U v;
             }
 
             public Box<T> Result;
