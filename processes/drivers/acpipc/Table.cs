@@ -43,8 +43,6 @@ namespace acpipc
             sig[3] = (char)table.Read(table.Addr64 + 3, 1);
 
             string sig_string = new string(sig);
-            System.Diagnostics.Debugger.Log(0, "acpipc", "Found table with signature " +
-                sig_string);
 
             // Check checksum
             uint length = (uint)table.Read(table.Addr64 + 4, 4);
@@ -57,6 +55,9 @@ namespace acpipc
                 }
             }
 
+            System.Diagnostics.Debugger.Log(0, "acpipc", "Found table with signature " +
+                sig_string + " at " + table.Addr64.ToString("X16") + " (length " + length.ToString("X8") + ")");
+
             if (csum == 0)
                 System.Diagnostics.Debugger.Log(0, "acpipc", "table checksum passed");
             else
@@ -67,10 +68,10 @@ namespace acpipc
             {
                 FADT f = new FADT();
 
-                f.FIRMWARE_CTRL = table.Read(table.Addr64 + 132, 8);
+                f.FIRMWARE_CTRL = (length >= 140) ? table.Read(table.Addr64 + 132, 8) : 0;
                 if (f.FIRMWARE_CTRL == 0)
                     f.FIRMWARE_CTRL = table.Read(table.Addr64 + 36, 4);
-                f.DSDT = table.Read(table.Addr64 + 140, 8);
+                f.DSDT = (length >= 148) ? table.Read(table.Addr64 + 140, 8) : 0;
                 if (f.DSDT == 0)
                     f.DSDT = table.Read(table.Addr64 + 40, 4);
 
@@ -98,22 +99,25 @@ namespace acpipc
                 f.GPE0_BLK = new GAS((uint)table.Read(table.Addr64 + 76, 4), f.GPE0_BLK_LEN * 8, a);
                 f.GPE1_BLK = new GAS((uint)table.Read(table.Addr64 + 76, 4), f.GPE1_BLK_LEN * 8, a);
 
-                if (table.Read(table.Addr64 + 152, 8) != 0)
-                    f.PM1a_EVT_BLK = new GAS(table, 148, a);
-                if (table.Read(table.Addr64 + 164, 8) != 0)
-                    f.PM1b_EVT_BLK = new GAS(table, 160, a);
-                if (table.Read(table.Addr64 + 176, 8) != 0)
-                    f.PM1a_CNT_BLK = new GAS(table, 172, a);
-                if (table.Read(table.Addr64 + 188, 8) != 0)
-                    f.PM1b_CNT_BLK = new GAS(table, 184, a);
-                if (table.Read(table.Addr64 + 200, 8) != 0)
-                    f.PM2_CNT_BLK = new GAS(table, 196, a);
-                if (table.Read(table.Addr64 + 212, 8) != 0)
-                    f.PM_TMR_BLK = new GAS(table, 208, a);
-                if (table.Read(table.Addr64 + 224, 8) != 0)
-                    f.GPE0_BLK = new GAS(table, 220, a);
-                if (table.Read(table.Addr64 + 236, 8) != 0)
-                    f.GPE1_BLK = new GAS(table, 232, a);
+                if (length >= 244)
+                {
+                    if (table.Read(table.Addr64 + 152, 8) != 0)
+                        f.PM1a_EVT_BLK = new GAS(table, 148, a);
+                    if (table.Read(table.Addr64 + 164, 8) != 0)
+                        f.PM1b_EVT_BLK = new GAS(table, 160, a);
+                    if (table.Read(table.Addr64 + 176, 8) != 0)
+                        f.PM1a_CNT_BLK = new GAS(table, 172, a);
+                    if (table.Read(table.Addr64 + 188, 8) != 0)
+                        f.PM1b_CNT_BLK = new GAS(table, 184, a);
+                    if (table.Read(table.Addr64 + 200, 8) != 0)
+                        f.PM2_CNT_BLK = new GAS(table, 196, a);
+                    if (table.Read(table.Addr64 + 212, 8) != 0)
+                        f.PM_TMR_BLK = new GAS(table, 208, a);
+                    if (table.Read(table.Addr64 + 224, 8) != 0)
+                        f.GPE0_BLK = new GAS(table, 220, a);
+                    if (table.Read(table.Addr64 + 236, 8) != 0)
+                        f.GPE1_BLK = new GAS(table, 232, a);
+                }
 
                 f.PM1_EVT = new RegGroup(f.PM1a_EVT_BLK, f.PM1b_EVT_BLK);
                 f.PM1_CNT = new RegGroup(f.PM1a_CNT_BLK, f.PM1b_CNT_BLK);

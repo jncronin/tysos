@@ -142,6 +142,9 @@ namespace acpipc
             }
             tysos.PhysicalMemoryResource64 p_dsdt = pmems.AllocFixed(p_dsdt_addr, dsdt_len);
             tysos.VirtualMemoryResource64 v_dsdt = vmems.Alloc(dsdt_len, 0x1000);
+
+            System.Diagnostics.Debugger.Log(0, null, "Mapping first page of DSDT from " + p_dsdt.Addr64.ToString("X16") + " (requested " +
+                p_dsdt_addr.ToString("X16") + ") to vmem " + v_dsdt.Addr64.ToString("X16"));
             p_dsdt.Map(v_dsdt);
 
             dsdt_len = v_dsdt.Read(v_dsdt.Addr64 + 4, 4);
