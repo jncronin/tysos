@@ -49,6 +49,7 @@ namespace tysos
 
         internal abstract void Init(UIntPtr chunk_vaddr, UIntPtr chunk_length, Multiboot.Header mboot);
         internal abstract void EnableMultitasking();
+        internal abstract void DisableMultitasking();
         internal abstract bool Multitasking { get; }
 
         internal abstract ulong PageSize { get; }

@@ -709,6 +709,12 @@ namespace tysos.x86_64
             libsupcs.x86_64.Cpu.Sti();
         }
 
+        internal override void DisableMultitasking()
+        {
+            libsupcs.x86_64.Cpu.Cli();
+            multitasking = false;
+        }
+
         internal override libsupcs.Unwinder GetUnwinder()
         {
             libsupcs.Unwinder u = new libsupcs.x86_64.Unwinder();
