@@ -140,19 +140,31 @@ namespace acpipc
             {
                 throw new Exception("DSDT not found");
             }
+            ulong dsdt_offset = p_dsdt_addr & 0xfffUL;
             tysos.PhysicalMemoryResource64 p_dsdt = pmems.AllocFixed(p_dsdt_addr, dsdt_len);
-            tysos.VirtualMemoryResource64 v_dsdt = vmems.Alloc(dsdt_len, 0x1000);
+            tysos.VirtualMemoryResource64 v_dsdt = vmems.Alloc(dsdt_len + dsdt_offset, 0x1000);
+
 
             System.Diagnostics.Debugger.Log(0, null, "Mapping first page of DSDT from " + p_dsdt.Addr64.ToString("X16") + " (requested " +
-                p_dsdt_addr.ToString("X16") + ") to vmem " + v_dsdt.Addr64.ToString("X16"));
+                p_dsdt_addr.ToString("X16") + ") to vmem " + v_dsdt.Addr64.ToString("X16") + ", length: " + v_dsdt.Length64.ToString("X"));
             p_dsdt.Map(v_dsdt);
+
+            if((p_dsdt_addr & 0xfffUL) != 0UL)
+            {
+                v_dsdt = v_dsdt.Split(v_dsdt.Addr64 + (p_dsdt_addr & 0xfffUL), dsdt_len) as tysos.VirtualMemoryResource64;
+            }
 
             dsdt_len = v_dsdt.Read(v_dsdt.Addr64 + 4, 4);
             System.Diagnostics.Debugger.Log(0, "acpipc", "DSDT table length " + dsdt_len.ToString("X16"));
 
             p_dsdt = pmems.AllocFixed(p_dsdt_addr, dsdt_len, true);
-            v_dsdt = vmems.Alloc(dsdt_len, 0x1000);
+            v_dsdt = vmems.Alloc(dsdt_len + dsdt_offset, 0x1000);
             p_dsdt.Map(v_dsdt);
+
+            if ((p_dsdt_addr & 0xfffUL) != 0UL)
+            {
+                v_dsdt = v_dsdt.Split(v_dsdt.Addr64 + (p_dsdt_addr & 0xfffUL), dsdt_len) as tysos.VirtualMemoryResource64;
+            }
 
             System.Diagnostics.Debugger.Log(0, "acpipc", "DSDT region: " + v_dsdt.Addr64.ToString("X16") +
                 " - " + (v_dsdt.Addr64 + v_dsdt.Length64).ToString("X16"));
