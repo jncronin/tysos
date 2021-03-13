@@ -399,6 +399,9 @@ namespace acpipc
             /* Take command of hardware resources */
             if (fadt != null)
             {
+                /* Say that we handle fixed power and sleep button events */
+                fadt.PM1_EN.Write((1UL << 8) | (1UL << 9));
+
                 System.Diagnostics.Debugger.Log(0, null, "FADT: " +
                     "PM1a_EVT_BLK: " + fadt.PM1a_EVT_BLK.ToString() +
                     ", PM1a_CNT_BLK: " + fadt.PM1a_CNT_BLK.ToString() +
@@ -415,6 +418,7 @@ namespace acpipc
                     System.Diagnostics.Debugger.Log(0, null, "SCI_INT mapped to " + sci.ToString());
                     sci.RegisterHandler(new tysos.Resources.InterruptLine.InterruptHandler(SCIInt));
                 }
+
 
                 /* Set ACPI mode */
                 var smi_cmd = ios.AllocFixed(fadt.SMI_CMD, 1, true);
@@ -433,8 +437,6 @@ namespace acpipc
                     }
                 }
 
-                /* Say that we handle fixed power and sleep button events */
-                fadt.PM1_EN.Write((1UL << 8) | (1UL << 9));
             }
 
             root.Add(new File.Property { Name = "class", Value = "bus" });
@@ -464,6 +466,15 @@ namespace acpipc
             /* Check GPE0 status register */
             ulong gpe0_sts = fadt.GPE0_STS.Read();
             ulong gpe1_sts = fadt.GPE1_STS.Read();
+
+            /* Get enabled bits */
+            ulong pm1_en = fadt.PM1_EN.Read();
+            ulong gpe0_en = fadt.GPE0_EN.Read();
+            ulong gpe1_en = fadt.GPE1_EN.Read();
+
+            System.Diagnostics.Debugger.Log(0, "acpipc", "PM1_EN: " + pm1_en.ToString("X") +
+                ", GPE0_EN: " + gpe0_en.ToString("X") +
+                ", GPE1_EN: " + gpe1_en.ToString("X"));
 
             return ret;
         }

@@ -181,7 +181,13 @@ namespace acpipc
             }
 
             System.Diagnostics.Debugger.Log(0, "acpipc", "GAS: Read(): read " + ret.ToString("X") + " from " +
-                addrspace.ToString() + ":" + addr.ToString("X"));
+                addrspace.ToString() + ":" + addr.ToString("X") +
+                " (bit_offset: " + bit_offset.ToString() +
+                ", bit_width: " + bit_width.ToString() +
+                ", reg_bit_width: " + reg_bit_width.ToString() +
+                ", reg_bit_offset: " + reg_bit_offset.ToString() +
+                ", access_size: " + access_size.ToString() +
+                ")");
 
             return ret;
         }
@@ -295,7 +301,13 @@ namespace acpipc
             }
 
             System.Diagnostics.Debugger.Log(0, "acpipc", "GAS: Write(): wrote " + val.ToString("X") + " to " +
-                addrspace.ToString() + ":" + addr.ToString("X"));
+                addrspace.ToString() + ":" + addr.ToString("X") +
+                " (bit_offset: " + bit_offset.ToString() +
+                ", bit_width: " + bit_width.ToString() +
+                ", reg_bit_width: " + reg_bit_width.ToString() +
+                ", reg_bit_offset: " + reg_bit_offset.ToString() +
+                ", access_size: " + access_size.ToString() +
+                ")");
         }
     }
 
