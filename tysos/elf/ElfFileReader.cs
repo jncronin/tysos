@@ -148,6 +148,13 @@ namespace tysos.elf
             /* .to files are relocatable but have the entry point set anyway */
             ulong text_section = 0;
             ulong hdr_epoint = ehdr.e_entry;
+            ulong hash_section = 0;
+            ulong hash_len = 0;
+            ElfReader.Elf64_Shdr* sym_tab_hdr = null;
+            ElfReader.Elf64_Shdr* sym_tab_str_hdr = null;
+
+            /* Map sections to their load address */
+            Dictionary<uint, ulong> sect_map = new Dictionary<uint, ulong>();
 
             ulong start = 0;
             tls_size = Program.arch.tysos_tls_length;
@@ -155,6 +162,17 @@ namespace tysos.elf
             for (uint i = 0; i < e_shnum; i++)
             {
                 ElfReader.Elf64_Shdr* cur_shdr = (ElfReader.Elf64_Shdr*)sect_header;
+
+                // if this .symtab?
+                if (cur_shdr->sh_type == 0x2)
+                {
+                    sym_tab_hdr = cur_shdr;
+
+                    if (cur_shdr->sh_link != 0)
+                    {
+                        sym_tab_str_hdr = (ElfReader.Elf64_Shdr*)(shdrs + cur_shdr->sh_link * e_shentsize);
+                    }
+                }
 
                 if ((cur_shdr->sh_flags & 0x2) == 0x2)
                 {
@@ -180,6 +198,7 @@ namespace tysos.elf
                         Virtual_Regions.Region.RegionType.ModuleSection, 
                         gc_data).start;
                     cur_shdr->sh_addr = sect_addr;
+                    sect_map[i] = sect_addr;
 
                     if (sect_addr + cur_shdr->sh_size > 0x7effffffff)
                         throw new Exception("Object section allocated beyond limit of small code model");
@@ -187,6 +206,13 @@ namespace tysos.elf
                     // is this .text?
                     if (sect_name == ".text")
                         text_section = sect_addr;
+
+                    // or .hash?
+                    if (sect_name == ".hash")
+                    {
+                        hash_section = sect_addr;
+                        hash_len = cur_shdr->sh_size;
+                    }
 
                     // copy the section to its destination
                     if (cur_shdr->sh_type == 0x1)
@@ -197,92 +223,127 @@ namespace tysos.elf
                         //byte[] sect_data = libsupcs.TysosArrayType.CreateByteArray((byte*)sect_addr, (int)cur_shdr->sh_size);
                         byte[] sect_data = libsupcs.Array.CreateSZArray<byte>((int)cur_shdr->sh_size, (void*)sect_addr);
 
+                        System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: begin loading section data");
                         // Read the section data into it
                         s.Seek((long)cur_shdr->sh_offset, System.IO.SeekOrigin.Begin);
                         s.Read(sect_data, 0, (int)cur_shdr->sh_size);
+                        System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: end loading section data");
                     }
                     else if (cur_shdr->sh_type == 0x8)
                     {
                         /* SHT_NOBITS */
+                        System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: begin clearing blank section");
+
                         libsupcs.MemoryOperations.MemSet((void*)sect_addr, 0, (int)cur_shdr->sh_size);
+
+                        System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: end clearing blank section");
+
                     }
                 }
 
                 sect_header += e_shentsize;
             }
 
-            /* Iterate through defined symbols, loading them into the symbol table */
-            sect_header = shdrs;
-            for (uint i = 0; i < e_shnum; i++)
+            if (hash_section != 0 && hash_len != 0 && sym_tab_hdr != null && sym_tab_str_hdr != null)
             {
-                ElfReader.Elf64_Shdr* cur_shdr = (ElfReader.Elf64_Shdr*)sect_header;
+                // Load symbol table and hash table
+                System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: begin loading symbol table");
+                var sym_data = ReadStructure(s, sym_tab_hdr->sh_offset, sym_tab_hdr->sh_size);
+                sym_tab_hdr->sh_addr = (ulong)sym_data;
+                System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: end loading symbol table");
 
-                if (cur_shdr->sh_type == 0x2)
+                System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: begin loading symbol string table");
+                var sym_str_data = ReadStructure(s, sym_tab_str_hdr->sh_offset, sym_tab_str_hdr->sh_size);
+                sym_tab_str_hdr->sh_addr = (ulong)sym_str_data;
+                System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: end loading symbol string table");
+
+                System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: begin loading hash symbol section");
+                var ht = new ElfReader.ElfHashTable(hash_section, (ulong)sym_data, sym_tab_hdr->sh_entsize,
+                    (ulong)sym_str_data, sect_map, (int)sym_tab_hdr->sh_info);
+                stab.symbol_providers.Add(ht);
+                System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: end loading hash symbol section");
+            }
+            else
+            {
+                System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: begin loading symbols");
+
+                /* Iterate through defined symbols, loading them into the symbol table */
+                sect_header = shdrs;
+                for (uint i = 0; i < e_shnum; i++)
                 {
-                    /* SHT_SYMTAB */
+                    ElfReader.Elf64_Shdr* cur_shdr = (ElfReader.Elf64_Shdr*)sect_header;
 
-                    // Load up the section data
-                    byte* shdr_data = ReadStructure(s, cur_shdr->sh_offset, cur_shdr->sh_size);
-                    ulong offset = cur_shdr->sh_info * cur_shdr->sh_entsize;
-                    cur_shdr->sh_addr = (ulong)shdr_data;
-
-                    while (offset < cur_shdr->sh_size)
+                    if (cur_shdr->sh_type == 0x2)
                     {
-                        ElfReader.Elf64_Sym* cur_sym = (ElfReader.Elf64_Sym*)(shdr_data + offset);
+                        /* SHT_SYMTAB */
 
-                        bool is_vis = false;
-                        bool is_weak = false;
+                        // Load up the section data
+                        byte* shdr_data = ReadStructure(s, cur_shdr->sh_offset, cur_shdr->sh_size);
+                        ulong offset = cur_shdr->sh_info * cur_shdr->sh_entsize;
+                        cur_shdr->sh_addr = (ulong)shdr_data;
 
-                        uint st_bind = (cur_sym->st_info_other_shndx >> 4) & 0xf;
-
-                        if (st_bind == 1)
+                        while (offset < cur_shdr->sh_size)
                         {
-                            // STB_GLOBAL
-                            is_vis = true;
-                        }
-                        else if (st_bind == 2)
-                        {
-                            // STB_WEAK
-                            is_vis = true;
-                            is_weak = true;
-                        }
+                            ElfReader.Elf64_Sym* cur_sym = (ElfReader.Elf64_Sym*)(shdr_data + offset);
 
-                        if (is_vis)
-                        {
-                            /* Get the symbol's name */
+                            bool is_vis = false;
+                            bool is_weak = false;
 
-                            // If the appropriate string table is not loaded, then load it
-                            ElfReader.Elf64_Shdr* strtab = (ElfReader.Elf64_Shdr*)(shdrs + cur_shdr->sh_link * e_shentsize);
-                            if(strtab->sh_addr == 0)
-                                strtab->sh_addr = (ulong)ReadStructure(s, strtab->sh_offset, strtab->sh_size);
+                            uint st_bind = (cur_sym->st_info_other_shndx >> 4) & 0xf;
 
-                            // Get the name
-                            string sym_name = new string((sbyte*)(strtab->sh_addr + cur_sym->st_name));
-
-                            uint st_shndx = (cur_sym->st_info_other_shndx >> 16) & 0xffff;
-
-                            if (st_shndx != 0)
+                            if (st_bind == 1)
                             {
-                                if (is_weak == false || stab.GetAddress(sym_name) == 0)
-                                {
-                                    ulong sym_addr = ((ElfReader.Elf64_Shdr*)(shdrs + st_shndx * e_shentsize))->sh_addr +
-                                        cur_sym->st_value;
+                                // STB_GLOBAL
+                                is_vis = true;
+                            }
+                            else if (st_bind == 2)
+                            {
+                                // STB_WEAK
+                                is_vis = true;
+                                is_weak = true;
+                            }
 
-                                    if (sym_name == "_start")
-                                        start = sym_addr;
-                                    else
-                                        stab.Add(sym_name, sym_addr, cur_sym->st_size);
+                            if (is_vis)
+                            {
+                                /* Get the symbol's name */
+
+                                // If the appropriate string table is not loaded, then load it
+                                ElfReader.Elf64_Shdr* strtab = (ElfReader.Elf64_Shdr*)(shdrs + cur_shdr->sh_link * e_shentsize);
+                                if (strtab->sh_addr == 0)
+                                    strtab->sh_addr = (ulong)ReadStructure(s, strtab->sh_offset, strtab->sh_size);
+
+                                // Get the name
+                                string sym_name = new string((sbyte*)(strtab->sh_addr + cur_sym->st_name));
+
+                                uint st_shndx = (cur_sym->st_info_other_shndx >> 16) & 0xffff;
+
+                                if (st_shndx != 0)
+                                {
+                                    if (is_weak == false || stab.GetAddress(sym_name) == 0)
+                                    {
+                                        ulong sym_addr = ((ElfReader.Elf64_Shdr*)(shdrs + st_shndx * e_shentsize))->sh_addr +
+                                            cur_sym->st_value;
+
+                                        if (sym_name == "_start")
+                                            start = sym_addr;
+                                        else
+                                            stab.Add(sym_name, sym_addr, cur_sym->st_size);
+                                    }
                                 }
                             }
+
+
+                            offset += cur_shdr->sh_entsize;
                         }
-
-
-                        offset += cur_shdr->sh_entsize;
                     }
+
+                    sect_header += e_shentsize;
                 }
 
-                sect_header += e_shentsize;
+                System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: end loading symbols");
             }
+
+            System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: begin fixing relocations");
 
             /* Iterate through relocations, fixing them up as we go */
             sect_header = shdrs;
@@ -317,7 +378,12 @@ namespace tysos.elf
                         uint st_bind = (rela_sym->st_info_other_shndx >> 4) & 0xf;
 
                         ulong S = 0;
-                        if (st_bind == 0)
+                        /* Can use direct relocation via the symbol table if:
+                         *   - not weak
+                         *   - is defined
+                         */
+                        if ((st_bind == 0 || st_bind == 1) &&
+                                rela_sym->st_shndx != 0)
                         {
                             /* STB_LOCAL symbols have not been loaded into the symbol table
                              * We need to use the value stored in the symbol table */
@@ -404,7 +470,10 @@ namespace tysos.elf
                 sect_header += e_shentsize;
             }
 
-            if(start == 0)
+            System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: end fixing relocations");
+
+
+            if (start == 0)
             {
                 // assume .to file - use entry point in header
                 start = text_section + hdr_epoint;

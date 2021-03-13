@@ -74,7 +74,7 @@ namespace tysos
             public UInt64 st_value;
             public UInt64 st_size;
 
-            public uint st_shndx { get { return st_info_other_shndx >> 16; } }
+            public uint st_shndx { get { return (st_info_other_shndx >> 16) & 0xffffU; } }
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
