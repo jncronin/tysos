@@ -217,6 +217,10 @@ namespace tysos.x86_64
             byte[] arr_func = func.ToArray();
             func_ptr = (ulong)libsupcs.MemoryOperations.GetInternalArray(arr_func);
 
+            System.Diagnostics.Debugger.Log(0, null, "CPU Interrupt Handler @ " + func_ptr.ToString("X16"));
+            System.Diagnostics.Debugger.Log(0, null, "First bytes: " + func[0].ToString("X2") + " " + func[1].ToString("X2") + " " +
+                func[2].ToString("X2") + " " + func[3].ToString("X2"));
+
             // TODO make Interrupts cpu-specific
             Program.arch.Interrupts.InstallHandler(cpu_int_no, func_ptr);
 

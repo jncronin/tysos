@@ -138,7 +138,8 @@ namespace modfs
             System.Diagnostics.Debugger.Log(0, "modfs", "Reading from " + mf.name +
                 ", pos: " + pos.ToString() +
                 ", addr: " + (mf.mem.Addr64 + (ulong)pos).ToString("X") +
-                ", length: " + ((long)mf.mem.Length64).ToString());
+                ", length: " + ((long)mf.mem.Length64).ToString() +
+                ", count: " + count.ToString());
 
             while (pos < (long)mf.mem.Length64 && bytes_read < count)
             {
@@ -146,6 +147,8 @@ namespace modfs
                 pos++;
                 bytes_read++;
             }
+
+            System.Diagnostics.Debugger.Log(0, "modfs", "Read done");
 
             return bytes_read;
         }
