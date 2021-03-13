@@ -360,6 +360,9 @@ namespace tysos.elf
                     ElfReader.Elf64_Shdr* cur_symtab = (ElfReader.Elf64_Shdr*)(shdrs + cur_shdr->sh_link * e_shentsize);
                     ElfReader.Elf64_Shdr* rela_sect = (ElfReader.Elf64_Shdr*)(shdrs + cur_shdr->sh_info * e_shentsize);
 
+                    /* Buffer loaded symbols */
+                    ulong[] sym_buf = new ulong[cur_symtab->sh_size / cur_symtab->sh_entsize];
+
                     /* Load section */
                     byte* shdr_data = ReadStructure(s, cur_shdr->sh_offset, cur_shdr->sh_size);
                     cur_shdr->sh_addr = (ulong)shdr_data;
@@ -393,13 +396,22 @@ namespace tysos.elf
                         }
                         else
                         {
-                            /* Get the symbol address from the symbol table */
-                            ElfReader.Elf64_Shdr* link_sect = (ElfReader.Elf64_Shdr*)(shdrs + cur_symtab->sh_link * e_shentsize);
-                            string sym_name = new string((sbyte*)(link_sect->sh_addr + rela_sym->st_name));
+                            /* Get the symbol address from the symbol table if not already loaded */
+                            if (sym_buf[r_sym] == 0)
+                            {
+                                ElfReader.Elf64_Shdr* link_sect = (ElfReader.Elf64_Shdr*)(shdrs + cur_symtab->sh_link * e_shentsize);
+                                string sym_name = new string((sbyte*)(link_sect->sh_addr + rela_sym->st_name));
 
-                            S = stab.GetAddress(sym_name);
-                            if (S == 0)
-                                throw new Exception("undefined reference to " + sym_name);
+                                S = stab.GetAddress(sym_name);
+                                if (S == 0)
+                                    throw new Exception("undefined reference to " + sym_name);
+
+                                sym_buf[r_sym] = S;
+                            }
+                            else
+                            {
+                                S = sym_buf[r_sym];
+                            }
                         }
 
                         /* Perform the relocation */
