@@ -27,12 +27,12 @@ namespace tysos
 {
     public class Event
     {
-        ulong event_id;
+        long event_id;
         public string name;
 
-        public ulong EventId { get { return event_id; } }
+        public long EventId { get { return event_id; } }
 
-        static ulong next_event_id = 0;
+        static long next_event_id = 0;
         static object next_event_id_lock = new object();
 
         public enum EventType { BlockOnMessage, Standard }
@@ -41,11 +41,8 @@ namespace tysos
 
         public Event()
         {
-            //libsupcs.x86_64.Cpu.Break();
-            lock (next_event_id_lock)
-            {
-                event_id = next_event_id++;
-            }
+            event_id = System.Threading.Interlocked.Add(ref next_event_id, 1L);
+
             Type = EventType.Standard;
         }
 
