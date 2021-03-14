@@ -1169,7 +1169,12 @@ namespace tysos
                 {
                     var mid = (lo + hi) / 2;
                     Elf64_Sym* cur_sym = (Elf64_Sym*)(sym_tab_start + mid * sym_tab_entsize);
-                    if (cur_sym->st_value > address) hi = mid; else lo = mid + 1;
+
+                    ulong sect_adjust;
+                    if (symbol_adjust == null || !symbol_adjust.TryGetValue(cur_sym->st_shndx, out sect_adjust))
+                        sect_adjust = 0;
+
+                    if (cur_sym->st_value + sect_adjust > address) hi = mid; else lo = mid + 1;
                 }
                 return lo - 1;
             }
@@ -1190,7 +1195,7 @@ namespace tysos
                 return null;
             }
 
-            protected internal override string GetSymbolAndOffset(ulong address, out ulong offset)
+            /*protected internal override string GetSymbolAndOffset(ulong address, out ulong offset)
             {
                 var idx = GetIndexBelow(address);
                 if (idx <= sym_count)
@@ -1201,6 +1206,32 @@ namespace tysos
                         ulong name_addr = sym_name_tab_start + cur_sym->st_name;
                         string sym_name = new string((sbyte*)name_addr);
                         offset = address - cur_sym->st_value;
+                        return sym_name;
+                    }
+                }
+                offset = 0;
+                return null;
+            }*/
+            protected internal override string GetSymbolAndOffset(ulong address, out ulong offset)
+            {
+                // slow iteration for now
+                for(ulong idx = 0; idx <= sym_count; idx++)
+                {
+                    Elf64_Sym* cur_sym = (Elf64_Sym*)(sym_tab_start + idx * sym_tab_entsize);
+
+                    ulong sect_adjust;
+                    if (symbol_adjust == null || !symbol_adjust.TryGetValue(cur_sym->st_shndx, out sect_adjust))
+                        sect_adjust = 0;
+
+                    var start = cur_sym->st_value + sect_adjust;
+                    var end = start + cur_sym->st_size;
+
+                    if(address >= start && address < end)
+                    {
+                        ulong name_addr = sym_name_tab_start + cur_sym->st_name;
+                        string sym_name = new string((sbyte*)name_addr);
+
+                        offset = address - start;
                         return sym_name;
                     }
                 }

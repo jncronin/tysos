@@ -259,7 +259,7 @@ namespace tysos.elf
 
                 System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: begin loading hash symbol section");
                 var ht = new ElfReader.ElfHashTable(hash_section, (ulong)sym_data, sym_tab_hdr->sh_entsize,
-                    (ulong)sym_str_data, sect_map, (int)sym_tab_hdr->sh_info);
+                    (ulong)sym_str_data, sect_map, (int)sym_tab_hdr->sh_info, sym_tab_hdr->sh_size);
                 stab.symbol_providers.Add(ht);
                 System.Diagnostics.Debugger.Log(0, null, "ElfFileReader.LoadObject: end loading hash symbol section");
             }
