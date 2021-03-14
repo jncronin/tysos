@@ -1195,24 +1195,32 @@ namespace tysos
                 return null;
             }
 
-            /*protected internal override string GetSymbolAndOffset(ulong address, out ulong offset)
+            protected internal override string GetSymbolAndOffset(ulong address, out ulong offset)
             {
                 var idx = GetIndexBelow(address);
                 if (idx <= sym_count)
                 {
                     Elf64_Sym* cur_sym = (Elf64_Sym*)(sym_tab_start + idx * sym_tab_entsize);
-                    if (address >= cur_sym->st_value && address < (cur_sym->st_value + cur_sym->st_size))
+
+                    ulong sect_adjust;
+                    if (symbol_adjust == null || !symbol_adjust.TryGetValue(cur_sym->st_shndx, out sect_adjust))
+                        sect_adjust = 0;
+
+                    var start = cur_sym->st_value + sect_adjust;
+                    var end = start + cur_sym->st_size;
+
+                    if (address >= start && address < end)
                     {
                         ulong name_addr = sym_name_tab_start + cur_sym->st_name;
                         string sym_name = new string((sbyte*)name_addr);
-                        offset = address - cur_sym->st_value;
+                        offset = address - start;
                         return sym_name;
                     }
                 }
                 offset = 0;
                 return null;
-            }*/
-            protected internal override string GetSymbolAndOffset(ulong address, out ulong offset)
+            }
+            /*protected internal override string GetSymbolAndOffset(ulong address, out ulong offset)
             {
                 // slow iteration for now
                 for(ulong idx = 0; idx <= sym_count; idx++)
@@ -1237,7 +1245,7 @@ namespace tysos
                 }
                 offset = 0;
                 return null;
-            }
+            }*/
 
             internal static uint HashFunction(string s)
             {
