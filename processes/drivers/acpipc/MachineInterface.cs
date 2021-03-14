@@ -75,24 +75,55 @@ namespace acpipc
                 throw new Exception("Invalid IO port: " + Addr.ToString("X"));
         }
 
+        // TODO: make ~16 cached Pmem areas
+        tysos.PhysicalMemoryResource64 cur_pmem = null;
+        tysos.VirtualMemoryResource64 vmem_page = null;
+
+        private tysos.VirtualMemoryResource64 map_page(ulong addr)
+        {
+            if(vmem_page == null)
+            {
+                vmem_page = a.vmems.Alloc(0x1000, 0x1000);
+            }
+
+            // is this the currently mapped page?
+            var pmem_page_start = addr & ~0xfffUL;
+            if(cur_pmem == null || cur_pmem.Addr64 != pmem_page_start)
+            {
+                cur_pmem = a.pmems.AllocFixed(pmem_page_start, 0x1000);
+                cur_pmem.Map(vmem_page);
+            }
+
+            return vmem_page;
+        }
+
+
         public byte ReadMemoryByte(ulong Addr)
         {
-            throw new NotImplementedException();
+            System.Diagnostics.Debugger.Log(0, null, "Read byte at " + Addr.ToString("X16"));
+            var vm = map_page(Addr);
+            return (byte)vm.Read((Addr & 0xfffUL) + vm.Addr64, 1);
         }
 
         public uint ReadMemoryDWord(ulong Addr)
         {
-            throw new NotImplementedException();
+            System.Diagnostics.Debugger.Log(0, null, "Read dword at " + Addr.ToString("X16"));
+            var vm = map_page(Addr);
+            return (uint)vm.Read((Addr & 0xfffUL) + vm.Addr64, 4);
         }
 
         public ulong ReadMemoryQWord(ulong Addr)
         {
-            throw new NotImplementedException();
+            System.Diagnostics.Debugger.Log(0, null, "Read qword at " + Addr.ToString("X16"));
+            var vm = map_page(Addr);
+            return vm.Read((Addr & 0xfffUL) + vm.Addr64, 8);
         }
 
         public ushort ReadMemoryWord(ulong Addr)
         {
-            throw new NotImplementedException();
+            System.Diagnostics.Debugger.Log(0, null, "Read word at " + Addr.ToString("X16"));
+            var vm = map_page(Addr);
+            return (ushort)vm.Read((Addr & 0xfffUL) + vm.Addr64, 2);
         }
 
         StringBuilder vbox_dbg;
@@ -200,22 +231,30 @@ namespace acpipc
 
         public void WriteMemoryByte(ulong Addr, byte v)
         {
-            throw new NotImplementedException();
+            System.Diagnostics.Debugger.Log(0, null, "Write byte at " + Addr.ToString("X16"));
+            var vm = map_page(Addr);
+            vm.Write((Addr & 0xfffUL) + vm.Addr64, 1, v);
         }
 
         public void WriteMemoryDWord(ulong Addr, uint v)
         {
-            throw new NotImplementedException();
+            System.Diagnostics.Debugger.Log(0, null, "Write dword at " + Addr.ToString("X16"));
+            var vm = map_page(Addr);
+            vm.Write((Addr & 0xfffUL) + vm.Addr64, 4, v);
         }
 
         public void WriteMemoryQWord(ulong Addr, ulong v)
         {
-            throw new NotImplementedException();
+            System.Diagnostics.Debugger.Log(0, null, "Write qword at " + Addr.ToString("X16"));
+            var vm = map_page(Addr);
+            vm.Write((Addr & 0xfffUL) + vm.Addr64, 8, v);
         }
 
         public void WriteMemoryWord(ulong Addr, ushort v)
         {
-            throw new NotImplementedException();
+            System.Diagnostics.Debugger.Log(0, null, "Write word at " + Addr.ToString("X16"));
+            var vm = map_page(Addr);
+            vm.Write((Addr & 0xfffUL) + vm.Addr64, 2, v);
         }
 
         public void WritePCIDWord(uint bus, uint device, uint func, uint offset, uint val)
