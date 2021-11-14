@@ -60,11 +60,14 @@ namespace tysos
         public bool EventSetsOnReturn = true;
     }
 
-    class IPC
+    unsafe class IPC
     {
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
         [libsupcs.ReinterpretAsMethod]
-        public static extern IPCMessage ReinterpretAsIPCMessage(ulong addr);
+        public static extern IPCMessage ReinterpretAsIPCMessage(IntPtr addr);
+
+        // The actual ring buffer
+        collections.RingBuffer<IntPtr> rb;
 
         internal static bool InitIPC(Process p)
         {
@@ -79,12 +82,9 @@ namespace tysos
 
             p.ipc_region = ipc_region;
             p.ipc = new IPC();
-            p.ipc.start = ipc_region.start;
-            p.ipc.end = ipc_region.start + ipc_region.length;
-            p.ipc.readpointer = p.ipc.start;
-            p.ipc.writepointer = p.ipc.start;
-            p.ipc.ready = true;
+            p.ipc.rb = new collections.RingBuffer<IntPtr>((void*)ipc_region.start, (int)ipc_region.length);
             p.ipc.owning_process = p;
+            p.ipc.ready = true;
 
             return true;
         }
@@ -97,19 +97,14 @@ namespace tysos
             if (!ready)
                 return null;
 
-            lock (lock_obj)
+            IntPtr ptr;
+            if(rb.Peek(out ptr) == false)
             {
-                if (readpointer == writepointer)
-                    return null;
-
-                IPCMessage ret;
-                unsafe
-                {
-                    ulong msg = *(ulong*)readpointer;
-                    ret = ReinterpretAsIPCMessage(msg);
-                }
-
-                return ret;
+                return null;
+            }
+            else
+            {
+                return ReinterpretAsIPCMessage(ptr);
             }
         }
 
@@ -118,24 +113,14 @@ namespace tysos
             if (!ready)
                 return null;
 
-            lock (lock_obj)
+            IntPtr ptr;
+            if(rb.Dequeue(out ptr) == false)
             {
-                if (readpointer == writepointer)
-                    return null;
-
-                IPCMessage ret;
-
-                unsafe
-                {
-                    ulong msg = *(ulong*)readpointer;
-                    ret = ReinterpretAsIPCMessage(msg);
-                }
-
-                readpointer += (ulong)Program.arch.PointerSize;
-                if (readpointer >= end)
-                    readpointer = start;
-
-                return ret;
+                return null;
+            }
+            else
+            {
+                return ReinterpretAsIPCMessage(ptr);
             }
         }
 
@@ -144,35 +129,9 @@ namespace tysos
             if (!ready)
                 return false;
 
-            lock (lock_obj)
-            {
-                /* Detect a buffer overflow condition */
-                if (writepointer == (readpointer - (ulong)Program.arch.PointerSize))
-                    return false;
-
-                if ((writepointer == (end - (ulong)Program.arch.PointerSize)) &&
-                    (readpointer == start))
-                    return false;
-
-                ulong msg = libsupcs.CastOperations.ReinterpretAsUlong(message);
-
-                unsafe
-                {
-                    *(ulong*)writepointer = msg;
-                }
-
-                writepointer += (ulong)Program.arch.PointerSize;
-                if (writepointer >= end)
-                    writepointer = start;
-
-                return true;
-            }
+            return rb.Enqueue((IntPtr)libsupcs.CastOperations.ReinterpretAsPointer(message));
         }
 
-        ulong start;
-        ulong end;
-        ulong readpointer;
-        ulong writepointer;
         bool ready;
     }
 }
