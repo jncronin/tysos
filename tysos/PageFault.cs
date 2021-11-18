@@ -136,7 +136,7 @@ namespace tysos
                                         tysos.gc.gc.Heap = gc.gc.HeapType.Startup;
                                     Formatter.WriteLine("Stack trace: ", Program.arch.DebugOutput);
                                     pf_unwinder.Init();
-                                    Unwind.DumpUnwindInfo(((libsupcs.x86_64.Unwinder)pf_unwinder).UnwindOneWithErrorCode().DoUnwind((UIntPtr)Program.arch.ExitAddress),
+                                    Unwind.DumpUnwindInfo(((libsupcs.x86_64.Unwinder)pf_unwinder).UnwindOneWithErrorCode().DoUnwind((UIntPtr)Program.arch.ExitAddress, false),
                                         Program.arch.DebugOutput);
                                 }
                                 
