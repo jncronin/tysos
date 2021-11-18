@@ -25,7 +25,7 @@ using System.Text;
 
 namespace bga
 {
-    partial class bga : tysos.lib.VirtualFileServer, tysos.Interfaces.IFileSystem
+    partial class bga : tysos.lib.VirtualFileServer, tysos.Interfaces.IFileSystem, tysos.Interfaces.IRenderer
     {
         pci.PCIConfiguration pciconf;
         internal tysos.x86_64.IORangeManager ios = new tysos.x86_64.IORangeManager();
@@ -40,10 +40,13 @@ namespace bga
         const ushort VBE_DISPI_INDEX_YRES = 2;
         const ushort VBE_DISPI_INDEX_BPP = 3;
         const ushort VBE_DISPI_INDEX_ENABLE = 4;
+        const ushort VBE_DISPI_INDEX_VIRT_HEIGHT = 6;
 
         const ushort VBE_DISPI_DISABLED = 0;
         const ushort VBE_DISPI_ENABLED = 1;
         const ushort VBE_DISPI_LFB_ENABLED = 0x40;
+
+        fbrenderer.FBRenderer.FBDesc fbd = null;
 
         public bga(tysos.lib.File.Property[] Properties)
         {
@@ -109,6 +112,8 @@ namespace bga
             root.Add(new tysos.lib.File.Property { Name = "class", Value = "framebuffer" });
             Tags.Add("class");
 
+            read_fbd();
+
             return true;
         }
 
@@ -171,7 +176,53 @@ namespace bga
                 ", LFB at physical " + lfb.Addr64.ToString("X") + ", virtual " +
                 vmem.Addr64.ToString("X"));
 
+            read_fbd();
+
             return true;
+        }
+
+        private void read_fbd()
+        {
+            /* Read back the current display mode */
+            int act_Width = ReadRegister(VBE_DISPI_INDEX_XRES);
+            int act_Height = ReadRegister(VBE_DISPI_INDEX_YRES);
+            int act_Bpp = ReadRegister(VBE_DISPI_INDEX_BPP);
+            int act_Stride = ReadRegister(VBE_DISPI_INDEX_VIRT_HEIGHT);
+
+            fbd.w = act_Width;
+            fbd.h = act_Height;
+            fbd.stride = (act_Stride > act_Width) ? act_Stride : act_Width;
+            switch(act_Bpp)
+            {
+                case 0x10:  // 16BPP
+                    fbd.pt = tysos.Interfaces.IRendererMessage.PixelType.BGR565;
+                    break;
+                case 0x18:  // 24BPP
+                    fbd.pt = tysos.Interfaces.IRendererMessage.PixelType.BGR888;
+                    break;
+                case 0x20:  // 32BPP
+                    fbd.pt = tysos.Interfaces.IRendererMessage.PixelType.BGRA8888;
+                    break;
+            }
+
+            fbd.buf = vmem.ToArray();
+        }
+
+        fbrenderer.FBRenderer fbr;
+
+        public tysos.SharedMemory<tysos.Interfaces.IRendererMessage> GetMessageList()
+        {
+            if(fbr == null)
+            {
+                fbr = new fbrenderer.FBRenderer(fbd);
+                fbr.ForkRendererThread();
+            }
+            return fbr.MessageList;
+        }
+
+        public void FlushQueue()
+        {
+            // This happens automatically wih the FBRenderer
         }
     }
 }

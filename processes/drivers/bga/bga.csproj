@@ -19,6 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\tysos\tysos.csproj" />
+    <ProjectReference Include="..\fbrenderer\fbrenderer.csproj" />
     <ProjectReference Include="..\pci\pci.csproj" />
   </ItemGroup>
 </Project>
