@@ -15,10 +15,11 @@ FRAMEBUFFEROBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/framebuffer/fr
 GUIOBJ = tobjfromexe(typroject(ROOT + "/processes/services/gui/gui.csproj"));
 NETOBJ = tobjfromexe(typroject(ROOT + "/processes/services/net/net.csproj"));
 PCNET32OBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/pcnet32/pcnet32.csproj"));
+FBRENDEREROBJ = tobjfromexe(typroject(ROOT + "/processes/drivers/fbrenderer/fbrenderer.csproj"));
 
 export PROCESSES = [ DEBUGPRINTOBJ,
 	VFSOBJ, ACPIPCOBJ, LOGGEROBJ, MODFSOBJ, FSDUMPOBJ, PCIOBJ, BGAOBJ, PCIIDEOBJ,
-	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ, GUIOBJ, NETOBJ, PCNET32OBJ ];
+	ATAOBJ, DISKOBJ, FRAMEBUFFEROBJ, GUIOBJ, NETOBJ, PCNET32OBJ, FBRENDEREROBJ ];
 
 // export PROCESSES = [];
 
