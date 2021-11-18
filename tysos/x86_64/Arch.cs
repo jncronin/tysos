@@ -328,7 +328,7 @@ namespace tysos.x86_64
             Formatter.WriteLine("x86_64: Page fault and double fault handlers installed", DebugOutput);
 
             /* Set up the current cpu */
-            Virtual_Regions.Region cpu_reg = VirtualRegions.AllocRegion(0x1000, 0x1000, "BSP cpu", 0, Virtual_Regions.Region.RegionType.CPU_specific, true);
+            Virtual_Regions.Region cpu_reg = VirtualRegions.AllocRegion(0x8000, 0x1000, "BSP cpu", 0, Virtual_Regions.Region.RegionType.CPU_specific, true);
             VirtMem.map_page(cpu_reg.start);
             x86_64_cpu bsp = new x86_64_cpu(cpu_reg);
             bsp.InitCurrentCpu();
