@@ -44,5 +44,15 @@ namespace tysos.jit
         public override IndividualRequestor<TypeSpec> StaticFieldRequestor => sf;
         public override IndividualRequestor<TypeSpec> VTableRequestor => vt;
         public override IndividualRequestor<TypeSpec> DelegateRequestor => d;
+
+        public override bool Empty
+        {
+            get
+            {
+                if (base.Empty == false)
+                    return false;
+                return fm.Empty;
+            }
+        }
     }
 }
