@@ -14,7 +14,7 @@ namespace tysos.collections
         int mask;
 
         /** <summary>Create a ring buffer at the given memory location with the given length </summary> */
-        public RingBuffer(void *mem, int length)
+        public RingBuffer(void* mem, int length)
         {
             d = (T*)mem;
 
@@ -30,7 +30,7 @@ namespace tysos.collections
             // reduce to next lowest power of 2 so we don't need to worry about wraparound
             //  (instead we just do index & mask on data access)
             int highest_bit = 0;
-            for(int i = 0; i < 32; i++)
+            for (int i = 0; i < 32; i++)
             {
                 if ((count & (1 << i)) != 0)
                     highest_bit = i;
@@ -78,13 +78,13 @@ namespace tysos.collections
             int l_cons_head;
             int l_cons_next;
 
-            while(true)
+            while (true)
             {
                 l_prod_tail = prod_tail;
                 l_cons_head = cons_head;
                 l_cons_next = l_cons_head + 1;
 
-                if((l_prod_tail & mask) == (l_cons_head & mask))
+                if ((l_prod_tail & mask) == (l_cons_head & mask))
                 {
                     val = default(T);
                     return false;
@@ -120,7 +120,7 @@ namespace tysos.collections
                 T retval = d[l_cons_head & mask];
 
                 // has there been an interval read which invalidates this?
-                if(cons_head == l_cons_head)
+                if (cons_head == l_cons_head)
                 {
                     // no - return the value
                     val = retval;
@@ -129,5 +129,46 @@ namespace tysos.collections
                 // else loop and try again
             }
         }
+
+        /** <summary>Is the buffer empty?</summary> */
+        public bool IsEmpty
+        {
+            get
+            {
+                return (cons_head & mask) == (prod_tail & mask);
+            }
+        }
+    }
+
+    class ManagedRingBuffer<T> where T : class
+    {
+        RingBuffer<IntPtr> rb;
+        unsafe public ManagedRingBuffer(int length = 1024)
+        {
+            int blen = length * sizeof(IntPtr);
+            ulong mem = gc.gc.Alloc((ulong)blen);
+            rb = new RingBuffer<IntPtr>(libsupcs.CastOperations.ReinterpretAsPointer((IntPtr)mem), blen);
+        }
+
+        public bool Enqueue(T val)
+        {
+            return rb.Enqueue(libsupcs.CastOperations.ReinterpretAsIntPtr(val));
+        }
+
+        public unsafe bool Dequeue(out T val)
+        {
+            var ret = rb.Dequeue(out var v);
+            val = libsupcs.CastOperations.ReinterpretAs<T>((void*)v);
+            return ret;
+        }
+
+        public unsafe bool Peek(out T val)
+        {
+            var ret = rb.Peek(out var v);
+            val = libsupcs.CastOperations.ReinterpretAs<T>((void*)v);
+            return ret;
+        }
+
+        public bool IsEmpty { get { return rb.IsEmpty; } }
     }
 }
