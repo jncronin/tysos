@@ -434,8 +434,14 @@ namespace tysos.x86_64
             var mtest = new metadata.MetadataStream();
             Formatter.WriteLine("x86_64: done", DebugOutput);
 
+            /* Set-up the architecture for the JIT engine */
+            jit.Jit.t = libtysila5.target.Target.targets["x86_64"];
+            jit.Jit.t.Options["mcmodel"] = "large";
+            jit.Jit.t.InitIntcalls();
+            jit.Jit.bness = binary_library.Bitness.Bits64;
+
             /* Initialize firmware */
-            switch(bios)
+            switch (bios)
             {
                 case Multiboot.MachineMinorType_x86.UEFI:
                     fwconf = new UEFI(VirtualRegions, VirtMem, mboot.virt_bda);
