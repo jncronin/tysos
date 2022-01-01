@@ -10,7 +10,7 @@ namespace tysos.x86_64
 {
     class JitStubAssembler : jit.Jit.JitStubAssembler
     {
-        public override bool AssembleJitStub(MethodSpec ms, Target t, IBinaryFile bf, TysilaState s)
+        public unsafe override bool AssembleJitStub(MethodSpec ms, Target t, IBinaryFile bf, TysilaState s)
         {
             var tsect = bf.GetTextSection();
             var mname = ms.MangleMethod();
@@ -64,20 +64,11 @@ namespace tysos.x86_64
             foreach (var bi in b)
                 tsect.Data.Add(bi);
 
-            // Next comes a R_X86_64_64 relocation to jit_tm
-            var jit_tm_sym = bf.CreateSymbol();
-            jit_tm_sym.Name = "jit_tm";
-            jit_tm_sym.Type = SymbolType.Undefined;
-            
-            var reloc = bf.CreateRelocation();
-            reloc.Addend = 0;
-            reloc.Offset = (ulong)tsect.Data.Count;
-            reloc.References = jit_tm_sym;
-            reloc.Type = new binary_library.elf.ElfFile.Rel_x86_64_64();
-            reloc.DefinedIn = tsect;
-            bf.AddRelocation(reloc);
-            for (int i = 0; i < 8; i++)
-                tsect.Data.Add(0);
+            // Next comes the 64-bit address of jit_tm
+            var jit_tm_addr = libsupcs.CastOperations.ReinterpretAs<ulong>(libsupcs.OtherOperations.GetFunctionAddress("jit_tm"));
+            var jit_tm_addr_b = BitConverter.GetBytes(jit_tm_addr);
+            foreach (var bi in jit_tm_addr_b)
+                tsect.Data.Add(bi);
 
             // Continue with the rest of the function
             b = new byte[]
