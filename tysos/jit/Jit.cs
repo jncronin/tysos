@@ -8,6 +8,7 @@ namespace tysos.jit
     {
         public static libtysila5.target.Target t;  // should be set by arch
         public static binary_library.Bitness bness = binary_library.Bitness.Bits32; // should be set by arch
+        public static JitStubAssembler jsa; // should be set by arch
 
         static int next_st_id = 0;
 
@@ -189,6 +190,12 @@ namespace tysos.jit
                 default:
                     return null;
             }
+        }
+
+        public abstract class JitStubAssembler
+        {
+            public abstract bool AssembleJitStub(metadata.MethodSpec ms, libtysila5.target.Target t,
+                binary_library.IBinaryFile bf, libtysila5.TysilaState s);
         }
     }
 }

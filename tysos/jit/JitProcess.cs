@@ -109,7 +109,10 @@ namespace tysos.jit
 
                     // f was NOTDONE, and has been set to INPROG.  Check not in stab
                     if (stab.GetAddress(ne.ms.MangleMethod()) == 0)
-                        throw new NotImplementedException("JIT stub assembler for " + ne.ms.MangleMethod());
+                    {
+                        // We need to build a JIT stub here
+                        Jit.jsa.AssembleJitStub(ne.ms, Jit.t, s.bf, s);
+                    }
 
                     // set to DONE
                     ne.JitFlags = JF_DONE;

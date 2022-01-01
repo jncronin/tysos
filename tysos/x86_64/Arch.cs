@@ -439,6 +439,7 @@ namespace tysos.x86_64
             jit.Jit.t.Options["mcmodel"] = "large";
             jit.Jit.t.InitIntcalls();
             jit.Jit.bness = binary_library.Bitness.Bits64;
+            jit.Jit.jsa = new JitStubAssembler();
 
             /* Initialize firmware */
             switch (bios)
