@@ -15,6 +15,19 @@ namespace tysos.x86_64
             var tsect = bf.GetTextSection();
             var mname = ms.MangleMethod();
 
+            // Align to 16 byte boundary
+            while ((tsect.Data.Count & 0xf) != 0)
+                tsect.Data.Add(0);
+
+            // First comes a pointer to the MethodSpec for this type, followed by a state flag (starts at 0)
+            var ms_ptr = libsupcs.CastOperations.ReinterpretAsUlong(ms);
+            var ms_ptr_b = BitConverter.GetBytes(ms_ptr);
+            foreach (var bi in ms_ptr_b)
+                tsect.Data.Add(bi);
+
+            for (int i = 0; i < 8; i++)
+                tsect.Data.Add(0);
+
             // Add symbol
             var sym = bf.CreateSymbol();
             sym.Name = mname;

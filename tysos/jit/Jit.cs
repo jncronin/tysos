@@ -44,12 +44,12 @@ namespace tysos.jit
 
         [libsupcs.AlwaysCompile]
         [libsupcs.MethodAlias("jit_tm")]
-        internal static unsafe void* JitCompile(libsupcs.TysosMethod meth)
+        internal static unsafe void* JitCompile(metadata.MethodSpec meth)
         {
             var s = InitTysilaState();
 
             // Add the new method to the requestor
-            ((JitRequestor)s.r).FullMethodRequestor.Request(meth.mspec);
+            ((JitRequestor)s.r).FullMethodRequestor.Request(meth);
 
             // Compile all needed bits
             JitProcess.ProcessRequestedItems(s, Program.stab);
