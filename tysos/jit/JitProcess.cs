@@ -179,9 +179,18 @@ namespace tysos.jit
                         break;
                     }
 
-                    // f was NOTDONE, and has been set to INPROG.  Check not in stab
-                    if(stab.GetAddress(ne.ms.MangleMethod()) == 0)
+                    // f was NOTDONE, and has been set to INPROG.  Check not in stab (and if so, not a stub)
+                    var faddr = stab.GetAddress(ne.ms.MangleMethod());
+                    if (faddr == 0 || stab.IsStub(faddr))
+                    {
+                        System.Diagnostics.Debugger.Log(0, "jit", "JIT compiling " + ne.ms.MangleMethod());
                         libtysila5.libtysila.AssembleMethod(ne.ms, s.bf, Jit.t, s);
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debugger.Log(0, "jit", "Request to JIT compile " + ne.ms.MangleMethod() +
+                            " however already present at " + stab.GetAddress(ne.ms.MangleMethod()).ToString("X16"));
+                    }
 
                     // set to DONE
                     ne.JitFlags = JF_DONE;

@@ -33,7 +33,7 @@ namespace tysos.x86_64
             sym.Name = mname;
             sym.ObjectType = SymbolObjectType.Function;
             sym.Offset = (ulong)tsect.Data.Count;
-            sym.Type = SymbolType.Global;
+            sym.Type = SymbolType.Weak;
             tsect.AddSymbol(sym);
 
             // The code here comes from libtysila5/target/x86/x86_64-jitstub.asm

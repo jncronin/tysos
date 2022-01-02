@@ -36,6 +36,7 @@ namespace tysos
 
         internal Dictionary<string, ulong> sym_to_offset;
         internal tysos.Collections.SortedList<ulong, string> offset_to_sym;
+        internal Dictionary<ulong, bool> offset_to_stub;
         internal Dictionary<string, ulong> sym_to_length;
 
         internal List<ulong> static_fields_addresses = new List<ulong>();
@@ -47,6 +48,7 @@ namespace tysos
             sym_to_offset = new Dictionary<string, ulong>(0x20000, new Program.MyGenericEqualityComparer<string>());
             offset_to_sym = new Collections.SortedList<ulong, string>(0x20000, new Program.MyComparer<ulong>());
             sym_to_length = new Dictionary<string, ulong>(0x20000, new Program.MyGenericEqualityComparer<string>());
+            offset_to_stub = new Dictionary<ulong, bool>(0x20000, new Program.MyGenericEqualityComparer<ulong>());
 
             unsafe
             {
@@ -88,7 +90,7 @@ namespace tysos
                 offset_to_sym.Add(address, sym);
         }
 
-        public void Add(string sym, ulong address, ulong length)
+        public void Add(string sym, ulong address, ulong length, bool is_stub = false)
         {
             if (sym_to_offset.ContainsKey(sym))
             {
@@ -100,9 +102,24 @@ namespace tysos
                 sym_to_offset.Add(sym, address);
                 sym_to_length.Add(sym, length);
             }
-            
+
             if (!offset_to_sym.ContainsKey(address))
+            {
                 offset_to_sym.Add(address, sym);
+                offset_to_stub.Add(address, is_stub);
+            }
+        }
+
+        public bool IsStub(ulong address)
+        {
+            if(offset_to_stub.TryGetValue(address, out var isstub))
+            {
+                return isstub;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public void AddStaticField(ulong address, ulong length)

@@ -121,7 +121,8 @@ namespace tysos.jit
                     else if (cur_sym.DefinedIn == tsect)
                     {
                         addr = cur_sym.Offset + tout;
-                        Program.stab.Add(cur_sym.Name, (ulong)addr, (ulong)cur_sym.Size);
+                        // JIT Stubs are marked as weak
+                        Program.stab.Add(cur_sym.Name, (ulong)addr, (ulong)cur_sym.Size, cur_sym.Type == binary_library.SymbolType.Weak);
                     }
 
                     if (addr != null)
@@ -168,7 +169,7 @@ namespace tysos.jit
                         {
                             if (cur_reloc.Type.Type == binary_library.elf.ElfFile.R_X86_64_64)
                             {
-                                *((byte**)addr) = (byte*)taddr;
+                                *((byte**)addr) = (byte*)(taddr) + cur_reloc.Addend;
                             }
                             else
                             {
