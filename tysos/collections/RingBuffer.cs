@@ -138,6 +138,15 @@ namespace tysos.collections
                 return (cons_head & mask) == (prod_tail & mask);
             }
         }
+
+        /** <summary>Number of entries</summary> */
+        public int Count
+        {
+            get
+            {
+                return prod_tail - cons_head;
+            }
+        }
     }
 
     class ManagedRingBuffer<T> where T : class
@@ -170,5 +179,7 @@ namespace tysos.collections
         }
 
         public bool IsEmpty { get { return rb.IsEmpty; } }
+
+        public int Count { get { return rb.Count; } }
     }
 }
