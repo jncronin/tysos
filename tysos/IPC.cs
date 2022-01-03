@@ -67,7 +67,7 @@ namespace tysos
         public static extern IPCMessage ReinterpretAsIPCMessage(IntPtr addr);
 
         // The actual ring buffer
-        collections.RingBuffer<IntPtr> rb;
+        Collections.RingBuffer<IntPtr> rb;
 
         internal static bool InitIPC(Process p)
         {
@@ -82,7 +82,7 @@ namespace tysos
 
             p.ipc_region = ipc_region;
             p.ipc = new IPC();
-            p.ipc.rb = new collections.RingBuffer<IntPtr>((void*)ipc_region.start, (int)ipc_region.length);
+            p.ipc.rb = new Collections.RingBuffer<IntPtr>((void*)ipc_region.start, (int)ipc_region.length);
             p.ipc.owning_process = p;
             p.ipc.ready = true;
 

@@ -11,7 +11,7 @@ namespace tysos.jit
     {
         class JitItemRequestor<T> : libtysila5.IndividualRequestor<T> where T : class, IEquatable<T>
         {
-            collections.ManagedRingBuffer<T> rb = new collections.ManagedRingBuffer<T>();
+            Collections.ManagedRingBuffer<T> rb = new Collections.ManagedRingBuffer<T>();
 
             public override bool Empty => rb.IsEmpty;
             public override T GetNext()

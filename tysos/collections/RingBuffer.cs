@@ -5,7 +5,7 @@ using System.Text;
 /* This is a lock-free multiple producer multiple consumer ring buffer based upon
  * the DPDK Ring Library described at https://doc.dpdk.org/guides/prog_guide/ring_lib.html */
 
-namespace tysos.collections
+namespace tysos.Collections
 {
     unsafe class RingBuffer<T> where T : unmanaged
     {
