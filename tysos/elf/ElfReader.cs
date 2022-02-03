@@ -641,8 +641,7 @@ namespace tysos
                             ulong vaddr_start = pie_base + cur_phdr->p_vaddr - page_offset;
                             ulong length = util.align(cur_phdr->p_filesz + page_offset, 0x1000);
 
-                            for (ulong j = 0; j < length; j += 0x1000)
-                                vmem.map_page(vaddr_start + j, paddr_start + j);
+                            vmem.Map(paddr_start, 0x1000, vaddr_start, VirtMem.FLAG_writeable);
                         }
                         else
                             throw new Exception("Binary not paged aligned - this is currently unsupported");

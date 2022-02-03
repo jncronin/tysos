@@ -27,12 +27,14 @@ namespace tysos
 {
     public abstract class Arch
     {
-        internal Pmem PhysMem;
+        internal PhysMem PhysMem;
         internal VirtMem VirtMem;
         internal TaskSwitcher Switcher;
         internal Timer SchedulerTimer;
         internal Virtual_Regions VirtualRegions;
         internal List<Cpu> Processors;
+
+        internal static bool unwinding = false;
 
         internal ulong tysos_tls_length = 0x1000;      // hard-wired - someday get this from the ELF file
 

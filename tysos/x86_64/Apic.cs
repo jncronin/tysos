@@ -217,7 +217,7 @@ namespace tysos.x86_64
              * Setting PCD and PWT bits on a page table entry ensures UC state regardless of MTRRs             * 
              */
             lapic_base_vaddr = vreg.Alloc(0x1000, 0x1000, "LAPIC " + lapic_id.ToString() + " registers");
-            vmem.map_page(lapic_base_vaddr, lapic_base_paddr, true, true, true);
+            vmem.Map(lapic_base_paddr, 0x1000, lapic_base_vaddr, VirtMem.FLAG_writeable | VirtMem.FLAG_cache_disable | VirtMem.FLAG_write_through);
 
             /* Intel 3A:10.4.7.1:
              * 

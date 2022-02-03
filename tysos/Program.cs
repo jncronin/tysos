@@ -549,8 +549,14 @@ namespace tysos
             ulong length = end - start;
             ulong start_vaddr = arch.VirtualRegions.Alloc(length, 0x1000, name);
             ulong vaddr = start_vaddr + page_offset;
-            for (ulong i = 0; i < length; i += 0x1000)
-                arch.VirtMem.map_page(start_vaddr + i, start + i, writeable, cache_disable, write_through);
+            uint flags = 0;
+            if (writeable)
+                flags |= VirtMem.FLAG_writeable;
+            if (cache_disable)
+                flags |= VirtMem.FLAG_cache_disable;
+            if (write_through)
+                flags |= VirtMem.FLAG_write_through;
+            arch.VirtMem.Map(start, length, start_vaddr, flags);
             return vaddr;
         }
 

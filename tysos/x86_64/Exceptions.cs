@@ -98,7 +98,7 @@ namespace tysos.x86_64
 
             /* Unwind the stack */
             Formatter.WriteLine("Invalid opcode", Program.arch.DebugOutput);
-            PageFault.unwinding = true;
+            Arch.unwinding = true;
             Formatter.WriteLine("Stack trace: ", Program.arch.DebugOutput);
 
             // Switch to protected heap and unwind stack
@@ -168,7 +168,7 @@ namespace tysos.x86_64
         public static unsafe void GeneralProtection_13_Handler(ulong ec, ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
-            if (PageFault.unwinding)
+            if (Arch.unwinding)
             {
                 Formatter.WriteLine("General protection fault during stack unwinding", Program.arch.DebugOutput);
                 libsupcs.OtherOperations.Halt();
@@ -237,7 +237,7 @@ namespace tysos.x86_64
         public static unsafe void SIMD_19_Handler(ulong return_rip, ulong return_cs,
             ulong rflags, ulong return_rsp, ulong return_ss, libsupcs.x86_64.Cpu.InterruptRegisters64* regs)
         {
-            if (PageFault.unwinding)
+            if (Arch.unwinding)
                 libsupcs.OtherOperations.Halt();
             
             Formatter.WriteLine("SIMD error", Program.arch.BootInfoOutput);

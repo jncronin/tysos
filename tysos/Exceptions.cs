@@ -165,7 +165,7 @@ namespace tysos
             System.Diagnostics.Debugger.Log(0, "Assert", message);
             System.Diagnostics.Debugger.Log(0, "Assert", stackTrace);
 
-            PageFault.unwinding = true;
+            Arch.unwinding = true;
             Formatter.WriteLine("Stack trace: ", Program.arch.DebugOutput);
 
             // Switch to protected heap and unwind stack
@@ -199,7 +199,7 @@ namespace tysos
             Formatter.WriteLine(exception.ToString(), Program.arch.BootInfoOutput);
 
             /* Unwind the stack */
-            PageFault.unwinding = true;
+            Arch.unwinding = true;
             Formatter.WriteLine("Stack trace: ", Program.arch.DebugOutput);
 
             // Switch to protected heap and unwind stack

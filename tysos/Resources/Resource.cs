@@ -398,23 +398,8 @@ namespace tysos
 
         public void Map()
         {
-            ulong buf = Program.arch.GetBuffer(Length64);
-            if (buf == 0)
-            {
-                if (Length64 == 0x1000)
-                {
-                    // Try using standard page mapping instead
-                    ulong pmemaddr = Program.arch.VirtMem.map_page(Addr64);
-                    mapped_to = new PhysicalMemoryResource64(pmemaddr, 0x1000);
-                }
-                else
-                    throw new Exception("GetBuffer failed");
-            }
-            else
-            {
-                PhysicalMemoryResource64 pmem = new PhysicalMemoryResource64(buf, Length64);
-                pmem.Map(this);
-            }
+            var pmemaddr = Program.arch.VirtMem.Map(0, Length64, Addr64, VirtMem.FLAG_writeable);
+            mapped_to = new PhysicalMemoryResource64(pmemaddr.paddr, pmemaddr.len);
         }
 
         public override string ToString()
@@ -459,12 +444,7 @@ namespace tysos
             if (max_length == 0)
                 return;
 
-            ulong offset = 0;
-            while (offset < max_length)
-            {
-                Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
-                offset += Program.arch.PageSize;
-            }
+            Program.arch.VirtMem.Map(Addr64, max_length, vmem.Addr64, VirtMem.FLAG_writeable);
 
             vmem.mapped_to = this;
         }
@@ -478,12 +458,7 @@ namespace tysos
             if (max_length == 0)
                 return;
 
-            ulong offset = 0;
-            while (offset < max_length)
-            {
-                Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
-                offset += Program.arch.PageSize;
-            }
+            Program.arch.VirtMem.Map(Addr64, max_length, vmem.Addr64, VirtMem.FLAG_writeable);
 
             vmem.mapped_to = this;
         }
@@ -522,12 +497,7 @@ namespace tysos
             if (max_length == 0)
                 return;
 
-            ulong offset = 0;
-            while (offset < max_length)
-            {
-                Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
-                offset += Program.arch.PageSize;
-            }
+            Program.arch.VirtMem.Map(Addr64, max_length, vmem.Addr64, VirtMem.FLAG_writeable);
 
             vmem.mapped_to = this;
         }
@@ -541,12 +511,7 @@ namespace tysos
             if (max_length == 0)
                 return;
 
-            ulong offset = 0;
-            while (offset < max_length)
-            {
-                Program.arch.VirtMem.map_page(vmem.Addr64 + offset, this.Addr64 + offset);
-                offset += Program.arch.PageSize;
-            }
+            Program.arch.VirtMem.Map(Addr64, max_length, vmem.Addr64, VirtMem.FLAG_writeable);
 
             vmem.mapped_to = this;
         }

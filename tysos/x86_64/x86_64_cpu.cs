@@ -56,7 +56,7 @@ namespace tysos.x86_64
 
             LApicAddress = Program.arch.VirtualRegions.Alloc(0x1000, 0x1000,
                 "LAPIC");
-            Program.arch.VirtMem.map_page(LApicAddress, apic_base);
+            Program.arch.VirtMem.Map(apic_base, 0x1000, LApicAddress, VirtMem.FLAG_writeable);
 
             uint apic_id = *(uint*)(LApicAddress + LApic.LAPIC_ID_offset) >> 24;
             cpu_id = (int)apic_id;

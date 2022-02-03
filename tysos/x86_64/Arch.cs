@@ -41,7 +41,7 @@ namespace tysos.x86_64
         const ulong heap_small_start = 0xffff800000000000;
         const ulong heap_small_end = 0xffffc00000000000;
         const ulong heap_long_start = 0xffffc00000000000;
-        const ulong heap_long_end = 0xffffff8000000000;
+        const ulong heap_long_end = Vmem.direct_start;
         const ulong heap_small_cutoff = 512;
 
         bool multitasking = false;
@@ -192,52 +192,162 @@ namespace tysos.x86_64
             vmem_temppage_va = bda_va + 0x3000;
             vga_fb_va = bda_va + 0x4000;
 
-            VirtMem = new VirtMem(null, vmem_temppage_va);
-            PhysMem = new Pmem(pmem_bitmap_va, 0x2000);
+            VirtMem = new Vmem();
+            PhysMem = new Pmem();
+            PhysMem.vmem = VirtMem;
 
             Multiboot.MachineMinorType_x86 bios = (Multiboot.MachineMinorType_x86)mboot.machine_minor_type;
 
             /* Set up the debug outputs */
             DebugOutput = new SerialDebug();
-            if (mboot.has_vga && bios == Multiboot.MachineMinorType_x86.BIOS)
+            /*if (mboot.has_vga && bios == Multiboot.MachineMinorType_x86.BIOS)
             {
-                VirtMem.map_page(bda_va, 0x0);
+                VirtMem.Map(0, 0x1000, bda_va, 0);      // TODO: will this cause Map() to allocate a physical page?
+                //VirtMem.map_page(bda_va, 0x0);
                 BootInfoOutput = new Vga(bda_va, vga_fb_va, VirtMem);
             }
-            else
+            else*/
                 BootInfoOutput = DebugOutput;
 
             /* Say hi */
             Formatter.WriteLine("Tysos x86_64 architecture initialising", DebugOutput);
 
-            // Set up the physical memory allocator
-            // First mark all pages as free, then unmark those which are used
+            // Only provide free pages to the memory allocator
+            var fmem = new List<EarlyPageProvider.EPPRegion>();
+
+            // Iterate through each free block
             for (int i = 0; i < mboot.mmap.Length; i++)
             {
                 Multiboot.MemoryMap cur_mmap = mboot.mmap[i];
                 if (IsUefiFreeMemory(cur_mmap.type))
                 {
-                    for (ulong cur_page = cur_mmap.base_addr; (cur_page + 0x1000) <= (cur_mmap.base_addr + cur_mmap.length); cur_page += 0x1000)
-                        PhysMem.ReleasePage(cur_page);
+                    // do not use first page
+                    if(cur_mmap.base_addr < 0x1000)
+                    {
+                        if (cur_mmap.length < 0x1000)
+                            continue;
+                        cur_mmap.base_addr += 0x1000;
+                        cur_mmap.length -= 0x1000;
+                    }
+
+                    // x is the current address to add
+                    var x = util.align(cur_mmap.base_addr, 0x1000);
+
+                    while (x < cur_mmap.base_addr + cur_mmap.length - 0x1000)
+                    {
+                        // is x in a used block?
+                        bool in_used = false;
+
+                        for (int j = 0; j < mboot.mmap.Length; j++)
+                        {
+                            Multiboot.MemoryMap cur_mmap2 = mboot.mmap[j];
+                            if (!IsUefiFreeMemory(cur_mmap2.type))
+                            {
+                                if (x >= cur_mmap2.base_addr && x < (cur_mmap2.base_addr + cur_mmap2.length))
+                                {
+                                    in_used = true;
+
+                                    // advance x
+                                    x = cur_mmap2.base_addr + cur_mmap2.length;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (in_used)
+                            continue;   // loop and check again if in used block
+
+                        // Now we know we are not currently in a free block,
+                        //  but need to ensure we don't cross over the boundary of the next
+                        //  lowest block, so find this
+
+                        while (true)
+                        {
+                            // Find lowest used block greater than or equal to x
+                            ulong lowest_start = ulong.MaxValue;
+                            ulong lowest_len = 0;
+                            bool has_lowest = false;
+
+                            for (int j = 0; j < mboot.mmap.Length; j++)
+                            {
+                                Multiboot.MemoryMap cur_mmap2 = mboot.mmap[j];
+                                if (!IsUefiFreeMemory(cur_mmap2.type))
+                                {
+                                    if (x < cur_mmap2.base_addr && cur_mmap2.base_addr < lowest_start)
+                                    {
+                                        has_lowest = true;
+                                        lowest_start = cur_mmap2.base_addr;
+                                        lowest_len = cur_mmap2.length;
+                                    }
+                                }
+                            }
+
+                            // if the lowest block is outside the current block, ignore it
+                            if (lowest_start >= (cur_mmap.base_addr + cur_mmap.length))
+                                has_lowest = false;
+
+                            // now, if has_lowest is true, we set the max here to it, else
+                            //  we use the total size of the free block, aligned down
+                            ulong cur_block_max = (has_lowest ? lowest_start : (cur_mmap.base_addr + cur_mmap.length)) & ~0xFFFUL;
+
+                            // Debug out
+                            Formatter.Write("x86_64 PhysMem: adding block ", DebugOutput);
+                            Formatter.Write(x, "X", DebugOutput);
+                            Formatter.Write(" - ", DebugOutput);
+                            Formatter.Write(cur_block_max, "X", DebugOutput);
+                            Formatter.WriteLine(DebugOutput);
+                            fmem.Add(new EarlyPageProvider.EPPRegion
+                            {
+                                start = x,
+                                length = cur_block_max - x,
+                                used = 0
+                            });
+
+                            // subtract a page size
+                            cur_block_max -= 0x1000;
+                            while (x <= cur_block_max)
+                            {
+                                //PhysMem.ReleasePage(x);
+                                x += 0x1000;
+                            }
+
+                            Formatter.Write(x, "X", DebugOutput);
+                            Formatter.WriteLine(DebugOutput);
+
+                            // have we reached the end of the block?
+                            if (x >= cur_mmap.base_addr + cur_mmap.length - 0x1000)
+                                break;
+                            else
+                            {
+                                // if not, we have hit a used block, skip on to after it
+                                x = util.align(lowest_start + lowest_len, 0x1000);
+                            }
+                        }
+                    }
                 }
             }
-            for (int i = 0; i < mboot.mmap.Length; i++)
+
+            // Use the free memory list to create a direct mapping of all physical memory
+            var pp = new EarlyPageProvider(fmem);
+            ((Vmem)VirtMem).GenerateDirectMapping(fmem, pp);
+            Formatter.WriteLine("Direct physical memory mapping generated @ 0x0xffffff0000000000", DebugOutput);
+
+            // Now create the actual physical memory manager with the free blocks
+            PhysMem.vmem = VirtMem;
+            for(int i = 0; i < fmem.Count; i++)
             {
-                Multiboot.MemoryMap cur_mmap = mboot.mmap[i];
-                if (!IsUefiFreeMemory(cur_mmap.type))
-                {
-                    for (ulong cur_page = cur_mmap.base_addr; cur_page < (cur_mmap.base_addr + cur_mmap.length); cur_page += 0x1000)
-                        PhysMem.MarkUsed(cur_page);
-                }
+                var fmemi = fmem[i];
+                if (fmemi.length > fmemi.used + 0x2000)
+                    PhysMem.Release(fmemi.start, fmemi.length - fmemi.used);
             }
 
             PageFault.pf_unwinder = new libsupcs.x86_64.Unwinder();
             
             // Display success
             Formatter.Write("Allocated: ", DebugOutput);
-            Formatter.Write(PhysMem.GetFreeCount(), DebugOutput);
-            Formatter.WriteLine(" 4 kiB pages", DebugOutput);
-            VirtMem.SetPmem(PhysMem);
+            Formatter.Write(PhysMem.FreeSpace, DebugOutput);
+            Formatter.WriteLine(" B", DebugOutput);
+            VirtMem.pmem = PhysMem;
 
             Formatter.Write("x86_64: mboot.max_tysos: ", DebugOutput);
             Formatter.Write(mboot.max_tysos, "X", DebugOutput);
@@ -258,19 +368,9 @@ namespace tysos.x86_64
 
             /* Set up interrupts */
             ulong idt_start = VirtualRegions.Alloc(256 * 16, 0x1000, "idt");
-            VirtMem.map_page(idt_start);
+            VirtMem.Map(PhysMem.GetPage(), 0x1000, idt_start, VirtMem.FLAG_writeable);
             Interrupts = new Interrupts(idt_start);
             Formatter.WriteLine("x86_64: IDT allocated", DebugOutput);
-
-            /* Generate a blank page to use for all read page faults */
-            ulong blank_page_vaddr = VirtualRegions.Alloc(0x1000, 0x1000, "blank page");
-            VirtMem.blank_page_paddr = VirtMem.map_page(blank_page_vaddr);
-            libsupcs.MemoryOperations.QuickClearAligned16(blank_page_vaddr, 0x1000);
-            Formatter.Write("x86_64: blank page paddr: ", DebugOutput);
-            Formatter.Write(VirtMem.blank_page_paddr, "X", DebugOutput);
-            Formatter.Write(", vaddr: ", DebugOutput);
-            Formatter.Write(blank_page_vaddr, "X", DebugOutput);
-            Formatter.WriteLine(DebugOutput);
 
             unsafe
             {
@@ -312,10 +412,10 @@ namespace tysos.x86_64
                 ulong ist_base = VirtualRegions.Alloc(ist_size + ist_guard_size, 0x1000, "IST");
                 ists[i] = ist_base + ist_guard_size + ist_size;
                 for (ulong addr = ist_base + ist_guard_size; addr < ist_base + ist_guard_size + ist_size; addr += 0x1000)
-                    VirtMem.map_page(addr);
+                    VirtMem.Map(PhysMem.GetPage(), 0x1000, addr, VirtMem.FLAG_writeable);
             }
 
-            VirtMem.map_page(tss);
+            VirtMem.Map(PhysMem.GetPage(), 0x1000, tss, VirtMem.FLAG_writeable);
             Tss.Init(tss, ists);
             Formatter.WriteLine("x86_64: TSS installed", DebugOutput);
 
@@ -329,7 +429,7 @@ namespace tysos.x86_64
 
             /* Set up the current cpu */
             Virtual_Regions.Region cpu_reg = VirtualRegions.AllocRegion(0x8000, 0x1000, "BSP cpu", 0, Virtual_Regions.Region.RegionType.CPU_specific, true);
-            VirtMem.map_page(cpu_reg.start);
+            VirtMem.Map(PhysMem.GetPage(), 0x1000, cpu_reg.start, VirtMem.FLAG_writeable);
             x86_64_cpu bsp = new x86_64_cpu(cpu_reg);
             bsp.InitCurrentCpu();
             cpu_structure_setup = true;
@@ -501,7 +601,7 @@ namespace tysos.x86_64
             Switcher = new tysos.x86_64.TaskSwitcher();
 
             /* Now we have a working heap we can set up the rest of the physical memory */
-            SetUpHighMemory(PhysMem, mboot);
+            //SetUpHighMemory(this.PhysMem, mboot);
 
             /* Finally, create a list of parameters for handing to the system device enumerator */
             if (acpi == null)
@@ -525,187 +625,6 @@ namespace tysos.x86_64
             get
             {
                 return ps;
-            }
-        }
-
-        private void SetUpHighMemory(Pmem PhysMem, Multiboot.Header mboot)
-        {
-            /* First generate a list of free memory > 256 MiB */
-            List<Pmem.FreeRegion> free_regions = new List<Pmem.FreeRegion>();
-
-            Formatter.WriteLine("x86_64: Multiboot memory map:", Program.arch.DebugOutput);
-            foreach (Multiboot.MemoryMap mmap in mboot.mmap)
-            {
-                if (IsUefiFreeMemory(mmap.type))
-                {
-                    Pmem.FreeRegion fr = new Pmem.FreeRegion();
-                    fr.start = mmap.base_addr;
-                    fr.length = mmap.length;
-                    free_regions.Add(fr);
-
-                    Formatter.WriteLine("x86_64: FREE:  start: " + fr.start.ToString("X16") + "  length: " + fr.length.ToString("X16"), Program.arch.DebugOutput);
-                }
-            }
-
-            /* Exclude the first 256 MiB */
-            exclude_region(0x0, PhysMem.bmp_end, free_regions);
-
-            /* Exclude space above this */
-            foreach (Multiboot.MemoryMap mmap in mboot.mmap)
-            {
-                if (!IsUefiFreeMemory(mmap.type))
-                {
-                    exclude_region(mmap.base_addr, mmap.length, free_regions);
-                    Formatter.WriteLine("x86_64: USED:  start: " + mmap.base_addr.ToString("X16") + "  length: " + mmap.length.ToString("X16"), Program.arch.DebugOutput);
-                }
-            }
-
-            /* Trim the regions to start/finish on page boundaries */
-            int i = 0;
-            while(i < free_regions.Count)
-            {
-                Pmem.FreeRegion fr = free_regions[i];
-
-                if ((fr.start & 0xfff) != 0x0)
-                {
-                    ulong next_page = (fr.start + 0x1000) & 0xfffffffffffff000;
-                    if ((next_page - fr.start) > fr.length)
-                        fr.length = 0;
-                    else
-                        fr.length -= (next_page - fr.start);
-                    fr.start = next_page;
-                }
-
-                if ((fr.length & 0xfff) != 0x0)
-                    fr.length = fr.length & 0xfffffffffffff000;
-
-                if (fr.length == 0x0)
-                    free_regions.RemoveAt(i);
-                else
-                    i++;
-            }
-
-            /* Now find some space to use as a buffer */
-            ulong buf_len = 0x400000;
-            ulong buf_addr = ulong.MaxValue;
-            foreach(var r in free_regions)
-            {
-                if(buf_len <= r.length && r.start + buf_len <= 0x100000000UL)
-                {
-                    buf_addr = r.start;
-                    r.start += buf_len;
-                    r.length -= buf_len;
-                    break;
-                }
-            }
-            if(buf_addr != ulong.MaxValue)
-            {
-                buf_cur = buf_addr;
-                buf_end = buf_addr + buf_len;
-
-                Formatter.Write("x86_64: device physical buffer set up at ", DebugOutput);
-                Formatter.Write(buf_addr, "X", DebugOutput);
-                Formatter.Write(" - ", DebugOutput);
-                Formatter.Write(buf_end, "X", DebugOutput);
-                Formatter.WriteLine(DebugOutput);
-            }
-
-            PhysMem.SetFreeRegions(free_regions);
-        }
-
-        private void exclude_region(ulong exclude_start, ulong exclude_length, List<Pmem.FreeRegion> free_regions)
-        {
-            ulong exclude_last_byte = exclude_start - 1 + exclude_length;
-
-            int i = 0;
-            while (i < free_regions.Count)
-            {
-                Pmem.FreeRegion fr = free_regions[i];
-                ulong test_start = fr.start;
-                ulong test_last_byte = fr.start - 1 + fr.length;
-
-                /* 6 possibilities exist:
-                 * 
-                 * 1) exclude region is below test region
-                 *          -   exclude_last_byte < test_start
-                 *          ->  do nothing
-                 * 2) exclude region is above test region
-                 *          -   exclude_start > test_last_byte
-                 *          ->  do nothing
-                 * 3) exclude region overlaps bottom of test region
-                 *          -   exclude_last_byte >= test_start
-                 *          -   exclude_last_byte < test_last_byte
-                 *          -   exclude_start <= test_start
-                 *          ->  shrink test region
-                 *                  - test_start = exclude_last_byte + 1
-                 * 4) exclude region overlaps top of test region
-                 *          -   exclude_start <= test_last_byte
-                 *          -   exclude_start > test_start
-                 *          -   exclude_last_byte >= test_last_byte
-                 *          ->  shrink test region
-                 *                  - test_last_byte = exclude_start - 1
-                 * 5) exclude region overlaps whole of test region
-                 *          -   exclude_start <= test_start
-                 *          -   exclude_last_byte >= test_last_byte
-                 *          ->  delete test region
-                 * 6) exclude region is contained within test region
-                 *          -   exclude_start > test_start
-                 *          -   exclude_start < test_last_byte
-                 *          -   exclude_last_byte < test_last_byte
-                 *          -   exclude_last_byte > test_start
-                 *          ->  split test region
-                 *                      - test1_start = test_start
-                 *                      - test1_last_byte = exclude_start - 1
-                 *                      - test2_start = exclude_last_byte + 1
-                 *                      - test2_last_byte = test_last_byte
-                 */
-
-                if (exclude_last_byte < test_start)
-                    i++;
-                else if (exclude_start > test_last_byte)
-                    i++;
-                else if ((exclude_last_byte >= test_start) &&
-                    (exclude_last_byte < test_last_byte) &&
-                    (exclude_start <= test_start))
-                {
-                    test_start = exclude_last_byte + 1;
-                    fr.start = test_start;
-                    fr.length = test_last_byte - test_start + 1;
-                    i++;
-                }
-                else if ((exclude_start <= test_last_byte) &&
-                    (exclude_start > test_start) &&
-                    (exclude_last_byte >= test_last_byte))
-                {
-                    test_last_byte = exclude_start - 1;
-                    fr.start = test_start;
-                    fr.length = test_last_byte - test_start + 1;
-                    i++;
-                }
-                else if ((exclude_start <= test_start) &&
-                    (exclude_last_byte >= test_last_byte))
-                {
-                    free_regions.RemoveAt(i);
-                }
-                else if ((exclude_start > test_start) &&
-                    (exclude_start < test_last_byte) &&
-                    (exclude_last_byte < test_last_byte) &&
-                    (exclude_last_byte > test_start))
-                {
-                    ulong test1_start = test_start;
-                    ulong test1_last_byte = exclude_start - 1;
-                    ulong test2_start = exclude_last_byte + 1;
-                    ulong test2_last_byte = test_last_byte;
-                    fr.start = test1_start;
-                    fr.length = test1_last_byte - test1_start + 1;
-
-                    Pmem.FreeRegion fr2 = new Pmem.FreeRegion();
-                    fr2.start = test2_start;
-                    fr2.length = test2_last_byte - test2_start + 1;
-                    free_regions.Add(fr2);
-
-                    i++;
-                }
             }
         }
 

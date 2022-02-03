@@ -221,7 +221,7 @@ namespace tysos
             free = new Region();
             free.type = Region.RegionType.Free;
             free.name = "Free region";
-            free.start = util.align(tysos.end, VirtMem.page_size);
+            free.start = util.align(tysos.end, Program.arch.VirtMem.PageSize);
             free.length = 0x700000000000 - free.start;
             Add(free);
 
@@ -243,7 +243,7 @@ namespace tysos
             heap.type = Region.RegionType.Heap;
             heap.name = "Heap";
             heap.start = 0xffff800000000000;
-            heap.length = 0x7f8000000000;
+            heap.length = 0x7f0000000000;
             Add(heap);
 
             pts = new Region();
